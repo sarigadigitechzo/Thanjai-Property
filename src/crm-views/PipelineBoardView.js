@@ -191,7 +191,18 @@ export function initPipelineBoardView() {
           const rect = wrap.getBoundingClientRect();
           optionsDiv.style.position = 'fixed';
           optionsDiv.style.display = 'block';
-          optionsDiv.style.top = (rect.bottom + 4) + 'px';
+          
+          const spaceBelow = window.innerHeight - rect.bottom;
+          const dropdownHeight = 280;
+          
+          if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+            optionsDiv.style.top = 'auto';
+            optionsDiv.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+          } else {
+            optionsDiv.style.bottom = 'auto';
+            optionsDiv.style.top = (rect.bottom + 4) + 'px';
+          }
+          
           optionsDiv.style.left = rect.left + 'px';
           optionsDiv.style.width = rect.width + 'px';
           optionsDiv.style.zIndex = '999999';
