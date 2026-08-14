@@ -62,49 +62,44 @@ export function renderDashboardView() {
       <!-- Mixed Layout: AI Insight + Charts -->
       <div class="dashboard-mixed-layout">
         
-        <!-- Pipeline Flow (Connected Capsules) -->
-        <div class="os-chart-card">
+        <!-- Pipeline Graph Flow -->
+        <div class="os-chart-card pipeline-card">
           <div class="os-chart-header">
             <i class="ri-node-tree"></i> Pipeline Distribution
           </div>
           <p class="chart-subtext">Total active leads across all stages.</p>
           
-          <div class="pipeline-flow-container">
-            <div class="pipeline-laser"></div>
+          <div class="pipeline-graph-wrapper">
+            <div class="graph-grid"></div>
             
-            <div class="pipeline-capsule" data-stage="new" data-tooltip="New Leads (3) • 21%">
-              <div class="cap-bg" style="width: 21.4%;"></div>
-              <div class="cap-content">
-                <span class="cap-dot"></span>
-                <span class="cap-title">New</span>
-                <span class="cap-val">3</span>
-              </div>
-            </div>
+            <svg class="pipeline-connectors" preserveAspectRatio="none">
+              <line x1="0" y1="50%" x2="100%" y2="50%" class="connector-base" />
+              <line x1="0" y1="50%" x2="100%" y2="50%" class="connector-glow" />
+            </svg>
 
-            <div class="pipeline-capsule pulse-highest" data-stage="followup" data-tooltip="Follow Up (5) • 36%">
-              <div class="cap-bg" style="width: 35.7%;"></div>
-              <div class="cap-content">
-                <span class="cap-dot"></span>
-                <span class="cap-title">Follow Up</span>
-                <span class="cap-val">5</span>
+            <div class="pipeline-stages">
+              <div class="pg-stage" style="flex: 21.4;" data-tooltip="New Leads • 21%">
+                <div class="pg-val count-up">3</div>
+                <div class="pg-node" style="border-color: var(--os-charcoal);"><div class="pg-inner" style="background: var(--os-charcoal);"></div></div>
+                <div class="pg-label">New</div>
               </div>
-            </div>
 
-            <div class="pipeline-capsule" data-stage="visit" data-tooltip="Site Visit (4) • 29%">
-              <div class="cap-bg" style="width: 28.6%;"></div>
-              <div class="cap-content">
-                <span class="cap-dot"></span>
-                <span class="cap-title">Site Visit</span>
-                <span class="cap-val">4</span>
+              <div class="pg-stage pulse-highest" style="flex: 35.7;" data-tooltip="Follow Up Pending • 36%">
+                <div class="pg-val count-up">5</div>
+                <div class="pg-node" style="border-color: var(--os-deep-brown);"><div class="pg-inner" style="background: var(--os-deep-brown);"></div></div>
+                <div class="pg-label">Follow Up</div>
               </div>
-            </div>
 
-            <div class="pipeline-capsule" data-stage="registration" data-tooltip="Registration (2) • 14%">
-              <div class="cap-bg" style="width: 14.3%;"></div>
-              <div class="cap-content">
-                <span class="cap-dot"></span>
-                <span class="cap-title">Register</span>
-                <span class="cap-val">2</span>
+              <div class="pg-stage" style="flex: 28.6;" data-tooltip="Site Visit Scheduled • 29%">
+                <div class="pg-val count-up">4</div>
+                <div class="pg-node" style="border-color: var(--os-luxury-orange);"><div class="pg-inner" style="background: var(--os-luxury-orange);"></div></div>
+                <div class="pg-label">Site Visit</div>
+              </div>
+
+              <div class="pg-stage" style="flex: 14.3;" data-tooltip="Registration • 14%">
+                <div class="pg-val count-up">2</div>
+                <div class="pg-node" style="border-color: var(--os-rich-red);"><div class="pg-inner" style="background: var(--os-rich-red);"></div></div>
+                <div class="pg-label">Register</div>
               </div>
             </div>
           </div>
@@ -119,90 +114,78 @@ export function renderDashboardView() {
         </div>
       </div>
       
-      <!-- Bottom Section: 3D Donut Chart -->
+      <!-- Bottom Section: Leads by Source Split Layout -->
       <div class="os-chart-card">
         <div class="os-chart-header">
           <i class="ri-pie-chart-2-fill"></i> Leads by Source (Acquisition)
         </div>
         
-        <div class="premium-donut-layout">
-          <div class="donut-svg-wrapper">
-            <!-- 3D effect shadow -->
-            <div class="donut-shadow"></div>
-            <svg viewBox="0 0 100 100" class="premium-donut">
-              <!-- Empty Track -->
-              <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(0,0,0,0.03)" stroke-width="12"></circle>
-              
-              <!-- Manual Entry: 11 (61%) | Dasharray: ~153. Dashoffset: 251.2 - 153 = 98.2 -->
-              <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-deep-brown)" stroke-width="12" 
-                      stroke-dasharray="153.2 251.2" stroke-dashoffset="0" data-source="manual">
-              </circle>
-              
-              <!-- WhatsApp: 3 (17%) | Dasharray: ~42.7. Offset: start at 153.2 -->
-              <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-luxury-orange)" stroke-width="12" 
-                      stroke-dasharray="42.7 251.2" stroke-dashoffset="-153.2" data-source="whatsapp">
-              </circle>
-              
-              <!-- Website Form: 3 (17%) | Dasharray: ~42.7. Offset: start at 195.9 -->
-              <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-charcoal)" stroke-width="12" 
-                      stroke-dasharray="42.7 251.2" stroke-dashoffset="-195.9" data-source="website">
-              </circle>
-
-              <!-- Referral: 1 (5%) | Dasharray: ~12.6. Offset: start at 238.6 -->
-              <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-rich-red)" stroke-width="12" 
-                      stroke-dasharray="12.6 251.2" stroke-dashoffset="-238.6" data-source="referral">
-              </circle>
-            </svg>
-            <div class="donut-center-info">
-              <span class="dc-total count-up">18</span>
-              <span class="dc-lbl">Total</span>
+        <div class="source-split-layout">
+          <!-- LEFT: 3D Donut Chart -->
+          <div class="source-left">
+            <div class="donut-svg-wrapper">
+              <div class="donut-shadow"></div>
+              <svg viewBox="0 0 100 100" class="premium-donut">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(0,0,0,0.03)" stroke-width="12"></circle>
+                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-deep-brown)" stroke-width="12" stroke-dasharray="153.2 251.2" stroke-dashoffset="0" data-tooltip="Manual: 11 (61%)" data-source="manual"></circle>
+                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-luxury-orange)" stroke-width="12" stroke-dasharray="42.7 251.2" stroke-dashoffset="-153.2" data-tooltip="WhatsApp: 3 (17%)" data-source="whatsapp"></circle>
+                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-gold)" stroke-width="12" stroke-dasharray="42.7 251.2" stroke-dashoffset="-195.9" data-tooltip="Website: 3 (17%)" data-source="website"></circle>
+                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-rich-red)" stroke-width="12" stroke-dasharray="12.6 251.2" stroke-dashoffset="-238.6" data-tooltip="Referral: 1 (5%)" data-source="referral"></circle>
+              </svg>
+              <div class="donut-center-info">
+                <span class="dc-total count-up">18</span>
+                <span class="dc-lbl">Total Leads</span>
+              </div>
             </div>
           </div>
 
-          <div class="donut-pill-legend">
-            <div class="legend-pill" data-target="manual">
-              <div class="lp-left">
-                <span class="lp-dot" style="background: var(--os-deep-brown); box-shadow: 0 0 10px var(--os-deep-brown);"></span>
-                <span class="lp-name">Manual Entry</span>
-              </div>
-              <div class="lp-right">
-                <span class="lp-perc">61%</span>
-                <span class="lp-badge count-up">11</span>
-              </div>
-            </div>
+          <!-- RIGHT: Premium Glass Cards -->
+          <div class="source-right">
             
-            <div class="legend-pill" data-target="whatsapp">
-              <div class="lp-left">
-                <span class="lp-dot" style="background: var(--os-luxury-orange); box-shadow: 0 0 10px var(--os-luxury-orange);"></span>
-                <span class="lp-name">WhatsApp</span>
+            <div class="source-glass-card hover-lift" data-source="manual">
+              <div class="sgc-header">
+                <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-deep-brown);"></span> Manual Entry</div>
+                <div class="sgc-badge"><span class="count-up">11</span> Leads</div>
               </div>
-              <div class="lp-right">
-                <span class="lp-perc">17%</span>
-                <span class="lp-badge count-up">3</span>
-              </div>
-            </div>
-
-            <div class="legend-pill" data-target="website">
-              <div class="lp-left">
-                <span class="lp-dot" style="background: var(--os-charcoal); box-shadow: 0 0 10px var(--os-charcoal);"></span>
-                <span class="lp-name">Website Form</span>
-              </div>
-              <div class="lp-right">
-                <span class="lp-perc">17%</span>
-                <span class="lp-badge count-up">3</span>
+              <div class="sgc-perc count-up">61%</div>
+              <div class="sgc-track">
+                <div class="sgc-fill" style="width: 61%; background: var(--os-deep-brown);"></div>
               </div>
             </div>
 
-            <div class="legend-pill" data-target="referral">
-              <div class="lp-left">
-                <span class="lp-dot" style="background: var(--os-rich-red); box-shadow: 0 0 10px var(--os-rich-red);"></span>
-                <span class="lp-name">Referral</span>
+            <div class="source-glass-card hover-lift" data-source="whatsapp">
+              <div class="sgc-header">
+                <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-luxury-orange);"></span> WhatsApp</div>
+                <div class="sgc-badge"><span class="count-up">3</span> Leads</div>
               </div>
-              <div class="lp-right">
-                <span class="lp-perc">5%</span>
-                <span class="lp-badge count-up">1</span>
+              <div class="sgc-perc count-up">17%</div>
+              <div class="sgc-track">
+                <div class="sgc-fill" style="width: 17%; background: var(--os-luxury-orange);"></div>
               </div>
             </div>
+
+            <div class="source-glass-card hover-lift" data-source="website">
+              <div class="sgc-header">
+                <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-gold);"></span> Website Form</div>
+                <div class="sgc-badge"><span class="count-up">3</span> Leads</div>
+              </div>
+              <div class="sgc-perc count-up">17%</div>
+              <div class="sgc-track">
+                <div class="sgc-fill" style="width: 17%; background: var(--os-gold);"></div>
+              </div>
+            </div>
+
+            <div class="source-glass-card hover-lift" data-source="referral">
+              <div class="sgc-header">
+                <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-rich-red);"></span> Referral</div>
+                <div class="sgc-badge"><span class="count-up">1</span> Leads</div>
+              </div>
+              <div class="sgc-perc count-up">5%</div>
+              <div class="sgc-track">
+                <div class="sgc-fill" style="width: 5%; background: var(--os-rich-red);"></div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -226,11 +209,46 @@ export function renderDashboardView() {
             update();
           });
 
-          // SVG Donut Hover - Bring to Front
-          document.querySelectorAll('.donut-slice').forEach(slice => {
+          // SVG Donut Hover - Bring to Front & Link Cards
+          const donutWrapper = document.querySelector('.premium-donut');
+          const slices = document.querySelectorAll('.donut-slice');
+          const cards = document.querySelectorAll('.source-glass-card');
+          
+          slices.forEach(slice => {
             slice.addEventListener('mouseenter', function() {
-              // Appending an existing child moves it to the end of the DOM order, bringing it to the front in SVG
               this.parentNode.appendChild(this);
+              donutWrapper.classList.add('has-active');
+              this.classList.add('is-active');
+              const source = this.getAttribute('data-source');
+              const card = document.querySelector('.source-glass-card[data-source="' + source + '"]');
+              if (card) card.classList.add('is-active');
+            });
+            slice.addEventListener('mouseleave', function() {
+              donutWrapper.classList.remove('has-active');
+              this.classList.remove('is-active');
+              const source = this.getAttribute('data-source');
+              const card = document.querySelector('.source-glass-card[data-source="' + source + '"]');
+              if (card) card.classList.remove('is-active');
+            });
+          });
+
+          cards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+              const source = this.getAttribute('data-source');
+              const slice = document.querySelector('.donut-slice[data-source="' + source + '"]');
+              if (slice) {
+                slice.parentNode.appendChild(slice);
+                slice.classList.add('is-active');
+                donutWrapper.classList.add('has-active');
+              }
+              this.classList.add('is-active');
+            });
+            card.addEventListener('mouseleave', function() {
+              const source = this.getAttribute('data-source');
+              const slice = document.querySelector('.donut-slice[data-source="' + source + '"]');
+              if (slice) slice.classList.remove('is-active');
+              donutWrapper.classList.remove('has-active');
+              this.classList.remove('is-active');
             });
           });
         }, 500);

@@ -110,7 +110,6 @@
           <div class="search-container">
             <i class="ri-search-2-line"></i>
             <input type="text" placeholder="Search leads, properties, clients..." class="universal-search" />
-            <div class="shortcut-hint">⌘K</div>
           </div>
 
           <div class="header-actions">
@@ -119,18 +118,52 @@
               <span>Today, 14 Aug</span>
             </div>
             
-            <button class="action-btn ai-btn" title="AI Assistant">
+            <button class="action-btn ai-btn" title="AI Assistant" id="header-ai-btn">
               <i class="ri-sparkling-line"></i>
             </button>
             
-            <button class="action-btn notifications-btn" title="Notifications">
-              <i class="ri-notification-3-line"></i>
-              <span class="pulse-dot"></span>
-            </button>
+            <div class="header-dropdown-wrapper">
+              <button class="action-btn notifications-btn" title="Notifications" id="header-notif-btn">
+                <i class="ri-notification-3-line"></i>
+                <span class="pulse-dot"></span>
+              </button>
+              <div class="header-dropdown" id="notif-dropdown">
+                <div class="hd-title">Notifications</div>
+                <div class="hd-list">
+                  <div class="hd-item unread">
+                    <i class="ri-whatsapp-line" style="color: var(--os-luxury-orange);"></i>
+                    <div class="hd-text">
+                      <p><strong>New WhatsApp Lead</strong></p>
+                      <span>Rajesh inquired about Thanjai Villa</span>
+                    </div>
+                    <i class="ri-close-line dismiss-btn" title="Dismiss"></i>
+                  </div>
+                  <div class="hd-item">
+                    <i class="ri-calendar-check-line" style="color: var(--os-deep-brown);"></i>
+                    <div class="hd-text">
+                      <p><strong>Site Visit Today</strong></p>
+                      <span>In 30 mins with Kumar</span>
+                    </div>
+                    <i class="ri-close-line dismiss-btn" title="Dismiss"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            <div class="profile-dropdown">
-              <img src="https://ui-avatars.com/api/?name=Aishwarya+Raman&background=2A1808&color=F8F4EC" alt="Profile" class="profile-img" />
-              <i class="ri-arrow-down-s-line"></i>
+            <div class="header-dropdown-wrapper">
+              <div class="profile-dropdown" id="header-profile-btn">
+                <img src="https://ui-avatars.com/api/?name=Aishwarya+Raman&background=2A1808&color=F8F4EC" alt="Profile" class="profile-img" />
+                <i class="ri-arrow-down-s-line"></i>
+              </div>
+              <div class="header-dropdown" id="profile-dropdown-menu">
+                <div class="hd-profile">
+                  <strong>Aishwarya R.</strong>
+                  <span>Super Admin</span>
+                </div>
+                <div class="hd-divider"></div>
+                <div class="hd-action" id="profile-settings-btn"><i class="ri-settings-4-line"></i> Settings</div>
+                <div class="hd-action logout-action" id="profile-logout-btn"><i class="ri-logout-box-r-line"></i> Log Out</div>
+              </div>
             </div>
           </div>
         </header>
