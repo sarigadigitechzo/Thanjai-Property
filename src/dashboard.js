@@ -1,18 +1,19 @@
 import { renderDashboardView } from './crm-views/DashboardView.js';
 import { renderLeadsView, initLeadsView } from './crm-views/LeadsView.js';
-import { renderPropertiesView, initPropertiesListeners } from './crm-views/PropertiesView.js';
+import { renderPropertiesView } from './crm-views/PropertiesView.js';
 import { renderSiteVisitsView } from './crm-views/SiteVisitsView.js';
 import { renderPartnersView } from './crm-views/PartnersView.js';
 import { renderAIAgentView } from './crm-views/AIAgentView.js';
 import { renderWhatsAppLogView } from './crm-views/WhatsAppLogView.js';
 import { renderWebsiteImagesView, initWebsiteImagesListeners } from './crm-views/WebsiteImagesView.js';
 import { renderAuditLogView, initAuditLogListeners } from './crm-views/AuditLogView.js';
+import { renderLeadDetailView, initLeadDetailView } from './crm-views/LeadDetailView.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const contentArea = document.getElementById('os-content');
   const navItems = document.querySelectorAll('.nav-item');
 
-  function loadView(viewName) {
+  function loadView(viewName, param = null) {
     let html = '';
     let afterRender = null;
 
@@ -23,15 +24,21 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'leads':
         html = renderLeadsView();
         break;
+      case 'lead-detail':
+        html = renderLeadDetailView(param);
+        afterRender = () => initLeadDetailView(param);
+        break;
       case 'properties':
         html = renderPropertiesView();
         afterRender = initPropertiesListeners;
         break;
       case 'visits':
         html = renderSiteVisitsView();
+        afterRender = initSiteVisitsView;
         break;
       case 'partners':
         html = renderPartnersView();
+        afterRender = initPartnersView;
         break;
       case 'ai':
         html = renderAIAgentView();
@@ -58,9 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     contentArea.innerHTML = html;
-    if (afterRender) {
-      afterRender();
-    }
   }
 
   function setActiveNav(viewName) {
@@ -75,6 +79,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleHashChange() {
     const hash = window.location.hash.slice(1) || 'dashboard';
+    
+    if (hash.startsWith('lead/')) {
+      const id = hash.split('/')[1];
+      loadView('lead-detail', id);
+      setActiveNav('leads');
+      return;
+    }
+
     loadView(hash);
     setActiveNav(hash);
   }

@@ -116,6 +116,7 @@
   border-radius: var(--os-radius-lg);
   padding: 20px;
   border: var(--os-border-thin);
+  border-left: 4px solid var(--os-luxury-orange);
   box-shadow: var(--os-shadow-soft);
   display: flex;
   align-items: center;

@@ -23,11 +23,11 @@ export function renderLeadsView() {
       <div class="os-filter-bar" style="background: transparent; padding: 0; box-shadow: none; border: none; margin-bottom: 24px; display: flex; gap: 16px; flex-wrap: nowrap;">
         <div class="search-box" style="flex: 1; max-width: 300px; background: var(--os-white); border: var(--os-border-thin); border-radius: var(--os-radius-sm);">
           <i class="ri-search-line"></i>
-          <input type="text" placeholder="Search name / phone / email..." style="background: transparent;" />
+          <input type="text" id="filter-search" placeholder="Search name / phone / email..." style="background: transparent;" />
         </div>
         
         <!-- Custom Selects -->
-        <div class="os-custom-select">
+        <div class="os-custom-select" id="filter-status">
           <div class="select-value">All statuses</div>
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
@@ -42,7 +42,7 @@ export function renderLeadsView() {
           </div>
         </div>
 
-        <div class="os-custom-select">
+        <div class="os-custom-select" id="filter-source">
           <div class="select-value">All sources</div>
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
@@ -58,7 +58,7 @@ export function renderLeadsView() {
           </div>
         </div>
 
-        <div class="os-custom-select">
+        <div class="os-custom-select" id="filter-type">
           <div class="select-value">All property types</div>
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
@@ -76,7 +76,7 @@ export function renderLeadsView() {
           </div>
         </div>
 
-        <div class="os-custom-select">
+        <div class="os-custom-select" id="filter-staff">
           <div class="select-value">All staff</div>
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
@@ -88,7 +88,7 @@ export function renderLeadsView() {
         </div>
 
         <label class="filter-toggle" style="background: var(--os-white); border: var(--os-border-thin); padding: 0 16px; border-radius: var(--os-radius-sm); height: 42px; display: flex; align-items: center; cursor: pointer;">
-          <input type="checkbox" style="accent-color: var(--os-luxury-orange);" /> <span style="margin-left: 8px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-600);">Due</span>
+          <input type="checkbox" id="filter-due" style="accent-color: var(--os-luxury-orange);" /> <span style="margin-left: 8px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-600);">Due</span>
         </label>
       </div>
 
@@ -262,6 +262,10 @@ export function renderLeadsView() {
                   </div>
                 </div>
               </div>
+              <div class="form-group">
+                <label>Follow-up Date</label>
+                <input type="date" id="lead-followup" style="color: var(--os-gray-600);" />
+              </div>
             </div>
             <div class="form-row">
               <div class="form-group" style="width: 100%;">
@@ -275,15 +279,6 @@ export function renderLeadsView() {
           <button class="os-btn-secondary" id="cancel-new-lead-btn">Cancel</button>
           <button class="os-btn-primary" id="btn-save-lead" style="background: var(--os-luxury-orange); border-color: var(--os-luxury-orange);">Create lead</button>
         </div>
-    <!-- Side Panel (View Lead) -->
-    <div class="os-side-panel-overlay" id="view-lead-panel">
-      <div class="os-side-panel">
-        <div class="sp-header">
-          <div class="sp-title">Lead Details</div>
-          <button class="sp-close" id="close-view-panel"><i class="ri-close-line"></i></button>
-        </div>
-        <div class="sp-body" id="view-panel-body">
-          <!-- Dynamic Content -->
         </div>
       </div>
     </div>
@@ -322,8 +317,46 @@ function formatCurrency(val) {
 function renderTable() {
   const tbody = document.getElementById('leads-table-body');
   if (!tbody) return;
-  const leads = getLeads();
+  let leads = getLeads();
   
+  // Apply filters
+  const searchEl = document.getElementById('filter-search');
+  const statusEl = document.getElementById('filter-status');
+  const sourceEl = document.getElementById('filter-source');
+  const typeEl = document.getElementById('filter-type');
+  const staffEl = document.getElementById('filter-staff');
+  const dueEl = document.getElementById('filter-due');
+
+  if (searchEl && statusEl) {
+    const q = searchEl.value.toLowerCase();
+    const fStatus = statusEl.querySelector('.select-value').textContent;
+    const fSource = sourceEl.querySelector('.select-value').textContent;
+    const fType = typeEl.querySelector('.select-value').textContent;
+    const fStaff = staffEl.querySelector('.select-value').textContent;
+    const fDue = dueEl.checked;
+
+    leads = leads.filter(lead => {
+      // Search
+      if (q) {
+        const str = `${lead.name || ''} ${lead.mobile || ''} ${lead.email || ''} ${lead.type || ''} ${lead.area || ''} ${lead.source || ''} ${lead.status || ''} ${lead.assignTo || ''}`.toLowerCase();
+        if (!str.includes(q)) return false;
+      }
+      // Dropdowns
+      if (fStatus !== 'All statuses' && lead.status !== fStatus) return false;
+      if (fSource !== 'All sources' && lead.source !== fSource) return false;
+      if (fType !== 'All property types' && lead.type !== fType) return false;
+      if (fStaff !== 'All staff' && lead.assignTo !== fStaff) return false;
+      
+      // Due Checkbox
+      if (fDue) {
+        if (!lead.followup || lead.followup === '—') return false;
+        // In a local demo, just showing items with a follow-up date assigned if 'Due' is checked
+      }
+      
+      return true;
+    });
+  }
+
   tbody.innerHTML = leads.map(lead => {
     
     let requirementHtml = `<div style="font-weight: 500; color: var(--os-gray-600);">${lead.type !== 'Any' ? lead.type : '—'}</div>`;
@@ -410,6 +443,10 @@ export function initLeadsView() {
         options.forEach(opt => opt.classList.remove('selected'));
         option.classList.add('selected');
         select.classList.remove('open');
+        // Trigger table re-render if a filter dropdown changes
+        if (select.id && select.id.startsWith('filter-')) {
+          renderTable();
+        }
       });
     });
   });
@@ -418,6 +455,13 @@ export function initLeadsView() {
   document.addEventListener('click', () => {
     customSelects.forEach(select => select.classList.remove('open'));
   });
+
+  // Attach search and due checkbox event listeners
+  const searchInput = document.getElementById('filter-search');
+  if (searchInput) searchInput.addEventListener('input', renderTable);
+  
+  const dueCheckbox = document.getElementById('filter-due');
+  if (dueCheckbox) dueCheckbox.addEventListener('change', renderTable);
 
   // Modal Logic
   const modal = document.getElementById('new-lead-modal');
@@ -432,6 +476,7 @@ export function initLeadsView() {
     if (!isEdit) {
       form.reset();
       document.getElementById('lead-id').value = '';
+      document.getElementById('lead-followup').value = '';
       modalTitle.textContent = 'New lead';
       saveBtn.textContent = 'Create lead';
       // reset custom selects visually
@@ -490,7 +535,7 @@ export function initLeadsView() {
         source,
         assignTo,
         status: idField ? undefined : 'New', // preserve status if edit later
-        followup: '—'
+        followup: document.getElementById('lead-followup').value || '—'
       };
 
       let leads = getLeads();
@@ -632,72 +677,7 @@ export function initLeadsView() {
       if (!lead) return;
 
       if (e.target.closest('.action-view')) {
-         const panel = document.getElementById('view-lead-panel');
-         const panelBody = document.getElementById('view-panel-body');
-         if (panel && panelBody) {
-           panelBody.innerHTML = `
-             <div class="sp-section">CONTACT INFO</div>
-             <div class="sp-row">
-               <div class="sp-field">
-                 <div class="sp-label">Name</div>
-                 <div class="sp-value">${lead.name || '—'}</div>
-               </div>
-               <div class="sp-field">
-                 <div class="sp-label">Mobile</div>
-                 <div class="sp-value">${lead.mobile || '—'}</div>
-               </div>
-             </div>
-             <div class="sp-row">
-               <div class="sp-field">
-                 <div class="sp-label">WhatsApp</div>
-                 <div class="sp-value">${lead.whatsapp || '—'}</div>
-               </div>
-               <div class="sp-field">
-                 <div class="sp-label">Email</div>
-                 <div class="sp-value">${lead.email || '—'}</div>
-               </div>
-             </div>
-             
-             <div class="sp-section">REQUIREMENT</div>
-             <div class="sp-row">
-               <div class="sp-field">
-                 <div class="sp-label">Property Type</div>
-                 <div class="sp-value">${lead.type || '—'}</div>
-               </div>
-               <div class="sp-field">
-                 <div class="sp-label">Budget</div>
-                 <div class="sp-value">Min: ${lead.budgetMin || '—'} - Max: ${lead.budgetMax || '—'}</div>
-               </div>
-             </div>
-             <div class="sp-field">
-                 <div class="sp-label">Preferred Area</div>
-                 <div class="sp-value">${lead.area || '—'}</div>
-             </div>
-
-             <div class="sp-section">TRACKING</div>
-             <div class="sp-row">
-               <div class="sp-field">
-                 <div class="sp-label">Source</div>
-                 <div class="sp-value">${lead.source || '—'}</div>
-               </div>
-               <div class="sp-field">
-                 <div class="sp-label">Status</div>
-                 <div class="sp-value">${lead.status || '—'}</div>
-               </div>
-             </div>
-             <div class="sp-row">
-               <div class="sp-field">
-                 <div class="sp-label">Assigned To</div>
-                 <div class="sp-value">${lead.assignTo || '—'}</div>
-               </div>
-             </div>
-             <div class="sp-field">
-                 <div class="sp-label">Notes</div>
-                 <div class="sp-value" style="white-space: pre-wrap;">${lead.notes || '—'}</div>
-             </div>
-           `;
-           panel.classList.add('show');
-         }
+         window.location.hash = 'lead/' + id;
       } else if (e.target.closest('.action-edit')) {
          openModal(true);
          modalTitle.textContent = 'Edit lead';
@@ -715,6 +695,7 @@ export function initLeadsView() {
          document.getElementById('lead-budget-max').value = lead.budgetMax || '';
          document.getElementById('lead-bedrooms').value = lead.bedrooms || '';
          document.getElementById('lead-notes').value = lead.notes || '';
+         document.getElementById('lead-followup').value = (lead.followup && lead.followup !== '—') ? lead.followup : '';
          
          // Set selects visually
          const typeSel = document.getElementById('lead-type-select');
@@ -733,16 +714,6 @@ export function initLeadsView() {
           renderTable();
         }
       }
-    });
-  }
-
-  // Side panel close logic
-  const viewPanel = document.getElementById('view-lead-panel');
-  const closePanelBtn = document.getElementById('close-view-panel');
-  if (viewPanel && closePanelBtn) {
-    closePanelBtn.addEventListener('click', () => viewPanel.classList.remove('show'));
-    viewPanel.addEventListener('click', (e) => {
-      if (e.target === viewPanel) viewPanel.classList.remove('show');
     });
   }
 }
