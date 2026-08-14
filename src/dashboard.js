@@ -7,12 +7,13 @@ import { renderAIAgentView } from './crm-views/AIAgentView.js';
 import { renderWhatsAppLogView } from './crm-views/WhatsAppLogView.js';
 import { renderWebsiteImagesView, initWebsiteImagesListeners } from './crm-views/WebsiteImagesView.js';
 import { renderAuditLogView, initAuditLogListeners } from './crm-views/AuditLogView.js';
+import { renderLeadDetailView, initLeadDetailView } from './crm-views/LeadDetailView.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const contentArea = document.getElementById('os-content');
   const navItems = document.querySelectorAll('.nav-item');
 
-  function loadView(viewName) {
+  function loadView(viewName, param = null) {
     let html = '';
     let afterRender = null;
 
@@ -22,6 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
       case 'leads':
         html = renderLeadsView();
+        break;
+      case 'lead-detail':
+        html = renderLeadDetailView(param);
+        afterRender = () => initLeadDetailView(param);
         break;
       case 'properties':
         html = renderPropertiesView();
@@ -57,6 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     contentArea.innerHTML = html;
+    if (viewName === 'leads') {
+      initLeadsView();
+    }
+    if (afterRender) {
+      setTimeout(afterRender, 0); // ensure DOM is painted
+    }
   }
 
   function setActiveNav(viewName) {
@@ -71,6 +82,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleHashChange() {
     const hash = window.location.hash.slice(1) || 'dashboard';
+    
+    if (hash.startsWith('lead/')) {
+      const id = hash.split('/')[1];
+      loadView('lead-detail', id);
+      setActiveNav('leads');
+      return;
+    }
+
     loadView(hash);
     setActiveNav(hash);
   }
