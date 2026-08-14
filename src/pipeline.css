@@ -86,8 +86,8 @@
 }
 
 .pipeline-card:hover {
+  top: -2px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  transform: translateY(-2px);
 }
 
 .pipeline-card.dragging {
@@ -167,16 +167,16 @@
 }
 
 /* Column Colors */
-.pipeline-col[data-stage="New Lead"] .pipeline-col-header { border-top-color: #3b82f6 !important; }
-.pipeline-col[data-stage="Initial Contact"] .pipeline-col-header { border-top-color: #06b6d4 !important; }
-.pipeline-col[data-stage="Requirement Analysis"] .pipeline-col-header { border-top-color: #8b5cf6 !important; }
-.pipeline-col[data-stage="Property Matching"] .pipeline-col-header { border-top-color: #d946ef !important; }
-.pipeline-col[data-stage="Shared To Partner (use Share to partner)"] .pipeline-col-header { border-top-color: #ec4899 !important; }
-.pipeline-col[data-stage="Property Shared"] .pipeline-col-header { border-top-color: #f43f5e !important; }
-.pipeline-col[data-stage="Follow Up Pending"] .pipeline-col-header { border-top-color: #eab308 !important; }
-.pipeline-col[data-stage="Site Visit Scheduled"] .pipeline-col-header { border-top-color: #10b981 !important; }
-.pipeline-col[data-stage="Site Visit Completed"] .pipeline-col-header { border-top-color: #84cc16 !important; }
-.pipeline-col[data-stage="Negotiation"] .pipeline-col-header { border-top-color: #f97316 !important; }
-.pipeline-col[data-stage="Bank Loan"] .pipeline-col-header { border-top-color: #14b8a6 !important; }
-.pipeline-col[data-stage="Registration"] .pipeline-col-header { border-top-color: #22c55e !important; }
-.pipeline-col[data-stage="Lost Closed"] .pipeline-col-header { border-top-color: #64748b !important; }
+.pipeline-col[data-stage="New Lead"] .pipeline-col-header { border-top: 4px solid #3b82f6 !important; }
+.pipeline-col[data-stage="Initial Contact"] .pipeline-col-header { border-top: 4px solid #06b6d4 !important; }
+.pipeline-col[data-stage="Requirement Analysis"] .pipeline-col-header { border-top: 4px solid #8b5cf6 !important; }
+.pipeline-col[data-stage="Property Matching"] .pipeline-col-header { border-top: 4px solid #d946ef !important; }
+.pipeline-col[data-stage="Shared To Partner (use Share to partner)"] .pipeline-col-header { border-top: 4px solid #ec4899 !important; }
+.pipeline-col[data-stage="Property Shared"] .pipeline-col-header { border-top: 4px solid #f43f5e !important; }
+.pipeline-col[data-stage="Follow Up Pending"] .pipeline-col-header { border-top: 4px solid #eab308 !important; }
+.pipeline-col[data-stage="Site Visit Scheduled"] .pipeline-col-header { border-top: 4px solid #10b981 !important; }
+.pipeline-col[data-stage="Site Visit Completed"] .pipeline-col-header { border-top: 4px solid #84cc16 !important; }
+.pipeline-col[data-stage="Negotiation"] .pipeline-col-header { border-top: 4px solid #f97316 !important; }
+.pipeline-col[data-stage="Bank Loan"] .pipeline-col-header { border-top: 4px solid #14b8a6 !important; }
+.pipeline-col[data-stage="Registration"] .pipeline-col-header { border-top: 4px solid #22c55e !important; }
+.pipeline-col[data-stage="Lost Closed"] .pipeline-col-header { border-top: 4px solid #64748b !important; }
