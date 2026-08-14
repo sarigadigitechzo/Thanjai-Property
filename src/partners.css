@@ -221,7 +221,10 @@
   margin-top: 6px;
   z-index: 100;
   display: none;
-  overflow: hidden;
+  overflow-y: auto;
+  max-height: 280px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--os-gray-300) transparent;
 }
 
 .custom-dropdown-wrap.open .custom-dropdown-options {

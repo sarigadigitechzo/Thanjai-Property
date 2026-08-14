@@ -124,7 +124,7 @@ export function initPipelineBoardView() {
     const currentLabel = currentStage.id + (currentStage.emailIcon ? ' <i class="ri-mail-line" style="margin-left:4px; font-size:0.8rem;"></i>' : '');
 
     return `
-      <div class="pipeline-card" draggable="true" data-id="${lead.id}">
+      <div class="pipeline-card" draggable="true" data-id="${lead.id}" data-priority="${priorityClass || 'medium'}">
         <div class="pipeline-card-header">
           <div class="pipeline-card-title">${lead.name}</div>
           <div class="pipeline-card-priority ${priorityClass}">${priorityText}</div>
@@ -165,56 +165,95 @@ export function initPipelineBoardView() {
       selectedEl.addEventListener('click', (e) => {
         e.stopPropagation();
         // Close all other open dropdowns first
-        board.querySelectorAll('.custom-dropdown-wrap.open').forEach(w => {
+        document.querySelectorAll('.custom-dropdown-wrap.open').forEach(w => {
           if (w !== wrap) {
             w.classList.remove('open');
-            w.querySelector('.custom-dropdown-options').style.position = '';
+          }
+        });
+        
+        // Return any body-appended options back to their original wraps
+        document.querySelectorAll('body > .custom-dropdown-options').forEach(optDiv => {
+          const originalWrap = document.querySelector(`.custom-dropdown-wrap[data-lead="${optDiv.dataset.wrapId}"]`);
+          if (originalWrap && originalWrap !== wrap) {
+            originalWrap.appendChild(optDiv);
+            optDiv.style.position = '';
+            optDiv.style.display = '';
           }
         });
         
         const isOpen = wrap.classList.contains('open');
         if (!isOpen) {
           wrap.classList.add('open');
-          // Use fixed positioning to escape overflow-y: auto clipping
           const optionsDiv = wrap.querySelector('.custom-dropdown-options');
+          
+          document.body.appendChild(optionsDiv);
+          
           const rect = wrap.getBoundingClientRect();
           optionsDiv.style.position = 'fixed';
-          optionsDiv.style.top = (rect.bottom + 4) + 'px';
+          optionsDiv.style.display = 'block';
+          
+          const spaceBelow = window.innerHeight - rect.bottom;
+          const dropdownHeight = 280;
+          
+          if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+            optionsDiv.style.top = 'auto';
+            optionsDiv.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+          } else {
+            optionsDiv.style.bottom = 'auto';
+            optionsDiv.style.top = (rect.bottom + 4) + 'px';
+          }
+          
           optionsDiv.style.left = rect.left + 'px';
           optionsDiv.style.width = rect.width + 'px';
-          optionsDiv.style.zIndex = '99999';
+          optionsDiv.style.zIndex = '999999';
+          
+          optionsDiv.dataset.wrapId = leadIdStr;
         } else {
           wrap.classList.remove('open');
-          wrap.querySelector('.custom-dropdown-options').style.position = '';
+          const optionsDiv = document.querySelector(`body > .custom-dropdown-options[data-wrap-id="${leadIdStr}"]`);
+          if (optionsDiv) {
+             wrap.appendChild(optionsDiv);
+             optionsDiv.style.position = '';
+             optionsDiv.style.display = '';
+          }
         }
       });
-
-      options.forEach(opt => {
-        opt.addEventListener('mousedown', (e) => {
-          e.stopPropagation(); // Prevent drag
-        });
-        opt.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const newStatus = opt.dataset.val;
-          wrap.classList.remove('open');
-          wrap.querySelector('.custom-dropdown-options').style.position = '';
-          updateLeadStatus(leadIdStr, newStatus);
-        });
+      
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('.custom-option')) {
+          const optionEl = e.target.closest('.custom-option');
+          const optionsDiv = optionEl.closest('.custom-dropdown-options');
+          
+          if (optionsDiv && optionsDiv.dataset.wrapId === leadIdStr) {
+            const newStageId = optionEl.dataset.val;
+            
+            wrap.appendChild(optionsDiv);
+            optionsDiv.style.position = '';
+            optionsDiv.style.display = '';
+            wrap.classList.remove('open');
+            
+            updateLeadStatus(leadIdStr, newStageId);
+          }
+        }
       });
     });
 
-    // Close open dropdowns if clicked outside or scrolling
-    const closeDropdowns = (e) => {
-      if (e && e.type === 'click' && e.target.closest('.custom-dropdown-wrap')) return;
-      board.querySelectorAll('.custom-dropdown-wrap.open').forEach(w => {
-        w.classList.remove('open');
-        w.querySelector('.custom-dropdown-options').style.position = '';
-      });
-    };
-
-    document.addEventListener('click', closeDropdowns);
-    board.querySelectorAll('.pipeline-col-cards').forEach(col => {
-      col.addEventListener('scroll', closeDropdowns);
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.custom-dropdown-wrap') && !e.target.closest('.custom-dropdown-options')) {
+        document.querySelectorAll('.custom-dropdown-wrap.open').forEach(wrap => {
+          wrap.classList.remove('open');
+        });
+        document.querySelectorAll('body > .custom-dropdown-options').forEach(optDiv => {
+          const originalWrap = document.querySelector(`.custom-dropdown-wrap[data-lead="${optDiv.dataset.wrapId}"]`);
+          if (originalWrap) {
+            originalWrap.appendChild(optDiv);
+            optDiv.style.position = '';
+            optDiv.style.display = '';
+          } else {
+            optDiv.remove();
+          }
+        });
+      }
     });
 
     // 2. Drag and Drop
