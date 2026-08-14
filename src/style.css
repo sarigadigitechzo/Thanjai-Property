@@ -4273,3 +4273,31 @@ a.contact-panel-row-value:hover {
   }
 }
 
+@keyframes modalPopupScale {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Universal Property Image Auto-Fitting & Aspect Ratio Normalization ── */
+.editorial-prop-card img,
+.discover-prop-card img,
+.lux-prop-card img,
+.property-card-img,
+.hero-slide-img,
+.magazine-item-img,
+.floating-gallery-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+}
+
+
+

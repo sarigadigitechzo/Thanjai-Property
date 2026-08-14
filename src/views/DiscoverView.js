@@ -1,9 +1,10 @@
-import { PROPERTIES } from '../data/properties.js';
+import { getProperties } from '../utils/propertiesStore.js';
 
 export function renderDiscoverView(discoverState, onPropertySelect, onNavigateToContact) {
+  const allProperties = getProperties();
   // If a property detail is selected, render the detail page
   if (discoverState.selectedPropertyId) {
-    const property = PROPERTIES.find(p => p.id === discoverState.selectedPropertyId);
+    const property = allProperties.find(p => p.id === discoverState.selectedPropertyId);
     if (property) {
       return renderPropertyDetailView(property, onNavigateToContact);
     }
@@ -335,7 +336,8 @@ function renderPropertyDetailView(property, onNavigateToContact) {
 }
 
 function filterProperties(state) {
-  return PROPERTIES.filter(prop => {
+  const allProperties = getProperties();
+  return allProperties.filter(prop => {
     // Keyword search
     if (state.keyword && state.keyword.trim() !== '') {
       const q = state.keyword.toLowerCase().trim();

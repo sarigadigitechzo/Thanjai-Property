@@ -1,5 +1,5 @@
 import './style.css';
-import { PROPERTIES } from './data/properties.js';
+import { getProperties } from './utils/propertiesStore.js';
 
 // Components
 import { renderNavbar, initNavbarListeners } from './components/Navbar.js';
@@ -117,8 +117,9 @@ function navigateToRoute(route, pushState = true) {
 // Primary Render Engine
 function renderApp() {
   const appContainer = document.getElementById('app');
+  const allProperties = getProperties();
   const selectedModalProperty = appState.selectedPropertyId 
-    ? PROPERTIES.find(p => p.id === appState.selectedPropertyId) 
+    ? allProperties.find(p => p.id === appState.selectedPropertyId) 
     : null;
 
   let mainContentHtml = '';
@@ -159,7 +160,7 @@ function renderApp() {
       mainContentHtml = `
         <main>
           ${renderHero()}
-          ${renderHomePropertyShowcase(PROPERTIES, openModalPropertyDetail, () => navigateToRoute('discover'))}
+          ${renderHomePropertyShowcase(allProperties, openModalPropertyDetail, () => navigateToRoute('discover'))}
           ${renderExploreSection(openPostModal)}
           ${renderLocationExplorer()}
           ${renderCategoryCarousel()}
@@ -347,7 +348,16 @@ window.addEventListener('favoritesUpdated', (e) => {
   const countBadge = document.getElementById('saved-count-badge');
   if (countBadge) countBadge.textContent = e.detail.count;
 });
+window.addEventListener('propertiesUpdated', () => {
+  renderApp();
+});
+window.addEventListener('storage', (e) => {
+  if (e.key === 'thanjai_properties') {
+    renderApp();
+  }
+});
 
 // Initial Load & Render
 updateSeoMetadata(currentRoute);
 renderApp();
+

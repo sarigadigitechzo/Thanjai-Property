@@ -1,6 +1,6 @@
 import { renderDashboardView } from './crm-views/DashboardView.js';
 import { renderLeadsView, initLeadsView } from './crm-views/LeadsView.js';
-import { renderPropertiesView } from './crm-views/PropertiesView.js';
+import { renderPropertiesView, initPropertiesListeners } from './crm-views/PropertiesView.js';
 import { renderSiteVisitsView } from './crm-views/SiteVisitsView.js';
 import { renderPartnersView } from './crm-views/PartnersView.js';
 import { renderAIAgentView } from './crm-views/AIAgentView.js';
@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
       case 'properties':
         html = renderPropertiesView();
+        afterRender = initPropertiesListeners;
         break;
       case 'visits':
         html = renderSiteVisitsView();
@@ -57,6 +58,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     contentArea.innerHTML = html;
+    if (afterRender) {
+      afterRender();
+    }
   }
 
   function setActiveNav(viewName) {
