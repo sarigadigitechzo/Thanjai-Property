@@ -1,22 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 70" width="340" height="70" fill="none">
-  <!-- Icon Box -->
-  <rect x="2" y="5" width="60" height="60" rx="14" fill="#24170B" stroke="#FF9C14" stroke-width="2.5"/>
-  <!-- Building Icon -->
-  <path d="M22 20H42C43.1 20 44 20.9 44 22V50H20V22C20 20.9 20.9 20 22 20Z" fill="none" stroke="#FF9C14" stroke-width="2.5" stroke-linejoin="round"/>
-  <!-- Windows -->
-  <rect x="24" y="25" width="5" height="5" rx="1" fill="#FF9C14"/>
-  <rect x="35" y="25" width="5" height="5" rx="1" fill="#FF9C14"/>
-  <rect x="24" y="33" width="5" height="5" rx="1" fill="#FF9C14"/>
-  <rect x="35" y="33" width="5" height="5" rx="1" fill="#FF9C14"/>
-  <rect x="24" y="41" width="5" height="5" rx="1" fill="#FF9C14"/>
-  <rect x="35" y="41" width="5" height="5" rx="1" fill="#FF9C14"/>
-  <!-- Base line -->
-  <line x1="16" y1="50" x2="48" y2="50" stroke="#FF9C14" stroke-width="2.5" stroke-linecap="round"/>
-
-  <!-- Text: Thanjai PROPERTY -->
-  <text x="76" y="38" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="28" font-weight="700" fill="#FFFFFF" letter-spacing="-0.5">Thanjai</text>
-  <text x="180" y="38" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="28" font-weight="800" fill="#FF9C14" letter-spacing="0.5">PROPERTY</text>
-
-  <!-- Subtext: REAL ESTATE • SINCE 2009 -->
-  <text x="77" y="56" font-family="'Plus Jakarta Sans', -apple-system, sans-serif" font-size="11" font-weight="600" fill="#D0C8BD" letter-spacing="2.2">REAL ESTATE • SINCE 2009</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 90" width="240" height="90" fill="none">
+  <!-- Thanjai -->
+  <text x="5" y="30" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="34" font-weight="700" fill="#FF9C14" letter-spacing="-1">Thanjai</text>
+  
+  <!-- SINCE 2009 -->
+  <text x="150" y="24" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="12" font-weight="600" fill="#666666" letter-spacing="1">SINCE 2009</text>
+  
+  <!-- PROPERTY with Red Circle O -->
+  <!-- PR -->
+  <text x="5" y="68" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="38" font-weight="400" fill="#34220E" letter-spacing="-0.5">PR</text>
+  
+  <!-- Red Circle 'O' with Building -->
+  <g transform="translate(73, 53)">
+    <!-- Red Outer Ring -->
+    <circle cx="16" cy="0" r="16" fill="none" stroke="#D72828" stroke-width="2.5"/>
+    <!-- Building Silhouette inside O -->
+    <path d="M12 -8H20V8H12V-8Z" fill="none" stroke="#555555" stroke-width="1.2"/>
+    <path d="M14 -5H18" stroke="#555555" stroke-width="1"/>
+    <path d="M14 -2H18" stroke="#555555" stroke-width="1"/>
+    <path d="M14 1H18" stroke="#555555" stroke-width="1"/>
+    <path d="M14 4H18" stroke="#555555" stroke-width="1"/>
+    <!-- Background building curve -->
+    <path d="M9 4C9 -4 14 -12 21 -10" fill="none" stroke="#666666" stroke-width="1"/>
+  </g>
+  
+  <!-- PERTY -->
+  <text x="108" y="68" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="38" font-weight="400" fill="#34220E" letter-spacing="-0.5">PERTY</text>
+  
+  <!-- Real Estate -->
+  <text x="152" y="84" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="13" font-weight="600" fill="#D72828" letter-spacing="0.5">Real Estate</text>
 </svg>

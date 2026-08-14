@@ -7,9 +7,10 @@ import { renderPropertyGrid, initPropertyGridListeners } from './components/Prop
 import { renderShowcaseBanner, initShowcaseListeners } from './components/ShowcaseBanner.js';
 import { renderLocationExplorer, initLocationExplorerListeners } from './components/LocationExplorer.js';
 import { renderCategoryCarousel, initCategoryCarouselListeners } from './components/CategoryCarousel.js';
-import { renderLuxuryTransition } from './components/LuxuryTransition.js';
-import { renderAgentShowcase, initAgentListeners } from './components/AgentShowcase.js';
+import { renderLuxuryTransition, initLuxuryTransitionListeners } from './components/LuxuryTransition.js';
+
 import { renderPostPropertyCTA, initPostPropertyCTAListeners } from './components/PostPropertyCTA.js';
+import { renderContactSection, initContactSectionListeners } from './components/ContactSection.js';
 import { renderFooter } from './components/Footer.js';
 import { renderMobileBottomNav, initMobileBottomNavListeners } from './components/MobileBottomNav.js';
 import { renderPropertyDetailModal, initPropertyDetailModalListeners } from './components/PropertyDetailModal.js';
@@ -98,8 +99,9 @@ function renderApp() {
       ${renderLocationExplorer()}
       ${renderCategoryCarousel()}
       ${renderLuxuryTransition()}
-      ${renderAgentShowcase()}
+
       ${renderPostPropertyCTA(openPostModal)}
+      ${renderContactSection()}
     </main>
 
     ${renderFooter()}
@@ -121,9 +123,11 @@ function renderApp() {
   initShowcaseListeners(openPropertyDetail);
   initLocationExplorerListeners(handleLocationSelect);
   initCategoryCarouselListeners(handleCategorySelect);
-  initAgentListeners();
+
   initPostPropertyCTAListeners(openPostModal);
+  initContactSectionListeners();
   initMobileBottomNavListeners(openPostModal, openSavedView);
+  initLuxuryTransitionListeners();
 
   // Attach modal listeners if open
   if (selectedProperty) {

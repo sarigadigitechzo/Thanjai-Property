@@ -9,7 +9,7 @@ export function renderNavbar(onPostPropertyClick, onSavedPropertiesClick, onFilt
         <nav class="nav-container">
           <!-- Brand Logo -->
           <a href="#" class="brand-logo-link" id="nav-brand-logo">
-            <img src="/logo.svg" alt="Thanjai Property Real Estate Since 2009" class="brand-logo-img" style="height: 48px; width: auto;" />
+            <img src="/thanjai-official-new.png" alt="Thanjai Property Real Estate Since 2009" class="brand-logo-img" style="height: 56px; width: auto; display: block;" />
           </a>
 
           <!-- Navigation Links -->
@@ -17,9 +17,9 @@ export function renderNavbar(onPostPropertyClick, onSavedPropertiesClick, onFilt
             <li><a href="#hero" class="nav-link active">Home</a></li>
             <li><a href="#explore" class="nav-link">Featured</a></li>
             <li><a href="#discovery" class="nav-link">Discover</a></li>
-            <li><a href="#locations" class="nav-link">Tamil Nadu</a></li>
+            <li><a href="#locations" class="nav-link">Explore</a></li>
             <li><a href="#categories" class="nav-link">Categories</a></li>
-            <li><a href="#agents" class="nav-link">Advisors</a></li>
+            <li><a href="#contact" class="nav-link">Contact</a></li>
           </ul>
 
           <!-- Action Buttons -->
@@ -29,10 +29,6 @@ export function renderNavbar(onPostPropertyClick, onSavedPropertiesClick, onFilt
               <span class="saved-badge-count" id="saved-count-badge">${favoritesCount}</span>
             </button>
 
-            <button class="btn btn-primary" id="nav-post-property-btn">
-              <i class="ri-add-circle-line"></i>
-              <span>Post Property</span>
-            </button>
 
             <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle Menu">
               <i class="ri-menu-4-line"></i>

@@ -1,0 +1,204 @@
+/* --------------------------------------------------------------------------
+   LUXURY PROPERTIES GRID
+   -------------------------------------------------------------------------- */
+.view-toggle {
+  display: flex;
+  background: var(--os-gray-100);
+  border-radius: var(--os-radius-sm);
+  padding: 4px;
+}
+.view-toggle button {
+  background: transparent;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  color: var(--os-gray-400);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+}
+.view-toggle button.active {
+  background: var(--os-white);
+  color: var(--os-deep-brown);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.luxury-property-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--os-space-4);
+  padding-bottom: var(--os-space-4);
+}
+
+.lux-prop-card {
+  background: var(--os-white);
+  border-radius: var(--os-radius-lg);
+  overflow: hidden;
+  border: var(--os-border-thin);
+  box-shadow: var(--os-shadow-soft);
+  display: flex;
+  flex-direction: column;
+}
+
+.lux-prop-img {
+  height: 220px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.lux-prop-img::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, rgba(0,0,0,0.6) 100%);
+  z-index: 1;
+}
+
+.lux-prop-tags {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+}
+.status-tag {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(4px);
+}
+.status-tag.available { background: rgba(22, 163, 74, 0.9); color: #fff; }
+.status-tag.booked { background: rgba(234, 179, 8, 0.9); color: #fff; }
+
+.type-tag {
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.fav-btn {
+  position: relative;
+  z-index: 2;
+  align-self: flex-end;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.4);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.fav-btn:hover {
+  background: #fff;
+  color: var(--os-rich-red);
+}
+
+.lux-prop-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.lux-prop-price {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--os-deep-brown);
+  margin-bottom: 8px;
+}
+.rent-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--os-gray-400);
+}
+
+.lux-prop-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--os-deep-brown);
+  margin: 0 0 4px 0;
+}
+
+.lux-prop-location {
+  font-size: 0.85rem;
+  color: var(--os-gray-600);
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lux-prop-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: var(--os-border-thin);
+}
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--os-gray-600);
+  font-weight: 600;
+}
+.feature i {
+  color: var(--os-luxury-orange);
+  font-size: 1rem;
+}
+
+.lux-prop-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+.agent-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--os-deep-brown);
+}
+.agent-info img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+.share-btn {
+  background: transparent;
+  border: none;
+  color: var(--os-gray-400);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.share-btn:hover {
+  color: var(--os-deep-brown);
+}

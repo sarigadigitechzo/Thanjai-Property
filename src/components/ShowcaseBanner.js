@@ -23,8 +23,8 @@ export function renderShowcaseBanner(featuredProperty, onPropertySelect) {
             ${property.title}
           </h2>
 
-          <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 28px; font-size: 1.125rem;">
-            <span style="font-family: var(--font-serif); font-size: 2.25rem; color: var(--color-orange); font-weight: 700;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 28px; font-size: 1.125rem; flex-wrap: wrap;">
+            <span style="font-family: var(--font-serif); font-size: 2.5rem; color: var(--color-orange); font-weight: 700;">
               ${property.priceFormatted}
             </span>
             <span style="width: 1px; height: 28px; background: rgba(255,255,255,0.3);"></span>
@@ -33,11 +33,11 @@ export function renderShowcaseBanner(featuredProperty, onPropertySelect) {
             </span>
           </div>
 
-          <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.05rem; margin-bottom: 40px; line-height: 1.6;">
+          <p style="color: rgba(255, 255, 255, 0.85); font-size: 1.1rem; max-width: 720px; margin: 0 auto 40px auto; line-height: 1.75; text-align: center;">
             Designed for those who view living as an art form. Features floor-to-ceiling double-glazed thermal glass, private infinity pool, VRV automation system, and lush landscaped outdoor courtyards.
           </p>
 
-          <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;">
             <button class="btn btn-primary showcase-details-btn" data-id="${property.id}">
               <span>View Property Details</span>
               <i class="ri-arrow-right-line"></i>

@@ -4,10 +4,10 @@ export function renderFooter() {
       <div class="container">
         <div class="footer-grid">
           <!-- Col 1: Brand & Philosophy -->
-          <div>
-            <div style="margin-bottom: 20px;">
-              <img src="/logo.svg" alt="Thanjai Property Real Estate Since 2009" style="height: 52px; width: auto;" />
-            </div>
+          <div class="footer-brand">
+            <a href="#" class="footer-logo">
+              <img src="/thanjai-official-new.png" alt="Thanjai Property Real Estate Since 2009" style="height: 60px; width: auto; background: #fff; border-radius: 8px; padding: 4px 8px; display: block;" />
+            </a>
 
             <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9375rem; line-height: 1.6; max-width: 340px; margin-bottom: 24px;">
               Tamil Nadu's premier luxury property discovery platform. Connecting families and investors with verified homes, villa plots, and Kaveri farm estates.

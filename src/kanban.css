@@ -1,0 +1,288 @@
+/* --------------------------------------------------------------------------
+   COMMON VIEW COMPONENTS
+   -------------------------------------------------------------------------- */
+.view-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--os-space-4);
+}
+.view-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--os-deep-brown);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.02em;
+}
+.view-subtitle {
+  font-size: 0.95rem;
+  color: var(--os-gray-600);
+  margin: 0;
+}
+.header-actions-right {
+  display: flex;
+  gap: 12px;
+}
+.os-btn-primary {
+  background: var(--os-deep-brown);
+  color: var(--os-white);
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--os-radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.os-btn-primary:hover {
+  background: var(--os-charcoal);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(42,24,8,0.15);
+}
+.os-btn-secondary {
+  background: var(--os-white);
+  color: var(--os-deep-brown);
+  border: var(--os-border-thin);
+  padding: 10px 20px;
+  border-radius: var(--os-radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.os-btn-secondary:hover {
+  background: var(--os-gray-100);
+  border-color: rgba(42,24,8,0.1);
+}
+
+.os-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--os-white);
+  padding: 12px 16px;
+  border-radius: var(--os-radius-lg);
+  border: var(--os-border-thin);
+  margin-bottom: var(--os-space-3);
+  box-shadow: var(--os-shadow-soft);
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 300px;
+  background: var(--os-gray-100);
+  padding: 8px 12px;
+  border-radius: var(--os-radius-sm);
+}
+.search-box i { color: var(--os-gray-400); }
+.search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-family: var(--os-font-sans);
+  font-size: 0.9rem;
+}
+.filter-dropdowns {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.filter-dropdowns select {
+  padding: 8px 32px 8px 12px;
+  border: var(--os-border-thin);
+  border-radius: var(--os-radius-sm);
+  background: var(--os-white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16'%3E%3Cpath fill='none' d='M0 0h24v24H0z'/%3E%3Cpath d='M12 14l-4-4h8z' fill='%236B6356'/%3E%3C/svg%3E") no-repeat right 8px center;
+  appearance: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--os-deep-brown);
+  outline: none;
+}
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--os-deep-brown);
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   KANBAN BOARD
+   -------------------------------------------------------------------------- */
+.kanban-board {
+  display: flex;
+  gap: var(--os-space-3);
+  overflow-x: auto;
+  padding-bottom: var(--os-space-3);
+  scrollbar-width: thin;
+  min-height: 600px;
+}
+
+.kanban-column {
+  min-width: 300px;
+  width: 300px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: var(--os-radius-lg);
+  border: 1px dashed rgba(42, 24, 8, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.kanban-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(42, 24, 8, 0.05);
+}
+
+.kanban-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--os-deep-brown);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kanban-title .count {
+  background: var(--os-white);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: var(--os-gray-600);
+  border: var(--os-border-thin);
+}
+
+.kanban-cards {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.kanban-card {
+  background: var(--os-white);
+  border-radius: var(--os-radius-md);
+  padding: 16px;
+  border: var(--os-border-thin);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  cursor: grab;
+}
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+.k-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.k-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.k-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.k-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--os-deep-brown);
+}
+
+.k-budget {
+  font-size: 0.75rem;
+  color: var(--os-luxury-orange);
+  font-weight: 600;
+}
+
+.k-menu i {
+  color: var(--os-gray-400);
+  cursor: pointer;
+}
+
+.k-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.k-tag {
+  background: var(--os-gray-100);
+  color: var(--os-gray-600);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.k-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: var(--os-border-thin);
+  padding-top: 12px;
+}
+
+.k-exec {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--os-gray-600);
+  font-weight: 500;
+}
+.k-exec img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.k-task {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--os-gray-600);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.k-task.urgent {
+  color: var(--os-rich-red);
+}
+
+.k-empty {
+  border: 1px dashed rgba(42, 24, 8, 0.2);
+  border-radius: var(--os-radius-md);
+  padding: 24px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--os-gray-400);
+  font-weight: 500;
+}

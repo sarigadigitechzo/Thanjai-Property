@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 90" width="240" height="90" fill="none">
+  <!-- Thanjai -->
+  <text x="5" y="30" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="34" font-weight="700" fill="#FF9C14" letter-spacing="-1">Thanjai</text>
+  
+  <!-- SINCE 2009 -->
+  <text x="150" y="24" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="12" font-weight="600" fill="#E0DCD5" letter-spacing="1">SINCE 2009</text>
+  
+  <!-- PROPERTY with Red Circle O -->
+  <!-- PR -->
+  <text x="5" y="68" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="38" font-weight="400" fill="#FFFFFF" letter-spacing="-0.5">PR</text>
+  
+  <!-- Red Circle 'O' with Building -->
+  <g transform="translate(73, 53)">
+    <!-- Red Outer Ring -->
+    <circle cx="16" cy="0" r="16" fill="none" stroke="#D72828" stroke-width="2.8"/>
+    <!-- Building Silhouette inside O -->
+    <path d="M12 -8H20V8H12V-8Z" fill="none" stroke="#FFFFFF" stroke-width="1.2"/>
+    <path d="M14 -5H18" stroke="#FFFFFF" stroke-width="1"/>
+    <path d="M14 -2H18" stroke="#FFFFFF" stroke-width="1"/>
+    <path d="M14 1H18" stroke="#FFFFFF" stroke-width="1"/>
+    <path d="M14 4H18" stroke="#FFFFFF" stroke-width="1"/>
+    <!-- Background building curve -->
+    <path d="M9 4C9 -4 14 -12 21 -10" fill="none" stroke="#E0E0E0" stroke-width="1"/>
+  </g>
+  
+  <!-- PERTY -->
+  <text x="108" y="68" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="38" font-weight="400" fill="#FFFFFF" letter-spacing="-0.5">PERTY</text>
+  
+  <!-- Real Estate -->
+  <text x="152" y="84" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="13" font-weight="600" fill="#FF5252" letter-spacing="0.5">Real Estate</text>
+</svg>

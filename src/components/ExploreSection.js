@@ -1,106 +1,262 @@
 export function renderExploreSection(properties, onPropertySelect) {
-  const spotlight = properties.find(p => p.heroFeatured) || properties[0];
-  const stacked = properties.filter(p => p.editorialFeatured && p.id !== spotlight.id).slice(0, 2);
+  // Select top 4 distinct featured properties for the left-side auto-slider
+  const featuredSlides = properties.slice(0, 4);
+  const magazineItems = properties.filter(p => !featuredSlides.map(f => f.id).includes(p.id)).slice(0, 3);
 
   return `
     <section class="editorial-section" id="explore">
-      <div class="container">
-        <!-- Section Header -->
-        <div class="editorial-header">
-          <div class="editorial-header-text">
-            <span class="eyebrow">CURATED EDITORIAL SHOWCASE</span>
-            <h2 class="heading-section" style="margin-top: 12px;">
-              Find the Property<br>That Fits Your Life.
-            </h2>
-          </div>
-          <p style="max-width: 420px; color: var(--color-text-muted); font-size: 0.9375rem;">
-            Explore handpicked architectural homes and prime investments curated by Tamil Nadu’s trusted real estate advisors.
-          </p>
-        </div>
-
-        <!-- Asymmetrical Asymmetric Grid Layout -->
-        <div class="asymmetric-grid">
-          <!-- Left: Large Featured Property Card -->
-          <div class="editorial-large-card" data-id="${spotlight.id}">
-            <img src="${spotlight.images[0]}" alt="${spotlight.title}" class="editorial-card-bg" />
-            <div class="editorial-card-gradient"></div>
-
-            <div class="editorial-card-content">
-              <span class="badge badge-orange" style="margin-bottom: 16px;">
-                <i class="ri-fire-fill"></i> ${spotlight.tag}
-              </span>
-              
-              <div class="font-serif" style="font-size: 2.25rem; color: var(--color-orange); margin-bottom: 8px;">
-                ${spotlight.priceFormatted}
-              </div>
-
-              <h3 style="font-size: 1.65rem; font-weight: 800; line-height: 1.25; margin-bottom: 12px; color: var(--color-white);">
-                ${spotlight.title}
-              </h3>
-
-              <div style="display: flex; align-items: center; gap: 16px; color: rgba(255, 255, 255, 0.85); font-size: 0.9375rem; margin-bottom: 24px;">
-                <span><i class="ri-map-pin-line" style="color: var(--color-orange);"></i> ${spotlight.area}</span>
-                <span>•</span>
-                <span><i class="ri-ruler-line" style="color: var(--color-orange);"></i> ${spotlight.size}</span>
-              </div>
-
-              <button class="btn btn-primary open-details-btn" data-id="${spotlight.id}">
-                <span>View Full Property</span>
-                <i class="ri-arrow-right-line"></i>
-              </button>
+      <div class="container" style="position: relative; z-index: 2;">
+        
+        <!-- 1. Redesigned Perfectly Balanced Editorial Intro Header -->
+        <div class="editorial-intro-container">
+          <!-- Top Eyebrow Bar -->
+          <div class="editorial-top-eyebrow-bar">
+            <div class="editorial-eyebrow-wrap">
+              <span class="editorial-vertical-line"></span>
+              <span class="eyebrow" style="color: var(--color-orange); font-weight: 800; letter-spacing: 0.12em;">CURATED PROPERTY DISCOVERY</span>
             </div>
           </div>
 
-          <!-- Right: Stacked Horizontal Cards -->
-          <div class="editorial-stacked-cards">
-            ${stacked.map(prop => `
-              <div class="horizontal-editorial-card" data-id="${prop.id}">
-                <div class="horizontal-card-img-wrap">
-                  <img src="${prop.images[0]}" alt="${prop.title}" class="horizontal-card-img" />
-                  <div style="position: absolute; top: 12px; left: 12px;">
-                    <span class="badge badge-dark">${prop.categoryLabel}</span>
+          <!-- Main 2-Column Row (Title Left + Description Right) -->
+          <div class="editorial-main-two-col">
+            <div class="editorial-title-col">
+              <h2 class="heading-display-light editorial-main-title">
+                Find a Property<br>That Fits Your Life.
+              </h2>
+            </div>
+
+            <div class="editorial-desc-col">
+              <p class="editorial-desc-text">
+                Explore handpicked architectural residences, Kaveri farm estates, and prime investment land curated exclusively by Tamil Nadu’s most trusted real estate advisors.
+              </p>
+            </div>
+          </div>
+
+          <!-- Integrated Horizontal Stats & Scroll Bar -->
+          <div class="editorial-integrated-stats-bar">
+            <div class="editorial-inline-stats" id="editorial-inline-stats">
+              <div class="inline-stat-item">
+                <div class="stat-num-wrap">
+                  <span class="stat-num" id="counter-props">0</span><span class="stat-plus">+</span>
+                </div>
+                <span class="stat-lbl">Curated Properties</span>
+              </div>
+
+              <div class="inline-stat-sep"></div>
+
+              <div class="inline-stat-item">
+                <div class="stat-num-wrap">
+                  <span class="stat-num" id="counter-locs">0</span><span class="stat-plus">+</span>
+                </div>
+                <span class="stat-lbl">Tamil Nadu Locations</span>
+              </div>
+
+              <div class="inline-stat-sep"></div>
+
+              <div class="inline-stat-item">
+                <div class="stat-num-wrap">
+                  <span class="stat-num">Since 2009</span>
+                </div>
+                <span class="stat-lbl">Trusted Excellence</span>
+              </div>
+            </div>
+
+            <a href="#featured-hero-slider" class="editorial-scroll-down-btn" id="scroll-to-collection-btn">
+              <span>EXPLORE COLLECTION</span>
+              <i class="ri-arrow-down-line scroll-arrow-icon"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- 2. Asymmetric Showcase: Left Premium Auto-Slider + Right Static Listings -->
+        <div class="editorial-asymmetric-showcase">
+          
+          <!-- LEFT 65%: AUTOMATIC FEATURED LUXURY PROPERTY SLIDER -->
+          <div class="editorial-hero-slider-wrap" id="featured-hero-slider">
+            <div class="hero-slides-container">
+              ${featuredSlides.map((slide, index) => `
+                <div class="hero-slide ${index === 0 ? 'active' : ''}" data-index="${index}" data-id="${slide.id}">
+                  <img src="${slide.images[0]}" alt="${slide.title}" class="hero-slide-img" />
+                  <div class="editorial-hero-gradient"></div>
+
+                  <div class="editorial-hero-badge-top">
+                    <span class="badge badge-orange">
+                      <i class="ri-sparkles-fill"></i> ${slide.tag || slide.categoryLabel.toUpperCase()}
+                    </span>
+                  </div>
+
+                  <!-- Floating White/Glass Information Panel overlapping bottom-right -->
+                  <div class="editorial-floating-info-panel open-details-btn" data-id="${slide.id}">
+                    <div class="floating-price-tag">${slide.priceFormatted}</div>
+                    <h3 class="floating-title">${slide.title}</h3>
+                    
+                    <div class="floating-location">
+                      <i class="ri-map-pin-2-line" style="color: var(--color-orange);"></i>
+                      <span>${slide.location}, ${slide.district}</span>
+                    </div>
+
+                    <div class="floating-specs-bar">
+                      <span><i class="ri-ruler-2-line"></i> ${slide.size}</span>
+                      ${slide.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${slide.bedrooms} BHK</span>` : `<span><i class="ri-shield-check-line"></i> ${slide.approval}</span>`}
+                    </div>
+
+                    <button class="editorial-cta-link open-details-btn" data-id="${slide.id}">
+                      <span>Explore Property</span>
+                      <i class="ri-arrow-right-line cta-arrow"></i>
+                    </button>
                   </div>
                 </div>
+              `).join('')}
+            </div>
+          </div>
 
-                <div class="horizontal-card-body">
-                  <div class="font-serif" style="font-size: 1.35rem; color: var(--color-brown); font-weight: 700; margin-bottom: 4px;">
-                    ${prop.priceFormatted}
+          <!-- RIGHT 35%: STATIC PROMINENT LISTINGS -->
+          <div class="editorial-magazine-list">
+            <h4 class="magazine-list-heading">PROMINENT LISTINGS</h4>
+
+            ${magazineItems.map(item => `
+              <div class="magazine-listing-item open-details-btn" data-id="${item.id}">
+                <div class="magazine-item-img-wrap">
+                  <img src="${item.images[0]}" alt="${item.title}" class="magazine-item-img" />
+                  <span class="badge badge-dark magazine-badge">${item.categoryLabel}</span>
+                </div>
+
+                <div class="magazine-item-info">
+                  <div class="magazine-price">${item.priceFormatted}</div>
+                  <h5 class="magazine-title">${item.title}</h5>
+                  <div class="magazine-location">
+                    <i class="ri-map-pin-line" style="color: var(--color-orange);"></i> ${item.location}, TN
                   </div>
-                  
-                  <h4 style="font-size: 1rem; font-weight: 700; color: var(--color-text-main); margin-bottom: 8px; line-height: 1.3;">
-                    ${prop.title}
-                  </h4>
 
-                  <div style="font-size: 0.8125rem; color: var(--color-text-muted); margin-bottom: 16px;">
-                    <i class="ri-map-pin-line" style="color: var(--color-orange);"></i> ${prop.location}, Tamil Nadu
-                  </div>
-
-                  <button class="btn btn-outline-dark open-details-btn" data-id="${prop.id}" style="padding: 8px 18px; font-size: 0.8125rem;">
-                    <span>View Property</span>
+                  <span class="magazine-explore-btn">
+                    <span>Explore</span>
                     <i class="ri-arrow-right-line"></i>
-                  </button>
+                  </span>
                 </div>
               </div>
             `).join('')}
           </div>
+
         </div>
+
       </div>
     </section>
   `;
 }
 
 export function initExploreSectionListeners(onPropertySelect) {
-  document.querySelectorAll('.open-details-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const id = btn.dataset.id;
-      if (id) onPropertySelect(id);
+  // Left-side Pure Automatic Property Slider Logic
+  const sliderContainer = document.getElementById('featured-hero-slider');
+  const slides = document.querySelectorAll('.hero-slide');
+  
+  if (slides.length > 0 && sliderContainer) {
+    let currentIndex = 0;
+    let autoSlideTimer = null;
+    let isPaused = false;
+    const slideDuration = 4500; // 4.5 seconds
+
+    function goToSlide(index) {
+      slides.forEach((slide, idx) => {
+        if (idx === index) {
+          slide.classList.add('active');
+        } else {
+          slide.classList.remove('active');
+        }
+      });
+      currentIndex = index;
+    }
+
+    function startAutoSlide() {
+      if (autoSlideTimer) clearInterval(autoSlideTimer);
+      autoSlideTimer = setInterval(() => {
+        if (!isPaused) {
+          const nextIdx = (currentIndex + 1) % slides.length;
+          goToSlide(nextIdx);
+        }
+      }, slideDuration);
+    }
+
+    // Start auto slideshow
+    startAutoSlide();
+
+    // Pause on Hover
+    sliderContainer.addEventListener('mouseenter', () => { isPaused = true; });
+    sliderContainer.addEventListener('mouseleave', () => { isPaused = false; });
+
+    // Touch Swipe Support on Mobile/Tablet
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    sliderContainer.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    sliderContainer.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      if (touchStartX - touchEndX > 50) {
+        const nextIdx = (currentIndex + 1) % slides.length;
+        goToSlide(nextIdx);
+        startAutoSlide();
+      } else if (touchEndX - touchStartX > 50) {
+        const prevIdx = (currentIndex - 1 + slides.length) % slides.length;
+        goToSlide(prevIdx);
+        startAutoSlide();
+      }
+    }, { passive: true });
+  }
+
+  // Count-Up Animation for Numeric Stats (120+ and 18+)
+  function animateValue(id, target) {
+    const obj = document.getElementById(id);
+    if (!obj) return;
+    let current = 0;
+    const step = Math.ceil(target / 40);
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        obj.textContent = target;
+        clearInterval(timer);
+      } else {
+        obj.textContent = current;
+      }
+    }, 25);
+  }
+
+  // Intersection Observer for Staggered Reveal Animations & Number Counting
+  let hasAnimatedCounters = false;
+  const observerOptions = { threshold: 0.15 };
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('reveal-active');
+        
+        if (!hasAnimatedCounters && (entry.target.classList.contains('editorial-intro-container') || entry.target.classList.contains('editorial-intro-grid'))) {
+          hasAnimatedCounters = true;
+          animateValue('counter-props', 120);
+          animateValue('counter-locs', 18);
+        }
+        
+        observer.unobserve(entry.target);
+      }
     });
+  }, observerOptions);
+
+  const introContainer = document.querySelector('.editorial-intro-container');
+  const showcase = document.querySelector('.editorial-asymmetric-showcase');
+  if (introContainer) observer.observe(introContainer);
+  if (showcase) observer.observe(showcase);
+
+  // Smooth scroll down to featured collection
+  document.getElementById('scroll-to-collection-btn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('featured-hero-slider')?.scrollIntoView({ behavior: 'smooth' });
   });
 
-  document.querySelectorAll('.editorial-large-card, .horizontal-editorial-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const id = card.dataset.id;
+  // Property details modal triggers
+  document.querySelectorAll('.open-details-btn').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = el.dataset.id;
       if (id) onPropertySelect(id);
     });
   });

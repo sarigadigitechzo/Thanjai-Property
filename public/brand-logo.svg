@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 85" width="260" height="85" fill="none">
+  <!-- Thanjai in Orange -->
+  <text x="2" y="32" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="36" font-weight="700" fill="#FF9C14" letter-spacing="-1">Thanjai</text>
+  
+  <!-- SINCE 2009 in Charcoal -->
+  <text x="162" y="26" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="11" font-weight="600" fill="#444444" letter-spacing="1">SINCE 2009</text>
+  
+  <!-- PR in Dark Brown -->
+  <text x="2" y="66" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="36" font-weight="300" fill="#34220E" letter-spacing="-0.5">PR</text>
+  
+  <!-- Red Circle 'O' with Building Graphic -->
+  <g transform="translate(70, 52)">
+    <!-- Red Circle -->
+    <circle cx="16" cy="0" r="15" fill="none" stroke="#E31E24" stroke-width="2"/>
+    <!-- Building Graphic inside O -->
+    <path d="M12 -8H20V8H12V-8Z" fill="none" stroke="#444444" stroke-width="1.2"/>
+    <line x1="14" y1="-5" x2="18" y2="-5" stroke="#444444" stroke-width="1"/>
+    <line x1="14" y1="-2" x2="18" y2="-2" stroke="#444444" stroke-width="1"/>
+    <line x1="14" y1="1" x2="18" y2="1" stroke="#444444" stroke-width="1"/>
+    <line x1="14" y1="4" x2="18" y2="4" stroke="#444444" stroke-width="1"/>
+    <!-- Curved architectural tiers -->
+    <path d="M8 5C8 -4 13 -12 21 -9" fill="none" stroke="#555555" stroke-width="1"/>
+    <path d="M11 7C11 -2 15 -9 22 -7" fill="none" stroke="#555555" stroke-width="0.8"/>
+  </g>
+  
+  <!-- PERTY in Dark Brown -->
+  <text x="104" y="66" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="36" font-weight="300" fill="#34220E" letter-spacing="-0.5">PERTY</text>
+  
+  <!-- Real Estate in Red -->
+  <text x="165" y="81" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="12" font-weight="600" fill="#E31E24" letter-spacing="0.2">Real Estate</text>
+</svg>
