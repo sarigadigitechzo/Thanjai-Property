@@ -165,15 +165,7 @@ body.os-body {
   transform: translateY(-50%) scaleY(1);
 }
 
-/* AI Magic Item */
-.nav-item.ai-item {
-  background: linear-gradient(to right, rgba(247, 147, 26, 0.05), transparent);
-  color: var(--os-deep-brown);
-  border: 1px solid rgba(247, 147, 26, 0.1);
-}
-.nav-item.ai-item i {
-  color: var(--os-luxury-orange);
-}
+/* Removed hardcoded AI Magic Item styles to prevent it looking active */
 
 .sidebar-footer {
   padding: var(--os-space-3);

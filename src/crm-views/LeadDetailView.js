@@ -314,13 +314,13 @@ export function renderLeadDetailView(id) {
         <div class="os-modal-body">
           <div class="form-group">
             <label>Visit date & time *</label>
-            <input type="datetime-local" class="os-input" style="width: 100%;" />
+            <input type="datetime-local" id="crm-sv-datetime" class="os-input" style="width: 100%;" />
           </div>
           <p style="font-size: 0.85rem; color: var(--os-gray-500); margin-top: 16px;">This sends the site visit confirmation WhatsApp to the client with this date/time.</p>
         </div>
         <div class="os-modal-footer">
           <button class="os-btn-secondary" id="cancel-schedule-modal">Cancel</button>
-          <button class="os-btn-primary" style="background: #fdba74; border-color: #fdba74; color: #fff;">Confirm & send</button>
+          <button class="os-btn-primary" id="confirm-schedule-modal" style="background: #fdba74; border-color: #fdba74; color: #fff;">Confirm & send</button>
         </div>
       </div>
     </div>
@@ -370,10 +370,53 @@ export function initLeadDetailView(id) {
   const btnSchedule = document.getElementById('btn-schedule-visit');
   const closeSchedule = document.getElementById('close-schedule-modal');
   const cancelSchedule = document.getElementById('cancel-schedule-modal');
+  const confirmSchedule = document.getElementById('confirm-schedule-modal');
 
   if (btnSchedule) btnSchedule.addEventListener('click', () => scheduleModal.classList.add('show'));
   if (closeSchedule) closeSchedule.addEventListener('click', () => scheduleModal.classList.remove('show'));
   if (cancelSchedule) cancelSchedule.addEventListener('click', () => scheduleModal.classList.remove('show'));
+  if (confirmSchedule) {
+    confirmSchedule.addEventListener('click', () => {
+      const datetime = document.getElementById('crm-sv-datetime').value;
+      if (!datetime) {
+        alert("Please select a date and time.");
+        return;
+      }
+
+      // Fetch lead info
+      const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const lead = leads.find(l => l.id == id);
+      if (!lead) return;
+
+      const dateObj = new Date(datetime);
+      const day = dateObj.getDate().toString();
+      let hours = dateObj.getHours();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      const mins = dateObj.getMinutes().toString().padStart(2, '0');
+      
+      const propertyText = (lead.area || '') + ' ' + (lead.type || '');
+
+      let visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
+      visits.push({
+        id: Date.now(),
+        date: day,
+        month: 'Aug',
+        hours: hours.toString(),
+        mins: mins,
+        ampm: ampm,
+        clientName: lead.name,
+        phone: lead.mobile || 'New Visit',
+        property: propertyText.trim() || 'TBD',
+        isNew: true
+      });
+      localStorage.setItem('thanjai_visits', JSON.stringify(visits));
+
+      // Close modal
+      scheduleModal.classList.remove('show');
+      alert("Visit scheduled successfully! You can view it in the Site Visits Planner.");
+    });
+  }
 
   const shareModal = document.getElementById('share-partner-modal');
   const btnShare = document.getElementById('btn-share-partner');

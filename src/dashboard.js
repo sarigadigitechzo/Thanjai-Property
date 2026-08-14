@@ -1,8 +1,8 @@
 import { renderDashboardView } from './crm-views/DashboardView.js';
 import { renderLeadsView, initLeadsView } from './crm-views/LeadsView.js';
 import { renderPropertiesView } from './crm-views/PropertiesView.js';
-import { renderSiteVisitsView } from './crm-views/SiteVisitsView.js';
-import { renderPartnersView } from './crm-views/PartnersView.js';
+import { renderSiteVisitsView, initSiteVisitsView } from './crm-views/SiteVisitsView.js';
+import { renderPartnersView, initPartnersView } from './crm-views/PartnersView.js';
 import { renderAIAgentView } from './crm-views/AIAgentView.js';
 import { renderWhatsAppLogView } from './crm-views/WhatsAppLogView.js';
 import { renderWebsiteImagesView, initWebsiteImagesListeners } from './crm-views/WebsiteImagesView.js';
@@ -33,9 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
       case 'visits':
         html = renderSiteVisitsView();
+        afterRender = initSiteVisitsView;
         break;
       case 'partners':
         html = renderPartnersView();
+        afterRender = initPartnersView;
         break;
       case 'ai':
         html = renderAIAgentView();
