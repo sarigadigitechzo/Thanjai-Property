@@ -866,20 +866,22 @@ function initPropertyFormListeners() {
     if (!files || files.length === 0) return;
 
     files.forEach(file => {
-      if (file.size > 5 * 1024 * 1024) {
-        showToast(`File ${file.name} exceeds 5MB limit.`, 'ri-error-warning-line');
+      if (file.size > 10 * 1024 * 1024) {
+        showToast(`File ${file.name} exceeds 10MB limit.`, 'ri-error-warning-line');
         return;
       }
 
       const reader = new FileReader();
       reader.onload = function(evt) {
-        const dataUrl = evt.target.result;
-        formImagesList.push(dataUrl);
-        if (mainImgInput && !mainImgInput.value) {
-          mainImgInput.value = dataUrl;
-        }
-        updateImagesPreviewGrid();
-        showToast('Photo uploaded! Click Save to publish.', 'ri-checkbox-circle-fill');
+        const rawDataUrl = evt.target.result;
+        compressImage(rawDataUrl, 1000, 0.75).then(compressedUrl => {
+          formImagesList.push(compressedUrl);
+          if (mainImgInput && !mainImgInput.value) {
+            mainImgInput.value = compressedUrl;
+          }
+          updateImagesPreviewGrid();
+          showToast('Photo uploaded & optimized! Click Save to publish.', 'ri-checkbox-circle-fill');
+        });
       };
       reader.readAsDataURL(file);
     });
@@ -949,24 +951,33 @@ function initPropertyFormListeners() {
 
     const featuresArray = featuresStr ? featuresStr.split(',').map(f => f.trim()).filter(Boolean) : [];
 
+    const locStr = location || '';
+    let parsedDistrict = 'Thanjavur';
+    if (locStr.includes(',')) {
+      const parts = locStr.split(',');
+      parsedDistrict = parts[parts.length - 1].trim() || parts[0].trim();
+    } else if (locStr.trim() !== '') {
+      parsedDistrict = locStr.trim();
+    }
+
     const formData = {
-      title,
-      type,
-      category,
-      location,
-      district: location.split(',')[1]?.trim() || location.split(',')[0]?.trim() || 'Thanjavur',
-      address,
+      title: title || 'Untitled Property',
+      type: type || 'Villa',
+      category: category || 'Sale',
+      location: locStr || 'Thanjavur',
+      district: parsedDistrict,
+      address: address || '',
       size: size || '',
       bedrooms: bedrooms ? parseInt(bedrooms, 10) : null,
       bathrooms: bathrooms ? parseInt(bathrooms, 10) : null,
-      furnishing,
+      furnishing: furnishing || 'Not specified',
       price: parseFloat(priceNum) || 0,
-      availability,
-      status: availability,
-      ownerName,
-      listedBy,
-      ownerPhone,
-      videoUrl,
+      availability: availability || 'Available',
+      status: availability || 'Available',
+      ownerName: ownerName || '',
+      listedBy: listedBy || '',
+      ownerPhone: ownerPhone || '',
+      videoUrl: videoUrl || '',
       latitude: latitude || '',
       longitude: longitude || '',
       images: finalImages,
@@ -974,22 +985,29 @@ function initPropertyFormListeners() {
       features: featuresArray
     };
 
-    if (editingPropertyId) {
-      updateProperty(editingPropertyId, formData);
+    // CRITICAL: Reset ALL state BEFORE calling store actions.
+    // addProperty/updateProperty dispatch 'propertiesUpdated', which triggers dashboard.js
+    // to call handleHashChange() → renderPropertiesView(). If currentViewMode is still 'form'
+    // at that point, the view re-renders as the form (not the list), swallowing the new card.
+    const wasEditing = editingPropertyId;
+    editingPropertyId = null;
+    activeSearch = '';
+    activeTypeFilter = 'all';
+    activeCategoryFilter = 'all';
+    activeStatusFilter = 'all';
+    activeMaxPriceFilter = 'all';
+    currentViewMode = 'list';
+
+    // NOW call the store action — propertiesUpdated fires with currentViewMode already 'list'
+    if (wasEditing) {
+      updateProperty(wasEditing, formData);
       showToast(`Property listing updated successfully!`, 'ri-checkbox-circle-fill');
     } else {
       const created = addProperty(formData);
       showToast(`New property ${created.id} published to website!`, 'ri-checkbox-circle-fill');
     }
 
-    // AUTOMATIC FILTER RESET: Guarantee the new/edited property is immediately displayed at index #0!
-    activeSearch = '';
-    activeTypeFilter = 'all';
-    activeCategoryFilter = 'all';
-    activeStatusFilter = 'all';
-    activeMaxPriceFilter = 'all';
-
-    currentViewMode = 'list';
+    // Direct refresh as an additional guarantee
     refreshPropertiesView();
   });
 }
@@ -1149,4 +1167,31 @@ function showToast(msg, icon = 'ri-notification-line') {
     toast.style.transition = 'all 0.3s ease';
     setTimeout(() => toast.remove(), 300);
   }, 3500);
+}
+
+function compressImage(dataUrl, maxDim = 1000, quality = 0.75) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width;
+      let h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) {
+          h = Math.round((h * maxDim) / w);
+          w = maxDim;
+        } else {
+          w = Math.round((w * maxDim) / h);
+          h = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
 }

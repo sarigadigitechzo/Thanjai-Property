@@ -6,17 +6,17 @@ const STORAGE_KEY = 'thanjai_properties';
 export function getProperties() {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
+    if (data !== null) {
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map(p => normalizePropertyRecord(p));
+      if (Array.isArray(parsed)) {
+        return parsed.map(p => normalizePropertyRecord(p)).filter(Boolean);
       }
     }
   } catch (e) {
     console.error("Error reading properties from localStorage", e);
   }
 
-  const normalizedDefaults = INITIAL_PROPERTIES.map(p => normalizePropertyRecord(p));
+  const normalizedDefaults = INITIAL_PROPERTIES.map(p => normalizePropertyRecord(p)).filter(Boolean);
   savePropertiesToStorage(normalizedDefaults);
   return normalizedDefaults;
 }
@@ -25,7 +25,22 @@ function savePropertiesToStorage(props) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(props));
   } catch (e) {
-    console.error("Error saving properties to localStorage", e);
+    console.warn("localStorage quota exceeded or error occurred, attempting sanitization...", e);
+    try {
+      // Fallback: sanitize huge base64 image strings to ensure property records fit in storage
+      const sanitized = props.map(p => {
+        const cleanImages = (p.images || []).map(img => {
+          if (typeof img === 'string' && img.startsWith('data:image') && img.length > 200000) {
+            return 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
+          }
+          return img;
+        });
+        return { ...p, images: cleanImages };
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
+    } catch (retryError) {
+      console.error("Critical: Failed to save properties even after sanitization", retryError);
+    }
   }
 }
 
@@ -191,6 +206,7 @@ export function resetPropertiesToDefault() {
 }
 
 function normalizePropertyRecord(p) {
+  if (!p) return null;
   let type = p.type;
   if (!type) {
     const catLabel = (p.categoryLabel || p.category || '').toLowerCase();
@@ -207,8 +223,33 @@ function normalizePropertyRecord(p) {
   const status = p.status || p.availability || 'Available';
   const purpose = p.purpose || ((categoryRaw.toLowerCase() === 'rent' || categoryRaw.toLowerCase() === 'lease') ? 'rent' : 'buy');
 
+  const loc = p.location || 'Thanjavur';
+  let dist = p.district;
+  if (!dist) {
+    if (loc.includes(',')) {
+      const parts = loc.split(',');
+      dist = parts[parts.length - 1].trim() || parts[0].trim();
+    } else {
+      dist = loc;
+    }
+  }
+
+  const numPrice = typeof p.price === 'number' ? p.price : (parseFloat(p.price) || 0);
+  let formattedPrice = p.priceFormatted;
+  if (!formattedPrice) {
+    if (numPrice >= 10000000) {
+      formattedPrice = `₹ ${(numPrice / 10000000).toFixed(2)} Crore`;
+    } else if (numPrice >= 100000) {
+      formattedPrice = `₹ ${(numPrice / 100000).toFixed(2)} Lakhs`;
+    } else {
+      formattedPrice = `₹ ${numPrice.toLocaleString('en-IN')}`;
+    }
+  }
+
   return {
     ...p,
+    id: p.id || `TP-${Date.now().toString().slice(-4)}`,
+    title: p.title || 'Untitled Property',
     type: type,
     category: frontEndCat,
     categoryRaw: categoryRaw,
@@ -216,7 +257,13 @@ function normalizePropertyRecord(p) {
     status: status,
     availability: status,
     purpose: purpose,
-    district: p.district || p.location?.split(',')[1]?.trim() || p.location?.split(',')[0]?.trim() || 'Thanjavur'
+    price: numPrice,
+    priceFormatted: formattedPrice,
+    location: loc,
+    district: dist || 'Thanjavur',
+    images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'],
+    description: p.description || 'Luxury property in prime growth corridor.',
+    features: Array.isArray(p.features) ? p.features : ['Clear Patta Title', 'Gated Community']
   };
 }
 

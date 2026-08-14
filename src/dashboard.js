@@ -188,6 +188,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Properties Updated Reactive Listener
+  // Guard: skip re-routing when already on #properties — PropertiesView.js manages its own refresh.
+  window.addEventListener('propertiesUpdated', () => {
+    const currentHash = window.location.hash.slice(1) || 'dashboard';
+    if (currentHash !== 'properties') {
+      handleHashChange();
+    }
+  });
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'thanjai_properties') {
+      handleHashChange();
+    }
+  });
+
   // Initialize
   handleHashChange();
 });
+

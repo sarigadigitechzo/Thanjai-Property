@@ -338,27 +338,36 @@ function renderPropertyDetailView(property, onNavigateToContact) {
 function filterProperties(state) {
   const allProperties = getProperties();
   return allProperties.filter(prop => {
+    if (!prop) return false;
+    const title = (prop.title || '').toLowerCase();
+    const loc = (prop.location || '').toLowerCase();
+    const dist = (prop.district || '').toLowerCase();
+    const catLabel = (prop.categoryLabel || '').toLowerCase();
+    const type = (prop.type || '').toLowerCase();
+    const cat = (prop.category || '').toLowerCase();
+
     // Keyword search
     if (state.keyword && state.keyword.trim() !== '') {
       const q = state.keyword.toLowerCase().trim();
-      const matchTitle = prop.title.toLowerCase().includes(q);
-      const matchLoc = prop.location.toLowerCase().includes(q);
-      const matchDist = prop.district.toLowerCase().includes(q);
-      const matchCategory = prop.categoryLabel.toLowerCase().includes(q);
+      const matchTitle = title.includes(q);
+      const matchLoc = loc.includes(q);
+      const matchDist = dist.includes(q);
+      const matchCategory = catLabel.includes(q) || cat.includes(q) || type.includes(q);
       if (!matchTitle && !matchLoc && !matchDist && !matchCategory) return false;
     }
 
     // Type filter
     if (state.type && state.type !== 'all') {
-      if (prop.category !== state.type) return false;
+      const targetType = state.type.toLowerCase();
+      const isTypeMatch = cat === targetType || type.includes(targetType) || catLabel.includes(targetType);
+      if (!isTypeMatch) return false;
     }
 
     // Location filter
     if (state.location && state.location !== 'all') {
-      if (prop.district.toLowerCase() !== state.location.toLowerCase() &&
-          prop.location.toLowerCase() !== state.location.toLowerCase()) {
-        return false;
-      }
+      const targetLoc = state.location.toLowerCase();
+      const isLocMatch = loc.includes(targetLoc) || dist.includes(targetLoc);
+      if (!isLocMatch) return false;
     }
 
     // Purpose filter
@@ -368,7 +377,7 @@ function filterProperties(state) {
 
     // Budget filter
     if (state.budget && state.budget !== 'all') {
-      const p = prop.price;
+      const p = prop.price || 0;
       if (state.budget === 'under-50l' && p >= 5000000) return false;
       if (state.budget === '50l-1.5cr' && (p < 5000000 || p > 15000000)) return false;
       if (state.budget === '1.5cr-3cr' && (p < 15000000 || p > 30000000)) return false;

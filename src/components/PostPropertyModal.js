@@ -1,4 +1,5 @@
 import { showToast } from '../utils/toast.js';
+import { addProperty } from '../utils/propertiesStore.js';
 
 export function renderPostPropertyModal() {
   return `
@@ -37,12 +38,12 @@ export function renderPostPropertyModal() {
               <div class="search-field-group">
                 <label class="search-field-label"><i class="ri-building-line"></i> Category</label>
                 <select id="post-category" class="search-select">
-                  <option value="villas">Luxury Villa</option>
-                  <option value="houses">Independent House</option>
-                  <option value="apartments">Apartment / Flat</option>
-                  <option value="plots">Residential Plot</option>
-                  <option value="agricultural">Agricultural Farmland</option>
-                  <option value="commercial">Commercial Space</option>
+                  <option value="Villa">Luxury Villa</option>
+                  <option value="Townhouse">Independent House</option>
+                  <option value="Apartment">Apartment / Flat</option>
+                  <option value="Plot">Residential Plot</option>
+                  <option value="Plot">Agricultural Farmland</option>
+                  <option value="Office">Commercial Space</option>
                 </select>
               </div>
             </div>
@@ -62,7 +63,7 @@ export function renderPostPropertyModal() {
 
               <div class="search-field-group">
                 <label class="search-field-label"><i class="ri-money-rupee-circle-line"></i> Expected Price (₹)</label>
-                <input type="text" id="post-price" required placeholder="e.g. 75,000,000" class="search-input" />
+                <input type="number" id="post-price" required placeholder="e.g. 7500000" class="search-input" />
               </div>
             </div>
 
@@ -82,7 +83,7 @@ export function renderPostPropertyModal() {
             <div style="border: 2px dashed var(--color-border); border-radius: var(--radius-md); padding: 24px; text-align: center; background: var(--color-cream-light);">
               <i class="ri-image-add-line" style="font-size: 2.25rem; color: var(--color-orange);"></i>
               <div style="font-size: 0.875rem; font-weight: 700; color: var(--color-brown); margin-top: 8px;">Upload Property Photos</div>
-              <div style="font-size: 0.75rem; color: var(--color-text-muted);">PNG, JPG up to 10MB per file</div>
+              <div style="font-size: 0.75rem; color: var(--color-text-muted);">Standard high-resolution photos attached automatically</div>
             </div>
 
             <button type="submit" class="btn btn-primary" style="padding: 16px; font-size: 1rem; width: 100%;">
@@ -113,7 +114,30 @@ export function initPostPropertyModalListeners(onClose) {
 
   document.getElementById('post-property-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
-    showToast('Success! Your property listing has been submitted for review.', 'ri-checkbox-circle-fill');
+
+    const title = document.getElementById('post-title')?.value.trim();
+    const type = document.getElementById('post-category')?.value || 'Villa';
+    const purpose = document.getElementById('post-purpose')?.value || 'buy';
+    const city = document.getElementById('post-city')?.value || 'Thanjavur';
+    const price = document.getElementById('post-price')?.value;
+    const ownerName = document.getElementById('post-owner-name')?.value.trim();
+    const ownerPhone = document.getElementById('post-owner-phone')?.value.trim();
+
+    const newProp = addProperty({
+      title: title || 'Submitted Property',
+      type: type,
+      category: purpose === 'rent' ? 'Rent' : 'Sale',
+      location: `${city}, Tamil Nadu`,
+      district: city,
+      price: parseFloat(price) || 0,
+      ownerName: ownerName || 'Property Owner',
+      ownerPhone: ownerPhone || '',
+      listedBy: ownerName || 'Website Submission',
+      status: 'Available',
+      availability: 'Available'
+    });
+
+    showToast(`Success! Property ${newProp.id} listed and published.`, 'ri-checkbox-circle-fill');
     overlay?.classList.remove('active');
     setTimeout(onClose, 300);
   });
