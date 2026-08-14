@@ -1,16 +1,19 @@
+import { getSiteImage } from '../utils/siteImagesStore.js';
+
 export function renderShowcaseBanner(featuredProperty, onPropertySelect) {
+  const showcaseBg = getSiteImage('showcase_bg');
   const property = featuredProperty || {
     id: "TP-2006",
     title: "East Coast Oceanfront Contemporary Villa",
     location: "Chennai",
     priceFormatted: "₹ 4.80 Crore",
     categoryLabel: "Oceanfront Luxury Villa",
-    image: "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=2000&q=90"
+    image: showcaseBg
   };
 
   return `
     <section class="showcase-banner-section" id="showcase">
-      <img src="${property.images ? property.images[0] : property.image}" alt="Luxury Showcase" class="showcase-bg-img" />
+      <img src="${showcaseBg}" alt="Luxury Showcase" class="showcase-bg-img" />
       <div class="showcase-overlay-gradient"></div>
 
       <div class="container">

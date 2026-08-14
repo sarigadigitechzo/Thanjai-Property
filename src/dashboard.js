@@ -5,6 +5,8 @@ import { renderSiteVisitsView } from './crm-views/SiteVisitsView.js';
 import { renderPartnersView } from './crm-views/PartnersView.js';
 import { renderAIAgentView } from './crm-views/AIAgentView.js';
 import { renderWhatsAppLogView } from './crm-views/WhatsAppLogView.js';
+import { renderWebsiteImagesView, initWebsiteImagesListeners } from './crm-views/WebsiteImagesView.js';
+import { renderAuditLogView, initAuditLogListeners } from './crm-views/AuditLogView.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const contentArea = document.getElementById('os-content');
@@ -12,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function loadView(viewName) {
     let html = '';
+    let afterRender = null;
+
     switch (viewName) {
       case 'dashboard':
         html = renderDashboardView();
@@ -34,6 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'whatsapp':
         html = renderWhatsAppLogView();
         break;
+      case 'images':
+        html = renderWebsiteImagesView();
+        afterRender = initWebsiteImagesListeners;
+        break;
+      case 'audit':
+        html = renderAuditLogView();
+        afterRender = initAuditLogListeners;
+        break;
       default:
         html = `
           <div class="view-enter" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color: var(--os-gray-400);">
@@ -45,6 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     contentArea.innerHTML = html;
+    if (afterRender) {
+      afterRender();
+    }
   }
 
   function setActiveNav(viewName) {

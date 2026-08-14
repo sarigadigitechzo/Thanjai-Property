@@ -1,10 +1,13 @@
+import { getSiteImage } from '../utils/siteImagesStore.js';
+
 export function renderHero() {
+  const heroBg = getSiteImage('hero_bg');
   return `
     <section class="hero-section" id="hero">
       <!-- Hero Background Image & Gradient -->
       <div class="hero-bg-container">
         <img 
-          src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=2000&q=90" 
+          src="${heroBg}" 
           alt="Thanjai Property Luxury Villa" 
           class="hero-bg-image" 
           id="hero-parallax-img"

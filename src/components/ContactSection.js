@@ -1,4 +1,7 @@
+import { getSiteImage } from '../utils/siteImagesStore.js';
+
 export function renderContactSection() {
+  const contactBg = getSiteImage('contact_bg');
   return `
     <section class="contact-section" id="contact">
 
@@ -32,7 +35,7 @@ export function renderContactSection() {
           <div class="contact-hero-right" id="contact-hero-right">
             <div class="contact-hero-img-wrap">
               <img
-                src="https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?auto=format&fit=crop&w=900&q=80"
+                src="${contactBg}"
                 alt="Luxury Property Thanjavur"
                 class="contact-hero-img"
                 id="contact-hero-img"

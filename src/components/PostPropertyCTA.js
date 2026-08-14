@@ -1,11 +1,14 @@
+import { getSiteImage } from '../utils/siteImagesStore.js';
+
 export function renderPostPropertyCTA(onPostPropertyClick) {
+  const postCtaBg = getSiteImage('post_cta_bg');
   return `
     <section class="post-cta-section" id="post-cta">
       <div class="container">
         <div class="post-cta-card">
           <div class="post-cta-media">
             <img 
-              src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80" 
+              src="${postCtaBg}" 
               alt="Sell Property with Thanjai Property" 
               class="post-cta-img"
             />
