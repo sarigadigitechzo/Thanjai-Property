@@ -1,9 +1,10 @@
 import { renderDashboardView } from './crm-views/DashboardView.js';
 import { renderLeadsView, initLeadsView } from './crm-views/LeadsView.js';
-import { renderPropertiesView } from './crm-views/PropertiesView.js';
-import { renderSiteVisitsView } from './crm-views/SiteVisitsView.js';
-import { renderPartnersView } from './crm-views/PartnersView.js';
-import { renderAIAgentView } from './crm-views/AIAgentView.js';
+import { renderPropertiesView, initPropertiesListeners } from './crm-views/PropertiesView.js';
+import { renderSiteVisitsView, initSiteVisitsView } from './crm-views/SiteVisitsView.js';
+import { renderPipelineBoardView, initPipelineBoardView } from './crm-views/PipelineBoardView.js?v=2';
+import { renderPartnersView, initPartnersView } from './crm-views/PartnersView.js';
+import { renderAIAgentView, initAIAgentView } from './crm-views/AIAgentView.js';
 import { renderWhatsAppLogView } from './crm-views/WhatsAppLogView.js';
 import { renderWebsiteImagesView, initWebsiteImagesListeners } from './crm-views/WebsiteImagesView.js';
 import { renderAuditLogView, initAuditLogListeners } from './crm-views/AuditLogView.js';
@@ -40,8 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
         html = renderPartnersView();
         afterRender = initPartnersView;
         break;
+      case 'pipeline':
+        html = renderPipelineBoardView();
+        afterRender = initPipelineBoardView;
+        break;
       case 'ai':
         html = renderAIAgentView();
+        afterRender = initAIAgentView;
         break;
       case 'whatsapp':
         html = renderWhatsAppLogView();
@@ -65,6 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     contentArea.innerHTML = html;
+    if (viewName === 'leads') {
+      initLeadsView();
+    }
+    if (afterRender) {
+      setTimeout(afterRender, 0); // ensure DOM is painted
+    }
   }
 
   function setActiveNav(viewName) {

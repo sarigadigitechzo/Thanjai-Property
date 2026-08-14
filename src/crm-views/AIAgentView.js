@@ -67,3 +67,44 @@ export function renderAIAgentView() {
     </div>
   `;
 }
+
+export function initAIAgentView() {
+  const sendBtn = document.querySelector('.ai-send-btn');
+  const inputField = document.querySelector('.ai-input-box input');
+  const sugCards = document.querySelectorAll('.ai-sug-card');
+  const welcomeScreen = document.querySelector('.ai-welcome');
+  const historyScreen = document.querySelector('.ai-history');
+
+  function simulateChat(text) {
+    if (!text.trim()) return;
+    
+    // Hide welcome, show history
+    welcomeScreen.style.display = 'none';
+    historyScreen.style.display = 'block';
+
+    // Clear input
+    inputField.value = '';
+    
+    // In a real app, we would append the new message to the history and auto-scroll.
+    // For this prototype, we'll just show the hardcoded history which demonstrates the layout.
+    // We can also update the user's bubble text to match what they typed/clicked.
+    const userBubble = historyScreen.querySelector('.ai-msg.user .ai-msg-bubble');
+    if (userBubble) {
+      userBubble.textContent = text;
+    }
+  }
+
+  if (sendBtn && inputField) {
+    sendBtn.addEventListener('click', () => simulateChat(inputField.value));
+    inputField.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') simulateChat(inputField.value);
+    });
+  }
+
+  sugCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const text = card.querySelector('span').textContent;
+      simulateChat(text);
+    });
+  });
+}
