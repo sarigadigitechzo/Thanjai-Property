@@ -124,7 +124,7 @@ export function initPipelineBoardView() {
     const currentLabel = currentStage.id + (currentStage.emailIcon ? ' <i class="ri-mail-line" style="margin-left:4px; font-size:0.8rem;"></i>' : '');
 
     return `
-      <div class="pipeline-card" draggable="true" data-id="${lead.id}">
+      <div class="pipeline-card" draggable="true" data-id="${lead.id}" data-priority="${priorityClass || 'medium'}">
         <div class="pipeline-card-header">
           <div class="pipeline-card-title">${lead.name}</div>
           <div class="pipeline-card-priority ${priorityClass}">${priorityText}</div>

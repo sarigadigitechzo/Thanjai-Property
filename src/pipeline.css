@@ -74,8 +74,8 @@
   background: #ffffff;
   border-radius: var(--os-radius-md);
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  border: 1px solid rgba(42, 24, 8, 0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  border: 1px solid var(--os-gray-300);
   cursor: grab;
   transition: all 0.2s ease;
   position: relative;
@@ -114,14 +114,15 @@
   padding: 2px 8px;
   border-radius: 12px;
   text-transform: uppercase;
-  background: #eff6ff;
-  color: #3b82f6;
 }
+.pipeline-card-priority.high { color: #ef4444; background: #fee2e2; }
+.pipeline-card-priority.medium { color: #3b82f6; background: #eff6ff; }
+.pipeline-card-priority.low { color: #10b981; background: #d1fae5; }
 
-.pipeline-card-priority.high {
-  background: #fff7ed;
-  color: #ea580c;
-}
+/* Left border on card corresponding to priority */
+.pipeline-card[data-priority="high"] { border-left: 4px solid #ef4444; }
+.pipeline-card[data-priority="medium"] { border-left: 4px solid #3b82f6; }
+.pipeline-card[data-priority="low"] { border-left: 4px solid #10b981; }
 
 .pipeline-card-details {
   font-size: 0.8rem;
