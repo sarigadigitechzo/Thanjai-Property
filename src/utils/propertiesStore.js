@@ -271,12 +271,16 @@ function getFrontEndCategory(type, categoryRaw) {
   const t = (type || '').toLowerCase();
   const c = (categoryRaw || '').toLowerCase();
 
+  const validCategories = ['villas', 'houses', 'apartments', 'plots', 'agricultural', 'commercial', 'industrial'];
+  if (validCategories.includes(c)) return c;
+
   if (t.includes('villa')) return 'villas';
   if (t.includes('house') || t.includes('townhouse')) return 'houses';
   if (t.includes('apartment') || t.includes('penthouse') || t.includes('studio')) return 'apartments';
-  if (t.includes('plot')) return 'plots';
+  if (t.includes('industrial')) return 'industrial';
+  if (t.includes('plot') || t.includes('layout')) return 'plots';
   if (t.includes('agriculture') || t.includes('farmland') || t.includes('farm')) return 'agricultural';
-  if (t.includes('office') || t.includes('retail') || t.includes('warehouse') || c === 'commercial') return 'commercial';
+  if (t.includes('office') || t.includes('retail') || t.includes('warehouse') || c.includes('commercial')) return 'commercial';
   return 'villas';
 }
 

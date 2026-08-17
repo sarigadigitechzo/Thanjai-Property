@@ -1329,19 +1329,17 @@ a {
   width: 100%;
   z-index: 1000;
   transition: all var(--transition-normal);
-  padding: 16px 0;
-  background: var(--color-white);
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  padding: 14px 0;
+  background: #FFFFFF;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 .header-wrapper.scrolled {
-  padding: 12px 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  padding: 10px 0;
+  background: #FFFFFF;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
 }
 
 .nav-container {
@@ -1355,12 +1353,17 @@ a {
   align-items: center;
   gap: 12px;
   text-decoration: none;
+  overflow: visible;
+  padding: 2px 0;
 }
 
 .brand-logo-img {
-  height: 44px;
+  height: 50px;
+  max-height: 50px;
   width: auto;
   object-fit: contain;
+  mix-blend-mode: multiply;
+  display: block;
 }
 
 .brand-fallback-vector {

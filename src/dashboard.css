@@ -607,6 +607,19 @@ body.os-body {
   box-shadow: var(--os-shadow-float);
 }
 
+.kpi-card.clickable-kpi {
+  cursor: pointer;
+  user-select: none;
+}
+.kpi-card.clickable-kpi:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  border-color: rgba(235, 94, 40, 0.3);
+}
+.kpi-card.clickable-kpi:active {
+  transform: translateY(-2px) scale(0.99);
+}
+
 .kpi-header {
   display: flex;
   justify-content: space-between;

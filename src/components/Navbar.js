@@ -11,7 +11,7 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
         <nav class="nav-container">
           <!-- Brand Logo -->
           <a href="/" class="brand-logo-link nav-route-link" data-route="home" id="nav-brand-logo">
-            <img src="${brandLogo}" alt="Thanjai Property Real Estate Since 2009" class="brand-logo-img" style="height: 54px; width: auto; display: block;" />
+            <img src="${brandLogo}" alt="Thanjai Property Real Estate Since 2009" class="brand-logo-img" />
           </a>
 
           <!-- Desktop Navigation Links (5 Core Pages) -->

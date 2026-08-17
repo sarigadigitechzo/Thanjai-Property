@@ -38,15 +38,39 @@ export const DEFAULT_SITE_IMAGES = {
   },
   contact_bg: {
     id: "contact_bg",
-    title: "Contact & Advisory Section Card Image",
+    title: "Contact Section Background Image",
     category: "Banners & Hero",
-    recommendedWidth: 900,
-    recommendedHeight: 600,
-    aspectRatio: "3:2",
+    recommendedWidth: 1920,
+    recommendedHeight: 800,
+    aspectRatio: "16:9",
     format: "JPG / WebP",
-    maxSize: "< 1.5 MB",
-    defaultUrl: "https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?auto=format&fit=crop&w=900&q=80",
-    description: "Featured image in the Private Property Consultation section."
+    maxSize: "< 2 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=2000&q=90",
+    description: "Background banner image for the Contact Advisory section."
+  },
+  leader_founder: {
+    id: "leader_founder",
+    title: "S. Vijayaraghavan (Managing Director Portrait)",
+    category: "Leadership & Team",
+    recommendedWidth: 600,
+    recommendedHeight: 800,
+    aspectRatio: "3:4",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1 MB",
+    defaultUrl: "https://ui-avatars.com/api/?name=S+Vijayaraghavan&background=eb5e28&color=ffffff&size=256",
+    description: "Managing Director portrait image displayed in Our Story executive leadership section."
+  },
+  leader_partner: {
+    id: "leader_partner",
+    title: "Radhakrishnan (Co-Partner Portrait)",
+    category: "Leadership & Team",
+    recommendedWidth: 600,
+    recommendedHeight: 800,
+    aspectRatio: "3:4",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1 MB",
+    defaultUrl: "https://ui-avatars.com/api/?name=Radhakrishnan&background=38a169&color=ffffff&size=256",
+    description: "Co-Partner portrait image displayed in Our Story executive leadership section."
   },
   brand_logo: {
     id: "brand_logo",
@@ -71,7 +95,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 1 MB",
-    defaultUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=80",
+    defaultUrl: "/images/tn_loc_thanjavur.jpg",
     description: "Visual tile for Thanjavur destination in Regional Destinations section."
   },
   loc_trichy: {
@@ -83,7 +107,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 1 MB",
-    defaultUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1000&q=80",
+    defaultUrl: "/images/tn_loc_trichy.jpg",
     description: "Visual tile for Trichy destination in Regional Destinations section."
   },
   loc_madurai: {
@@ -95,7 +119,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 1 MB",
-    defaultUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1000&q=80",
+    defaultUrl: "/images/tn_loc_madurai.jpg",
     description: "Visual tile for Madurai destination in Regional Destinations section."
   },
   loc_chennai: {
@@ -107,7 +131,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 1 MB",
-    defaultUrl: "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1000&q=80",
+    defaultUrl: "/images/tn_loc_chennai.jpg",
     description: "Visual tile for Chennai destination in Regional Destinations section."
   },
   loc_coimbatore: {
@@ -119,7 +143,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 1 MB",
-    defaultUrl: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1000&q=80",
+    defaultUrl: "/images/tn_loc_coimbatore.jpg",
     description: "Visual tile for Coimbatore destination in Regional Destinations section."
   },
   loc_kumbakonam: {
@@ -131,7 +155,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 1 MB",
-    defaultUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1000&q=80",
+    defaultUrl: "/images/tn_loc_kumbakonam.jpg",
     description: "Visual tile for Kumbakonam destination in Regional Destinations section."
   },
 
@@ -145,7 +169,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
-    defaultUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80",
+    defaultUrl: "/images/tn_villas.jpg",
     description: "Marquee tile for Luxury Villas asset class."
   },
   cat_houses: {
@@ -157,7 +181,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
-    defaultUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+    defaultUrl: "/images/tn_houses.jpg",
     description: "Marquee tile for Independent Houses asset class."
   },
   cat_apartments: {
@@ -169,7 +193,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
-    defaultUrl: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
+    defaultUrl: "/images/tn_apartments.jpg",
     description: "Marquee tile for Modern Apartments asset class."
   },
   cat_plots: {
@@ -181,7 +205,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
-    defaultUrl: "https://images.unsplash.com/photo-1524813686514-a57563d77965?auto=format&fit=crop&w=800&q=80",
+    defaultUrl: "/images/tn_plots.jpg",
     description: "Marquee tile for Residential Plots asset class."
   },
   cat_agricultural: {
@@ -193,7 +217,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
-    defaultUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80",
+    defaultUrl: "/images/tn_agricultural.jpg",
     description: "Marquee tile for Agricultural Farmland asset class."
   },
   cat_commercial: {
@@ -205,7 +229,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
-    defaultUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
+    defaultUrl: "/images/tn_commercial.jpg",
     description: "Marquee tile for Commercial Spaces asset class."
   },
   cat_industrial: {
@@ -217,7 +241,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
-    defaultUrl: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+    defaultUrl: "/images/tn_industrial.jpg",
     description: "Marquee tile for Industrial Land asset class."
   }
 };

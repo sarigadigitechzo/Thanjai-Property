@@ -351,8 +351,11 @@ window.addEventListener('favoritesUpdated', (e) => {
 window.addEventListener('propertiesUpdated', () => {
   renderApp();
 });
+window.addEventListener('blogPostsUpdated', () => {
+  renderApp();
+});
 window.addEventListener('storage', (e) => {
-  if (e.key === 'thanjai_properties') {
+  if (e.key === 'thanjai_properties' || e.key === 'thanjai_blog_posts') {
     renderApp();
   }
 });

@@ -26,7 +26,7 @@ export function renderLocationExplorer() {
 
               <div class="location-tile-content">
                 <div style="margin-bottom: auto; display: flex; justify-content: space-between; align-items: flex-start;">
-                  <span class="badge badge-dark">${loc.propertiesCount} Properties</span>
+                  <span class="badge badge-dark">${loc.count}</span>
                   <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; color: var(--color-white);">
                     <i class="ri-arrow-right-up-line" style="font-size: 1.2rem;"></i>
                   </div>

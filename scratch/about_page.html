@@ -1,0 +1,1117 @@
+
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thanjai Property – About Us</title>
+
+  <!-- Favicons (unchanged from original) -->
+  <link rel="apple-touch-icon" sizes="57x57"   href="https://www.thanjaiproperty.com/images/fav/apple-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60"   href="https://www.thanjaiproperty.com/images/fav/apple-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72"   href="https://www.thanjaiproperty.com/images/fav/apple-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76"   href="https://www.thanjaiproperty.com/images/fav/apple-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="https://www.thanjaiproperty.com/images/fav/apple-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="https://www.thanjaiproperty.com/images/fav/apple-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="https://www.thanjaiproperty.com/images/fav/apple-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="https://www.thanjaiproperty.com/images/fav/apple-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="https://www.thanjaiproperty.com/images/fav/apple-icon-180x180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="https://www.thanjaiproperty.com/images/fav/android-icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="32x32"   href="https://www.thanjaiproperty.com/images/fav/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="96x96"   href="https://www.thanjaiproperty.com/images/fav/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="16x16"   href="https://www.thanjaiproperty.com/images/fav/favicon-16x16.png">
+  <link rel="manifest" href="https://www.thanjaiproperty.com/images/fav/manifest.json">
+
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/about.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/footer.css">
+  <link rel="stylesheet" href="css/breadcrumb.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<style>
+    @media (min-width: 768px) {
+    .md\:h-10 {
+        height: 3.5rem !important;
+    }
+}
+.footer-section-desktop {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .footer-section-desktop {
+    display: block;
+  }
+}
+.all-cities-item {
+  font-weight: 600;
+  color: #c8102e;
+  margin-bottom: 4px;
+  padding-bottom: 10px;
+}
+</style>
+<nav class="bg-[#FFF0EB]/80 backdrop-blur-[20px] fixed top-0 left-0 w-full z-50 shadow-[0_4px_20px_rgba(30,27,24,0.06)] border-b border-outline-variant/20 transition-all duration-300">
+  <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 md:px-10 lg:px-12 py-3 md:py-4 flex justify-between items-center gap-3">
+    <div class="flex items-center gap-4 lg:gap-10 min-w-0">
+      <a href="https://www.thanjaiproperty.com/"><img class="h-8 sm:h-9 md:h-10 w-auto object-contain flex-shrink-0" src="https://www.thanjaiproperty.com/images/1637904557ThanjaiProperty-Web-Logo.png" alt="Thanjai Property Logo"></a>
+
+      <!-- Desktop City Selector -->
+      <div class="relative nav-city-trigger hidden lg:flex items-center gap-1 px-3 py-1.5 rounded-full cursor-pointer text-white font-medium text-sm"
+           style="background: linear-gradient(135deg, #d8232a, #ff4d4f);">
+        <span class="material-symbols-outlined text-white text-sm">location_on</span>
+<span id="selectedCity">
+    All Cities</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+        <div class="nav-city-dropdown">
+          <div style="position:relative;width:100%;">
+            <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:10px;top:40%;transform:translateY(-50%);color:#777;font-size:14px;pointer-events:none;"></i>
+            <input class="district-search" type="text" id="districtSearchInput" placeholder="Search district..." oninput="filterDistricts(this.value)" onclick="event.stopPropagation()" style="width:100%;padding:10px 10px 10px 32px;border-radius:6px;border:1px solid #ccc;">
+          </div>
+          <div class="district-group-title">Tamil Nadu Districts</div>
+          <div class="district-grid" id="districtGrid"></div>
+        </div>
+      </div>
+
+      <div class="hidden xl:flex gap-5 font-headline text-sm font-medium tracking-tight">
+        <a class="flex items-center gap-1.5 text-on-surface/80 hover:text-primary transition-all" href="https://www.thanjaiproperty.com/listing-gird-view"><span class="material-symbols-outlined text-primary text-base">home</span> Buy Property</a>
+               <a class="flex items-center gap-1.5 text-on-surface/80 hover:text-primary transition-all" href="https://www.thanjaiproperty.com/agent-list"><span class="material-symbols-outlined text-primary text-base">groups</span> Agents</a>
+        <a class="flex items-center gap-1.5 text-on-surface/80 hover:text-primary transition-all" href="https://www.thanjaiproperty.com/builder"><span class="material-symbols-outlined text-primary text-base">apartment</span> Builders</a>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <a class="btn-login-elegant hidden sm:flex" href="https://www.thanjaiproperty.com/login"><span class="material-symbols-outlined text-base">account_circle</span>
+      <span class="hidden md:inline">Login</span></a>
+      <a href="https://www.thanjaiproperty.com/register" class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-semibold" style="background:linear-gradient(135deg,#d8232a,#ff4d4f);">
+        <span class="material-symbols-outlined text-[18px]">home</span> Post Property
+      </a>
+            
+      
+      <!-- Mobile City Selector -->
+      <div class="relative inline-block text-left lg:hidden">
+        <div id="loc_districtBtn" class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium cursor-pointer shadow-md" style="background:linear-gradient(135deg,#d8232a,#ff4d4f);">
+          <span class="material-symbols-outlined" style="font-size:14px;color:white;">location_on</span>
+          <span id="loc_selectedName" style="color:white;font-size:14px;">Thanjavur</span>
+          <span id="loc_districtArrow" class="material-symbols-outlined" style="font-size:14px;color:white;transition:transform 0.2s ease;">expand_more</span>
+        </div>
+        <div id="loc_districtDropdown" style="display:none;position:absolute;right:-45px;margin-top:8px;width:240px;background:white;border-radius:12px;border:1px solid #e5e7eb;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);z-index:50;overflow:hidden;">
+          <div style="padding:8px;border-bottom:1px solid #f3f4f6;background:#f9fafb;display:flex;align-items:center;gap:8px;">
+            <span class="material-symbols-outlined" style="color:#9ca3af;font-size:18px;">search</span>
+            <input type="text" id="loc_searchInput" placeholder="Search district..." style="width:100%;background:transparent;font-size:14px;border:none;outline:none;color:#374151;">
+          </div>
+          <div id="loc_listContainer" style="max-height:256px;overflow-y:auto;padding:4px 0;">
+            <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=2" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Ariyalur
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=3" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Chennai
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=4" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Coimbatore
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=5" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Cuddalore
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=6" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Dharmapuri
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=7" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Dindigul
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=8" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Erode
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=9" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Kancheepuram
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=10" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Kanyakumari
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=11" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Karur
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=12" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Krishnagiri
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=13" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Madurai
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=14" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Nagapattinam
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=15" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Namakal
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=21" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Nilgiris
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=16" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Perambalur
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=17" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Pudukkottai
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=18" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Ramanathapuram
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=19" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Salem
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=43" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        sivagangai
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=1" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Thanjavur
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=22" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Theni
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=23" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Tirunelveli
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=24" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Tirupur
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=25" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Tiruvallur
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=26" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Tiruvannamalai
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=27" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Tiruvarur
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=28" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Trichy
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=29" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Tuticorin
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=30" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Vellore
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=31" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Villupuram
+       </a><a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=32" 
+        class="loc_district-item" 
+        style="display:block;padding:12px 16px;font-size:14px;color:#374151;text-decoration:none;border-bottom:1px solid #f9fafb;">
+        Virudhunagar
+       </a>          </div>
+          <div id="loc_noResult" style="display:none;padding:24px 16px;font-size:12px;color:#9ca3af;text-align:center;">No district found</div>
+        </div>
+      </div>
+
+      <button id="menuToggleBtn" class="xl:hidden flex items-center justify-center w-9 h-9 rounded-full bg-surface-container-highest flex-shrink-0">
+        <span class="material-symbols-outlined text-xl">menu</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Drawer -->
+<div id="mobileOverlay" class="mobile-nav-overlay"></div>
+<div id="mobileDrawer" class="mobile-drawer">
+  <div class="flex justify-between items-center mb-8">
+    <img src="https://www.thanjaiproperty.com/images/1637904557ThanjaiProperty-Web-Logo.png" alt="logo" class="h-7">
+    <button id="closeDrawerBtn" class="p-2 rounded-full bg-surface-container-high"><span class="material-symbols-outlined">close</span></button>
+  </div>
+  <div class="flex flex-col gap-0">
+    <a class="drawer-link" href="https://www.thanjaiproperty.com/index"><span class="material-symbols-outlined text-primary text-base">home</span> Home</a>
+    <a class="drawer-link" href="https://www.thanjaiproperty.com/listing-gird-view"><span class="material-symbols-outlined text-primary text-base">apartment</span> Buy Property</a>
+    <a class="drawer-link" href="https://www.thanjaiproperty.com/postneeds"><span class="material-symbols-outlined text-primary text-base">edit_note</span> Post Your Needs</a>
+    <a class="drawer-link" href="https://www.thanjaiproperty.com/agent-list"><span class="material-symbols-outlined text-primary text-base">groups</span> Agents Directory</a>
+    <a class="drawer-link" href="https://www.thanjaiproperty.com/builder"><span class="material-symbols-outlined text-primary text-base">apartment</span> Builder Directory</a>
+    <a class="drawer-link" href="https://www.thanjaiproperty.com/about"><span class="material-symbols-outlined text-primary text-base">person</span> About Us</a>
+    <a class="drawer-link" href="https://www.thanjaiproperty.com/contact"><span class="material-symbols-outlined text-primary text-base">mail</span> Contact Us</a>    <div class="mt-8 pt-5 border-t border-outline-variant/40 flex flex-col gap-3">
+                  <a href="https://www.thanjaiproperty.com/login" class="btn-premium text-sm justify-center"><span class="material-symbols-outlined text-sm">account_circle</span> Login / Register</a>
+          <a href="https://www.thanjaiproperty.com/register" class="btn-login-elegant justify-center" style="background:linear-gradient(135deg,#ffaa00,#ff6a00);color:white;border:none;display:flex;align-items:center;gap:8px;padding:8px 14px;">
+            <span class="material-symbols-outlined text-base" style="color:#000;">home</span>
+            <span style="color:#000;font-weight:600;">Post Property</span>
+            <span style="background:#fff;color:#ff6a00;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;">FREE</span>
+          </a>
+               
+    </div>
+  </div>
+</div>
+
+<main>
+  <br><br><br>
+
+  <!-- Mobile Post Property Button -->
+  <a href="https://www.thanjaiproperty.com/register" class="mobile-post-btn sm:hidden">
+    <span class="material-symbols-outlined">home</span>
+    <span>Post Property</span>
+    <span style="background:white;color:#d8232a;font-size:9px;font-weight:700;padding:2px 5px;border-radius:8px;margin-left:4px;">FREE</span>
+  </a>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-wrapper">
+  <div class="breadcrumb-center">About Us</div>
+</div>
+
+<div class="wrap">
+
+  <!-- ===== DESKTOP: 2 images top ===== -->
+  <div class="desktop-top">
+    <div>
+      <div class="photo-wrap">
+        <img src="https://www.thanjaiproperty.com/images/about/S-Vijayaraghvan.jpg" alt="S. Vijayaraghavan">
+      </div>
+      <div class="person-info">
+        <p class="person-name">S. Vijayaraghavan</p>
+        <p class="person-position">Managing Director</p>
+        <a href="tel:+919578311506" class="person-mobile">📞 +91 9578311506</a>
+      </div>
+    </div>
+    <div>
+      <div class="photo-wrap">
+        <img src="https://www.thanjaiproperty.com/images/about/Radhakrishnan.jpg" alt="Radhakrishnan">
+      </div>
+      <div class="person-info">
+        <p class="person-name">Radhakrishnan</p>
+        <p class="person-position">Co-Partner</p>
+        <a href="tel:+919585777772" class="person-mobile">📞 +91 9585777772</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- DESKTOP: white box with yellow top stripe -->
+  <div class="desktop-content content-box">
+    <p class="about-header">
+      ABOUT US <span>THANJAI PROPERTY</span> REAL ESTATE LAND PROMOTERS AND CONSTRUCTIONS IN THANJAVUR
+      TO BUY, SALE AND HOUSE LAND PLOT COMMERCIAL INDUSTRIAL APARTMENT
+    </p>
+    <p class="why-title">Why should I use Thanjaiproperty.com?</p>
+    <p class="body-text">There are many Top 10 real estate websites in India, but in Tamilnadu we are the No.1 real estate website. Thanjaiproperty.com has many categories like House and Apartments are listed or advertised and allows searching, buying, rent or taking on lease. Property owners post their properties for sale or rent; developers and builders advertise their projects, to global visitors, real estate consultants and brokers list properties to expand their market place.</p>
+    <p class="body-text">ThanjaiProperty.com covers Tamilnadu property website for buy, sell and rent properties anywhere in Tamilnadu. ThanjaiProperty mainly focuses on 32 Districts in Tamilnadu including Taluks. It's the right place for Individuals, builders and agents to find the new property search. Thanjaiproperty.com is a comfortable feeling to know that you stand on your own property.</p>
+  </div>
+
+  <!-- ===== MOBILE: image1 → image2 → white box content ===== -->
+  <div class="mobile-layout">
+
+    <div class="m-photo-wrap">
+      <img src="https://www.thanjaiproperty.com/images/about/S-Vijayaraghvan.jpg" alt="S. Vijayaraghavan">
+    </div>
+    <div class="m-person-info">
+      <p class="person-name">S. Vijayaraghavan</p>
+      <p class="person-position">Managing Director</p>
+      <a href="tel:+919876543210" class="person-mobile">📞 +91 98765 43210</a>
+    </div>
+
+    <div class="m-photo-wrap">
+      <img src="https://www.thanjaiproperty.com/images/about/Radhakrishnan.jpg" alt="Radhakrishnan">
+    </div>
+    <div class="m-person-info">
+      <p class="person-name">Radhakrishnan</p>
+      <p class="person-position">Senior Property Consultant</p>
+      <a href="tel:+919876543211" class="person-mobile">📞 +91 98765 43211</a>
+    </div>
+
+    <div class="content-box">
+      <p class="about-header">
+        ABOUT US <span>THANJAI PROPERTY</span> REAL ESTATE LAND PROMOTERS AND CONSTRUCTIONS IN THANJAVUR
+        TO BUY, SALE AND HOUSE LAND PLOT COMMERCIAL INDUSTRIAL APARTMENT
+      </p>
+      <p class="why-title">Why should I use Thanjaiproperty.com?</p>
+      <p class="body-text">There are many Top 10 real estate websites in India, but in Tamilnadu we are the No.1 real estate website. Thanjaiproperty.com has many categories like House and Apartments are listed or advertised and allows searching, buying, rent or taking on lease. Property owners post their properties for sale or rent; developers and builders advertise their projects, to global visitors, real estate consultants and brokers list properties to expand their market place.</p>
+      <p class="body-text">ThanjaiProperty.com covers Tamilnadu property website for buy, sell and rent properties anywhere in Tamilnadu. ThanjaiProperty mainly focuses on 32 Districts in Tamilnadu including Taluks. It's the right place for Individuals, builders and agents to find the new property search.</p>
+      <p class="districts-label">Districts &amp; Taluks:</p>
+      <p class="districts-text">Ariyalur (Ariyalur, Sendurai, Udayarpalayam), Chennai (Angappanaicken Street, Flower Bazar, Govt Stanely Hospital, Kothwal Market, M P T Admn Office, Madras Gpo, Mannady, Mint Buildings, Monegar Choultry, Muthialpet, Sembier Street, Seven Wells, Wal Tax Road, Anna Road H O, Annaroad Sourth, Chintadripeta, Government Estate, Madras Electricity System, Pudupet, Central Station…)</p>
+    </div>
+
+  </div>
+
+</div>
+
+<style>
+   .footer-links-list {
+  text-align: justify !important;
+  display: block;
+}
+
+.footer-links-list li {
+  display: inline;
+  text-align: justify;
+}
+</style>
+<!-- ========== FOOTER LINKS (from DB) ========== -->
+<div class="footer-links-section" style="padding:50px;">
+  <div class="inner">
+
+    <!-- Real Estate -->
+   
+    <!-- Buy Property -->
+    <div class="section-block footer-section-desktop">
+      <div class="section-title">Buy Property</div>
+      <ul class="footer-links-list">
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=1"
+             title="Properties for Sale in Thanjavur">
+            Buy Property in Thanjavur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=2"
+             title="Properties for Sale in Ariyalur">
+            Buy Property in Ariyalur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=3"
+             title="Properties for Sale in Chennai">
+            Buy Property in Chennai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=4"
+             title="Properties for Sale in Coimbatore">
+            Buy Property in Coimbatore          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=5"
+             title="Properties for Sale in Cuddalore">
+            Buy Property in Cuddalore          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=6"
+             title="Properties for Sale in Dharmapuri">
+            Buy Property in Dharmapuri          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=7"
+             title="Properties for Sale in Dindigul">
+            Buy Property in Dindigul          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=8"
+             title="Properties for Sale in Erode">
+            Buy Property in Erode          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=9"
+             title="Properties for Sale in Kancheepuram">
+            Buy Property in Kancheepuram          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=10"
+             title="Properties for Sale in Kanyakumari">
+            Buy Property in Kanyakumari          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=11"
+             title="Properties for Sale in Karur">
+            Buy Property in Karur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=12"
+             title="Properties for Sale in Krishnagiri">
+            Buy Property in Krishnagiri          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=13"
+             title="Properties for Sale in Madurai">
+            Buy Property in Madurai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=14"
+             title="Properties for Sale in Nagapattinam">
+            Buy Property in Nagapattinam          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=15"
+             title="Properties for Sale in Namakal">
+            Buy Property in Namakal          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=16"
+             title="Properties for Sale in Perambalur">
+            Buy Property in Perambalur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=17"
+             title="Properties for Sale in Pudukkottai">
+            Buy Property in Pudukkottai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=18"
+             title="Properties for Sale in Ramanathapuram">
+            Buy Property in Ramanathapuram          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=19"
+             title="Properties for Sale in Salem">
+            Buy Property in Salem          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=21"
+             title="Properties for Sale in Nilgiris">
+            Buy Property in Nilgiris          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=22"
+             title="Properties for Sale in Theni">
+            Buy Property in Theni          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=23"
+             title="Properties for Sale in Tirunelveli">
+            Buy Property in Tirunelveli          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=24"
+             title="Properties for Sale in Tirupur">
+            Buy Property in Tirupur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=25"
+             title="Properties for Sale in Tiruvallur">
+            Buy Property in Tiruvallur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=26"
+             title="Properties for Sale in Tiruvannamalai">
+            Buy Property in Tiruvannamalai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=27"
+             title="Properties for Sale in Tiruvarur">
+            Buy Property in Tiruvarur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=28"
+             title="Properties for Sale in Trichy">
+            Buy Property in Trichy          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=29"
+             title="Properties for Sale in Tuticorin">
+            Buy Property in Tuticorin          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=30"
+             title="Properties for Sale in Vellore">
+            Buy Property in Vellore          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=31"
+             title="Properties for Sale in Villupuram">
+            Buy Property in Villupuram          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=32"
+             title="Properties for Sale in Virudhunagar">
+            Buy Property in Virudhunagar          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Sale&Btnsrchfilter=Btnsrchfilter&distsrch=43"
+             title="Properties for Sale in sivagangai">
+            Buy Property in sivagangai          </a>        </li>
+              </ul>
+    </div>
+
+    <!-- Properties For Rent -->
+    <div class="section-block footer-section-desktop">
+      <div class="section-title">Properties For Rent</div>
+      <ul class="footer-links-list">
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=1"
+             title="Properties for Rent in Thanjavur">
+            Rent Property in Thanjavur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=2"
+             title="Properties for Rent in Ariyalur">
+            Rent Property in Ariyalur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=3"
+             title="Properties for Rent in Chennai">
+            Rent Property in Chennai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=4"
+             title="Properties for Rent in Coimbatore">
+            Rent Property in Coimbatore          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=5"
+             title="Properties for Rent in Cuddalore">
+            Rent Property in Cuddalore          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=6"
+             title="Properties for Rent in Dharmapuri">
+            Rent Property in Dharmapuri          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=7"
+             title="Properties for Rent in Dindigul">
+            Rent Property in Dindigul          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=8"
+             title="Properties for Rent in Erode">
+            Rent Property in Erode          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=9"
+             title="Properties for Rent in Kancheepuram">
+            Rent Property in Kancheepuram          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=10"
+             title="Properties for Rent in Kanyakumari">
+            Rent Property in Kanyakumari          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=11"
+             title="Properties for Rent in Karur">
+            Rent Property in Karur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=12"
+             title="Properties for Rent in Krishnagiri">
+            Rent Property in Krishnagiri          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=13"
+             title="Properties for Rent in Madurai">
+            Rent Property in Madurai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=14"
+             title="Properties for Rent in Nagapattinam">
+            Rent Property in Nagapattinam          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=15"
+             title="Properties for Rent in Namakal">
+            Rent Property in Namakal          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=16"
+             title="Properties for Rent in Perambalur">
+            Rent Property in Perambalur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=17"
+             title="Properties for Rent in Pudukkottai">
+            Rent Property in Pudukkottai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=18"
+             title="Properties for Rent in Ramanathapuram">
+            Rent Property in Ramanathapuram          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=19"
+             title="Properties for Rent in Salem">
+            Rent Property in Salem          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=21"
+             title="Properties for Rent in Nilgiris">
+            Rent Property in Nilgiris          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=22"
+             title="Properties for Rent in Theni">
+            Rent Property in Theni          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=23"
+             title="Properties for Rent in Tirunelveli">
+            Rent Property in Tirunelveli          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=24"
+             title="Properties for Rent in Tirupur">
+            Rent Property in Tirupur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=25"
+             title="Properties for Rent in Tiruvallur">
+            Rent Property in Tiruvallur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=26"
+             title="Properties for Rent in Tiruvannamalai">
+            Rent Property in Tiruvannamalai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=27"
+             title="Properties for Rent in Tiruvarur">
+            Rent Property in Tiruvarur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=28"
+             title="Properties for Rent in Trichy">
+            Rent Property in Trichy          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=29"
+             title="Properties for Rent in Tuticorin">
+            Rent Property in Tuticorin          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=30"
+             title="Properties for Rent in Vellore">
+            Rent Property in Vellore          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=31"
+             title="Properties for Rent in Villupuram">
+            Rent Property in Villupuram          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=32"
+             title="Properties for Rent in Virudhunagar">
+            Rent Property in Virudhunagar          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?type=Rent&Btnsrchfilter=Btnsrchfilter&distsrch=43"
+             title="Properties for Rent in sivagangai">
+            Rent Property in sivagangai          </a>        </li>
+              </ul>
+    </div>
+
+    <!-- Residential Projects -->
+    <div class="section-block footer-section-desktop">
+      <div class="section-title">Residential Projects</div>
+      <ul class="footer-links-list">
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=1&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Thanjavur">
+            Residential Projects in Thanjavur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=2&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Ariyalur">
+            Residential Projects in Ariyalur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=3&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Chennai">
+            Residential Projects in Chennai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=4&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Coimbatore">
+            Residential Projects in Coimbatore          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=5&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Cuddalore">
+            Residential Projects in Cuddalore          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=6&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Dharmapuri">
+            Residential Projects in Dharmapuri          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=7&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Dindigul">
+            Residential Projects in Dindigul          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=8&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Erode">
+            Residential Projects in Erode          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=9&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Kancheepuram">
+            Residential Projects in Kancheepuram          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=10&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Kanyakumari">
+            Residential Projects in Kanyakumari          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=11&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Karur">
+            Residential Projects in Karur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=12&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Krishnagiri">
+            Residential Projects in Krishnagiri          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=13&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Madurai">
+            Residential Projects in Madurai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=14&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Nagapattinam">
+            Residential Projects in Nagapattinam          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=15&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Namakal">
+            Residential Projects in Namakal          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=16&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Perambalur">
+            Residential Projects in Perambalur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=17&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Pudukkottai">
+            Residential Projects in Pudukkottai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=18&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Ramanathapuram">
+            Residential Projects in Ramanathapuram          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=19&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Salem">
+            Residential Projects in Salem          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=21&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Nilgiris">
+            Residential Projects in Nilgiris          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=22&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Theni">
+            Residential Projects in Theni          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=23&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Tirunelveli">
+            Residential Projects in Tirunelveli          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=24&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Tirupur">
+            Residential Projects in Tirupur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=25&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Tiruvallur">
+            Residential Projects in Tiruvallur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=26&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Tiruvannamalai">
+            Residential Projects in Tiruvannamalai          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=27&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Tiruvarur">
+            Residential Projects in Tiruvarur          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=28&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Trichy">
+            Residential Projects in Trichy          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=29&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Tuticorin">
+            Residential Projects in Tuticorin          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=30&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Vellore">
+            Residential Projects in Vellore          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=31&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Villupuram">
+            Residential Projects in Villupuram          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=32&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in Virudhunagar">
+            Residential Projects in Virudhunagar          </a><span class="sep">/</span>        </li>
+                <li>
+          <a href="https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=43&ptypesrch=Residential+Plot+%2F+Land"
+             title="Residential Projects in sivagangai">
+            Residential Projects in sivagangai          </a>        </li>
+              </ul>
+    </div>
+
+    <!-- Popular Properties (from TBLCKEY) -->
+    <div class="section-block">
+      <div class="section-title">Popular Properties in Tamil Nadu</div>
+      <p class="footer-desc-text">
+        Thanjaiproperty.com is India's premium real estate portal where users can find Independent Houses / Villas,
+        Apartments/Flats and Plots for sale and rent in 400+ cities across India. Thanjai property helps the property
+        seeker to find Resale properties, Residential Projects and Owner properties in Thanjavur, Chennai, Madurai,
+        Trichy and other cities. Thanjai property provides complete details of Project launches, under construction
+        projects and ready-to-move projects with detailed description of locality, builder, price trends and features.
+      </p>
+    </div>
+
+    <!-- Footer description -->
+
+  </div>
+</div>
+
+<!-- ========== DARK FOOTER (DB-powered) ========== -->
+<footer class="dark-footer" style="padding:50px;">
+  <div class="dark-footer-grid">
+
+    <!-- About -->
+    <div class="dark-footer-col">
+      <h3>About Thanjai property</h3>
+      <a href="https://www.thanjaiproperty.com/about">
+        <p>Thanjai property Real Estate Land Promoters and Constructions in Thanjavur to buy sale and house land plot commercial industrial apartment</p>
+      </a>
+      
+
+    <p style="margin-top:12px;">
+  <span style="color:#fff;font-weight:700;">
+  <a href="https://statcounter.com/p12085651/summary/daily-pvn-last6months/?account_id=7287753&login_id=5&code=86100789cb77b82739c83e4722c821ac&guest_login=1" target="_blank">
+   Visitors Count: 38,187  </a></span>
+</p>
+    </div>
+
+    <!-- Contact — from DB -->
+    <div class="dark-footer-col">
+      <h3>Our Office</h3>
+      <p style="color:#F8E81C;font-weight:bold;">THANJAI PROPERTY</p>
+      <p style="margin-top:8px;">
+        Flat No B1, 2nd Floor, Sivasakthi Apartment,<br />
+Raja Nagar, Behind HDFC Bank, Near New Bus Stand, <br />
+Thanjavur - 613005      </p>
+    </div>
+
+    <!-- Useful Links -->
+    <div class="dark-footer-col">
+      <h3>Overview</h3>
+      <ul>
+        <li><a href="https://www.thanjaiproperty.com/about">About Us</a></li>
+        <li><a href="https://www.thanjaiproperty.com/contact">Contact</a></li>
+        <li><a href="https://www.thanjaiproperty.com/privacy-policy">Privacy Policy</a></li>
+        <li><a href="https://www.thanjaiproperty.com/termofuse">Terms of use</a></li>
+        <li><a href="https://www.thanjaiproperty.com/faq">FAQ</a></li>
+        <li><a href="https://www.thanjaiproperty.com/blog">Blog</a></li>
+      </ul>
+    </div>
+
+    <!-- Social Media — from DB -->
+    <div class="dark-footer-col">
+      <h3>Our Social Media</h3>
+      <ul>
+                <li><a href="https://www.facebook.com/profile.php?id=100063582174179" target="_blank"><i class="fab fa-facebook-f" style="width:20px;"></i> Facebook</a></li>
+        
+                <li><a href="https://twitter.com/thanjaiproperty" target="_blank"><i class="fab fa-twitter" style="width:20px;"></i> Twitter</a></li>
+        
+                <li><a href="https://goo.gl/maps/R5qPCKadFu3UxLg87" target="_blank"><i class="fab fa-google-plus-g" style="width:20px;"></i> Google Plus</a></li>
+        
+                <li><a href="https://www.youtube.com/channel/UCfAePuCC2OaNrgVT8Ix5xww?view_as=subscriber" target="_blank"><i class="fab fa-youtube" style="width:20px;"></i> Youtube</a></li>
+        
+        
+        
+                <li><a href="https://www.linkedin.com/in/thanjai-property-9812422b/" target="_blank"><i class="fab fa-linkedin-in" style="width:20px;"></i> Linkedin</a></li>
+        
+        
+              </ul>
+    </div>
+
+  </div>
+</footer>
+
+<!-- ========== COPYRIGHT BAR ========== -->
+<div class="copyright-bar" style="padding-left:50px;">
+  <div class="bar-container">
+    <div class="bottom-nav">
+      <a href="https://www.thanjaiproperty.com/index">Home</a>
+      <a href="https://www.thanjaiproperty.com/register"
+         >Post Property</a>
+      <a href="https://www.thanjaiproperty.com/advanced-search">Search Property</a>
+      <a href="https://www.thanjaiproperty.com/blog">Latest Blog</a>
+      <a href="https://www.thanjaiproperty.com/contact">Contact Us</a>
+    </div>
+    <div>
+      All Rights Reserved. © Copyright 2026 ThanjaiProperty.com    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<script>
+
+var selectedDistId    = '';
+var selectedProp      = '';
+var selectedBudgetMin = '';
+var selectedBudgetMax = '';
+
+var budgetMap = {
+    '₹ 5L – 10L':    { min: 500000,   max: 1000000  },
+    '₹ 10L – 20L':   { min: 1000000,  max: 2000000  },
+    '₹ 20L – 50L':   { min: 2000000,  max: 5000000  },
+    '₹ 50L – 1 Cr':  { min: 5000000,  max: 10000000 },
+    '₹ 1 Cr – 2 Cr': { min: 10000000, max: 20000000 },
+    '₹ 2 Cr – 5 Cr': { min: 20000000, max: 50000000 },
+    '₹ 5 Cr+':       { min: 50000000, max: ''        }  // no upper limit
+};
+
+
+
+  // ===========================
+  // 1. DISTRICTS (Desktop nav)
+  // ===========================
+ var tamilNaduDistricts = [{"id":2,"name":"Ariyalur"},{"id":3,"name":"Chennai"},{"id":4,"name":"Coimbatore"},{"id":5,"name":"Cuddalore"},{"id":6,"name":"Dharmapuri"},{"id":7,"name":"Dindigul"},{"id":8,"name":"Erode"},{"id":9,"name":"Kancheepuram"},{"id":10,"name":"Kanyakumari"},{"id":11,"name":"Karur"},{"id":12,"name":"Krishnagiri"},{"id":13,"name":"Madurai"},{"id":14,"name":"Nagapattinam"},{"id":15,"name":"Namakal"},{"id":21,"name":"Nilgiris"},{"id":16,"name":"Perambalur"},{"id":17,"name":"Pudukkottai"},{"id":18,"name":"Ramanathapuram"},{"id":19,"name":"Salem"},{"id":43,"name":"sivagangai"},{"id":1,"name":"Thanjavur"},{"id":22,"name":"Theni"},{"id":23,"name":"Tirunelveli"},{"id":24,"name":"Tirupur"},{"id":25,"name":"Tiruvallur"},{"id":26,"name":"Tiruvannamalai"},{"id":27,"name":"Tiruvarur"},{"id":28,"name":"Trichy"},{"id":29,"name":"Tuticorin"},{"id":30,"name":"Vellore"},{"id":31,"name":"Villupuram"},{"id":32,"name":"Virudhunagar"}];
+
+ function renderDistricts(list) {
+  document.querySelectorAll('#districtGrid').forEach(function(grid) {
+    var allCitiesHtml = '<div class="district-item all-cities-item" onclick="selectAllCities()">'
+                       + '<span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:4px;">public</span>'
+                       + 'View All Cities</div>';
+    grid.innerHTML = list.map(function(d) {
+      return '<div class="district-item" onclick="selectDistrict(\''+d.id+'\',\''+d.name+'\')">'+d.name+'</div>';
+    }).join('') + allCitiesHtml;
+  });
+}
+
+function selectAllCities() {
+  document.getElementById('selectedCity').textContent = 'All Cities';
+  window.location.href = 'https://www.thanjaiproperty.com/listing-gird-view';
+}
+  function filterDistricts(query) {
+    renderDistricts(tamilNaduDistricts.filter(function(d) {
+      return d.name.toLowerCase().includes(query.toLowerCase());
+    }));
+  }
+
+  function selectDistrict(id, name) {
+    document.getElementById('selectedCity').textContent = name;
+    window.location.href = 'https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter&distsrch=' + id;
+  }
+
+  renderDistricts(tamilNaduDistricts);
+
+  // ===========================
+  // 2. MOBILE DISTRICT DROPDOWN
+  // ===========================
+  var loc_btn       = document.getElementById('loc_districtBtn');
+  var loc_dropdown  = document.getElementById('loc_districtDropdown');
+  var loc_input     = document.getElementById('loc_searchInput');
+  var loc_items     = document.querySelectorAll('.loc_district-item');
+  var loc_emptyMsg  = document.getElementById('loc_noResult');
+  var loc_container = document.getElementById('loc_listContainer');
+  var loc_arrow     = document.getElementById('loc_districtArrow');
+
+  function loc_openDropdown() {
+    loc_dropdown.style.display = "block";
+    loc_arrow.style.transform = "rotate(180deg)";
+    if(loc_input){ loc_input.value = ""; loc_filterList(); setTimeout(function(){loc_input.focus();},100); }
+  }
+  function loc_closeDropdown() {
+    loc_dropdown.style.display = "none";
+    loc_arrow.style.transform = "rotate(0deg)";
+  }
+  function loc_filterList() {
+    if(!loc_input) return;
+    var filter = loc_input.value.toLowerCase().trim();
+    var hasMatch = false;
+    loc_items.forEach(function(item) {
+      var show = item.textContent.toLowerCase().includes(filter);
+      item.style.display = show ? "block" : "none";
+      if(show) hasMatch = true;
+    });
+    loc_emptyMsg.style.display  = hasMatch ? "none"  : "block";
+    loc_container.style.display = hasMatch ? "block" : "none";
+  }
+  if(loc_btn) loc_btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    loc_dropdown.style.display === "block" ? loc_closeDropdown() : loc_openDropdown();
+  });
+  if(loc_input)    loc_input.addEventListener('input', loc_filterList);
+  if(loc_dropdown) loc_dropdown.addEventListener('click', function(e){ e.stopPropagation(); });
+
+  // ===========================
+  // 3. SEARCH PANEL
+  // ===========================
+  var selectedDistId = '0';
+
+  function togglePanel(id, event) {
+    if(event) event.stopPropagation();
+    var target = document.getElementById(id);
+    var isOpen = target.classList.contains('open');
+    document.querySelectorAll('.overlay-panel').forEach(function(p){ p.classList.remove('open'); });
+    if(!isOpen) target.classList.add('open');
+  }
+
+  function pickCity(id, name, el, panelId) {
+    selectedDistId = id;
+    document.getElementById('sel-city').textContent = name;
+    document.getElementById(panelId).classList.remove('open');
+  }
+
+  function pick(targetId, el, panelId) {
+    // Use data-value if present, otherwise fall back to text content
+    selectedProp = el.dataset.value || el.textContent.trim();
+    document.getElementById(targetId).textContent = el.textContent.trim(); // label shown to user
+    document.getElementById(panelId).classList.remove('open');
+    el.parentElement.querySelectorAll('.item-row').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+  function setBudgetRange(range, el) {
+    document.getElementById('sel-budget').innerText = range;
+    document.querySelectorAll('#panel-budget .item-row').forEach(function(item) {
+        item.classList.remove('active');
+    });
+    el.classList.add('active');
+    document.getElementById('panel-budget').classList.remove('open');
+
+    // ✅ This part was missing — set the min/max values
+    var budget = budgetMap[range];
+    if (budget) {
+        selectedBudgetMin = budget.min;
+        selectedBudgetMax = budget.max;
+    }
+}
+
+  function filterList(input, listId) {
+    var q = input.value.toLowerCase();
+    document.querySelectorAll('#'+listId+' .item-row').forEach(function(r){
+      r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  }
+
+  function doSearch() {
+    var url = 'https://www.thanjaiproperty.com/listing-gird-view?Btnsrchfilter=Btnsrchfilter';
+
+    // City / District
+    if (selectedDistId) url += '&distsrch=' + selectedDistId;
+
+    // Property Type
+    if (selectedProp) url += '&ptypesrch=' + encodeURIComponent(selectedProp);
+
+    // Budget
+    if (selectedBudgetMin !== '') url += '&budgetmin=' + selectedBudgetMin;
+    if (selectedBudgetMax !== '') url += '&budgetmax=' + selectedBudgetMax;
+
+    window.location.href = url;
+}
+
+  document.addEventListener('click', function(e) {
+    if(!e.target.closest('#searchPanel')) {
+      document.querySelectorAll('.overlay-panel').forEach(function(p){ p.classList.remove('open'); });
+    }
+    loc_closeDropdown();
+  });
+  document.querySelectorAll('.overlay-panel').forEach(function(panel){
+    panel.addEventListener('click', function(e){ e.stopPropagation(); });
+  });
+
+  // ===========================
+  // 4. SWIPER INIT
+  // ===========================
+  const exclusiveSwiper = new Swiper('#exclusiveSwiper', {
+    slidesPerView: 1, spaceBetween: 20, loop: true,
+    breakpoints: { 480:{slidesPerView:1}, 640:{slidesPerView:2}, 1024:{slidesPerView:3}, 1280:{slidesPerView:3} }
+  });
+var exclusiveNextBtn = document.getElementById('exclusiveNext');
+var exclusivePrevBtn = document.getElementById('exclusivePrev');
+if (exclusiveNextBtn) exclusiveNextBtn.addEventListener('click', function(e){ e.stopPropagation(); exclusiveSwiper.slideNext(); });
+if (exclusivePrevBtn) exclusivePrevBtn.addEventListener('click', function(e){ e.stopPropagation(); exclusiveSwiper.slidePrev(); });
+
+  if (document.getElementById('blogSwiper')) {
+  new Swiper('#blogSwiper', {
+    slidesPerView:1, spaceBetween:20, loop:true,
+    autoplay:{delay:5000,disableOnInteraction:false},
+    navigation:{nextEl:'#blogNext',prevEl:'#blogPrev'},
+    breakpoints:{480:{slidesPerView:1},640:{slidesPerView:2},1024:{slidesPerView:3},1280:{slidesPerView:3}}
+  });
+}
+
+if (document.querySelector('.locality-swiper')) {
+  new Swiper('.locality-swiper', {
+    slidesPerView:1, spaceBetween:24, loop:true,
+    autoplay:{delay:4000,disableOnInteraction:false},
+    navigation:{nextEl:'.swiper-btn-next-locality',prevEl:'.swiper-btn-prev-locality'},
+    breakpoints:{480:{slidesPerView:1},640:{slidesPerView:2},1024:{slidesPerView:3},1280:{slidesPerView:3}}
+  });
+}
+
+  // ===========================
+  // 5. MOBILE DRAWER
+  // ===========================
+  var menuBtn  = document.getElementById('menuToggleBtn');
+  var closeBtn = document.getElementById('closeDrawerBtn');
+  var overlay  = document.getElementById('mobileOverlay');
+  var drawer   = document.getElementById('mobileDrawer');
+  if(menuBtn)  menuBtn.addEventListener('click',  function(){ overlay.classList.add('open');    drawer.classList.add('open');    document.body.classList.add('drawer-open'); });
+  if(closeBtn) closeBtn.addEventListener('click', function(){ overlay.classList.remove('open'); drawer.classList.remove('open'); document.body.classList.remove('drawer-open'); });
+  if(overlay)  overlay.addEventListener('click',  function(){ overlay.classList.remove('open'); drawer.classList.remove('open'); document.body.classList.remove('drawer-open'); });
+
+  // ===========================
+  // 6. FAQ
+  // ===========================
+  var faqItems = document.querySelectorAll('.faq-item');
+  faqItems.forEach(function(item){
+    var q = item.querySelector('.faq-question');
+    if(q) q.addEventListener('click', function(){
+      var isActive = item.classList.contains('active');
+      faqItems.forEach(function(i){ i.classList.remove('active'); });
+      if(!isActive) item.classList.add('active');
+    });
+  });
+  if(faqItems.length) faqItems[0].classList.add('active');
+
+  // ===========================
+  // 7. NAV SCROLL
+  // ===========================
+  var nav = document.querySelector('nav');
+  window.addEventListener('scroll', function(){
+    nav.style.background = window.scrollY > 50 ? 'rgba(255,240,235,0.95)' : 'rgba(255,240,235,0.8)';
+  });
+
+</script>
+
+</body>
+</html>

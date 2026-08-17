@@ -1,6 +1,10 @@
 import { LOCATIONS } from '../data/locations.js';
+import { getSiteImage } from '../utils/siteImagesStore.js';
 
 export function renderOurStoryView(onNavigateToDiscover) {
+  const founderImg = getSiteImage('leader_founder');
+  const partnerImg = getSiteImage('leader_partner');
+
   return `
     <div class="page-view view-enter story-page">
       
@@ -72,6 +76,92 @@ export function renderOurStoryView(onNavigateToDiscover) {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- 2.5 FOUNDER & PARTNER EXECUTIVE LEADERSHIP SECTION -->
+      <section style="padding: 90px 0; background: #2A1808; color: #ffffff; position: relative; overflow: hidden;">
+        <div style="position: absolute; inset: 0; opacity: 0.1; background-image: radial-gradient(#eb5e28 1px, transparent 1px); background-size: 24px 24px;"></div>
+        <div class="container" style="position: relative; z-index: 2;">
+          
+          <div style="text-align: center; max-width: 760px; margin: 0 auto 60px auto;">
+            <span class="eyebrow" style="color: var(--color-orange, #eb5e28); font-weight: 800; letter-spacing: 0.15em; font-size: 0.8rem; text-transform: uppercase;">
+              EXECUTIVE LEADERSHIP & VISION
+            </span>
+            <h2 style="font-family: var(--font-serif, 'DM Serif Display', serif); font-size: clamp(2.2rem, 4vw, 3.2rem); margin-top: 12px; color: #ffffff;">
+              Meet Our Leadership
+            </h2>
+            <p style="color: rgba(255,255,255,0.85); font-size: 1.05rem; margin-top: 14px; line-height: 1.6;">
+              Driven by over 15+ years of real estate integrity, legal Patta title assurance, and client-first dedication across Tamil Nadu.
+            </p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 36px;">
+            
+            <!-- MANAGING DIRECTOR CARD -->
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 28px; backdrop-filter: blur(12px); box-shadow: 0 16px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <!-- Spacious Photo Frame -->
+                <div style="width: 100%; height: 260px; border-radius: 16px; overflow: hidden; margin-bottom: 20px; background: rgba(0,0,0,0.4); border: 1px solid rgba(235,94,40,0.3); position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+                  <img src="${founderImg}" alt="S. Vijayaraghavan" style="width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block;" onerror="this.src='https://ui-avatars.com/api/?name=S+Vijayaraghavan&background=eb5e28&color=ffffff&size=256'" />
+                  <span style="position: absolute; bottom: 12px; left: 12px; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); color: #eb5e28; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid rgba(235,94,40,0.4);">
+                    MANAGING DIRECTOR
+                  </span>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                  <h3 style="font-family: var(--font-serif); font-size: 1.7rem; font-weight: 700; color: #ffffff; line-height: 1.2;">S. Vijayaraghavan</h3>
+                  <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 4px; font-weight: 600;">Managing Director & Chief Promoter</p>
+                </div>
+
+                <div style="font-size: 0.92rem; color: rgba(255,255,255,0.85); line-height: 1.65; margin-bottom: 24px; font-style: italic; border-left: 3px solid #eb5e28; padding-left: 14px;">
+                  "Pioneered Thanjai Property in 2009 with an uncompromising vision to bring 100% legal Patta title verification and land security to every home buyer and investor across Tamil Nadu."
+                </div>
+              </div>
+
+              <div style="padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 12px; flex-wrap: wrap;">
+                <a href="tel:+919578311506" style="flex: 1; background: #eb5e28; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <i class="ri-phone-line"></i> +91 95783 11506
+                </a>
+                <a href="mailto:vijayaraghavan@thanjaiproperty.com" style="flex: 1; background: rgba(255,255,255,0.12); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <i class="ri-mail-line"></i> Direct Email
+                </a>
+              </div>
+            </div>
+
+            <!-- CO-PARTNER CARD -->
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 28px; backdrop-filter: blur(12px); box-shadow: 0 16px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: space-between;">
+              <div>
+                <!-- Spacious Photo Frame -->
+                <div style="width: 100%; height: 260px; border-radius: 16px; overflow: hidden; margin-bottom: 20px; background: rgba(0,0,0,0.4); border: 1px solid rgba(56,161,105,0.3); position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+                  <img src="${partnerImg}" alt="Radhakrishnan" style="width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block;" onerror="this.src='https://ui-avatars.com/api/?name=Radhakrishnan&background=38a169&color=ffffff&size=256'" />
+                  <span style="position: absolute; bottom: 12px; left: 12px; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); color: #38a169; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid rgba(56,161,105,0.4);">
+                    CO-PARTNER
+                  </span>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                  <h3 style="font-family: var(--font-serif); font-size: 1.7rem; font-weight: 700; color: #ffffff; line-height: 1.2;">Radhakrishnan</h3>
+                  <p style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-top: 4px; font-weight: 600;">Co-Partner & Legal Specialist</p>
+                </div>
+
+                <div style="font-size: 0.92rem; color: rgba(255,255,255,0.85); line-height: 1.65; margin-bottom: 24px; font-style: italic; border-left: 3px solid #38a169; padding-left: 14px;">
+                  "Co-partner overseeing revenue record verification, DTCP/RERA approvals, field survey coordination, and customer partnership growth across Tamil Nadu's 32 districts."
+                </div>
+              </div>
+
+              <div style="padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 12px; flex-wrap: wrap;">
+                <a href="tel:+919585777772" style="flex: 1; background: rgba(255,255,255,0.15); color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <i class="ri-phone-line"></i> +91 95857 77772
+                </a>
+                <a href="https://wa.me/919585777772" target="_blank" style="flex: 1; background: #25D366; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                  <i class="ri-whatsapp-line"></i> WhatsApp
+                </a>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </section>
 

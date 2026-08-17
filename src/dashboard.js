@@ -1,4 +1,4 @@
-import { renderDashboardView } from './crm-views/DashboardView.js';
+import { renderDashboardView, initDashboardListeners } from './crm-views/DashboardView.js';
 import { renderLeadsView, initLeadsView } from './crm-views/LeadsView.js';
 import { renderPropertiesView, initPropertiesListeners } from './crm-views/PropertiesView.js';
 import { renderSiteVisitsView, initSiteVisitsView } from './crm-views/SiteVisitsView.js';
@@ -9,6 +9,7 @@ import { renderWhatsAppLogView } from './crm-views/WhatsAppLogView.js';
 import { renderWebsiteImagesView, initWebsiteImagesListeners } from './crm-views/WebsiteImagesView.js';
 import { renderAuditLogView, initAuditLogListeners } from './crm-views/AuditLogView.js';
 import { renderLeadDetailView, initLeadDetailView } from './crm-views/LeadDetailView.js';
+import { renderBlogCMSView, initBlogCMSListeners } from './crm-views/BlogCMSView.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const contentArea = document.getElementById('os-content');
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     switch (viewName) {
       case 'dashboard':
         html = renderDashboardView();
+        afterRender = initDashboardListeners;
         break;
       case 'leads':
         html = renderLeadsView();
@@ -51,6 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
       case 'whatsapp':
         html = renderWhatsAppLogView();
+        break;
+      case 'blog-cms':
+      case 'blogs':
+        html = renderBlogCMSView();
+        afterRender = initBlogCMSListeners;
         break;
       case 'images':
         html = renderWebsiteImagesView();

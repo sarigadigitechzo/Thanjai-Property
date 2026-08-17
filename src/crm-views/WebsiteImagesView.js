@@ -67,6 +67,7 @@ export function renderWebsiteImagesView() {
         <div class="category-tabs-row" id="img-category-tabs" style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button class="img-tab-btn active" data-category="all">All Images (${imageList.length})</button>
           <button class="img-tab-btn" data-category="Banners & Hero">Main Banners</button>
+          <button class="img-tab-btn" data-category="Leadership & Team">Leadership & Team</button>
           <button class="img-tab-btn" data-category="Regional Destinations">Destinations</button>
           <button class="img-tab-btn" data-category="Property Types">Property Types</button>
           <button class="img-tab-btn" data-category="Brand Assets">Brand Assets</button>

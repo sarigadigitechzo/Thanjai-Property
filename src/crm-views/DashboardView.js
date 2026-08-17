@@ -1,4 +1,8 @@
+import { getProperties } from '../utils/propertiesStore.js';
+
 export function renderDashboardView() {
+  const activePropertiesCount = getProperties().length;
+
   return `
     <div class="view-enter">
       <!-- Luxury Hero -->
@@ -20,42 +24,86 @@ export function renderDashboardView() {
         </div>
       </div>
 
-      <!-- KPI Grid -->
+      <!-- 8 KPI Grid (2x4) Matching Reference Design -->
       <div class="kpi-grid">
-        <div class="kpi-card">
+        <!-- 1. TOTAL LEADS -->
+        <div class="kpi-card clickable-kpi" data-route="#leads" title="Open CRM Pipeline">
           <div class="kpi-header">
-            <span class="kpi-title">Total Leads</span>
-            <div class="kpi-icon" style="background: rgba(247, 147, 26, 0.1); color: var(--os-luxury-orange);"><i class="ri-group-line"></i></div>
+            <span class="kpi-title">TOTAL LEADS</span>
+            <div class="kpi-icon" style="background: #ebf8ff; color: #3182ce;"><i class="ri-user-line"></i></div>
           </div>
-          <div class="kpi-value">18</div>
+          <div class="kpi-value count-up">18</div>
           <div class="kpi-trend up"><i class="ri-arrow-up-line"></i> 12% this week</div>
         </div>
-        
-        <div class="kpi-card">
+
+        <!-- 2. NEW TODAY -->
+        <div class="kpi-card clickable-kpi" data-route="#leads" title="Open CRM Pipeline">
           <div class="kpi-header">
-            <span class="kpi-title">Follow Ups</span>
-            <div class="kpi-icon" style="background: rgba(216, 58, 46, 0.1); color: var(--os-rich-red);"><i class="ri-calendar-todo-line"></i></div>
+            <span class="kpi-title">NEW TODAY</span>
+            <div class="kpi-icon" style="background: #e6fffa; color: #319795;"><i class="ri-sparkling-fill"></i></div>
           </div>
-          <div class="kpi-value">11</div>
-          <div class="kpi-trend neutral"><i class="ri-subtract-line"></i> Due today</div>
+          <div class="kpi-value count-up">0</div>
+          <div class="kpi-trend neutral"><i class="ri-subtract-line"></i> Just arrived</div>
         </div>
 
-        <div class="kpi-card">
+        <!-- 3. FOLLOW-UPS DUE -->
+        <div class="kpi-card clickable-kpi" data-route="#visits" title="Open Site Visits & Appointments">
           <div class="kpi-header">
-            <span class="kpi-title">Conversion</span>
-            <div class="kpi-icon" style="background: rgba(22, 163, 74, 0.1); color: #16A34A;"><i class="ri-line-chart-line"></i></div>
+            <span class="kpi-title">FOLLOW-UPS DUE</span>
+            <div class="kpi-icon" style="background: #feebc8; color: #dd6b20;"><i class="ri-calendar-event-line"></i></div>
+          </div>
+          <div class="kpi-value count-up">11</div>
+          <div class="kpi-trend neutral"><i class="ri-time-line"></i> today</div>
+        </div>
+
+        <!-- 4. CONVERSION RATE -->
+        <div class="kpi-card clickable-kpi" data-route="#reports" title="Open Reports & Analytics">
+          <div class="kpi-header">
+            <span class="kpi-title">CONVERSION RATE</span>
+            <div class="kpi-icon" style="background: #faf5ff; color: #805ad5;"><i class="ri-pie-chart-line"></i></div>
           </div>
           <div class="kpi-value">11.1%</div>
           <div class="kpi-trend up"><i class="ri-arrow-up-line"></i> 2.4% vs last mo</div>
         </div>
 
-        <div class="kpi-card">
+        <!-- 5. PROPERTIES AVAILABLE -->
+        <div class="kpi-card clickable-kpi" data-route="#properties" title="Open Properties Inventory">
           <div class="kpi-header">
-            <span class="kpi-title">Shared Leads</span>
-            <div class="kpi-icon" style="background: rgba(42, 24, 8, 0.05); color: var(--os-deep-brown);"><i class="ri-briefcase-4-line"></i></div>
+            <span class="kpi-title">PROPERTIES AVAILABLE</span>
+            <div class="kpi-icon" style="background: #e6fffa; color: #00a3c4;"><i class="ri-building-line"></i></div>
           </div>
-          <div class="kpi-value">8</div>
-          <div class="kpi-trend neutral"><i class="ri-subtract-line"></i> Partner network</div>
+          <div class="kpi-value count-up">${activePropertiesCount}</div>
+          <div class="kpi-trend up"><i class="ri-checkbox-circle-line"></i> Active inventory</div>
+        </div>
+
+        <!-- 6. SHARED TODAY -->
+        <div class="kpi-card clickable-kpi" data-route="#whatsapp" title="Open WhatsApp Log">
+          <div class="kpi-header">
+            <span class="kpi-title">SHARED TODAY</span>
+            <div class="kpi-icon" style="background: #ebf8ff; color: #4299e1;"><i class="ri-send-plane-line"></i></div>
+          </div>
+          <div class="kpi-value count-up">1</div>
+          <div class="kpi-trend neutral"><i class="ri-whatsapp-line"></i> via WhatsApp</div>
+        </div>
+
+        <!-- 7. WHATSAPP SENT TODAY -->
+        <div class="kpi-card clickable-kpi" data-route="#whatsapp" title="Open WhatsApp Log">
+          <div class="kpi-header">
+            <span class="kpi-title">WHATSAPP SENT TODAY</span>
+            <div class="kpi-icon" style="background: #f0fff4; color: #38a169;"><i class="ri-whatsapp-line"></i></div>
+          </div>
+          <div class="kpi-value count-up">2</div>
+          <div class="kpi-trend neutral"><i class="ri-chat-3-line"></i> Client logs</div>
+        </div>
+
+        <!-- 8. PARTNER-SHARED LEADS -->
+        <div class="kpi-card clickable-kpi" data-route="#partners" title="Open Partner Network">
+          <div class="kpi-header">
+            <span class="kpi-title">PARTNER-SHARED LEADS</span>
+            <div class="kpi-icon" style="background: #fff5f5; color: #d53f8c;"><i class="ri-briefcase-4-line"></i></div>
+          </div>
+          <div class="kpi-value count-up">8</div>
+          <div class="kpi-trend neutral"><i class="ri-user-shared-line"></i> Partner network</div>
         </div>
       </div>
 
@@ -255,4 +303,16 @@ export function renderDashboardView() {
       </script>
     </div>
   `;
+}
+
+export function initDashboardListeners() {
+  document.querySelectorAll('.clickable-kpi').forEach(card => {
+    card.addEventListener('click', (e) => {
+      e.preventDefault();
+      const route = card.dataset.route;
+      if (route) {
+        window.location.hash = route;
+      }
+    });
+  });
 }
