@@ -23,8 +23,8 @@ export function renderUsersView() {
         </div>
 
         <div style="display: flex; gap: 12px;">
-          <a href="/login.html#register" target="_blank" class="os-btn primary-btn" style="text-decoration: none;">
-            <i class="ri-user-add-line"></i> Register New User
+          <a href="/login.html#register" target="_blank" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 4px; border: 1px solid #805ad5; background: #faf5ff; color: #805ad5; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-decoration: none;">
+            <i class="ri-user-add-line" style="font-size: 1.1rem;"></i> Register New User
           </a>
         </div>
       </div>
@@ -70,13 +70,18 @@ export function renderUsersView() {
 
       <!-- MAIN USERS DIRECTORY TABLE -->
       <div class="os-chart-card">
-        <div class="os-chart-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-          <span><i class="ri-user-shared-line"></i> Registered Portal Users Directory</span>
+        <div class="os-chart-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <span><i class="ri-user-shared-line"></i> Registered Portal Users Directory</span>
+          </div>
           
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <input type="text" id="user-search-input" placeholder="Search by name, email, phone..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid var(--os-border); font-size: 0.85rem; outline: none; width: 240px;" />
+          <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+            <div style="position: relative;">
+              <i class="ri-search-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--os-gray-400);"></i>
+              <input type="text" id="user-search-input" placeholder="Search by name, email, phone..." style="padding: 8px 14px 8px 36px; border-radius: 8px; border: 1px solid var(--os-border); font-size: 0.85rem; outline: none; width: 240px; background: #fff;" />
+            </div>
             
-            <select id="user-role-filter" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--os-border); font-size: 0.85rem; outline: none;">
+            <select id="user-role-filter" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--os-border); background: #fff; font-size: 0.85rem; font-weight: 600; color: var(--os-charcoal); outline: none; cursor: pointer;">
               <option value="all">All Roles</option>
               <option value="Individual">Individual</option>
               <option value="Agent">Agent</option>
@@ -135,7 +140,7 @@ function renderUsersRows(users, allProperties) {
           </a>
         </td>
         <td style="padding: 14px 16px;">
-          <span style="background: rgba(49,130,206,0.12); color: #3182ce; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem;">
+          <span style="background: rgba(49,130,206,0.12); color: #3182ce; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; display: inline-block; white-space: nowrap;">
             ${u.role}
           </span>
         </td>
@@ -148,8 +153,8 @@ function renderUsersRows(users, allProperties) {
           </span>
         </td>
         <td style="padding: 14px 16px;">
-          <button class="os-btn secondary-btn view-user-props-btn" data-user-name="${u.fullName}" data-user-email="${u.email}" style="padding: 6px 12px; font-size: 0.8rem;">
-            <i class="ri-stack-line"></i> View Props
+          <button class="view-user-props-btn" data-user-name="${u.fullName}" data-user-email="${u.email}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 0.82rem; font-weight: 600; color: #4a5568; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" onmouseover="this.style.borderColor='#cbd5e0'; this.style.backgroundColor='#f7fafc';" onmouseout="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='#fff';">
+            <i class="ri-eye-line" style="color: #a0aec0;"></i> View Properties
           </button>
         </td>
       </tr>
