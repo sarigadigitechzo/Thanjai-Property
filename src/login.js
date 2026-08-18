@@ -12,7 +12,7 @@ export function renderLogin(initialMode = 'signin') {
         <div class="login-left-panel">
           <div class="login-left-content">
             <div class="login-brand-area">
-              <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" class="login-brand-logo" />
+              <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 0; letter-spacing: 1px;">Thanjai<span style="color: #eb5e28;">Property</span></h2>
             </div>
 
             <div class="login-left-illustration">
@@ -34,9 +34,6 @@ export function renderLogin(initialMode = 'signin') {
 
         <!-- RIGHT FORM PANEL -->
         <div class="login-right-panel">
-          <a href="/" class="back-home-link">
-            <i class="ri-arrow-left-line"></i> Back to Home
-          </a>
 
           <!-- SIGN IN FORM MODE -->
           <div class="auth-mode-container ${initialMode === 'signin' ? 'active-mode' : ''}" id="mode-signin">
@@ -134,9 +131,11 @@ export function renderLogin(initialMode = 'signin') {
                   <i class="ri-user-shared-line field-icon"></i>
                   <select id="reg-role" name="role" required class="auth-select">
                     <option value="">-- Select your role --</option>
-                    <option value="individual" data-label="Individual">Individual</option>
-                    <option value="agent" data-label="Agent">Agent</option>
-                    <option value="builder" data-label="Builder">Builder</option>
+                    <option value="superadmin" data-label="Super Admin">Super Admin</option>
+                    <option value="salesmanager" data-label="Sales Manager">Sales Manager</option>
+                    <option value="salesexecutive" data-label="Sales Executive">Sales Executive</option>
+                    <option value="propertystaff" data-label="Property Staff">Property Staff</option>
+                    <option value="partneruser" data-label="Partner User">Partner User</option>
                   </select>
                 </div>
               </div>
