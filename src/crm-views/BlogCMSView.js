@@ -24,19 +24,41 @@ export function renderBlogCMSView() {
 
   return `
     <div class="view-enter blog-cms-view">
+      <style>
+        .blog-filter-btn {
+          padding: 6px 14px;
+          border-radius: 20px;
+          border: 1px solid #e2e8f0;
+          background: #fff;
+          color: #4a5568;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .blog-filter-btn:hover {
+          background: #f7fafc;
+          border-color: #cbd5e0;
+        }
+        .blog-filter-btn.active {
+          background: #2d3748;
+          color: #fff;
+          border-color: #2d3748;
+        }
+      </style>
       <!-- Top Header -->
-      <div class="view-header-flex" style="margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-            <span class="badge badge-orange" style="font-size: 0.75rem; letter-spacing: 0.05em;">
-              <i class="ri-article-line"></i> CONTENT MANAGEMENT SYSTEM
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--os-luxury-orange); letter-spacing: 1px; text-transform: uppercase;">
+              <i class="ri-article-line" style="margin-right: 4px;"></i> CONTENT MANAGEMENT SYSTEM
             </span>
           </div>
-          <h1 class="view-title">Blog Posts & Publishing CMS</h1>
-          <p class="view-subtitle">Write, edit, and manage articles, legal Patta guides, and market perspectives for the public website.</p>
+          <h1 class="view-title" style="margin: 4px 0;">Blog Posts & Publishing CMS</h1>
+          <p class="view-subtitle" style="margin: 0;">Write, edit, and manage articles, legal Patta guides, and market perspectives for the public website.</p>
         </div>
 
-        <div class="header-actions-right" style="gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
           <a href="/index.html#blog" target="_blank" class="os-btn-secondary" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none;">
             <i class="ri-external-link-line"></i> View Live Journal
           </a>
@@ -80,15 +102,6 @@ export function renderBlogCMSView() {
           <i class="ri-search-line"></i>
           <input type="text" id="blog-cms-search" value="${cmsState.searchQuery}" placeholder="Search article title, category, author..." />
         </div>
-
-        <div class="category-tabs-row" id="blog-cms-tabs" style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="img-tab-btn ${cmsState.activeCategory === 'all' ? 'active' : ''}" data-category="all">All (${allPosts.length})</button>
-          <button class="img-tab-btn ${cmsState.activeCategory === 'Legal & Patta' ? 'active' : ''}" data-category="Legal & Patta">Legal & Patta</button>
-          <button class="img-tab-btn ${cmsState.activeCategory === 'Investment' ? 'active' : ''}" data-category="Investment">Investment</button>
-          <button class="img-tab-btn ${cmsState.activeCategory === 'Architecture' ? 'active' : ''}" data-category="Architecture">Architecture</button>
-          <button class="img-tab-btn ${cmsState.activeCategory === 'Market Guide' ? 'active' : ''}" data-category="Market Guide">Market Guide</button>
-          <button class="img-tab-btn ${cmsState.activeCategory === 'NRI Guide' ? 'active' : ''}" data-category="NRI Guide">NRI Guide</button>
-        </div>
       </div>
 
       <!-- Articles Data Table -->
@@ -97,7 +110,6 @@ export function renderBlogCMSView() {
           <thead>
             <tr style="background: #fdfbf7; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.78rem; text-transform: uppercase; color: #666; letter-spacing: 0.05em;">
               <th style="padding: 16px 20px;">Article Title</th>
-              <th style="padding: 16px 20px;">Category</th>
               <th style="padding: 16px 20px;">Author</th>
               <th style="padding: 16px 20px;">Date & Read Time</th>
               <th style="padding: 16px 20px; text-align: right;">Actions</th>
@@ -106,7 +118,7 @@ export function renderBlogCMSView() {
           <tbody>
             ${filteredPosts.length === 0 ? `
               <tr>
-                <td colspan="5" style="padding: 40px 20px; text-align: center; color: #888;">
+                <td colspan="4" style="padding: 40px 20px; text-align: center; color: #888;">
                   <i class="ri-draft-line" style="font-size: 2.5rem; color: #ccc; display: block; margin-bottom: 8px;"></i>
                   <p style="font-weight: 600;">No articles match your query.</p>
                 </td>
@@ -122,12 +134,7 @@ export function renderBlogCMSView() {
                     </div>
                   </div>
                 </td>
-                <td style="padding: 16px 20px;">
-                  <span class="status-pill" style="background: rgba(235, 94, 40, 0.1); color: #eb5e28; border: 1px solid rgba(235, 94, 40, 0.2); font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; font-weight: 600;">
-                    ${post.category}
-                  </span>
-                </td>
-                <td style="padding: 16px 20px;">
+                <td style="padding: 16px 20px; white-space: nowrap;">
                   <div style="display: flex; align-items: center; gap: 8px;">
                     <img src="${post.authorAvatar || 'https://ui-avatars.com/api/?name=Author'}" alt="${post.author}" style="width: 24px; height: 24px; border-radius: 50%;" />
                     <span style="font-size: 0.88rem; color: #333; font-weight: 500;">${post.author}</span>
@@ -250,8 +257,23 @@ export function initBlogCMSListeners() {
   // Search input filter
   const searchInput = document.getElementById('blog-cms-search');
   searchInput?.addEventListener('input', (e) => {
-    cmsState.searchQuery = e.target.value;
-    refreshView();
+    cmsState.searchQuery = e.target.value.toLowerCase();
+    
+    const rows = document.querySelectorAll('.blog-cms-view tbody tr');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+      // Don't filter the empty-state row if it exists
+      if (row.querySelector('td[colspan]')) return;
+      
+      const text = row.textContent.toLowerCase();
+      if (text.includes(cmsState.searchQuery)) {
+        row.style.display = 'table-row';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
   });
 
   // Category tab buttons
