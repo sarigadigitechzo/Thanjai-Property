@@ -360,6 +360,22 @@
   background-color: var(--os-luxury-orange);
   border: 1px solid rgba(0,0,0,0.1);
   box-shadow: var(--os-shadow-sm);
+  padding: 0;
+  overflow: hidden;
+}
+
+.color-swatch-box::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-swatch-box::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+.color-swatch-box::-moz-color-swatch {
+  border: none;
+  border-radius: 3px;
 }
 
 /* Utility for Tab Display */

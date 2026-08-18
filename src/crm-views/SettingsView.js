@@ -1,3 +1,6 @@
+import { getSiteImage, updateSiteImage, resetSiteImage } from '../utils/siteImagesStore.js';
+import { showToast } from '../utils/toast.js';
+
 export function renderSettingsView() {
   const templates = [
     {
@@ -165,11 +168,12 @@ export function renderSettingsView() {
             <label class="settings-label">Logo</label>
             <div class="logo-upload-area">
               <div class="logo-preview-box">
-                <img src="/public/thanjai-official-new.png" alt="Logo preview" onerror="this.style.display='none'" />
+                <img id="settings-logo-preview" src="${getSiteImage('brand_logo') || '/thanjai-official-new.png'}" alt="Logo preview" onerror="this.src='/thanjai-official-new.png'" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
               </div>
               <div class="upload-btn-group">
-                <button class="settings-btn-outline"><i class="ri-upload-cloud-2-line"></i> Upload logo</button>
-                <button class="btn-remove-link">Remove</button>
+                <button id="settings-logo-upload-btn" class="settings-btn-outline"><i class="ri-upload-cloud-2-line"></i> Upload logo</button>
+                <button id="settings-logo-remove-btn" class="btn-remove-link">Remove</button>
+                <input type="file" id="settings-logo-file-input" accept="image/*" style="display: none;" />
               </div>
             </div>
           </div>
@@ -177,8 +181,8 @@ export function renderSettingsView() {
           <div class="settings-form-group">
             <label class="settings-label">Primary color</label>
             <div class="color-picker-area">
-              <div class="color-swatch-box" style="background-color: var(--os-luxury-orange);"></div>
-              <input type="text" class="settings-input" value="Default orange" style="color: var(--os-gray-500);" />
+              <input type="color" id="settings-primary-color" class="color-swatch-box" value="#eb5e28" style="padding: 0; border: none; cursor: pointer; outline: none; -webkit-appearance: none;" />
+              <input type="text" id="settings-primary-color-text" class="settings-input" value="#eb5e28" style="color: var(--os-gray-500);" />
             </div>
           </div>
 
@@ -380,5 +384,65 @@ export function initSettingsView() {
         targetContent.classList.add('active');
       }
     });
+  });
+
+  // Logo Upload Logic
+  const uploadBtn = document.getElementById('settings-logo-upload-btn');
+  const fileInput = document.getElementById('settings-logo-file-input');
+  const removeBtn = document.getElementById('settings-logo-remove-btn');
+  const previewImg = document.getElementById('settings-logo-preview');
+
+  uploadBtn?.addEventListener('click', () => {
+    fileInput?.click();
+  });
+
+  fileInput?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const dataUrl = evt.target.result;
+        if (previewImg) previewImg.src = dataUrl;
+        updateSiteImage('brand_logo', dataUrl);
+        showToast('Logo updated successfully!', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  removeBtn?.addEventListener('click', () => {
+    resetSiteImage('brand_logo');
+    const defaultUrl = getSiteImage('brand_logo') || '/thanjai-official-new.png';
+    if (previewImg) previewImg.src = defaultUrl;
+    showToast('Logo removed and reset to default.', 'info');
+  });
+
+  // Color Picker Logic
+  const colorPicker = document.getElementById('settings-primary-color');
+  const colorText = document.getElementById('settings-primary-color-text');
+  
+  const savedColor = localStorage.getItem('thanjai_custom_color') || '#eb5e28';
+  if (colorPicker) colorPicker.value = savedColor;
+  if (colorText) colorText.value = savedColor;
+
+  function updateColor(newColor) {
+    document.documentElement.style.setProperty('--os-luxury-orange', newColor);
+    document.documentElement.style.setProperty('--color-orange', newColor);
+    document.documentElement.style.setProperty('--text-orange', newColor);
+    localStorage.setItem('thanjai_custom_color', newColor);
+  }
+
+  colorPicker?.addEventListener('input', (e) => {
+    const newColor = e.target.value;
+    if (colorText) colorText.value = newColor;
+    updateColor(newColor);
+  });
+
+  colorText?.addEventListener('input', (e) => {
+    const newColor = e.target.value;
+    if (newColor.length === 7 && newColor.startsWith('#')) {
+      if (colorPicker) colorPicker.value = newColor;
+      updateColor(newColor);
+    }
   });
 }
