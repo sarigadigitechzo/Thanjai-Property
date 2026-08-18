@@ -23,6 +23,7 @@ import { renderOurStoryView, initOurStoryListeners } from './views/OurStoryView.
 import { renderDiscoverView, initDiscoverListeners } from './views/DiscoverView.js';
 import { renderBlogView, initBlogListeners } from './views/BlogView.js';
 import { renderContactView, initContactListeners } from './views/ContactView.js';
+import { renderTermsView, initTermsListeners } from './views/TermsView.js';
 
 import { getFavorites } from './utils/favorites.js';
 import { showToast } from './utils/toast.js';
@@ -62,6 +63,7 @@ function parseCurrentRoute() {
   if (path.includes('discover') || hash === 'discover') return 'discover';
   if (path.includes('blog') || path.includes('journal') || hash === 'blog' || hash === 'journal') return 'blog';
   if (path.includes('contact') || hash === 'contact') return 'contact';
+  if (path.includes('terms') || hash === 'terms' || hash.startsWith('term-')) return 'terms';
 
   return 'home';
 }
@@ -72,6 +74,7 @@ function getRoutePath(route) {
     case 'discover': return '/discover';
     case 'blog': return '/blog';
     case 'contact': return '/contact';
+    case 'terms': return '/terms';
     default: return '/';
   }
 }
@@ -159,6 +162,10 @@ function renderApp() {
       mainContentHtml = renderContactView();
       break;
 
+    case 'terms':
+      mainContentHtml = renderTermsView();
+      break;
+
     case 'home':
     default:
       mainContentHtml = `
@@ -234,6 +241,10 @@ function renderApp() {
 
     case 'contact':
       initContactListeners();
+      break;
+
+    case 'terms':
+      initTermsListeners();
       break;
 
     case 'home':
@@ -345,7 +356,12 @@ window.addEventListener('popstate', () => {
 });
 
 window.addEventListener('hashchange', () => {
-  currentRoute = parseCurrentRoute();
+  const newRoute = parseCurrentRoute();
+  // Prevent full app re-render if it's just an internal terms section anchor
+  if (newRoute === 'terms' && currentRoute === 'terms' && window.location.hash.startsWith('#term-')) {
+    return;
+  }
+  currentRoute = newRoute;
   updateSeoMetadata(currentRoute);
   renderApp();
 });
