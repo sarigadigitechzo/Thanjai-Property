@@ -6,80 +6,88 @@ export function renderFooter() {
     <footer class="footer-section">
       <div class="container">
         <div class="footer-grid">
-          <!-- Col 1: Brand & Philosophy -->
-          <div class="footer-brand">
-            <a href="/" class="footer-logo nav-route-link" data-route="home">
-              <img src="${brandLogo}" alt="Thanjai Property Real Estate Since 2009" style="height: 60px; width: auto; background: #fff; border-radius: 8px; padding: 4px 8px; display: block;" />
+          
+          <!-- Col 1: ABOUT THANJAI PROPERTY -->
+          <div>
+            <h4 class="footer-col-title">ABOUT THANJAI PROPERTY</h4>
+            
+            <a href="/" class="footer-logo nav-route-link" data-route="home" style="display: block; margin-bottom: 16px;">
+              <img src="${brandLogo}" alt="Thanjai Property Logo" style="height: 50px; width: auto; background: #fff; border-radius: 8px; padding: 4px 8px;" />
             </a>
 
-            <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9375rem; line-height: 1.6; max-width: 340px; margin-bottom: 24px;">
-              Tamil Nadu's premier luxury property discovery platform. Connecting families and investors with verified homes, villa plots, and Kaveri farm estates.
+            <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9375rem; line-height: 1.8; margin-bottom: 16px;">
+              Thanjai property Real Estate Land Promoters and Constructions in Thanjavur to buy sale and house land plot commercial industrial apartment
             </p>
 
-            <div style="display: flex; gap: 12px;">
-              <a href="#" style="width: 38px; height: 38px; border-radius: 50%; background: var(--color-dark-surface); border: 1px solid var(--color-border-dark); display: flex; align-items: center; justify-content: center; color: var(--color-white);"><i class="ri-facebook-fill"></i></a>
-              <a href="#" style="width: 38px; height: 38px; border-radius: 50%; background: var(--color-dark-surface); border: 1px solid var(--color-border-dark); display: flex; align-items: center; justify-content: center; color: var(--color-white);"><i class="ri-instagram-line"></i></a>
-              <a href="#" style="width: 38px; height: 38px; border-radius: 50%; background: var(--color-dark-surface); border: 1px solid var(--color-border-dark); display: flex; align-items: center; justify-content: center; color: var(--color-white);"><i class="ri-youtube-fill"></i></a>
-              <a href="#" style="width: 38px; height: 38px; border-radius: 50%; background: var(--color-dark-surface); border: 1px solid var(--color-border-dark); display: flex; align-items: center; justify-content: center; color: var(--color-white);"><i class="ri-whatsapp-line"></i></a>
+            <div style="color: var(--color-white); font-weight: 700; font-size: 0.95rem;">
+              Visitors Count: 38,375
             </div>
           </div>
 
-          <!-- Col 2: Navigation Links -->
+          <!-- Col 2: OUR OFFICE -->
           <div>
-            <h4 class="font-serif" style="font-size: 1.25rem; color: var(--color-white); margin-bottom: 20px;">Explore Pages</h4>
-            <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.9375rem; color: rgba(255,255,255,0.7);">
-              <li><a href="/" class="nav-route-link" data-route="home" style="transition: color 0.2s;">Home</a></li>
-              <li><a href="/our-story" class="nav-route-link" data-route="our-story" style="transition: color 0.2s;">Our Story</a></li>
-              <li><a href="/discover" class="nav-route-link" data-route="discover" style="transition: color 0.2s;">Discover Properties</a></li>
-              <li><a href="/blog" class="nav-route-link" data-route="blog" style="transition: color 0.2s;">Blog & Insights</a></li>
-              <li><a href="/contact" class="nav-route-link" data-route="contact" style="transition: color 0.2s;">Contact Us</a></li>
-            </ul>
-          </div>
+            <h4 class="footer-col-title">OUR OFFICE</h4>
+            
+            <div style="color: var(--color-orange, #eb5e28); font-weight: 700; font-size: 0.95rem; margin-bottom: 12px; text-transform: uppercase;">
+              THANJAI PROPERTY
+            </div>
 
-          <!-- Col 3: Asset Classes -->
-          <div>
-            <h4 class="font-serif" style="font-size: 1.25rem; color: var(--color-white); margin-bottom: 20px;">Asset Classes</h4>
-            <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 0.9375rem; color: rgba(255,255,255,0.7);">
-              <li><a href="/discover" class="nav-route-link" data-route="discover">Luxury Villas</a></li>
-              <li><a href="/discover" class="nav-route-link" data-route="discover">Independent Houses</a></li>
-              <li><a href="/discover" class="nav-route-link" data-route="discover">Modern Apartments</a></li>
-              <li><a href="/discover" class="nav-route-link" data-route="discover">DTCP Villa Plots</a></li>
-              <li><a href="/discover" class="nav-route-link" data-route="discover">Kaveri Farmlands</a></li>
-              <li><a href="/discover" class="nav-route-link" data-route="discover">Commercial Spaces</a></li>
-            </ul>
-          </div>
-
-          <!-- Col 4: Head Office Info -->
-          <div>
-            <h4 class="font-serif" style="font-size: 1.25rem; color: var(--color-white); margin-bottom: 20px;">Head Office</h4>
-            <div style="display: flex; flex-direction: column; gap: 14px; font-size: 0.875rem; color: rgba(255,255,255,0.75);">
-              <div style="display: flex; gap: 10px;">
-                <i class="ri-map-pin-2-fill" style="color: var(--color-orange); font-size: 1.1rem;"></i>
-                <span>Flat No B1, Sivasakthi Apt, Raja Nagar, Behind HDFC Bank, Near New Bus Stand, Thanjavur 613005</span>
-              </div>
-              <div style="display: flex; gap: 10px;">
-                <i class="ri-phone-fill" style="color: var(--color-orange); font-size: 1.1rem;"></i>
-                <span>+91 94431 25009 / +91 94431 89000</span>
-              </div>
-              <div style="display: flex; gap: 10px;">
-                <i class="ri-mail-fill" style="color: var(--color-orange); font-size: 1.1rem;"></i>
-                <span>info@thanjaiproperty.com</span>
-              </div>
-              <div style="display: flex; gap: 10px;">
-                <i class="ri-time-fill" style="color: var(--color-orange); font-size: 1.1rem;"></i>
-                <span>Mon – Sat: 9:00 AM – 7:00 PM</span>
-              </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.9375rem; color: rgba(255, 255, 255, 0.7); line-height: 1.6;">
+              <span>Flat No B1, 2nd Floor, Sivasakthi Apartment,</span>
+              <span>Raja Nagar, Behind HDFC Bank, Near New Bus Stand,</span>
+              <span>Thanjavur - 613005</span>
             </div>
           </div>
+
+          <!-- Col 3: OVERVIEW -->
+          <div>
+            <h4 class="footer-col-title">OVERVIEW</h4>
+            <ul class="footer-links-list">
+              <li><a href="/our-story" class="nav-route-link" data-route="our-story">About Us</a></li>
+              <li><a href="/contact" class="nav-route-link" data-route="contact">Contact</a></li>
+              <li><a href="#">Privacy Policy</a></li>
+              <li><a href="/terms" class="nav-route-link" data-route="terms">Terms of use</a></li>
+              <li><a href="#">FAQ</a></li>
+              <li><a href="/blog" class="nav-route-link" data-route="blog">Blog</a></li>
+            </ul>
+          </div>
+
+          <!-- Col 4: OUR SOCIAL MEDIA -->
+          <div>
+            <h4 class="footer-col-title">OUR SOCIAL MEDIA</h4>
+            <ul class="footer-social-list">
+              <li>
+                <a href="#" class="social-link">
+                  <i class="ri-facebook-fill"></i> Facebook
+                </a>
+              </li>
+              <li>
+                <a href="#" class="social-link">
+                  <i class="ri-twitter-fill"></i> Twitter
+                </a>
+              </li>
+              <li>
+                <a href="#" class="social-link">
+                  <i class="ri-google-fill"></i> Google Plus
+                </a>
+              </li>
+              <li>
+                <a href="#" class="social-link">
+                  <i class="ri-youtube-fill"></i> Youtube
+                </a>
+              </li>
+              <li>
+                <a href="#" class="social-link">
+                  <i class="ri-linkedin-fill"></i> Linkedin
+                </a>
+              </li>
+            </ul>
+          </div>
+
         </div>
 
         <div class="footer-bottom">
           <div>© 2009–2026 Thanjai Property Real Estate. All rights reserved.</div>
-          <div style="display: flex; gap: 20px;">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">RERA Compliance</a>
-          </div>
         </div>
       </div>
     </footer>
