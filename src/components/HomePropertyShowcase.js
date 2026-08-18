@@ -1,3 +1,12 @@
+function formatSizeDisplay(size) {
+  if (!size) return '2,400 Sq.Ft';
+  const str = String(size).trim();
+  if (/^\d+$/.test(str)) {
+    return `${parseInt(str, 10).toLocaleString('en-IN')} Sq.Ft`;
+  }
+  return str;
+}
+
 export function renderHomePropertyShowcase(properties, onSelectProperty, onNavigateToDiscover) {
   // Select top 3 featured properties for editorial presentation
   const featured = properties.slice(0, 3);
@@ -58,8 +67,8 @@ export function renderHomePropertyShowcase(properties, onSelectProperty, onNavig
                 </div>
 
                 <div style="display: flex; gap: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.85rem; color: #555; margin-top: auto;">
-                  <span><i class="ri-ruler-2-line"></i> ${prop.size}</span>
-                  ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : `<span><i class="ri-shield-check-line"></i> ${prop.approval}</span>`}
+                  <span><i class="ri-ruler-2-line"></i> ${formatSizeDisplay(prop.size)}</span>
+                  ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : `<span><i class="ri-shield-check-line"></i> ${prop.approval || 'DTCP & RERA Approved'}</span>`}
                 </div>
 
                 <button class="btn btn-outline-dark" style="margin-top: 20px; width: 100%; border-radius: 10px; font-size: 0.9rem;">
