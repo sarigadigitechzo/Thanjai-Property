@@ -10,6 +10,7 @@ import { renderWebsiteImagesView, initWebsiteImagesListeners } from './crm-views
 import { renderAuditLogView, initAuditLogListeners } from './crm-views/AuditLogView.js';
 import { renderLeadDetailView, initLeadDetailView } from './crm-views/LeadDetailView.js';
 import { renderBlogCMSView, initBlogCMSListeners } from './crm-views/BlogCMSView.js';
+import { renderReportsView, initReportsView } from './crm-views/ReportsView.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const contentArea = document.getElementById('os-content');
@@ -50,6 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'ai':
         html = renderAIAgentView();
         afterRender = initAIAgentView;
+        break;
+      case 'reports':
+        html = renderReportsView();
+        afterRender = initReportsView;
         break;
       case 'whatsapp':
         html = renderWhatsAppLogView();
