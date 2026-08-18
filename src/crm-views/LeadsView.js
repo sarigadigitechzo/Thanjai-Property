@@ -289,11 +289,12 @@ export function renderLeadsView() {
 function initStore() {
   let leads = localStorage.getItem('thanjai_leads');
   if (!leads) {
+    const now = Date.now();
     const dummyData = [
-      { id: 1, name: 'mm', mobile: '9566321457', type: 'Plot', area: '', budgetMin: '', budgetMax: '', source: 'Manual', status: 'Contacted', assignTo: 'Unassigned', followup: '—' },
-      { id: 2, name: 'cc', mobile: '9585598263', type: 'Any', area: '', budgetMin: '', budgetMax: '3000000', source: 'Manual', status: 'Follow Up', assignTo: 'Unassigned', followup: '—' },
-      { id: 3, name: 'esther', mobile: '9585598263', type: 'Plot', area: 'mc road', budgetMin: '', budgetMax: '3000000', source: 'Whatsapp', status: 'Follow Up', assignTo: 'Unassigned', followup: '—' },
-      { id: 4, name: 'Manikandan', mobile: '918807158206', type: 'Plot', area: 'thanjavur new bus stand', budgetMin: '', budgetMax: '10000000', source: 'Website Form', status: 'Negotiation', assignTo: 'Kavitha Murugan', followup: '12 Aug 2026' }
+      { id: 1, name: 'mm', mobile: '9566321457', type: 'Plot', area: '', budgetMin: '', budgetMax: '', source: 'Manual', status: 'Contacted', assignTo: 'Unassigned', followup: '—', createdAt: now - (10 * 86400000) },
+      { id: 2, name: 'cc', mobile: '9585598263', type: 'Any', area: '', budgetMin: '', budgetMax: '3000000', source: 'Manual', status: 'Follow Up', assignTo: 'Unassigned', followup: '—', createdAt: now - (5 * 86400000) },
+      { id: 3, name: 'esther', mobile: '9585598263', type: 'Plot', area: 'mc road', budgetMin: '', budgetMax: '3000000', source: 'Whatsapp', status: 'Follow Up', assignTo: 'Unassigned', followup: '—', createdAt: now - (2 * 86400000) },
+      { id: 4, name: 'Manikandan', mobile: '918807158206', type: 'Plot', area: 'thanjavur new bus stand', budgetMin: '', budgetMax: '10000000', source: 'Website Form', status: 'Negotiation', assignTo: 'Kavitha Murugan', followup: '12 Aug 2026', createdAt: now }
     ];
     localStorage.setItem('thanjai_leads', JSON.stringify(dummyData));
   }
@@ -535,15 +536,17 @@ export function initLeadsView() {
         source,
         assignTo,
         status: idField ? undefined : 'New', // preserve status if edit later
-        followup: document.getElementById('lead-followup').value || '—'
+        followup: document.getElementById('lead-followup').value || '—',
+        createdAt: Date.now()
       };
 
       let leads = getLeads();
       if (idField) {
         const idx = leads.findIndex(l => l.id === leadData.id);
         if (idx !== -1) {
-           // preserve existing status during edit
+           // preserve existing status and createdAt during edit
            leadData.status = leads[idx].status; 
+           leadData.createdAt = leads[idx].createdAt || Date.now();
            leads[idx] = leadData;
         }
       } else {
