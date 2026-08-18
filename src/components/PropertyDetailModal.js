@@ -83,10 +83,6 @@ export function renderPropertyDetailModal(property) {
                 <div class="fact-value">${property.bathrooms || '—'}</div>
                 <div class="fact-label">BATHROOMS</div>
               </div>
-              <div class="fact-block">
-                <div class="fact-value">${property.facing}</div>
-                <div class="fact-label">FACING</div>
-              </div>
             </div>
 
             <!-- Description -->

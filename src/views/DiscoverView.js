@@ -1,5 +1,14 @@
 import { getProperties, getPublicProperties } from '../utils/propertiesStore.js';
 
+function formatSizeDisplay(size) {
+  if (!size) return '2,400 Sq.Ft';
+  const str = String(size).trim();
+  if (/^\d+$/.test(str)) {
+    return `${parseInt(str, 10).toLocaleString('en-IN')} Sq.Ft`;
+  }
+  return str;
+}
+
 export function renderDiscoverView(discoverState, onPropertySelect, onNavigateToContact) {
   const allProperties = getPublicProperties();
   // If a property detail is selected, render the detail page
@@ -213,93 +222,193 @@ export function renderDiscoverView(discoverState, onPropertySelect, onNavigateTo
   `;
 }
 
+let activeDetailPhotoIndex = 0;
+
 // Render dynamic Property Detail Page
 function renderPropertyDetailView(property, onNavigateToContact) {
-  return `
-    <div class="page-view view-enter property-detail-page" style="padding-top: 100px; padding-bottom: 90px; background: #faf8f5;">
-      <div class="container">
-        
-        <!-- Back Link -->
-        <button class="os-btn-secondary" id="back-to-discover-btn" style="margin-bottom: 24px; font-size: 0.9rem;">
-          <i class="ri-arrow-left-line"></i> Back to Discover Properties
-        </button>
+  const rawImgs = Array.isArray(property.images) ? property.images.filter(Boolean) : [];
+  const uniqueImgs = [...new Set(rawImgs)];
+  const images = uniqueImgs.length > 0 ? uniqueImgs : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'];
 
-        <div style="background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 10px 40px rgba(0,0,0,0.06);">
+  if (activeDetailPhotoIndex >= images.length) activeDetailPhotoIndex = 0;
+  const mainImage = images[activeDetailPhotoIndex] || images[0];
+
+  return `
+    <div class="page-view view-enter property-detail-page" style="padding-top: 110px; padding-bottom: 90px; background: #faf8f5;">
+      <div class="container" style="max-width: 1140px;">
+        
+        <!-- Back Navigation & Action Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+          <button class="os-btn-secondary" id="back-to-discover-btn" style="font-size: 0.9rem; padding: 10px 20px; border-radius: 10px; font-weight: 700; background: #ffffff; border: 1px solid #E2E8F0; color: #4A5568; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+            <i class="ri-arrow-left-line" style="color: #eb5e28;"></i> Back to Discover Properties
+          </button>
+
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <span style="background: #E6FFFA; color: #234E52; font-weight: 800; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #B2F5EA;">
+              <i class="ri-checkbox-circle-fill" style="color: #38A169;"></i> ${property.approval || 'DTCP & RERA Approved'}
+            </span>
+          </div>
+        </div>
+
+        <!-- MAIN LUXURY CARD CONTAINER -->
+        <div style="background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 16px 48px rgba(0,0,0,0.06);">
           
-          <!-- Image Gallery Grid -->
-          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; height: 440px; background: #111;" class="detail-gallery-grid">
-            <img src="${property.images[0]}" alt="${property.title}" style="width: 100%; height: 100%; object-fit: cover;" />
-            <div style="display: flex; flex-direction: column; gap: 8px; height: 100%;">
-              ${property.images[1] ? `<img src="${property.images[1]}" style="width: 100%; height: 50%; object-fit: cover;" />` : ''}
-              ${property.images[2] ? `<img src="${property.images[2]}" style="width: 100%; height: 50%; object-fit: cover;" />` : ''}
+          <!-- STATE-OF-THE-ART HERO MEDIA VIEWPORT (500px) WITH CAROUSEL ARROWS -->
+          <div style="width: 100%; position: relative;">
+            <div style="width: 100%; height: 500px; background: #0f172a; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
+              <img id="detail-hero-img" src="${mainImage}" alt="${property.title}" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease;" />
+
+              <!-- Top Left Counter Badge -->
+              <div style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.75); color: #ffffff; font-size: 0.82rem; font-weight: 700; padding: 6px 16px; border-radius: 20px; backdrop-filter: blur(6px); display: flex; align-items: center; gap: 6px; z-index: 10;">
+                <i class="ri-image-line" style="color: #eb5e28;"></i>
+                <span id="detail-photo-counter">Photo ${activeDetailPhotoIndex + 1} of ${images.length}</span>
+              </div>
+
+              <!-- Top Right Status Badge -->
+              <span style="position: absolute; top: 20px; right: 20px; background: #eb5e28; color: #ffffff; font-size: 0.8rem; font-weight: 800; padding: 6px 16px; border-radius: 20px; z-index: 10; box-shadow: 0 4px 14px rgba(0,0,0,0.25); letter-spacing: 0.05em; text-transform: uppercase;">
+                ${property.purpose === 'rent' ? 'FOR RENT' : 'FOR SALE'}
+              </span>
+
+              <!-- Left/Right Carousel Swipe Arrows -->
+              ${images.length > 1 ? `
+                <button id="detail-prev-photo-btn" title="Previous photo" style="
+                  position: absolute; left: 20px; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%;
+                  background: rgba(0,0,0,0.65); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-size: 1.5rem;
+                  display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px);
+                  box-shadow: 0 4px 16px rgba(0,0,0,0.4); z-index: 10; transition: all 0.2s ease;
+                ">
+                  <i class="ri-arrow-left-s-line"></i>
+                </button>
+
+                <button id="detail-next-photo-btn" title="Next photo" style="
+                  position: absolute; right: 20px; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%;
+                  background: rgba(0,0,0,0.65); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-size: 1.5rem;
+                  display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px);
+                  box-shadow: 0 4px 16px rgba(0,0,0,0.4); z-index: 10; transition: all 0.2s ease;
+                ">
+                  <i class="ri-arrow-right-s-line"></i>
+                </button>
+              ` : ''}
             </div>
+
+            <!-- Thumbnail Selector Bar Below Hero Image -->
+            ${images.length > 1 ? `
+              <div style="display: flex; gap: 12px; overflow-x: auto; padding: 16px 20px; background: #1A202C; scrollbar-width: thin; scrollbar-color: #eb5e28 #2D3748;">
+                ${images.map((img, idx) => `
+                  <div class="detail-thumb-item" data-index="${idx}" style="
+                    width: 96px; height: 68px; border-radius: 10px; overflow: hidden; flex-shrink: 0; cursor: pointer;
+                    border: 2px solid ${idx === activeDetailPhotoIndex ? '#eb5e28' : 'transparent'};
+                    opacity: ${idx === activeDetailPhotoIndex ? '1' : '0.6'}; transition: all 0.2s ease;
+                  ">
+                    <img src="${img}" style="width: 100%; height: 100%; object-fit: cover;" />
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
           </div>
 
-          <!-- Main Info Content -->
+          <!-- MAIN PROPERTY DETAILS BODY CONTENT -->
           <div style="padding: 40px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; margin-bottom: 24px;">
-              <div>
-                <span class="badge badge-orange" style="font-size: 0.8rem; margin-bottom: 10px; display: inline-block;">
-                  ${property.categoryLabel}
+            
+            <!-- Title & Price Header Row -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 24px; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #EDF2F7;">
+              <div style="flex: 1; min-width: 280px;">
+                <span class="badge badge-orange" style="font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 12px; display: inline-block;">
+                  ${property.categoryLabel || property.type || 'Property'}
                 </span>
-                <h1 style="font-family: var(--font-serif); font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">
+                <h1 style="font-family: var(--font-serif); font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 800; color: #1A202C; margin-bottom: 10px; line-height: 1.25;">
                   ${property.title}
                 </h1>
-                <div style="display: flex; align-items: center; gap: 8px; font-size: 1.05rem; color: #555;">
-                  <i class="ri-map-pin-2-fill" style="color: var(--color-orange, #eb5e28);"></i>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 1.05rem; color: #4A5568; font-weight: 600;">
+                  <i class="ri-map-pin-2-fill" style="color: #eb5e28; font-size: 1.2rem;"></i>
                   <span>${property.location}, ${property.district}, Tamil Nadu</span>
                 </div>
               </div>
 
-              <div style="text-align: right;">
-                <div style="font-size: 0.85rem; color: #777; text-transform: uppercase; font-weight: 700;">Asking Price</div>
-                <div style="font-family: var(--font-serif); font-size: 2.4rem; font-weight: 700; color: var(--color-orange, #eb5e28);">
-                  ${property.priceFormatted}
+              <div style="background: #FFF5F2; padding: 20px 28px; border-radius: 16px; border: 1px solid #FFD0C2; text-align: right; min-width: 220px;">
+                <span style="font-size: 0.8rem; color: #718096; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Asking Price</span>
+                <div style="font-family: var(--font-serif); font-size: 2.5rem; font-weight: 800; color: #eb5e28; line-height: 1;">
+                  ${property.priceFormatted || '₹ ' + property.price}
                 </div>
+                <span style="font-size: 0.78rem; color: #4A5568; font-weight: 700; display: block; margin-top: 6px;">
+                  100% Verified Ownership & Clear Patta Title
+                </span>
               </div>
             </div>
 
-            <!-- Specs Bar -->
+            <!-- KEY SPECIFICATIONS GRID -->
             <div style="
-              display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px;
-              padding: 20px 24px; background: #fdfbf7; border-radius: 16px; border: 1px solid rgba(0,0,0,0.06); margin-bottom: 32px;
+              display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;
+              padding: 24px; background: #F8FAFC; border-radius: 16px; border: 1px solid #E2E8F0; margin-bottom: 36px;
             ">
               <div>
-                <span style="font-size: 0.75rem; color: #777; text-transform: uppercase; display: block;">Total Area</span>
-                <strong style="font-size: 1rem; color: #1a1a1a;"><i class="ri-ruler-2-line"></i> ${property.size}</strong>
+                <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Total Area</span>
+                <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-ruler-2-line" style="color: #eb5e28;"></i> ${formatSizeDisplay(property.size)}</strong>
               </div>
+
               ${property.bedrooms ? `
                 <div>
-                  <span style="font-size: 0.75rem; color: #777; text-transform: uppercase; display: block;">Bedrooms</span>
-                  <strong style="font-size: 1rem; color: #1a1a1a;"><i class="ri-hotel-bed-line"></i> ${property.bedrooms} BHK</strong>
+                  <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Bedrooms</span>
+                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-hotel-bed-line" style="color: #eb5e28;"></i> ${property.bedrooms} BHK</strong>
                 </div>
               ` : ''}
+
+              ${property.bathrooms ? `
+                <div>
+                  <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Bathrooms</span>
+                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-drop-line" style="color: #eb5e28;"></i> ${property.bathrooms} Baths</strong>
+                </div>
+              ` : ''}
+
               <div>
-                <span style="font-size: 0.75rem; color: #777; text-transform: uppercase; display: block;">Legal Status</span>
-                <strong style="font-size: 1rem; color: #1a1a1a;"><i class="ri-shield-check-line"></i> ${property.approval}</strong>
-              </div>
-              <div>
-                <span style="font-size: 0.75rem; color: #777; text-transform: uppercase; display: block;">Facing</span>
-                <strong style="font-size: 1rem; color: #1a1a1a;"><i class="ri-compass-3-line"></i> ${property.facing || 'East Facing'}</strong>
+                <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Furnishing</span>
+                <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-armchair-line" style="color: #eb5e28;"></i> ${property.furnishing || 'Not specified'}</strong>
               </div>
             </div>
 
-            <!-- Description -->
-            <div style="margin-bottom: 36px;">
-              <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 12px; color: #1a1a1a;">Property Overview</h3>
-              <p style="font-size: 1.05rem; color: #4a5568; line-height: 1.7;">
-                ${property.description}
+            <!-- POSTER / OWNER INFORMATION CARD -->
+            ${(() => {
+              const primaryOwner = (property.ownerName || '').trim();
+              const listedBy = (property.listedBy || '').trim();
+              let sellerDisplayName = primaryOwner || listedBy || 'Thanjai Property Specialist';
+              if (primaryOwner && listedBy && primaryOwner.toLowerCase() !== listedBy.toLowerCase() && !listedBy.toLowerCase().includes('seller')) {
+                sellerDisplayName = `${primaryOwner} (${listedBy})`;
+              }
+              return `
+                <div style="background: #FAF8F5; padding: 20px 24px; border-radius: 16px; border: 1px solid #E7E0D8; margin-bottom: 36px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                  <div>
+                    <span style="font-size: 0.78rem; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Verified Property Seller / Specialist:</span>
+                    <strong style="font-size: 1.1rem; color: #1A202C;">${sellerDisplayName}</strong>
+                  </div>
+
+                  <div style="display: flex; gap: 10px;">
+                    <a href="tel:${property.ownerPhone || '9585777772'}" style="background: #ffffff; border: 1px solid #CBD5E0; color: #2D3748; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                      <i class="ri-phone-line" style="color: #eb5e28;"></i> Call Seller
+                    </a>
+                    <a href="https://wa.me/91${(property.ownerPhone || '9585777772').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(sellerDisplayName)},%20interested%20in%20${encodeURIComponent(property.title)}" target="_blank" style="background: #25D366; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,211,102,0.25);">
+                      <i class="ri-whatsapp-line"></i> WhatsApp Chat
+                    </a>
+                  </div>
+                </div>
+              `;
+            })()}
+
+            <!-- DESCRIPTION OVERVIEW -->
+            <div style="margin-bottom: 40px;">
+              <h3 style="font-family: var(--font-serif); font-size: 1.4rem; font-weight: 800; margin-bottom: 14px; color: #1A202C;">Property Overview</h3>
+              <p style="font-size: 1.05rem; color: #4A5568; line-height: 1.7; margin: 0;">
+                ${property.description || 'Luxury property in prime growth corridor with clear Patta title and excellent connectivity.'}
               </p>
             </div>
 
-            <!-- Key Features & Highlights -->
-            ${property.features ? `
+            <!-- KEY FEATURES & AMENITIES GRID -->
+            ${property.features && property.features.length > 0 ? `
               <div style="margin-bottom: 40px;">
-                <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 16px; color: #1a1a1a;">Key Highlights & Amenities</h3>
+                <h3 style="font-family: var(--font-serif); font-size: 1.4rem; font-weight: 800; margin-bottom: 18px; color: #1A202C;">Key Highlights & Amenities</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
                   ${property.features.map(f => `
-                    <div style="display: flex; align-items: center; gap: 10px; font-size: 0.95rem; color: #2d3748; background: #faf8f5; padding: 12px 16px; border-radius: 10px;">
-                      <i class="ri-checkbox-circle-fill" style="color: var(--color-orange, #eb5e28); font-size: 1.15rem;"></i>
+                    <div style="display: flex; align-items: center; gap: 10px; font-size: 0.95rem; font-weight: 700; color: #2D3748; background: #FAF8F5; padding: 14px 18px; border-radius: 12px; border: 1px solid #E7E0D8;">
+                      <i class="ri-checkbox-circle-fill" style="color: #38A169; font-size: 1.2rem;"></i>
                       <span>${f}</span>
                     </div>
                   `).join('')}
@@ -307,23 +416,25 @@ function renderPropertyDetailView(property, onNavigateToContact) {
               </div>
             ` : ''}
 
-            <!-- CTA Box -->
+            <!-- LUXURY ADVISORY & SITE VISIT CTA BANNER -->
             <div style="
-              padding: 32px; background: #2A1808; color: #ffffff; border-radius: 20px;
-              display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
+              padding: 36px; background: linear-gradient(135deg, #1C1007 0%, #2A1808 100%); color: #ffffff; border-radius: 20px;
+              display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; box-shadow: 0 12px 30px rgba(0,0,0,0.15);
             ">
               <div>
-                <h3 style="font-family: var(--font-serif); font-size: 1.6rem; color: #ffffff; margin-bottom: 6px;">
-                  Interested in this property?
+                <h3 style="font-family: var(--font-serif); font-size: 1.75rem; color: #ffffff; margin-bottom: 6px; font-weight: 800;">
+                  Interested in visiting this property?
                 </h3>
-                <p style="color: rgba(255,255,255,0.8); font-size: 0.95rem; margin: 0;">
-                  Schedule a private site tour or connect directly with our property advisory team.
+                <p style="color: rgba(255,255,255,0.85); font-size: 0.98rem; margin: 0;">
+                  Schedule a private site tour or connect directly with our senior property advisory desk.
                 </p>
               </div>
 
-              <button class="btn btn-primary" id="detail-enquire-btn" style="padding: 14px 32px; font-size: 1rem; border-radius: 10px;">
-                <i class="ri-mail-send-line"></i> Enquire Now
-              </button>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="detail-enquire-btn" style="padding: 14px 32px; font-size: 1rem; border-radius: 12px; font-weight: 800;">
+                  <i class="ri-mail-send-line"></i> Enquire Now
+                </button>
+              </div>
             </div>
 
           </div>
@@ -403,6 +514,7 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
   const backBtn = document.getElementById('back-to-discover-btn');
   if (backBtn) {
     backBtn.addEventListener('click', () => {
+      activeDetailPhotoIndex = 0;
       onPropertySelect(null);
     });
   }
@@ -413,6 +525,34 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
       onNavigateToContact();
     });
   }
+
+  // Detail Hero Carousel Prev/Next & Thumbnails
+  const selectedProp = discoverState.selectedPropertyId ? getPublicProperties().find(p => p.id === discoverState.selectedPropertyId) : null;
+  const propImages = selectedProp && Array.isArray(selectedProp.images) ? selectedProp.images.filter(Boolean) : [];
+
+  document.getElementById('detail-prev-photo-btn')?.addEventListener('click', () => {
+    if (propImages.length > 0) {
+      activeDetailPhotoIndex = (activeDetailPhotoIndex - 1 + propImages.length) % propImages.length;
+      onStateUpdate(discoverState);
+    }
+  });
+
+  document.getElementById('detail-next-photo-btn')?.addEventListener('click', () => {
+    if (propImages.length > 0) {
+      activeDetailPhotoIndex = (activeDetailPhotoIndex + 1) % propImages.length;
+      onStateUpdate(discoverState);
+    }
+  });
+
+  document.querySelectorAll('.detail-thumb-item').forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      const idx = parseInt(thumb.dataset.index, 10);
+      if (!isNaN(idx)) {
+        activeDetailPhotoIndex = idx;
+        onStateUpdate(discoverState);
+      }
+    });
+  });
 
   // Filter Bar Listeners
   const searchInput = document.getElementById('discover-search-input');
@@ -467,6 +607,7 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
     card.addEventListener('click', () => {
       const id = card.dataset.id;
       if (id && onPropertySelect) {
+        activeDetailPhotoIndex = 0;
         onPropertySelect(id);
       }
     });
