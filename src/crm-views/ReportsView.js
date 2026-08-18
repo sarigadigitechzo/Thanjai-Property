@@ -3,8 +3,8 @@ export function renderReportsView(fromDateStr, toDateStr) {
   let fromDate = fromDateStr ? new Date(fromDateStr) : new Date(new Date().getFullYear(), 0, 1);
   let toDate = toDateStr ? new Date(toDateStr) : new Date(new Date().getFullYear(), 11, 31);
   
-  const fromValue = fromDate.toISOString().split('T')[0];
-  const toValue = toDate.toISOString().split('T')[0];
+  const fromValue = `${fromDate.getFullYear()}-${String(fromDate.getMonth() + 1).padStart(2, '0')}-${String(fromDate.getDate()).padStart(2, '0')}`;
+  const toValue = `${toDate.getFullYear()}-${String(toDate.getMonth() + 1).padStart(2, '0')}-${String(toDate.getDate()).padStart(2, '0')}`;
   
   const toDateEnd = new Date(toDate);
   toDateEnd.setHours(23, 59, 59, 999);
