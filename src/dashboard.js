@@ -10,6 +10,10 @@ import { renderWebsiteImagesView, initWebsiteImagesListeners } from './crm-views
 import { renderAuditLogView, initAuditLogListeners } from './crm-views/AuditLogView.js';
 import { renderLeadDetailView, initLeadDetailView } from './crm-views/LeadDetailView.js';
 import { renderBlogCMSView, initBlogCMSListeners } from './crm-views/BlogCMSView.js';
+import { renderUsersView, initUsersView } from './crm-views/UsersView.js';
+import { renderPropertyApprovalsView, initPropertyApprovalsView } from './crm-views/PropertyApprovalsView.js';
+import { renderAgentsDirectoryView, initAgentsDirectoryView } from './crm-views/AgentsDirectoryView.js';
+import { renderBuildersDirectoryView, initBuildersDirectoryView } from './crm-views/BuildersDirectoryView.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const contentArea = document.getElementById('os-content');
@@ -34,6 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'properties':
         html = renderPropertiesView();
         afterRender = initPropertiesListeners;
+        break;
+      case 'property-approvals':
+      case 'approvals':
+        html = renderPropertyApprovalsView();
+        afterRender = initPropertyApprovalsView;
         break;
       case 'visits':
         html = renderSiteVisitsView();
@@ -66,6 +75,20 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'audit':
         html = renderAuditLogView();
         afterRender = initAuditLogListeners;
+        break;
+      case 'users':
+        html = renderUsersView();
+        afterRender = initUsersView;
+        break;
+      case 'registered-agents':
+      case 'agents':
+        html = renderAgentsDirectoryView();
+        afterRender = initAgentsDirectoryView;
+        break;
+      case 'registered-builders':
+      case 'builders':
+        html = renderBuildersDirectoryView();
+        afterRender = initBuildersDirectoryView;
         break;
       default:
         html = `

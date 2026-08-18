@@ -1,7 +1,7 @@
-import { getProperties } from '../utils/propertiesStore.js';
+import { getProperties, getPublicProperties } from '../utils/propertiesStore.js';
 
 export function renderDiscoverView(discoverState, onPropertySelect, onNavigateToContact) {
-  const allProperties = getProperties();
+  const allProperties = getPublicProperties();
   // If a property detail is selected, render the detail page
   if (discoverState.selectedPropertyId) {
     const property = allProperties.find(p => p.id === discoverState.selectedPropertyId);
@@ -336,7 +336,7 @@ function renderPropertyDetailView(property, onNavigateToContact) {
 }
 
 function filterProperties(state) {
-  const allProperties = getProperties();
+  const allProperties = getPublicProperties();
   return allProperties.filter(prop => {
     if (!prop) return false;
     const title = (prop.title || '').toLowerCase();

@@ -1,4 +1,5 @@
 import { getSiteImage } from '../utils/siteImagesStore.js';
+import { getCurrentUser } from '../utils/userAuthStore.js';
 
 export function renderHero() {
   const heroBg = getSiteImage('hero_bg');
@@ -226,7 +227,12 @@ export function initHeroListeners(onSearchSubmit) {
       currentPurpose = tab.dataset.purpose || 'buy';
 
       if (currentPurpose === 'sell') {
-        window.dispatchEvent(new CustomEvent('openPostPropertyModal'));
+        const user = getCurrentUser();
+        if (user) {
+          window.location.href = '/user-dashboard.html';
+        } else {
+          window.location.href = '/login.html#register';
+        }
       }
     });
   });

@@ -1,7 +1,9 @@
 import { getProperties } from '../utils/propertiesStore.js';
+import { getRegisteredUsers } from '../utils/userAuthStore.js';
 
 export function renderDashboardView() {
   const activePropertiesCount = getProperties().length;
+  const users = getRegisteredUsers();
 
   return `
     <div class="view-enter">
@@ -235,6 +237,45 @@ export function renderDashboardView() {
             </div>
 
           </div>
+        </div>
+      </div>
+
+      <!-- Registered Portal Users & Client Logins Table -->
+      <div class="os-chart-card" style="margin-top: 32px;">
+        <div class="os-chart-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <span><i class="ri-user-shared-line"></i> Registered Portal Users & Active Logins (${users.length})</span>
+          <span style="font-size: 0.78rem; background: rgba(235,94,40,0.15); color: #eb5e28; padding: 4px 12px; border-radius: 20px; font-weight: 800;">
+            Client Portal Synchronized
+          </span>
+        </div>
+        
+        <div class="table-responsive" style="margin-top: 16px;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+            <thead>
+              <tr style="border-bottom: 1px solid rgba(0,0,0,0.08); text-transform: uppercase; font-size: 0.75rem; color: var(--os-gray-400);">
+                <th style="padding: 12px 16px;">User ID</th>
+                <th style="padding: 12px 16px;">Full Name</th>
+                <th style="padding: 12px 16px;">Email Address</th>
+                <th style="padding: 12px 16px;">Mobile Phone</th>
+                <th style="padding: 12px 16px;">Account Role</th>
+                <th style="padding: 12px 16px;">Listed Props</th>
+                <th style="padding: 12px 16px;">OTP Verification</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${users.map(u => `
+                <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
+                  <td style="padding: 12px 16px; font-weight: 700; color: var(--os-luxury-orange);">${u.id}</td>
+                  <td style="padding: 12px 16px; font-weight: 700;">${u.fullName}</td>
+                  <td style="padding: 12px 16px;">${u.email}</td>
+                  <td style="padding: 12px 16px;">${u.phone || 'N/A'}</td>
+                  <td style="padding: 12px 16px;"><span class="os-badge" style="background: rgba(49,130,206,0.12); color: #3182ce; font-weight: 700; padding: 2px 8px; border-radius: 6px;">${u.role}</span></td>
+                  <td style="padding: 12px 16px; font-weight: 700;">${u.propertiesCount || 0}</td>
+                  <td style="padding: 12px 16px;"><span style="color: #38a169; font-weight: 800;"><i class="ri-checkbox-circle-fill"></i> ${u.status || 'Active'}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
         </div>
       </div>
 

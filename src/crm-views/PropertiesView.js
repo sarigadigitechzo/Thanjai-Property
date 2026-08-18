@@ -165,7 +165,7 @@ function renderAdminPropertyCard(prop) {
     ">
       <!-- Card Image Header -->
       <div style="height: 200px; position: relative; overflow: hidden; background: #f0f4f8;">
-        <img src="${mainImg}" alt="${prop.title}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80';" style="
+        <img src="${mainImg}" alt="${prop.title}" style="
           width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
         " />
         

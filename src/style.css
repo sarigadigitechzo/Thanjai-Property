@@ -224,15 +224,56 @@ a {
   border-color: var(--color-white);
 }
 
-.btn-outline-dark {
-  background: transparent;
-  color: var(--color-brown);
-  border: 1.5px solid var(--color-brown);
-}
-
 .btn-outline-dark:hover {
   background: var(--color-brown);
   color: var(--color-white);
+}
+
+/* Header Action Buttons (Matching Screenshot 1) */
+.nav-login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: 30px;
+  border: 1px solid #E2D9CF;
+  background: #FFF8F3;
+  color: #1A1A1A;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+.nav-login-btn:hover {
+  background: #ffffff;
+  border-color: #eb5e28;
+  color: #eb5e28;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.nav-post-property-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 22px;
+  border-radius: 30px;
+  border: none;
+  background: #E52E3D;
+  color: #FFFFFF;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(229, 46, 61, 0.3);
+}
+
+.nav-post-property-btn:hover {
+  background: #D92332;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(229, 46, 61, 0.4);
 }
 
 .btn-icon {

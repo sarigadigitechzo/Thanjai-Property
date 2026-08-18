@@ -1,9 +1,11 @@
 import { getFavorites } from '../utils/favorites.js';
 import { getSiteImage } from '../utils/siteImagesStore.js';
+import { getCurrentUser, logoutUser } from '../utils/userAuthStore.js';
 
 export function renderNavbar(currentRoute = 'home', onNavigate) {
   const favoritesCount = getFavorites().length;
   const brandLogo = getSiteImage('brand_logo');
+  const currentUser = getCurrentUser();
 
   return `
     <header class="header-wrapper" id="main-header">
@@ -33,12 +35,30 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
             </li>
           </ul>
 
-          <!-- Action Buttons -->
-          <div class="nav-actions">
-            <button class="saved-counter-btn" id="saved-properties-btn" title="View Saved Properties">
-              <i class="ri-heart-3-line"></i>
-              <span class="saved-badge-count" id="saved-count-badge">${favoritesCount}</span>
-            </button>
+          <!-- Action Buttons (Matching Screenshot 1) -->
+          <div class="nav-actions" style="display: flex; align-items: center; gap: 10px;">
+            ${currentUser ? `
+              <a href="/user-dashboard.html" class="nav-login-btn" id="nav-account-btn" title="View My Account Workspace">
+                <i class="ri-user-3-line"></i>
+                <span>My Account</span>
+              </a>
+            ` : `
+              <a href="/login.html" class="nav-login-btn" id="nav-login-btn" title="Sign In to your Account">
+                <i class="ri-user-3-line"></i>
+                <span>Login</span>
+              </a>
+            `}
+
+            <a href="${currentUser ? '/user-dashboard.html' : '/login.html#register'}" class="nav-post-property-btn" id="nav-post-property-btn" title="Post Property for Sale or Rent">
+              <i class="ri-home-4-line"></i>
+              <span>Post Property</span>
+            </a>
+
+            ${currentUser ? `
+              <button class="nav-logout-icon-btn" id="nav-logout-header-btn" title="Logout" style="width: 38px; height: 38px; border-radius: 50%; background: rgba(229,46,61,0.12); color: #E52E3D; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer;">
+                <i class="ri-logout-box-r-line"></i>
+              </button>
+            ` : ''}
 
             <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle Menu">
               <i class="ri-menu-4-line"></i>
@@ -92,6 +112,10 @@ export function initNavbarListeners(onNavigate, onSavedClick) {
   });
 
   document.getElementById('saved-properties-btn')?.addEventListener('click', onSavedClick);
+  document.getElementById('nav-logout-header-btn')?.addEventListener('click', () => {
+    logoutUser();
+    window.location.reload();
+  });
   
   // Route Navigation Clicks
   document.querySelectorAll('.nav-route-link').forEach(link => {

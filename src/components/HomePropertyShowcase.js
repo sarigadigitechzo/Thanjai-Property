@@ -85,10 +85,17 @@ export function renderHomePropertyShowcase(properties, onSelectProperty, onNavig
 }
 
 export function initHomePropertyShowcaseListeners(onSelectProperty, onNavigateToDiscover) {
-  document.getElementById('showcase-discover-all-btn')?.addEventListener('click', onNavigateToDiscover);
+  const discoverBtn = document.getElementById('showcase-discover-all-btn');
+  if (discoverBtn) {
+    discoverBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (onNavigateToDiscover) onNavigateToDiscover();
+    });
+  }
 
   document.querySelectorAll('.editorial-prop-card').forEach(card => {
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (e) => {
+      e.preventDefault();
       const id = card.dataset.id;
       if (id && onSelectProperty) {
         onSelectProperty(id);

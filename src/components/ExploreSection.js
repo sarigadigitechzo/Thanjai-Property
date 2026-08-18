@@ -1,6 +1,7 @@
 import { getSiteImage } from '../utils/siteImagesStore.js';
+import { getCurrentUser } from '../utils/userAuthStore.js';
 
-export function renderExploreSection(onPostPropertyClick) {
+export function renderExploreSection() {
   const postCtaBg = getSiteImage('post_cta_bg') || "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80";
   const showcaseBg = getSiteImage('showcase_bg') || "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80";
 
@@ -157,14 +158,15 @@ export function renderExploreSection(onPostPropertyClick) {
   `;
 }
 
-export function initExploreSectionListeners(onPostPropertyClick) {
+export function initExploreSectionListeners() {
   document.querySelectorAll('.post-land-trigger-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      if (onPostPropertyClick) {
-        onPostPropertyClick();
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        window.location.href = '/user-dashboard.html';
       } else {
-        window.dispatchEvent(new CustomEvent('openPostPropertyModal'));
+        window.location.href = '/login.html#register';
       }
     });
   });

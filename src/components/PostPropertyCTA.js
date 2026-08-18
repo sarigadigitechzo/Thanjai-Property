@@ -1,6 +1,7 @@
 import { getSiteImage } from '../utils/siteImagesStore.js';
+import { getCurrentUser } from '../utils/userAuthStore.js';
 
-export function renderPostPropertyCTA(onPostPropertyClick) {
+export function renderPostPropertyCTA() {
   const postCtaBg = getSiteImage('post_cta_bg');
   return `
     <section class="post-cta-section" id="post-cta">
@@ -46,7 +47,7 @@ export function renderPostPropertyCTA(onPostPropertyClick) {
             <div>
               <button class="btn btn-primary" id="post-cta-trigger-btn" style="padding: 16px 36px; font-size: 1rem;">
                 <i class="ri-add-line" style="font-size: 1.25rem;"></i>
-                <span>POST YOUR PROPERTY NOW</span>
+                <span>CREATE ACCOUNT & POST PROPERTY</span>
               </button>
             </div>
           </div>
@@ -56,6 +57,13 @@ export function renderPostPropertyCTA(onPostPropertyClick) {
   `;
 }
 
-export function initPostPropertyCTAListeners(onPostPropertyClick) {
-  document.getElementById('post-cta-trigger-btn')?.addEventListener('click', onPostPropertyClick);
+export function initPostPropertyCTAListeners() {
+  document.getElementById('post-cta-trigger-btn')?.addEventListener('click', () => {
+    const user = getCurrentUser();
+    if (user) {
+      window.location.href = '/user-dashboard.html';
+    } else {
+      window.location.href = '/login.html#register';
+    }
+  });
 }

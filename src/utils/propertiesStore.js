@@ -44,6 +44,60 @@ function savePropertiesToStorage(props) {
   }
 }
 
+export function getPublicProperties() {
+  const all = getProperties();
+  return all.filter(p => p.approvalStatus === 'Approved' || !p.approvalStatus || p.approvalStatus === 'Active');
+}
+
+export function getPendingSubmissions() {
+  const all = getProperties();
+  return all.filter(p => p.approvalStatus === 'Pending Approval');
+}
+
+export function approveSubmission(id) {
+  const props = getProperties();
+  const idx = props.findIndex(p => p.id === id);
+  if (idx === -1) return false;
+
+  props[idx].approvalStatus = 'Approved';
+  props[idx].status = 'Available';
+  props[idx].availability = 'Available';
+  savePropertiesToStorage(props);
+
+  addAuditLog({
+    timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+    user: 'Aishwarya R. (Super Admin)',
+    action: `Approved Property Submission (${id})`,
+    module: 'Property Approvals',
+    details: `Approved & Published user property "${props[idx].title}" submitted by ${props[idx].ownerName || 'User'}.`
+  });
+
+  window.dispatchEvent(new CustomEvent('propertiesUpdated', { detail: { action: 'approve', id } }));
+  return props[idx];
+}
+
+export function rejectSubmission(id, reason = 'Did not meet Patta title guidelines') {
+  const props = getProperties();
+  const idx = props.findIndex(p => p.id === id);
+  if (idx === -1) return false;
+
+  props[idx].approvalStatus = 'Rejected';
+  props[idx].status = 'Rejected';
+  props[idx].rejectionReason = reason;
+  savePropertiesToStorage(props);
+
+  addAuditLog({
+    timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+    user: 'Aishwarya R. (Super Admin)',
+    action: `Rejected Property Submission (${id})`,
+    module: 'Property Approvals',
+    details: `Declined property submission "${props[idx].title}" by ${props[idx].ownerName || 'User'}. Reason: ${reason}`
+  });
+
+  window.dispatchEvent(new CustomEvent('propertiesUpdated', { detail: { action: 'reject', id } }));
+  return props[idx];
+}
+
 export function getPropertyById(id) {
   const props = getProperties();
   return props.find(p => p.id === id) || null;

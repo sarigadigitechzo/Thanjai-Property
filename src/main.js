@@ -1,5 +1,5 @@
 import './style.css';
-import { getProperties } from './utils/propertiesStore.js';
+import { getProperties, getPublicProperties } from './utils/propertiesStore.js';
 
 // Components
 import { renderNavbar, initNavbarListeners } from './components/Navbar.js';
@@ -26,6 +26,7 @@ import { renderContactView, initContactListeners } from './views/ContactView.js'
 
 import { getFavorites } from './utils/favorites.js';
 import { showToast } from './utils/toast.js';
+import { getCurrentUser } from './utils/userAuthStore.js';
 
 // Global Route & Application State
 let currentRoute = parseCurrentRoute();
@@ -55,12 +56,12 @@ let appState = {
 // Route Parser
 function parseCurrentRoute() {
   const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
-  const hash = window.location.hash.toLowerCase().replace('#', '');
+  const hash = window.location.hash.toLowerCase().replace(/^#\/?/, '');
 
-  if (path === '/our-story' || hash === 'our-story') return 'our-story';
-  if (path === '/discover' || hash === 'discover') return 'discover';
-  if (path === '/blog' || path === '/journal' || hash === 'blog' || hash === 'journal') return 'blog';
-  if (path === '/contact' || hash === 'contact') return 'contact';
+  if (path.includes('our-story') || hash === 'our-story') return 'our-story';
+  if (path.includes('discover') || hash === 'discover') return 'discover';
+  if (path.includes('blog') || path.includes('journal') || hash === 'blog' || hash === 'journal') return 'blog';
+  if (path.includes('contact') || hash === 'contact') return 'contact';
 
   return 'home';
 }
@@ -106,6 +107,9 @@ function updateSeoMetadata(route) {
 // Router Navigation Handler
 function navigateToRoute(route, pushState = true) {
   currentRoute = route;
+  if (route !== 'discover') {
+    discoverState.selectedPropertyId = null;
+  }
   if (pushState) {
     window.history.pushState({ route }, '', getRoutePath(route));
   }
@@ -117,7 +121,7 @@ function navigateToRoute(route, pushState = true) {
 // Primary Render Engine
 function renderApp() {
   const appContainer = document.getElementById('app');
-  const allProperties = getProperties();
+  const allProperties = getPublicProperties();
   const selectedModalProperty = appState.selectedPropertyId 
     ? allProperties.find(p => p.id === appState.selectedPropertyId) 
     : null;
@@ -190,6 +194,7 @@ function renderApp() {
 
   // Attach navbar & footer global link listeners
   initNavbarListeners(navigateToRoute, openSavedView);
+  document.getElementById('nav-post-property-btn')?.addEventListener('click', openPostModal);
 
   // Attach Page-Specific Listeners
   switch (currentRoute) {
@@ -234,7 +239,10 @@ function renderApp() {
     case 'home':
     default:
       initHeroListeners(handleHeroSearch);
-      initHomePropertyShowcaseListeners(openModalPropertyDetail, () => navigateToRoute('discover'));
+      initHomePropertyShowcaseListeners(openModalPropertyDetail, () => {
+        discoverState.selectedPropertyId = null;
+        navigateToRoute('discover');
+      });
       initExploreSectionListeners(openPostModal);
       initLocationExplorerListeners(handleLocationSelect);
       initCategoryCarouselListeners(handleCategorySelect);
@@ -260,8 +268,8 @@ function renderApp() {
 
 // Handlers
 function openModalPropertyDetail(id) {
-  appState.selectedPropertyId = id;
-  renderApp();
+  discoverState.selectedPropertyId = id;
+  navigateToRoute('discover');
 }
 
 function closeModalPropertyDetail() {
@@ -275,8 +283,12 @@ function openBlogArticle(postId) {
 }
 
 function openPostModal() {
-  appState.isPostModalOpen = true;
-  renderApp();
+  const currentUser = getCurrentUser();
+  if (currentUser) {
+    window.location.href = '/user-dashboard.html';
+  } else {
+    window.location.href = '/login.html#register';
+  }
 }
 
 function closePostModal() {
