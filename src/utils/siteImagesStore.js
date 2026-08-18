@@ -3,7 +3,7 @@ export const DEFAULT_SITE_IMAGES = {
   hero_bg: {
     id: "hero_bg",
     title: "Hero Main Background Banner",
-    category: "Banners & Hero",
+    category: "Home",
     recommendedWidth: 1920,
     recommendedHeight: 1080,
     aspectRatio: "16:9",
@@ -15,7 +15,7 @@ export const DEFAULT_SITE_IMAGES = {
   showcase_bg: {
     id: "showcase_bg",
     title: "Exclusive Architectural Showcase Banner",
-    category: "Banners & Hero",
+    category: "Home",
     recommendedWidth: 1920,
     recommendedHeight: 900,
     aspectRatio: "16:9",
@@ -27,7 +27,7 @@ export const DEFAULT_SITE_IMAGES = {
   post_cta_bg: {
     id: "post_cta_bg",
     title: "Post Property CTA Section Image",
-    category: "Banners & Hero",
+    category: "SELL & PROMOTE YOUR LAND",
     recommendedWidth: 1200,
     recommendedHeight: 800,
     aspectRatio: "3:2",
@@ -39,7 +39,7 @@ export const DEFAULT_SITE_IMAGES = {
   contact_bg: {
     id: "contact_bg",
     title: "Contact Section Background Image",
-    category: "Banners & Hero",
+    category: "Home",
     recommendedWidth: 1920,
     recommendedHeight: 800,
     aspectRatio: "16:9",
@@ -48,10 +48,34 @@ export const DEFAULT_SITE_IMAGES = {
     defaultUrl: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=2000&q=90",
     description: "Background banner image for the Contact Advisory section."
   },
+  our_story_hero_bg: {
+    id: "our_story_hero_bg",
+    title: "Our Story Hero Background",
+    category: "our story home image",
+    recommendedWidth: 1920,
+    recommendedHeight: 1080,
+    aspectRatio: "16:9",
+    format: "JPG / WebP",
+    maxSize: "< 2 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=90",
+    description: "Main full-width background banner displayed at the top of the Our Story page."
+  },
+  our_philosophy_img: {
+    id: "our_philosophy_img",
+    title: "Our Philosophy Image",
+    category: "OUR PHILOSOPHY",
+    recommendedWidth: 1200,
+    recommendedHeight: 800,
+    aspectRatio: "3:2",
+    format: "JPG / WebP",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80",
+    description: "Image displayed in the Our Philosophy section on the Our Story page."
+  },
   leader_founder: {
     id: "leader_founder",
     title: "S. Vijayaraghavan (Managing Director Portrait)",
-    category: "Leadership & Team",
+    category: "Meet Our Leadership",
     recommendedWidth: 600,
     recommendedHeight: 800,
     aspectRatio: "3:4",
@@ -63,7 +87,7 @@ export const DEFAULT_SITE_IMAGES = {
   leader_partner: {
     id: "leader_partner",
     title: "Radhakrishnan (Co-Partner Portrait)",
-    category: "Leadership & Team",
+    category: "Meet Our Leadership",
     recommendedWidth: 600,
     recommendedHeight: 800,
     aspectRatio: "3:4",
@@ -89,7 +113,7 @@ export const DEFAULT_SITE_IMAGES = {
   loc_thanjavur: {
     id: "loc_thanjavur",
     title: "Thanjavur Location Card",
-    category: "Regional Destinations",
+    category: "REGIONAL DESTINATIONS",
     recommendedWidth: 1000,
     recommendedHeight: 750,
     aspectRatio: "4:3",
@@ -101,7 +125,7 @@ export const DEFAULT_SITE_IMAGES = {
   loc_trichy: {
     id: "loc_trichy",
     title: "Trichy Location Card",
-    category: "Regional Destinations",
+    category: "REGIONAL DESTINATIONS",
     recommendedWidth: 1000,
     recommendedHeight: 750,
     aspectRatio: "4:3",
@@ -113,7 +137,7 @@ export const DEFAULT_SITE_IMAGES = {
   loc_madurai: {
     id: "loc_madurai",
     title: "Madurai Location Card",
-    category: "Regional Destinations",
+    category: "REGIONAL DESTINATIONS",
     recommendedWidth: 1000,
     recommendedHeight: 750,
     aspectRatio: "4:3",
@@ -125,7 +149,7 @@ export const DEFAULT_SITE_IMAGES = {
   loc_chennai: {
     id: "loc_chennai",
     title: "Chennai Location Card",
-    category: "Regional Destinations",
+    category: "REGIONAL DESTINATIONS",
     recommendedWidth: 1000,
     recommendedHeight: 750,
     aspectRatio: "4:3",
@@ -137,7 +161,7 @@ export const DEFAULT_SITE_IMAGES = {
   loc_coimbatore: {
     id: "loc_coimbatore",
     title: "Coimbatore Location Card",
-    category: "Regional Destinations",
+    category: "REGIONAL DESTINATIONS",
     recommendedWidth: 1000,
     recommendedHeight: 750,
     aspectRatio: "4:3",
@@ -149,7 +173,7 @@ export const DEFAULT_SITE_IMAGES = {
   loc_kumbakonam: {
     id: "loc_kumbakonam",
     title: "Kumbakonam Location Card",
-    category: "Regional Destinations",
+    category: "REGIONAL DESTINATIONS",
     recommendedWidth: 1000,
     recommendedHeight: 750,
     aspectRatio: "4:3",
@@ -163,7 +187,7 @@ export const DEFAULT_SITE_IMAGES = {
   cat_villas: {
     id: "cat_villas",
     title: "Luxury Villas Category Tile",
-    category: "Property Types",
+    category: "PROPERTY ASSET CLASSES",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
@@ -175,7 +199,7 @@ export const DEFAULT_SITE_IMAGES = {
   cat_houses: {
     id: "cat_houses",
     title: "Independent Houses Category Tile",
-    category: "Property Types",
+    category: "PROPERTY ASSET CLASSES",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
@@ -187,7 +211,7 @@ export const DEFAULT_SITE_IMAGES = {
   cat_apartments: {
     id: "cat_apartments",
     title: "Modern Apartments Category Tile",
-    category: "Property Types",
+    category: "PROPERTY ASSET CLASSES",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
@@ -199,7 +223,7 @@ export const DEFAULT_SITE_IMAGES = {
   cat_plots: {
     id: "cat_plots",
     title: "Residential Plots Category Tile",
-    category: "Property Types",
+    category: "PROPERTY ASSET CLASSES",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
@@ -211,7 +235,7 @@ export const DEFAULT_SITE_IMAGES = {
   cat_agricultural: {
     id: "cat_agricultural",
     title: "Agricultural Farmland Category Tile",
-    category: "Property Types",
+    category: "PROPERTY ASSET CLASSES",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
@@ -223,7 +247,7 @@ export const DEFAULT_SITE_IMAGES = {
   cat_commercial: {
     id: "cat_commercial",
     title: "Commercial Spaces Category Tile",
-    category: "Property Types",
+    category: "PROPERTY ASSET CLASSES",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
@@ -235,7 +259,7 @@ export const DEFAULT_SITE_IMAGES = {
   cat_industrial: {
     id: "cat_industrial",
     title: "Industrial Land Category Tile",
-    category: "Property Types",
+    category: "PROPERTY ASSET CLASSES",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
