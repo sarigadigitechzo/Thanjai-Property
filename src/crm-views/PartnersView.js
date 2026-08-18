@@ -111,31 +111,35 @@ export function initPartnersView() {
   }
 
   // Mock Shared Leads Data
-  const allSharedLeads = {
-    1: [ // Chennai Prime Realty
-      {
-        name: 'Karthikeyan V G',
-        phone: '8015911359',
-        location: 'MADURAI',
-        propertyType: 'Plot',
-        budget: 'up to ₹1,10,000',
-        sharedBy: 'Arun Prakash',
-        sharedDate: '11 Aug 2026, 11:13',
-        status: 'Shared'
-      },
-      {
-        name: 'Rajesh Annamalai',
-        phone: '+919843954321',
-        location: 'Coimbatore',
-        propertyType: 'Townhouse',
-        budget: 'up to ₹1,40,00,000',
-        sharedBy: 'Kavitha Murugan',
-        sharedDate: '2 Jul 2026, 21:58',
-        notes: 'Coimbatore client, prefers Saravanampatti but open to Vadavalli villas.',
-        status: 'In Progress'
-      }
-    ]
-  };
+  let allSharedLeads = JSON.parse(localStorage.getItem('thanjai_shared_leads'));
+  if (!allSharedLeads) {
+    allSharedLeads = {
+      1: [ // Chennai Prime Realty
+        {
+          name: 'Karthikeyan V G',
+          phone: '**********',
+          location: 'MADURAI',
+          propertyType: 'Plot',
+          budget: 'up to ₹1,10,000',
+          sharedBy: 'Arun Prakash',
+          sharedDate: '11 Aug 2026, 11:13',
+          status: 'Shared'
+        },
+        {
+          name: 'Rajesh Annamalai',
+          phone: '**********',
+          location: 'Coimbatore',
+          propertyType: 'Townhouse',
+          budget: 'up to ₹1,40,00,000',
+          sharedBy: 'Kavitha Murugan',
+          sharedDate: '2 Jul 2026, 21:58',
+          notes: 'Coimbatore client, prefers Saravanampatti but open to Vadavalli villas.',
+          status: 'In Progress'
+        }
+      ]
+    };
+    localStorage.setItem('thanjai_shared_leads', JSON.stringify(allSharedLeads));
+  }
 
   let activePartnerId = 1;
 
@@ -209,7 +213,7 @@ export function initPartnersView() {
     }
 
     let html = '';
-    leads.forEach(lead => {
+    leads.forEach((lead, index) => {
       const statusClass = lead.status === 'Shared' ? 'shared' : 'in-progress';
       const notesHtml = lead.notes ? `<div style="font-size: 0.85rem; color: var(--os-gray-600); margin-top: 8px;">${lead.notes}</div>` : '';
       html += `
@@ -236,6 +240,9 @@ export function initPartnersView() {
                 <div class="custom-option" data-val="Closed">Closed</div>
               </div>
             </div>
+            <button class="os-btn-icon btn-delete-shared-lead" data-index="${index}" style="color: #ef4444; border: 1px solid #fee2e2; background: #fff;">
+              <i class="ri-delete-bin-line"></i>
+            </button>
           </div>
         </div>
       `;
@@ -262,6 +269,18 @@ export function initPartnersView() {
           wrap.classList.remove('open');
           e.stopPropagation();
         });
+      });
+    });
+
+    // Delete Logic
+    leadsContainer.querySelectorAll('.btn-delete-shared-lead').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (confirm('Are you sure you want to delete this shared lead?')) {
+          const index = parseInt(btn.dataset.index);
+          allSharedLeads[activePartnerId].splice(index, 1);
+          localStorage.setItem('thanjai_shared_leads', JSON.stringify(allSharedLeads));
+          renderContent();
+        }
       });
     });
   };

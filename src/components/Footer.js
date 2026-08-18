@@ -19,9 +19,6 @@ export function renderFooter() {
               Thanjai property Real Estate Land Promoters and Constructions in Thanjavur to buy sale and house land plot commercial industrial apartment
             </p>
 
-            <div style="color: var(--color-white); font-weight: 700; font-size: 0.95rem;">
-              Visitors Count: 38,375
-            </div>
           </div>
 
           <!-- Col 2: OUR OFFICE -->
@@ -43,11 +40,12 @@ export function renderFooter() {
           <div>
             <h4 class="footer-col-title">OVERVIEW</h4>
             <ul class="footer-links-list">
-              <li><a href="/our-story" class="nav-route-link" data-route="our-story">About Us</a></li>
-              <li><a href="/contact-us" class="nav-route-link" data-route="contact">Contact</a></li>
-              <li><a href="/terms#term-privacy" class="nav-route-link" data-route="terms">Privacy Policy</a></li>
-              <li><a href="/terms#term-agreement" class="nav-route-link" data-route="terms">Terms of use</a></li>
+              <li><a href="/our-story" class="nav-route-link" data-route="our-story">Our Story</a></li>
+              <li><a href="/discover-properties" class="nav-route-link" data-route="discover">Discover Properties</a></li>
               <li><a href="/blog" class="nav-route-link" data-route="blog">Blog</a></li>
+              <li><a href="/contact-us" class="nav-route-link" data-route="contact-us">Contact Us</a></li>
+              <li><a href="/terms#term-privacy" class="nav-route-link" data-route="terms">Privacy Policy</a></li>
+              <li><a href="/terms#term-agreement" class="nav-route-link" data-route="terms">Terms of Use</a></li>
             </ul>
           </div>
 

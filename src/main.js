@@ -24,6 +24,7 @@ import { renderDiscoverView, initDiscoverListeners } from './views/DiscoverView.
 import { renderBlogView, initBlogListeners } from './views/BlogView.js';
 import { renderContactView, initContactListeners } from './views/ContactView.js';
 import { renderTermsView, initTermsListeners } from './views/TermsView.js';
+import { renderPrivacyView, initPrivacyListeners } from './views/PrivacyView.js';
 
 import { getFavorites } from './utils/favorites.js';
 import { showToast } from './utils/toast.js';
@@ -69,6 +70,7 @@ function parseCurrentRoute() {
   if (path.includes('blog') || path.includes('journal') || hash === 'blog' || hash === 'journal') return 'blog';
   if (path.includes('contact-us') || path.includes('contact') || hash === 'contact-us' || hash === 'contact') return 'contact';
   if (path.includes('terms') || hash === 'terms' || hash.startsWith('term-')) return 'terms';
+  if (path.includes('privacy') || hash === 'privacy' || hash.startsWith('privacy-')) return 'privacy';
 
   return 'home';
 }
@@ -80,6 +82,7 @@ function getRoutePath(route) {
     case 'blog': return '/blog';
     case 'contact': return '/contact-us';
     case 'terms': return '/terms';
+    case 'privacy': return '/privacy';
     default: return '/';
   }
 }
@@ -104,6 +107,10 @@ function updateSeoMetadata(route) {
     case 'contact':
       title = "Contact Us — Thanjai Property Advisory Desk";
       desc = "Connect with our senior property advisors at Thanjavur Raja Nagar office or submit your private property brief.";
+      break;
+    case 'privacy':
+      title = "Privacy Policy — Thanjai Property";
+      desc = "Privacy policy governing information collection, use of cookies, and limitations of liability on Thanjaiproperty.com";
       break;
   }
 
@@ -169,6 +176,10 @@ function renderApp() {
 
     case 'terms':
       mainContentHtml = renderTermsView();
+      break;
+
+    case 'privacy':
+      mainContentHtml = renderPrivacyView();
       break;
 
     case 'home':
@@ -250,6 +261,10 @@ function renderApp() {
 
     case 'terms':
       initTermsListeners();
+      break;
+
+    case 'privacy':
+      initPrivacyListeners();
       break;
 
     case 'home':

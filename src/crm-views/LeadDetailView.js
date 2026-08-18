@@ -334,22 +334,17 @@ export function renderLeadDetailView(id) {
         <div class="os-modal-body">
           <div class="form-group">
             <label>Partner company</label>
-            <div class="os-custom-select" style="width: 100%;">
-              <div class="select-value">Select partner...</div>
+            <div class="os-custom-select" style="width: 100%;" id="partner-share-dropdown">
+              <div class="select-value">Broadcast to All Partners</div>
               <i class="ri-arrow-down-s-line"></i>
-              <div class="select-dropdown">
-                <div class="select-option selected">Select partner...</div>
-                <div class="select-option">Chennai Prime Realty</div>
-                <div class="select-option">digitechzo</div>
-                <div class="select-option">fvghg</div>
-                <div class="select-option">IUCS</div>
-                <div class="select-option">Kovai Homes & Plots</div>
+              <div class="select-dropdown" id="partner-share-options">
+                <!-- Dynamically populated -->
               </div>
             </div>
           </div>
           <div class="form-group" style="margin-top: 16px;">
             <label>Notes to share</label>
-            <textarea class="os-input" rows="3" placeholder="Context for the partner team..." style="width: 100%; resize: vertical;"></textarea>
+            <textarea id="share-partner-notes" class="os-input" rows="3" placeholder="Context for the partner team..." style="width: 100%; resize: vertical;"></textarea>
           </div>
           <label style="display: flex; align-items: start; gap: 8px; margin-top: 16px; cursor: pointer;">
             <input type="checkbox" checked style="margin-top: 4px;" />
@@ -358,7 +353,7 @@ export function renderLeadDetailView(id) {
         </div>
         <div class="os-modal-footer">
           <button class="os-btn-secondary" id="cancel-share-modal">Cancel</button>
-          <button class="os-btn-primary" style="background: #fdba74; border-color: #fdba74; color: #fff;">Share lead</button>
+          <button class="os-btn-primary" id="confirm-share-modal" style="background: #fdba74; border-color: #fdba74; color: #fff;">Share lead</button>
         </div>
       </div>
     </div>
@@ -366,6 +361,42 @@ export function renderLeadDetailView(id) {
 }
 
 export function initLeadDetailView(id) {
+  const shareDropdownWrap = document.getElementById('partner-share-dropdown');
+  const shareDropdownOptions = document.getElementById('partner-share-options');
+  if (shareDropdownWrap && shareDropdownOptions) {
+    const partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
+    let optionsHtml = '<div class="select-option selected" data-id="ALL">Broadcast to All Partners <i class="ri-broadcast-line" style="margin-left:8px; color:var(--os-luxury-orange);"></i></div>';
+    partners.forEach(p => {
+      if (p.status === 'Active') {
+        optionsHtml += `<div class="select-option" data-id="${p.id}">${p.company}</div>`;
+      }
+    });
+    shareDropdownOptions.innerHTML = optionsHtml;
+    
+    // Attach custom dropdown logic
+    const selected = shareDropdownWrap.querySelector('.select-value');
+    selected.dataset.id = 'ALL';
+    selected.addEventListener('click', (e) => {
+      e.stopPropagation();
+      shareDropdownWrap.classList.toggle('open');
+    });
+    shareDropdownOptions.querySelectorAll('.select-option').forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        shareDropdownOptions.querySelectorAll('.select-option').forEach(o => o.classList.remove('selected'));
+        opt.classList.add('selected');
+        selected.innerHTML = opt.innerHTML;
+        selected.dataset.id = opt.dataset.id;
+        shareDropdownWrap.classList.remove('open');
+      });
+    });
+    window.addEventListener('click', (e) => {
+      if (!shareDropdownWrap.contains(e.target)) {
+        shareDropdownWrap.classList.remove('open');
+      }
+    });
+  }
+
   const scheduleModal = document.getElementById('schedule-visit-modal');
   const btnSchedule = document.getElementById('btn-schedule-visit');
   const closeSchedule = document.getElementById('close-schedule-modal');
@@ -422,10 +453,62 @@ export function initLeadDetailView(id) {
   const btnShare = document.getElementById('btn-share-partner');
   const closeShare = document.getElementById('close-share-modal');
   const cancelShare = document.getElementById('cancel-share-modal');
+  const confirmShare = document.getElementById('confirm-share-modal');
 
   if (btnShare) btnShare.addEventListener('click', () => shareModal.classList.add('show'));
   if (closeShare) closeShare.addEventListener('click', () => shareModal.classList.remove('show'));
   if (cancelShare) cancelShare.addEventListener('click', () => shareModal.classList.remove('show'));
+  if (confirmShare) {
+    confirmShare.addEventListener('click', () => {
+      const selectedValue = document.querySelector('#partner-share-dropdown .select-value');
+      const partnerId = selectedValue ? selectedValue.dataset.id : null;
+      const notes = document.getElementById('share-partner-notes')?.value || '';
+      
+      const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const currentLead = leads.find(l => l.id == id);
+      if (!currentLead) return;
+
+      let sharedLeadsData = JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {};
+      const partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
+
+      const newSharedRecord = {
+        name: currentLead.name || 'Unknown',
+        phone: '**********',
+        location: currentLead.city || 'Unknown',
+        propertyType: currentLead.type || 'Any',
+        budget: currentLead.budgetMax ? 'up to ' + currentLead.budgetMax : 'Not specified',
+        sharedBy: 'Current User', // In a real app, this is the logged-in user
+        sharedDate: new Date().toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+        notes: notes,
+        status: 'Shared'
+      };
+
+      if (partnerId === 'ALL') {
+        // Broadcast to all active partners
+        partners.forEach(p => {
+          if (p.status === 'Active') {
+            if (!sharedLeadsData[p.id]) sharedLeadsData[p.id] = [];
+            sharedLeadsData[p.id].push({...newSharedRecord});
+          }
+        });
+        localStorage.setItem('thanjai_shared_leads', JSON.stringify(sharedLeadsData));
+        shareModal.classList.remove('show');
+        alert('Lead details have been broadcasted to ALL partners in the dashboard. WhatsApp API broadcast will activate tomorrow.');
+      } else if (partnerId) {
+        // Share to specific partner
+        if (!sharedLeadsData[partnerId]) sharedLeadsData[partnerId] = [];
+        sharedLeadsData[partnerId].push(newSharedRecord);
+        localStorage.setItem('thanjai_shared_leads', JSON.stringify(sharedLeadsData));
+        
+        const partner = partners.find(p => p.id == partnerId);
+        const partnerName = partner ? partner.company : 'the selected partner';
+        shareModal.classList.remove('show');
+        alert(`Lead details have been shared with ${partnerName}. WhatsApp API integration pending.`);
+      } else {
+        alert('Please select a partner or Broadcast option.');
+      }
+    });
+  }
 
   // Close modals on outside click
   window.addEventListener('click', (e) => {
