@@ -22,6 +22,7 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         login: resolve(import.meta.dirname, 'login.html'),
+        adminLogin: resolve(import.meta.dirname, 'admin-login.html'),
         dashboard: resolve(import.meta.dirname, 'dashboard.html'),
         userDashboard: resolve(import.meta.dirname, 'user-dashboard.html'),
         user_dashboard: resolve(import.meta.dirname, 'user-dashboard.html'),

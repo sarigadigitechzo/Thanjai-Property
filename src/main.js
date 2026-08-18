@@ -60,9 +60,14 @@ function parseCurrentRoute() {
   const hash = window.location.hash.toLowerCase().replace(/^#\/?/, '');
 
   if (path.includes('our-story') || hash === 'our-story') return 'our-story';
-  if (path.includes('discover') || hash === 'discover') return 'discover';
+  if (path.includes('discover-properties') || path.includes('discover') || hash === 'discover-properties' || hash === 'discover') return 'discover';
+  if (hash.startsWith('blog/')) {
+    const slug = hash.replace('blog/', '');
+    if (slug) blogState.selectedPostId = slug;
+    return 'blog';
+  }
   if (path.includes('blog') || path.includes('journal') || hash === 'blog' || hash === 'journal') return 'blog';
-  if (path.includes('contact') || hash === 'contact') return 'contact';
+  if (path.includes('contact-us') || path.includes('contact') || hash === 'contact-us' || hash === 'contact') return 'contact';
   if (path.includes('terms') || hash === 'terms' || hash.startsWith('term-')) return 'terms';
 
   return 'home';
@@ -71,9 +76,9 @@ function parseCurrentRoute() {
 function getRoutePath(route) {
   switch (route) {
     case 'our-story': return '/our-story';
-    case 'discover': return '/discover';
+    case 'discover': return '/discover-properties';
     case 'blog': return '/blog';
-    case 'contact': return '/contact';
+    case 'contact': return '/contact-us';
     case 'terms': return '/terms';
     default: return '/';
   }

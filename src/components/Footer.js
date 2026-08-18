@@ -44,10 +44,9 @@ export function renderFooter() {
             <h4 class="footer-col-title">OVERVIEW</h4>
             <ul class="footer-links-list">
               <li><a href="/our-story" class="nav-route-link" data-route="our-story">About Us</a></li>
-              <li><a href="/contact" class="nav-route-link" data-route="contact">Contact</a></li>
-              <li><a href="#">Privacy Policy</a></li>
-              <li><a href="/terms" class="nav-route-link" data-route="terms">Terms of use</a></li>
-              <li><a href="#">FAQ</a></li>
+              <li><a href="/contact-us" class="nav-route-link" data-route="contact">Contact</a></li>
+              <li><a href="/terms#term-privacy" class="nav-route-link" data-route="terms">Privacy Policy</a></li>
+              <li><a href="/terms#term-agreement" class="nav-route-link" data-route="terms">Terms of use</a></li>
               <li><a href="/blog" class="nav-route-link" data-route="blog">Blog</a></li>
             </ul>
           </div>

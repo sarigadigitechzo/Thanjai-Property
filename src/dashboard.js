@@ -16,6 +16,7 @@ import { renderAgentsDirectoryView, initAgentsDirectoryView } from './crm-views/
 import { renderBuildersDirectoryView, initBuildersDirectoryView } from './crm-views/BuildersDirectoryView.js';
 import { renderReportsView, initReportsView } from './crm-views/ReportsView.js';
 import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.js';
+import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsersView.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const contentArea = document.getElementById('os-content');
@@ -90,6 +91,10 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'users':
         html = renderUsersView();
         afterRender = initUsersView;
+        break;
+      case 'admin-users':
+        html = renderAdminUsersView();
+        afterRender = initAdminUsersView;
         break;
       case 'registered-agents':
       case 'agents':
@@ -235,16 +240,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Properties Updated Reactive Listener
-  window.addEventListener('propertiesUpdated', () => {
-    handleHashChange();
-  });
+  // Admin OS Logout Handlers
+  const handleAdminLogout = () => {
+    localStorage.removeItem('thanjai_active_user');
+    window.location.href = '/admin-login.html';
+  };
 
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'thanjai_properties') {
-      handleHashChange();
-    }
-  });
+  document.getElementById('profile-logout-btn')?.addEventListener('click', handleAdminLogout);
+  document.getElementById('sidebar-logout-btn')?.addEventListener('click', handleAdminLogout);
 
   // Initialize
   handleHashChange();

@@ -98,8 +98,8 @@ export function renderLogin(initialMode = 'signin') {
 
           <!-- CREATE ACCOUNT FORM MODE -->
           <div class="auth-mode-container ${initialMode === 'register' ? 'active-mode' : ''}" id="mode-register">
-            <a href="/dashboard.html#users" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: #718096; text-decoration: none; margin-bottom: 24px; transition: color 0.2s;" onmouseover="this.style.color='#2d3748'" onmouseout="this.style.color='#718096'">
-              <i class="ri-arrow-left-line"></i> Back to Users Dashboard
+            <a href="#" id="reg-back-to-signin" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: #718096; text-decoration: none; margin-bottom: 24px; transition: color 0.2s;" onmouseover="this.style.color='#2d3748'" onmouseout="this.style.color='#718096'">
+              <i class="ri-arrow-left-line"></i> Back to Sign In
             </a>
             <h1 class="auth-heading">Create your Account</h1>
 
@@ -134,11 +134,9 @@ export function renderLogin(initialMode = 'signin') {
                   <i class="ri-user-shared-line field-icon"></i>
                   <select id="reg-role" name="role" required class="auth-select">
                     <option value="">-- Select your role --</option>
-                    <option value="superadmin" data-label="Super Admin">Super Admin</option>
-                    <option value="salesmanager" data-label="Sales Manager">Sales Manager</option>
-                    <option value="salesexecutive" data-label="Sales Executive">Sales Executive</option>
-                    <option value="propertystaff" data-label="Property Staff">Property Staff</option>
-                    <option value="partneruser" data-label="Partner User">Partner User</option>
+                    <option value="individualowner" data-label="Individual Owner">Individual Owner</option>
+                    <option value="agentbroker" data-label="Agent / Broker">Agent / Broker</option>
+                    <option value="builderdeveloper" data-label="Builder / Developer">Builder / Developer</option>
                   </select>
                 </div>
               </div>
@@ -158,7 +156,7 @@ export function renderLogin(initialMode = 'signin') {
               <div class="auth-checkbox-row">
                 <label class="checkbox-label">
                   <input type="checkbox" id="reg-terms" required />
-                  <span>I agree to the <a href="#" class="auth-link">privacy policy</a> and <a href="#" class="auth-link">terms of service</a></span>
+                  <span>I agree to the <a href="/index.html#term-privacy" target="_blank" class="auth-link">privacy policy</a> and <a href="/index.html#terms" target="_blank" class="auth-link">terms of service</a></span>
                 </label>
               </div>
 
@@ -218,10 +216,18 @@ export function initLogin() {
   const app = document.getElementById('login-app');
   if (!app) return;
 
-  const hash = window.location.hash.slice(1);
+  const hash = window.location.hash.slice(1).toLowerCase();
   let mode = 'signin';
-  if (hash === 'register') mode = 'register';
-  if (hash === 'otp') mode = 'otp';
+  if (hash === 'register' || hash === 'user-register' || hash === 'signup') {
+    mode = 'register';
+    window.location.hash = 'user-register';
+  } else if (hash === 'otp') {
+    mode = 'otp';
+    window.location.hash = 'otp';
+  } else {
+    mode = 'signin';
+    window.location.hash = 'user-login';
+  }
 
   app.innerHTML = renderLogin(mode);
 
@@ -233,12 +239,15 @@ export function initLogin() {
   function showMode(targetMode) {
     [modeSignin, modeRegister, modeOtp].forEach(m => m?.classList.remove('active-mode'));
     if (targetMode === 'signin') {
+      window.location.hash = 'user-login';
       modeSignin?.classList.add('active-mode');
       if (leftTagline) leftTagline.textContent = 'Welcome back! Sign in to continue exploring properties in Thanjavur & surrounding areas.';
     } else if (targetMode === 'register') {
+      window.location.hash = 'user-register';
       modeRegister?.classList.add('active-mode');
       if (leftTagline) leftTagline.textContent = 'Find your perfect home in Thanjavur & surrounding areas. Trusted listings, verified owners.';
     } else if (targetMode === 'otp') {
+      window.location.hash = 'otp';
       modeOtp?.classList.add('active-mode');
       const pending = getPendingOTPUser();
       const email = pending ? pending.email : '';
@@ -250,6 +259,7 @@ export function initLogin() {
 
   document.getElementById('go-to-register')?.addEventListener('click', (e) => { e.preventDefault(); showMode('register'); });
   document.getElementById('go-to-signin')?.addEventListener('click', (e) => { e.preventDefault(); showMode('signin'); });
+  document.getElementById('reg-back-to-signin')?.addEventListener('click', (e) => { e.preventDefault(); showMode('signin'); });
   document.getElementById('otp-back-signin')?.addEventListener('click', (e) => { e.preventDefault(); showMode('signin'); });
 
   // Password Visibility Eye Toggle
@@ -285,8 +295,12 @@ export function initLogin() {
     const pass = passwordInput?.value || 'Admin@1234';
 
     setTimeout(() => {
-      loginUser(email, pass);
-      window.location.href = '/user-dashboard.html';
+      const loggedUser = loginUser(email, pass);
+      if (loggedUser && (loggedUser.role === 'superadmin' || loggedUser.email === 'admin@realrest.example')) {
+        window.location.href = '/dashboard.html';
+      } else {
+        window.location.href = '/user-dashboard.html';
+      }
     }, 800);
   });
 
@@ -353,7 +367,7 @@ export function initLogin() {
     const result = verifyOTPAndActivate(otpCode);
     if (result.success) {
       if (errMsg) errMsg.style.display = 'none';
-      if (btn) btn.textContent = 'Activated! Credentials Sent to Email...';
+      if (btn) btn.textContent = 'Activated! Opening Dashboard...';
       alert(`Account Activated Successfully!\nYour Login Email & System Password have been dispatched to your registered email.\n\nClick OK to open your Client User Dashboard.`);
       setTimeout(() => {
         window.location.href = '/user-dashboard.html';

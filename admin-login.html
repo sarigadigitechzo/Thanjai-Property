@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin OS Staff Login — Thanjai Property</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
+
+    <!-- Login CSS -->
+    <link rel="stylesheet" href="/src/login.css" />
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Manrope', 'Inter', sans-serif;
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f8fafc;
+      }
+
+      .admin-card {
+        width: 100%;
+        max-width: 480px;
+        background: rgba(30, 41, 59, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 24px;
+        padding: 44px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(12px);
+        box-sizing: border-box;
+      }
+
+      .admin-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(235, 94, 40, 0.15);
+        color: #eb5e28;
+        font-size: 0.78rem;
+        font-weight: 800;
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid rgba(235, 94, 40, 0.3);
+        margin-bottom: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .admin-title {
+        font-family: 'DM Serif Display', serif;
+        font-size: 2.2rem;
+        margin: 0 0 8px 0;
+        color: #ffffff;
+      }
+
+      .admin-subtitle {
+        color: #94a3b8;
+        font-size: 0.95rem;
+        margin: 0 0 32px 0;
+        line-height: 1.5;
+      }
+
+      .admin-form-group {
+        margin-bottom: 20px;
+      }
+
+      .admin-label {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: #cbd5e1;
+        margin-bottom: 8px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .admin-input-wrap {
+        position: relative;
+      }
+
+      .admin-input-wrap i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+        font-size: 1.1rem;
+      }
+
+      .admin-input {
+        width: 100%;
+        padding: 12px 16px 12px 46px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid #334155;
+        border-radius: 12px;
+        color: #ffffff;
+        font-size: 0.95rem;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+      }
+
+      .admin-input:focus {
+        border-color: #eb5e28;
+      }
+
+      .admin-submit-btn {
+        width: 100%;
+        padding: 14px;
+        background: linear-gradient(135deg, #eb5e28 0%, #d94e18 100%);
+        border: none;
+        border-radius: 12px;
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 14px rgba(235, 94, 40, 0.35);
+        margin-top: 10px;
+      }
+
+      .admin-submit-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(235, 94, 40, 0.45);
+      }
+
+      .demo-section {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .demo-title {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #94a3b8;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .demo-pill {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 10px 14px;
+        border-radius: 10px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .demo-pill:hover {
+        background: rgba(235, 94, 40, 0.15);
+        border-color: rgba(235, 94, 40, 0.4);
+      }
+
+      .demo-name {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #f1f5f9;
+      }
+
+      .demo-role {
+        font-size: 0.78rem;
+        color: #eb5e28;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-card">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" style="height: 48px; background: #fff; padding: 6px 12px; border-radius: 8px; margin-bottom: 16px;" />
+        <div style="display: block;">
+          <span class="admin-badge"><i class="ri-shield-keyhole-line"></i> Administrative Operating System</span>
+        </div>
+        <h1 class="admin-title">Admin Staff Login</h1>
+        <p class="admin-subtitle">Sign in with your administrative credentials to access CRM Pipeline, Property Inventory & System Controls.</p>
+      </div>
+
+      <form id="admin-login-form">
+        <div class="admin-form-group">
+          <label class="admin-label" for="admin-email">STAFF EMAIL ADDRESS</label>
+          <div class="admin-input-wrap">
+            <i class="ri-mail-line"></i>
+            <input type="email" id="admin-email" value="admin@realrest.example" required class="admin-input" placeholder="admin@realrest.example" />
+          </div>
+        </div>
+
+        <div class="admin-form-group">
+          <label class="admin-label" for="admin-password">SYSTEM PASSWORD</label>
+          <div class="admin-input-wrap">
+            <i class="ri-lock-2-line"></i>
+            <input type="password" id="admin-password" value="Admin@1234" required class="admin-input" placeholder="••••••••" />
+          </div>
+        </div>
+
+        <button type="submit" class="admin-submit-btn" id="admin-signin-btn">
+          <i class="ri-login-circle-line"></i> Sign In to Admin OS
+        </button>
+      </form>
+
+      <!-- DEMO QUICK FILL -->
+      <div class="demo-section">
+        <div class="demo-title"><i class="ri-key-2-line"></i> Admin Staff Demo Accounts — click to fill</div>
+        
+        <div class="demo-pill" data-email="admin@realrest.example">
+          <div>
+            <div class="demo-name">Aishwarya R.</div>
+            <div style="font-size: 0.78rem; color: #94a3b8;">admin@realrest.example</div>
+          </div>
+          <span class="demo-role">Super Admin</span>
+        </div>
+
+        <div class="demo-pill" data-email="manager@realrest.example">
+          <div>
+            <div class="demo-name">Sales Manager</div>
+            <div style="font-size: 0.78rem; color: #94a3b8;">manager@realrest.example</div>
+          </div>
+          <span class="demo-role">Manager</span>
+        </div>
+
+        <div class="demo-pill" data-email="kavitha@realrest.example">
+          <div>
+            <div class="demo-name">Kavitha S.</div>
+            <div style="font-size: 0.78rem; color: #94a3b8;">kavitha@realrest.example</div>
+          </div>
+          <span class="demo-role">Sales Executive</span>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 24px; font-size: 0.85rem;">
+        <a href="/login.html#user-login" style="color: #94a3b8; text-decoration: none;" onmouseover="this.style.color='#eb5e28'" onmouseout="this.style.color='#94a3b8'">
+          ← Switch to Client Portal Login
+        </a>
+      </div>
+    </div>
+
+    <script>
+      document.querySelectorAll('.demo-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          const email = pill.getAttribute('data-email');
+          document.getElementById('admin-email').value = email;
+          document.getElementById('admin-password').value = 'Admin@1234';
+        });
+      });
+
+      document.getElementById('admin-login-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('admin-signin-btn');
+        if (btn) btn.textContent = 'Authenticating...';
+        
+        const email = document.getElementById('admin-email').value.trim() || 'admin@realrest.example';
+        const password = document.getElementById('admin-password').value.trim();
+
+        // Match against stored admin users if available
+        let staffUser = null;
+        try {
+          const stored = localStorage.getItem('thanjai_admin_users');
+          if (stored) {
+            const list = JSON.parse(stored);
+            staffUser = list.find(u => u.email.toLowerCase() === email.toLowerCase());
+          }
+        } catch (err) {}
+
+        const adminUser = staffUser ? {
+          id: staffUser.id,
+          fullName: staffUser.fullName,
+          email: staffUser.email,
+          role: staffUser.role,
+          roleCode: staffUser.roleCode
+        } : {
+          id: 'ADM-001',
+          fullName: email.includes('admin') ? 'Aishwarya R.' : email.includes('manager') ? 'Sales Manager' : 'Kavitha S.',
+          email: email,
+          role: email.includes('admin') ? 'Super Admin' : email.includes('manager') ? 'Sales Manager' : 'Sales Executive',
+          roleCode: 'superadmin'
+        };
+        
+        localStorage.setItem('thanjai_active_user', JSON.stringify(adminUser));
+
+        setTimeout(() => {
+          window.location.href = '/dashboard.html';
+        }, 600);
+      });
+    </script>
+  </body>
+</html>

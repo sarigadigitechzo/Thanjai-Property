@@ -22,12 +22,6 @@ export function renderUsersView() {
             Track client portal account registrations, user roles, OTP verification status, and listed properties across Tamil Nadu.
           </p>
         </div>
-
-        <div style="display: flex; gap: 12px;">
-          <a href="/login.html#register" target="_blank" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 4px; border: 1px solid #805ad5; background: #faf5ff; color: #805ad5; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-decoration: none;">
-            <i class="ri-user-add-line" style="font-size: 1.1rem;"></i> Register New User
-          </a>
-        </div>
       </div>
 
       <!-- USER STATS SUMMARY CARDS -->
@@ -46,7 +40,7 @@ export function renderUsersView() {
             <span class="kpi-title">INDIVIDUAL OWNERS</span>
             <div class="kpi-icon" style="background: #feebc8; color: #dd6b20;"><i class="ri-user-3-line"></i></div>
           </div>
-          <div class="kpi-value">${users.filter(u => u.role.includes('Individual') || u.roleCode === 'individual' || u.roleCode === 'owner').length}</div>
+          <div class="kpi-value">${users.filter(u => (u.role && u.role.toLowerCase().includes('owner')) || u.roleCode === 'individualowner' || u.roleCode === 'owner').length}</div>
           <div class="kpi-trend neutral"><i class="ri-shield-check-line"></i> Land owners</div>
         </div>
 
@@ -55,7 +49,7 @@ export function renderUsersView() {
             <span class="kpi-title">AGENTS & BROKERS</span>
             <div class="kpi-icon" style="background: #e6fffa; color: #319795;"><i class="ri-briefcase-line"></i></div>
           </div>
-          <div class="kpi-value">${users.filter(u => u.role.includes('Agent') || u.roleCode === 'agent').length}</div>
+          <div class="kpi-value">${users.filter(u => (u.role && u.role.toLowerCase().includes('agent')) || u.roleCode === 'agentbroker' || u.roleCode === 'agent').length}</div>
           <div class="kpi-trend neutral"><i class="ri-building-line"></i> Network pros</div>
         </div>
 
@@ -64,7 +58,7 @@ export function renderUsersView() {
             <span class="kpi-title">BUILDERS & DEVS</span>
             <div class="kpi-icon" style="background: #faf5ff; color: #805ad5;"><i class="ri-community-line"></i></div>
           </div>
-          <div class="kpi-value">${users.filter(u => u.role.includes('Builder') || u.roleCode === 'builder').length}</div>
+          <div class="kpi-value">${users.filter(u => (u.role && u.role.toLowerCase().includes('builder')) || u.roleCode === 'builderdeveloper' || u.roleCode === 'builder').length}</div>
           <div class="kpi-trend neutral"><i class="ri-layout-line"></i> Layout developers</div>
         </div>
       </div>
@@ -84,11 +78,9 @@ export function renderUsersView() {
             
             <select id="user-role-filter" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--os-border); background: #fff; font-size: 0.85rem; font-weight: 600; color: var(--os-charcoal); outline: none; cursor: pointer;">
               <option value="all">All Roles</option>
-              <option value="Super Admin">Super Admin</option>
-              <option value="Sales Manager">Sales Manager</option>
-              <option value="Sales Executive">Sales Executive</option>
-              <option value="Property Staff">Property Staff</option>
-              <option value="Partner User">Partner User</option>
+              <option value="Individual Owner">Individual Owner</option>
+              <option value="Agent / Broker">Agent / Broker</option>
+              <option value="Builder / Developer">Builder / Developer</option>
             </select>
           </div>
         </div>
@@ -130,7 +122,14 @@ function renderUsersRows(users, allProperties) {
   }
 
   return users.map(u => {
-    const userPropsCount = u.propertiesCount || allProperties.filter(p => p.ownerName === u.fullName || p.ownerPhone === u.phone).length;
+    const userProps = allProperties.filter(p => 
+      (p.userEmail && u.email && p.userEmail.toLowerCase() === u.email.toLowerCase()) || 
+      (p.userId && u.id && p.userId === u.id) || 
+      (p.ownerPhone && u.phone && p.ownerPhone === u.phone) || 
+      (p.ownerName && u.fullName && p.ownerName.toLowerCase().includes(u.fullName.toLowerCase())) ||
+      (p.listedBy && u.fullName && p.listedBy.toLowerCase().includes(u.fullName.toLowerCase()))
+    );
+    const userPropsCount = userProps.length;
     
     return `
       <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">

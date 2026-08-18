@@ -1,17 +1,19 @@
-import { BLOG_POSTS } from '../data/blog.js';
+import { getBlogPosts, getBlogPostByIdOrSlug } from '../utils/blogStore.js';
 
 export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
+  const allPosts = getBlogPosts();
+
   // If an article is selected, render the article detail reader view
   if (blogState.selectedPostId) {
-    const post = BLOG_POSTS.find(p => p.id === blogState.selectedPostId);
+    const post = getBlogPostByIdOrSlug(blogState.selectedPostId);
     if (post) {
-      return renderArticleDetailView(post, onNavigateToContact);
+      return renderArticleDetailView(post, onNavigateToContact, allPosts);
     }
   }
 
   // Otherwise render the Blog listing page
-  const filteredPosts = filterBlogPosts(blogState);
-  const featuredPost = filteredPosts[0] || BLOG_POSTS[0];
+  const filteredPosts = filterBlogPosts(blogState, allPosts);
+  const featuredPost = filteredPosts[0] || allPosts[0];
   const remainingPosts = filteredPosts.length > 1 ? filteredPosts.slice(1) : [];
 
   return `
@@ -28,22 +30,22 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
             INSIGHTS & MARKET PERSPECTIVES
           </span>
           <h1 class="heading-display-light" style="font-size: clamp(2.2rem, 4.5vw, 3.8rem); color: #ffffff; margin-bottom: 16px;">
-            The Blog
+            The Blog & Legal Journal
           </h1>
           <p style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.85); line-height: 1.6; max-width: 680px; margin: 0 auto;">
-            Expert real estate guides, Patta legal verification checklists, architectural stories, and Kaveri delta property trends.
+            Expert real estate guides, Patta legal verification checklists, architectural perspectives, and Tamil Nadu market intelligence.
           </p>
         </div>
       </section>
 
-      <!-- CATEGORY FILTERS & SEARCH -->
+      <!-- CATEGORY FILTERS & SEARCH BAR -->
       <section style="padding: 30px 0; background: #faf8f5; border-bottom: 1px solid rgba(0,0,0,0.06);">
         <div class="container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
           
           <!-- Category Filter Pills -->
           <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="blog-category-pills">
             <button class="blog-pill-btn ${blogState.category === 'all' ? 'active' : ''}" data-category="all">
-              All Articles (${BLOG_POSTS.length})
+              All Articles (${allPosts.length})
             </button>
             <button class="blog-pill-btn ${blogState.category === 'Legal & Patta' ? 'active' : ''}" data-category="Legal & Patta">
               Legal & Patta
@@ -63,16 +65,16 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
           </div>
 
           <!-- Quick Search -->
-          <div style="position: relative; width: 260px;">
+          <div style="position: relative; width: 280px;">
             <i class="ri-search-line" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #888;"></i>
             <input 
               type="text" 
               id="blog-search-input" 
               value="${blogState.keyword || ''}" 
-              placeholder="Search articles..." 
+              placeholder="Search articles or topics..." 
               style="
-                width: 100%; padding: 8px 14px 8px 40px; font-size: 0.88rem; border-radius: 20px;
-                border: 1px solid #cbd5e0; background: #ffffff; outline: none;
+                width: 100%; padding: 10px 14px 10px 40px; font-size: 0.9rem; border-radius: 20px;
+                border: 1px solid #cbd5e0; background: #ffffff; outline: none; transition: border-color 0.2s;
               "
             />
           </div>
@@ -80,89 +82,99 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
         </div>
       </section>
 
-      <!-- ARTICLES CONTAINER -->
+      <!-- ARTICLES CATALOG CONTAINER -->
       <section style="padding: 60px 0 90px 0; background: #ffffff;">
-        <div class="container">
+        <div class="container" style="max-width: 1140px;">
           
           ${filteredPosts.length > 0 ? `
             
-            <!-- Featured Main Article Banner -->
+            <!-- FEATURED MAIN ARTICLE BANNER -->
             ${featuredPost ? `
-              <article class="featured-blog-card hover-lift" data-id="${featuredPost.id}" style="
+              <article class="featured-blog-card hover-lift" data-id="${featuredPost.id}" data-slug="${featuredPost.slug || ''}" style="
                 background: #ffffff; border-radius: 24px; overflow: hidden;
-                border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+                border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 12px 36px rgba(0,0,0,0.06);
                 display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-                margin-bottom: 50px; cursor: pointer;
+                margin-bottom: 50px; cursor: pointer; transition: all 0.3s ease;
               ">
-                <div style="position: relative; min-height: 320px; background: #111; overflow: hidden;">
+                <div style="position: relative; min-height: 360px; background: #0f172a; overflow: hidden;">
                   <img src="${featuredPost.image}" alt="${featuredPost.title}" style="width: 100%; height: 100%; object-fit: cover;" />
-                  <span class="badge badge-orange" style="position: absolute; top: 20px; left: 20px; font-weight: 700;">
+                  <span class="badge badge-orange" style="position: absolute; top: 20px; left: 20px; font-weight: 800; letter-spacing: 0.05em;">
                     FEATURED • ${featuredPost.category}
                   </span>
                 </div>
 
-                <div style="padding: 40px; display: flex; flex-direction: column; justify-content: center;">
-                  <div style="display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: #777; margin-bottom: 16px;">
-                    <span><i class="ri-calendar-line"></i> ${featuredPost.date}</span>
+                <div style="padding: 44px; display: flex; flex-direction: column; justify-content: center;">
+                  <div style="display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: #718096; font-weight: 700; margin-bottom: 16px;">
+                    <span><i class="ri-calendar-line" style="color: #eb5e28;"></i> ${featuredPost.date}</span>
                     <span>•</span>
-                    <span><i class="ri-time-line"></i> ${featuredPost.readTime}</span>
+                    <span><i class="ri-time-line" style="color: #eb5e28;"></i> ${featuredPost.readTime}</span>
                   </div>
 
-                  <h2 style="font-family: var(--font-serif); font-size: clamp(1.5rem, 3vw, 2.1rem); font-weight: 700; color: #1a1a1a; line-height: 1.3; margin-bottom: 16px;">
+                  <h2 style="font-family: var(--font-serif); font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; color: #1A202C; line-height: 1.3; margin-bottom: 16px;">
                     ${featuredPost.title}
                   </h2>
 
-                  <p style="font-size: 1rem; color: #555; line-height: 1.65; margin-bottom: 24px;">
+                  <p style="font-size: 1.02rem; color: #4A5568; line-height: 1.65; margin-bottom: 28px;">
                     ${featuredPost.excerpt}
                   </p>
 
-                  <div style="display: flex; align-items: center; gap: 12px; margin-top: auto;">
-                    <img src="${featuredPost.authorAvatar}" alt="${featuredPost.author}" style="width: 36px; height: 36px; border-radius: 50%;" />
-                    <div>
-                      <div style="font-size: 0.88rem; font-weight: 700; color: #222;">${featuredPost.author}</div>
-                      <div style="font-size: 0.78rem; color: var(--color-orange, #eb5e28); font-weight: 700; display: flex; align-items: center; gap: 4px;">
-                        Read Full Article <i class="ri-arrow-right-line"></i>
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 20px; border-top: 1px solid #EDF2F7;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                      <img src="${featuredPost.authorAvatar}" alt="${featuredPost.author}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid #E2E8F0;" />
+                      <div>
+                        <div style="font-size: 0.9rem; font-weight: 800; color: #1A202C;">${featuredPost.author}</div>
+                        <div style="font-size: 0.78rem; color: #718096;">Editorial Contributor</div>
                       </div>
+                    </div>
+
+                    <div style="font-size: 0.88rem; color: #eb5e28; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">
+                      Read Article <i class="ri-arrow-right-line"></i>
                     </div>
                   </div>
                 </div>
               </article>
             ` : ''}
 
-            <!-- Secondary Grid for Remaining Articles -->
+            <!-- PREMIER GRID FOR ALL REMAINING ARTICLES -->
             ${remainingPosts.length > 0 ? `
-              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 32px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 32px;">
                 ${remainingPosts.map(post => `
-                  <article class="blog-card hover-lift" data-id="${post.id}" style="
+                  <article class="blog-card hover-lift" data-id="${post.id}" data-slug="${post.slug || ''}" style="
                     background: #ffffff; border-radius: 20px; overflow: hidden;
-                    border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 18px rgba(0,0,0,0.04);
+                    border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 6px 20px rgba(0,0,0,0.04);
                     display: flex; flex-direction: column; cursor: pointer; transition: all 0.3s ease;
                   ">
-                    <div style="position: relative; width: 100%; height: 210px; overflow: hidden; background: #111;">
+                    <div style="position: relative; width: 100%; height: 230px; overflow: hidden; background: #0f172a;">
                       <img src="${post.image}" alt="${post.title}" style="width: 100%; height: 100%; object-fit: cover;" />
-                      <span class="badge badge-orange" style="position: absolute; top: 16px; left: 16px; font-size: 0.75rem;">
+                      <span class="badge badge-orange" style="position: absolute; top: 16px; left: 16px; font-size: 0.75rem; font-weight: 800;">
                         ${post.category}
                       </span>
                     </div>
 
                     <div style="padding: 24px; display: flex; flex-direction: column; flex: 1;">
-                      <div style="display: flex; align-items: center; gap: 12px; font-size: 0.82rem; color: #777; margin-bottom: 12px;">
-                        <span><i class="ri-calendar-line"></i> ${post.date}</span>
+                      <div style="display: flex; align-items: center; gap: 12px; font-size: 0.82rem; color: #718096; font-weight: 700; margin-bottom: 12px;">
+                        <span><i class="ri-calendar-line" style="color: #eb5e28;"></i> ${post.date}</span>
                         <span>•</span>
-                        <span><i class="ri-time-line"></i> ${post.readTime}</span>
+                        <span><i class="ri-time-line" style="color: #eb5e28;"></i> ${post.readTime}</span>
                       </div>
 
-                      <h3 style="font-family: var(--font-serif); font-size: 1.25rem; font-weight: 700; color: #1a1a1a; line-height: 1.4; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                      <h3 style="font-family: var(--font-serif); font-size: 1.3rem; font-weight: 800; color: #1A202C; line-height: 1.4; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                         ${post.title}
                       </h3>
 
-                      <p style="font-size: 0.9rem; color: #666; line-height: 1.6; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                      <p style="font-size: 0.92rem; color: #4A5568; line-height: 1.6; margin-bottom: 24px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
                         ${post.excerpt}
                       </p>
 
-                      <div style="margin-top: auto; display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.88rem; color: var(--color-orange, #eb5e28);">
-                        <span>Read Article</span>
-                        <i class="ri-arrow-right-line"></i>
+                      <div style="margin-top: auto; display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid #F1F5F9;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                          <img src="${post.authorAvatar}" alt="${post.author}" style="width: 28px; height: 28px; border-radius: 50%;" />
+                          <span style="font-size: 0.82rem; font-weight: 700; color: #4A5568;">${post.author}</span>
+                        </div>
+
+                        <div style="font-weight: 800; font-size: 0.88rem; color: #eb5e28; display: inline-flex; align-items: center; gap: 4px;">
+                          Read Article <i class="ri-arrow-right-line"></i>
+                        </div>
                       </div>
                     </div>
                   </article>
@@ -172,11 +184,11 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
 
           ` : `
             <!-- Empty State -->
-            <div style="text-align: center; padding: 70px 20px; background: #faf8f5; border-radius: 20px; max-width: 500px; margin: 0 auto;">
-              <i class="ri-file-search-line" style="font-size: 3rem; color: #a0aec0; margin-bottom: 12px; display: block;"></i>
-              <h3 style="font-family: var(--font-serif); font-size: 1.4rem; color: #2d3748; margin-bottom: 8px;">No articles found</h3>
-              <p style="color: #718096; font-size: 0.9rem; margin-bottom: 20px;">Try selecting another category filter or search query.</p>
-              <button class="btn btn-primary" id="reset-blog-filter-btn" style="padding: 10px 24px; font-size: 0.88rem;">
+            <div style="text-align: center; padding: 70px 20px; background: #faf8f5; border-radius: 20px; max-width: 500px; margin: 0 auto; border: 1px dashed #CBD5E0;">
+              <i class="ri-file-search-line" style="font-size: 3.5rem; color: #a0aec0; margin-bottom: 14px; display: block;"></i>
+              <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: #2d3748; margin-bottom: 8px;">No articles found</h3>
+              <p style="color: #718096; font-size: 0.95rem; margin-bottom: 20px;">Try selecting another category filter or keyword query.</p>
+              <button class="btn btn-primary" id="reset-blog-filter-btn" style="padding: 10px 24px; font-size: 0.88rem; font-weight: 800;">
                 Show All Articles
               </button>
             </div>
@@ -190,69 +202,69 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
 }
 
 // Render dynamic Article Detail Reader View
-function renderArticleDetailView(post, onNavigateToContact) {
-  const relatedPosts = BLOG_POSTS.filter(p => p.id !== post.id).slice(0, 2);
+function renderArticleDetailView(post, onNavigateToContact, allPosts) {
+  const relatedPosts = (allPosts || getBlogPosts()).filter(p => p.id !== post.id && p.slug !== post.slug).slice(0, 3);
 
   return `
-    <div class="page-view view-enter article-detail-page" style="padding-top: 100px; padding-bottom: 90px; background: #faf8f5;">
-      <div class="container" style="max-width: 900px;">
+    <div class="page-view view-enter article-detail-page" style="padding-top: 110px; padding-bottom: 90px; background: #faf8f5;">
+      <div class="container" style="max-width: 960px;">
         
         <!-- Back Navigation Button -->
-        <button class="os-btn-secondary" id="back-to-blog-btn" style="margin-bottom: 28px; font-size: 0.9rem;">
-          <i class="ri-arrow-left-line"></i> Back to Blog Articles
+        <button class="os-btn-secondary" id="back-to-blog-btn" style="margin-bottom: 28px; font-size: 0.9rem; padding: 10px 20px; border-radius: 10px; font-weight: 700; background: #ffffff; border: 1px solid #E2E8F0; color: #4A5568; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+          <i class="ri-arrow-left-line" style="color: #eb5e28;"></i> Back to Blog & Legal Journal
         </button>
 
         <article style="
           background: #ffffff; border-radius: 24px; overflow: hidden;
-          border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 10px 40px rgba(0,0,0,0.06);
+          border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 16px 48px rgba(0,0,0,0.06);
         ">
           <!-- Article Header -->
-          <div style="padding: 44px 44px 28px 44px;">
-            <span class="badge badge-orange" style="font-size: 0.8rem; margin-bottom: 16px; display: inline-block;">
+          <div style="padding: 48px 48px 32px 48px;">
+            <span class="badge badge-orange" style="font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 16px; display: inline-block;">
               ${post.category}
             </span>
 
-            <h1 style="font-family: var(--font-serif); font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; color: #1a1a1a; line-height: 1.25; margin-bottom: 20px;">
+            <h1 style="font-family: var(--font-serif); font-size: clamp(2rem, 4.5vw, 3.1rem); font-weight: 800; color: #1A202C; line-height: 1.25; margin-bottom: 24px;">
               ${post.title}
             </h1>
 
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 24px; border-bottom: 1px solid rgba(0,0,0,0.08);">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <img src="${post.authorAvatar}" alt="${post.author}" style="width: 44px; height: 44px; border-radius: 50%;" />
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding-bottom: 28px; border-bottom: 1px solid #EDF2F7;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <img src="${post.authorAvatar}" alt="${post.author}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #E2E8F0;" />
                 <div>
-                  <div style="font-size: 0.95rem; font-weight: 700; color: #222;">${post.author}</div>
-                  <div style="font-size: 0.82rem; color: #777;">Published on ${post.date}</div>
+                  <div style="font-size: 1rem; font-weight: 800; color: #1A202C;">${post.author}</div>
+                  <div style="font-size: 0.82rem; color: #718096;">Published on ${post.date}</div>
                 </div>
               </div>
 
-              <div style="font-size: 0.88rem; color: #666; display: flex; align-items: center; gap: 6px;">
-                <i class="ri-time-line" style="color: var(--color-orange, #eb5e28);"></i>
+              <div style="font-size: 0.9rem; color: #4A5568; font-weight: 700; display: flex; align-items: center; gap: 8px; background: #F8FAFC; padding: 8px 16px; border-radius: 20px; border: 1px solid #E2E8F0;">
+                <i class="ri-time-line" style="color: #eb5e28;"></i>
                 <span>${post.readTime}</span>
               </div>
             </div>
           </div>
 
-          <!-- Featured Image -->
-          <div style="width: 100%; max-height: 440px; overflow: hidden; background: #111;">
+          <!-- Featured Image Banner -->
+          <div style="width: 100%; height: 500px; overflow: hidden; background: #0f172a; position: relative;">
             <img src="${post.image}" alt="${post.title}" style="width: 100%; height: 100%; object-fit: cover;" />
           </div>
 
           <!-- Article Content Body -->
-          <div class="article-body-text" style="padding: 44px; font-size: 1.1rem; color: #333; line-height: 1.8;">
-            ${post.content}
+          <div class="article-body-text" style="padding: 48px; font-size: 1.12rem; color: #2D3748; line-height: 1.85;">
+            ${post.content || `<p class="blog-lead">${post.excerpt}</p>`}
           </div>
 
-          <!-- Bottom Contact CTA -->
-          <div style="padding: 36px 44px; background: #2A1808; color: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+          <!-- Bottom Senior Advisory CTA -->
+          <div style="padding: 40px 48px; background: linear-gradient(135deg, #1C1007 0%, #2A1808 100%); color: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; box-shadow: 0 12px 30px rgba(0,0,0,0.15);">
             <div>
-              <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: #ffffff; margin-bottom: 4px;">
-                Need Expert Real Estate Guidance?
+              <h3 style="font-family: var(--font-serif); font-size: 1.65rem; color: #ffffff; margin-bottom: 6px; font-weight: 800;">
+                Need Legal Title Guidance or Private Consultation?
               </h3>
-              <p style="color: rgba(255,255,255,0.8); font-size: 0.95rem; margin: 0;">
-                Speak with our senior legal advisors and property specialists today.
+              <p style="color: rgba(255,255,255,0.85); font-size: 0.96rem; margin: 0;">
+                Speak directly with our senior Patta legal verification attorneys and investment specialists.
               </p>
             </div>
-            <button class="btn btn-primary" id="article-contact-btn" style="padding: 12px 28px; font-size: 0.95rem;">
+            <button class="btn btn-primary" id="article-contact-btn" style="padding: 14px 32px; font-size: 0.98rem; font-weight: 800;">
               <i class="ri-mail-send-line"></i> Contact Advisory Desk
             </button>
           </div>
@@ -261,25 +273,29 @@ function renderArticleDetailView(post, onNavigateToContact) {
         <!-- Related Articles Grid -->
         ${relatedPosts.length > 0 ? `
           <div style="margin-top: 60px;">
-            <h3 style="font-family: var(--font-serif); font-size: 1.5rem; margin-bottom: 24px; color: #1a1a1a;">Related Articles</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 28px;">
+            <h3 style="font-family: var(--font-serif); font-size: 1.6rem; font-weight: 800; margin-bottom: 24px; color: #1A202C;">
+              Related Articles & Legal Guides
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px;">
               ${relatedPosts.map(rel => `
-                <article class="blog-card hover-lift" data-id="${rel.id}" style="
+                <article class="blog-card hover-lift" data-id="${rel.id}" data-slug="${rel.slug || ''}" style="
                   background: #ffffff; border-radius: 20px; overflow: hidden;
                   border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 18px rgba(0,0,0,0.04);
-                  display: flex; flex-direction: column; cursor: pointer;
+                  display: flex; flex-direction: column; cursor: pointer; transition: all 0.3s ease;
                 ">
-                  <div style="position: relative; width: 100%; height: 180px; overflow: hidden;">
+                  <div style="position: relative; width: 100%; height: 180px; overflow: hidden; background: #0f172a;">
                     <img src="${rel.image}" alt="${rel.title}" style="width: 100%; height: 100%; object-fit: cover;" />
-                    <span class="badge badge-orange" style="position: absolute; top: 12px; left: 12px; font-size: 0.72rem;">
+                    <span class="badge badge-orange" style="position: absolute; top: 12px; left: 12px; font-size: 0.72rem; font-weight: 800;">
                       ${rel.category}
                     </span>
                   </div>
                   <div style="padding: 20px; display: flex; flex-direction: column; flex: 1;">
-                    <h4 style="font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">
+                    <h4 style="font-family: var(--font-serif); font-size: 1.15rem; font-weight: 800; color: #1A202C; margin-bottom: 10px; line-height: 1.35;">
                       ${rel.title}
                     </h4>
-                    <span style="font-size: 0.82rem; color: var(--color-orange, #eb5e28); font-weight: 700; margin-top: auto;">Read Article →</span>
+                    <span style="font-size: 0.85rem; color: #eb5e28; font-weight: 800; margin-top: auto; display: inline-flex; align-items: center; gap: 4px;">
+                      Read Article <i class="ri-arrow-right-line"></i>
+                    </span>
                   </div>
                 </article>
               `).join('')}
@@ -292,16 +308,17 @@ function renderArticleDetailView(post, onNavigateToContact) {
   `;
 }
 
-function filterBlogPosts(state) {
-  return BLOG_POSTS.filter(post => {
+function filterBlogPosts(state, allPosts) {
+  const posts = allPosts || getBlogPosts();
+  return posts.filter(post => {
     if (state.category && state.category !== 'all') {
       if (post.category !== state.category) return false;
     }
     if (state.keyword && state.keyword.trim() !== '') {
       const q = state.keyword.toLowerCase().trim();
-      const matchTitle = post.title.toLowerCase().includes(q);
-      const matchExcerpt = post.excerpt.toLowerCase().includes(q);
-      const matchCat = post.category.toLowerCase().includes(q);
+      const matchTitle = (post.title || '').toLowerCase().includes(q);
+      const matchExcerpt = (post.excerpt || '').toLowerCase().includes(q);
+      const matchCat = (post.category || '').toLowerCase().includes(q);
       if (!matchTitle && !matchExcerpt && !matchCat) return false;
     }
     return true;
@@ -337,12 +354,12 @@ export function initBlogListeners(blogState, onStateUpdate, onSelectPost, onNavi
     onStateUpdate(blogState);
   });
 
-  // Blog cards click
+  // Blog cards click (matches by id or slug)
   document.querySelectorAll('.blog-card, .featured-blog-card').forEach(card => {
     card.addEventListener('click', () => {
-      const id = card.dataset.id;
-      if (id && onSelectPost) {
-        onSelectPost(id);
+      const targetId = card.dataset.slug || card.dataset.id;
+      if (targetId && onSelectPost) {
+        onSelectPost(targetId);
       }
     });
   });

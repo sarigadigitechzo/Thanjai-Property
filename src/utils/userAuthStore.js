@@ -12,7 +12,7 @@ const DEFAULT_USERS = [
     email: 'kanidigitechzo@gmail.com',
     phone: '9585777772',
     role: 'Individual Owner',
-    roleCode: 'owner',
+    roleCode: 'individualowner',
     status: 'Active',
     propertiesCount: 3,
     visitorsCount: 142,
@@ -22,30 +22,48 @@ const DEFAULT_USERS = [
   {
     id: 'USR-1002',
     fullName: 'Senthil Kumar',
-    email: 'senthil@chennaiprime.example',
+    email: 'senthil.agent@thanjai.example',
     phone: '9840123456',
     role: 'Agent / Broker',
-    roleCode: 'agent',
+    roleCode: 'agentbroker',
     status: 'Active',
     propertiesCount: 8,
     visitorsCount: 420,
     buyersCount: 35,
     createdAt: '2026-08-12T14:30:00Z'
+  },
+  {
+    id: 'USR-2578',
+    fullName: 'Tamilselvan R.',
+    email: 'tamilselvan.builder@thanjai.example',
+    phone: '9585777772',
+    role: 'Builder / Developer',
+    roleCode: 'builderdeveloper',
+    status: 'Active',
+    propertiesCount: 2,
+    visitorsCount: 95,
+    buyersCount: 14,
+    createdAt: '2026-08-13T09:15:00Z'
   }
 ];
 
 export function getRegisteredUsers() {
   try {
     const data = localStorage.getItem(USERS_STORAGE_KEY);
-    if (!data) {
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
-      return DEFAULT_USERS;
+    if (data !== null) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Exclude admin staff accounts from client portal users list
+        const clientUsersOnly = parsed.filter(u => u.email !== 'admin@realrest.example' && u.roleCode !== 'superadmin');
+        return clientUsersOnly.length > 0 ? clientUsersOnly : DEFAULT_USERS;
+      }
     }
-    return JSON.parse(data);
   } catch (err) {
     console.error('Error reading registered users:', err);
-    return DEFAULT_USERS;
   }
+
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
+  return DEFAULT_USERS;
 }
 
 export function getCurrentUser() {
@@ -87,7 +105,7 @@ export function initiateRegistration(userData) {
     email: userData.email,
     phone: userData.phone || '',
     role: userData.roleLabel || 'Individual Owner',
-    roleCode: userData.role || 'owner',
+    roleCode: userData.role || 'individualowner',
     status: 'Pending OTP Verification',
     otpCode: '1234', // Demo fixed OTP code for testing
     createdAt: new Date().toISOString()
@@ -151,14 +169,25 @@ export function loginUser(email, password) {
   let found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
   if (!found) {
+    let assignedRole = 'Individual Owner';
+    let assignedRoleCode = 'individualowner';
+    const lowerEmail = email.toLowerCase();
+    if (lowerEmail.includes('builder')) {
+      assignedRole = 'Builder / Developer';
+      assignedRoleCode = 'builderdeveloper';
+    } else if (lowerEmail.includes('agent')) {
+      assignedRole = 'Agent / Broker';
+      assignedRoleCode = 'agentbroker';
+    }
+
     // Auto-create user for demo flexibility
     found = {
       id: `USR-${Date.now().toString().slice(-4)}`,
       fullName: email.split('@')[0].toUpperCase(),
       email: email,
       phone: '9585777772',
-      role: 'Individual Owner',
-      roleCode: 'owner',
+      role: assignedRole,
+      roleCode: assignedRoleCode,
       status: 'Active',
       propertiesCount: 2,
       visitorsCount: 88,

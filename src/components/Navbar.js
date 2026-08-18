@@ -25,13 +25,13 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
               <a href="/our-story" class="nav-link nav-route-link ${currentRoute === 'our-story' ? 'active' : ''}" data-route="our-story">Our Story</a>
             </li>
             <li>
-              <a href="/discover" class="nav-link nav-route-link ${currentRoute === 'discover' ? 'active' : ''}" data-route="discover">Discover Properties</a>
+              <a href="/discover-properties" class="nav-link nav-route-link ${currentRoute === 'discover' ? 'active' : ''}" data-route="discover">Discover Properties</a>
             </li>
             <li>
               <a href="/blog" class="nav-link nav-route-link ${currentRoute === 'blog' ? 'active' : ''}" data-route="blog">Blog</a>
             </li>
             <li>
-              <a href="/contact" class="nav-link nav-route-link ${currentRoute === 'contact' ? 'active' : ''}" data-route="contact">Contact</a>
+              <a href="/contact-us" class="nav-link nav-route-link ${currentRoute === 'contact' ? 'active' : ''}" data-route="contact">Contact</a>
             </li>
           </ul>
 
@@ -87,9 +87,9 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
         <ul style="list-style: none; display: flex; flex-direction: column; gap: 20px; font-size: 1.1rem; font-weight: 600;">
           <li><a href="/" class="mobile-nav-link nav-route-link ${currentRoute === 'home' ? 'active' : ''}" data-route="home" style="color: #fff; text-decoration: none;">Home</a></li>
           <li><a href="/our-story" class="mobile-nav-link nav-route-link ${currentRoute === 'our-story' ? 'active' : ''}" data-route="our-story" style="color: #fff; text-decoration: none;">Our Story</a></li>
-          <li><a href="/discover" class="mobile-nav-link nav-route-link ${currentRoute === 'discover' ? 'active' : ''}" data-route="discover" style="color: #fff; text-decoration: none;">Discover Properties</a></li>
+          <li><a href="/discover-properties" class="mobile-nav-link nav-route-link ${currentRoute === 'discover' ? 'active' : ''}" data-route="discover" style="color: #fff; text-decoration: none;">Discover Properties</a></li>
           <li><a href="/blog" class="mobile-nav-link nav-route-link ${currentRoute === 'blog' ? 'active' : ''}" data-route="blog" style="color: #fff; text-decoration: none;">Blog</a></li>
-          <li><a href="/contact" class="mobile-nav-link nav-route-link ${currentRoute === 'contact' ? 'active' : ''}" data-route="contact" style="color: #fff; text-decoration: none;">Contact</a></li>
+          <li><a href="/contact-us" class="mobile-nav-link nav-route-link ${currentRoute === 'contact' ? 'active' : ''}" data-route="contact" style="color: #fff; text-decoration: none;">Contact</a></li>
         </ul>
 
         <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: rgba(255,255,255,0.7);">

@@ -5,6 +5,7 @@ const STORAGE_KEY = 'thanjai_blog_posts';
 export const INITIAL_BLOG_POSTS = [
   {
     id: "dtcp-rera-buyer-guide",
+    slug: "guide-to-buying-dtcp-rera-approved-layout-plots-in-thanjavur",
     title: "Guide to Buying DTCP & RERA Approved Layout Plots in Thanjavur",
     category: "Legal & Patta",
     date: "10 Aug 2026",
@@ -24,6 +25,7 @@ export const INITIAL_BLOG_POSTS = [
   },
   {
     id: "kaveri-farmland-investment",
+    slug: "the-rising-appreciation-of-kaveri-riverfront-agricultural-farmlands",
     title: "The Rising Appreciation of Kaveri Riverfront Agricultural Farmlands",
     category: "Investment",
     date: "28 Jul 2026",
@@ -40,6 +42,7 @@ export const INITIAL_BLOG_POSTS = [
   },
   {
     id: "contemporary-villas-architecture",
+    slug: "modern-villa-architecture-blending-dravidian-courtyards-with-contemporary-luxury",
     title: "Modern Villa Architecture: Blending Dravidian Courtyards with Contemporary Luxury",
     category: "Architecture",
     date: "15 Jul 2026",
@@ -56,6 +59,7 @@ export const INITIAL_BLOG_POSTS = [
   },
   {
     id: "central-tn-commercial-hubs",
+    slug: "investing-in-central-tamil-nadu-trichy-thanjavur-commercial-corridors",
     title: "Investing in Central Tamil Nadu: Trichy & Thanjavur Commercial Corridors",
     category: "Market Guide",
     date: "30 Jun 2026",
@@ -70,6 +74,7 @@ export const INITIAL_BLOG_POSTS = [
   },
   {
     id: "nri-property-buying-guide",
+    slug: "nri-real-estate-guide-purchasing-property-in-tamil-nadu-seamlessly",
     title: "NRI Real Estate Guide: Purchasing Property in Tamil Nadu Seamlessly",
     category: "NRI Guide",
     date: "12 Jun 2026",
@@ -114,6 +119,13 @@ export function getBlogPostById(id) {
   return posts.find(p => p.id === id) || null;
 }
 
+export function getBlogPostByIdOrSlug(idOrSlug) {
+  if (!idOrSlug) return null;
+  const posts = getBlogPosts();
+  const target = String(idOrSlug).toLowerCase().trim();
+  return posts.find(p => p.id === idOrSlug || p.slug === target || p.id.toLowerCase() === target) || null;
+}
+
 export function addBlogPost(data) {
   const posts = getBlogPosts();
   const slug = (data.title || 'article')
@@ -126,6 +138,7 @@ export function addBlogPost(data) {
 
   const newPost = {
     id: newId,
+    slug: data.slug || slug,
     title: data.title || 'Untitled Article',
     category: data.category || 'Market Guide',
     date: data.date || nowStr,
