@@ -1,5 +1,6 @@
 import { getRegisteredUsers } from '../utils/userAuthStore.js';
 import { getProperties } from '../utils/propertiesStore.js';
+import { setPropertiesSearchFilter } from './PropertiesView.js';
 
 export function renderUsersView() {
   const users = getRegisteredUsers();
@@ -83,9 +84,11 @@ export function renderUsersView() {
             
             <select id="user-role-filter" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--os-border); background: #fff; font-size: 0.85rem; font-weight: 600; color: var(--os-charcoal); outline: none; cursor: pointer;">
               <option value="all">All Roles</option>
-              <option value="Individual">Individual</option>
-              <option value="Agent">Agent</option>
-              <option value="Builder">Builder</option>
+              <option value="Super Admin">Super Admin</option>
+              <option value="Sales Manager">Sales Manager</option>
+              <option value="Sales Executive">Sales Executive</option>
+              <option value="Property Staff">Property Staff</option>
+              <option value="Partner User">Partner User</option>
             </select>
           </div>
         </div>
@@ -191,7 +194,8 @@ export function initUsersView() {
     document.querySelectorAll('.view-user-props-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const name = btn.dataset.userName;
-        alert(`Viewing properties submitted by user: ${name}\nTo manage inventory, navigate to Properties Inventory.`);
+        setPropertiesSearchFilter(name);
+        window.location.hash = '#properties';
       });
     });
   }

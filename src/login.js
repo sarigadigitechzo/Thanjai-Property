@@ -98,6 +98,9 @@ export function renderLogin(initialMode = 'signin') {
 
           <!-- CREATE ACCOUNT FORM MODE -->
           <div class="auth-mode-container ${initialMode === 'register' ? 'active-mode' : ''}" id="mode-register">
+            <a href="/dashboard.html#users" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: #718096; text-decoration: none; margin-bottom: 24px; transition: color 0.2s;" onmouseover="this.style.color='#2d3748'" onmouseout="this.style.color='#718096'">
+              <i class="ri-arrow-left-line"></i> Back to Users Dashboard
+            </a>
             <h1 class="auth-heading">Create your Account</h1>
 
             <form class="auth-form" id="register-form" onsubmit="return false;">

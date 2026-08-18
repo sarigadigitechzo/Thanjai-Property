@@ -10,6 +10,10 @@ let activeMaxPriceFilter = 'all';
 let currentViewMode = 'list'; // 'list' or 'form'
 let editingPropertyId = null; // null for add, string ID for edit
 
+export function setPropertiesSearchFilter(query) {
+  activeSearch = query;
+}
+
 // State for active form image gallery & video upload
 let formImagesList = [];
 let formVideoFileUrl = '';
@@ -41,6 +45,9 @@ export function renderPropertiesView() {
             <i class="ri-building-4-fill"></i>
           </div>
           <div>
+            <a href="#users" style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem; color: #718096; text-decoration: none; font-weight: 700; margin-bottom: 6px; transition: color 0.2s;" onmouseover="this.style.color='#1a202c'" onmouseout="this.style.color='#718096'">
+              <i class="ri-arrow-left-line"></i> Back to Registered Users
+            </a>
             <h1 style="font-size: 1.5rem; font-weight: 700; color: #1a202c; margin: 0; line-height: 1.2;">Properties Inventory</h1>
             <p style="font-size: 0.88rem; color: #718096; margin: 2px 0 0 0;">Browse, list, and manage your property catalog</p>
           </div>
