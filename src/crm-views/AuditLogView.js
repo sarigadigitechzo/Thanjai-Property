@@ -5,36 +5,58 @@ export function renderAuditLogView() {
 
   return `
     <div class="view-enter audit-log-view">
-      <div class="view-header-flex" style="margin-bottom: 24px;">
+      <style>
+        .audit-filter-btn {
+          padding: 6px 14px;
+          border-radius: 20px;
+          border: 1px solid #e2e8f0;
+          background: #fff;
+          color: #4a5568;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .audit-filter-btn:hover {
+          background: #f7fafc;
+          border-color: #cbd5e0;
+        }
+        .audit-filter-btn.active {
+          background: #2d3748;
+          color: #fff;
+          border-color: #2d3748;
+        }
+      </style>
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
             <span class="badge badge-dark" style="font-size: 0.75rem;">
               <i class="ri-history-line"></i> SECURITY & SYSTEM AUDIT TRAIL
             </span>
           </div>
-          <h1 class="view-title">Audit Log</h1>
-          <p class="view-subtitle">Track administrative activities, image asset changes, listings updates, and access logs.</p>
+          <h1 class="view-title" style="margin: 4px 0;">Audit Log</h1>
+          <p class="view-subtitle" style="margin: 0;">Track administrative activities, image asset changes, listings updates, and access logs.</p>
         </div>
 
-        <div class="header-actions-right">
-          <button class="os-btn-secondary" id="export-audit-btn">
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <button class="os-btn-secondary" id="export-audit-btn" style="display: inline-flex; align-items: center; gap: 6px;">
             <i class="ri-download-2-line"></i> Export Audit Log
           </button>
         </div>
       </div>
 
       <!-- Filter Controls -->
-      <div class="os-filter-bar" style="margin-bottom: 24px;">
-        <div class="search-box" style="flex: 1; max-width: 400px;">
-          <i class="ri-search-line"></i>
-          <input type="text" id="audit-search-input" placeholder="Search logs by action, user, or module..." />
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+        <div class="search-box" style="flex: 1; min-width: 280px; max-width: 400px; display: flex; align-items: center; gap: 8px; background: #fff; padding: 8px 14px; border: 1px solid var(--os-border); border-radius: 8px;">
+          <i class="ri-search-line" style="color: var(--os-gray-400);"></i>
+          <input type="text" id="audit-search-input" placeholder="Search logs by action, user, or module..." style="border: none; outline: none; width: 100%; font-size: 0.85rem;" />
         </div>
         
-        <div style="display: flex; gap: 8px;">
-          <button class="img-tab-btn active audit-filter-btn" data-module="all">All Modules</button>
-          <button class="img-tab-btn audit-filter-btn" data-module="Website Images">Website Images</button>
-          <button class="img-tab-btn audit-filter-btn" data-module="Properties Inventory">Properties</button>
-          <button class="img-tab-btn audit-filter-btn" data-module="CRM Pipeline">CRM Pipeline</button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="audit-filter-btn active" data-module="all">All Modules</button>
+          <button class="audit-filter-btn" data-module="Website Images">Website Images</button>
+          <button class="audit-filter-btn" data-module="Properties Inventory">Properties</button>
+          <button class="audit-filter-btn" data-module="CRM Pipeline">CRM Pipeline</button>
         </div>
       </div>
 
@@ -63,11 +85,11 @@ export function renderAuditLogView() {
                   <i class="ri-time-line" style="color: #999; margin-right: 4px;"></i>
                   ${log.timestamp}
                 </td>
-                <td style="padding: 16px 20px; font-weight: 600; color: #222;">
+                <td style="padding: 16px 20px; font-weight: 600; color: #222; white-space: nowrap;">
                   <div style="display: flex; align-items: center; gap: 8px;">
                     <div style="
                       width: 28px; height: 28px; border-radius: 50%; background: #2A1808; color: #F8F4EC;
-                      font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+                      font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
                     ">${log.user.slice(0,2).toUpperCase()}</div>
                     <span>${log.user}</span>
                   </div>
@@ -78,6 +100,7 @@ export function renderAuditLogView() {
                 <td style="padding: 16px 20px;">
                   <span style="
                     font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 12px;
+                    display: inline-block; white-space: nowrap;
                     background: ${log.module === 'Website Images' ? 'rgba(235, 94, 40, 0.1)' : '#edf2f7'};
                     color: ${log.module === 'Website Images' ? 'var(--color-orange, #eb5e28)' : '#4a5568'};
                   ">${log.module}</span>

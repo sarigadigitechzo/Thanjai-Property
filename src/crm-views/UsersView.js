@@ -1,5 +1,6 @@
 import { getRegisteredUsers } from '../utils/userAuthStore.js';
 import { getProperties } from '../utils/propertiesStore.js';
+import { setPropertiesSearchFilter } from './PropertiesView.js';
 
 export function renderUsersView() {
   const users = getRegisteredUsers();
@@ -23,8 +24,8 @@ export function renderUsersView() {
         </div>
 
         <div style="display: flex; gap: 12px;">
-          <a href="/login.html#register" target="_blank" class="os-btn primary-btn" style="text-decoration: none;">
-            <i class="ri-user-add-line"></i> Register New User
+          <a href="/login.html#register" target="_blank" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 4px; border: 1px solid #805ad5; background: #faf5ff; color: #805ad5; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-decoration: none;">
+            <i class="ri-user-add-line" style="font-size: 1.1rem;"></i> Register New User
           </a>
         </div>
       </div>
@@ -70,17 +71,24 @@ export function renderUsersView() {
 
       <!-- MAIN USERS DIRECTORY TABLE -->
       <div class="os-chart-card">
-        <div class="os-chart-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-          <span><i class="ri-user-shared-line"></i> Registered Portal Users Directory</span>
+        <div class="os-chart-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <span><i class="ri-user-shared-line"></i> Registered Portal Users Directory</span>
+          </div>
           
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <input type="text" id="user-search-input" placeholder="Search by name, email, phone..." style="padding: 8px 14px; border-radius: 8px; border: 1px solid var(--os-border); font-size: 0.85rem; outline: none; width: 240px;" />
+          <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+            <div style="position: relative;">
+              <i class="ri-search-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--os-gray-400);"></i>
+              <input type="text" id="user-search-input" placeholder="Search by name, email, phone..." style="padding: 8px 14px 8px 36px; border-radius: 8px; border: 1px solid var(--os-border); font-size: 0.85rem; outline: none; width: 240px; background: #fff;" />
+            </div>
             
-            <select id="user-role-filter" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--os-border); font-size: 0.85rem; outline: none;">
+            <select id="user-role-filter" style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--os-border); background: #fff; font-size: 0.85rem; font-weight: 600; color: var(--os-charcoal); outline: none; cursor: pointer;">
               <option value="all">All Roles</option>
-              <option value="Individual">Individual</option>
-              <option value="Agent">Agent</option>
-              <option value="Builder">Builder</option>
+              <option value="Super Admin">Super Admin</option>
+              <option value="Sales Manager">Sales Manager</option>
+              <option value="Sales Executive">Sales Executive</option>
+              <option value="Property Staff">Property Staff</option>
+              <option value="Partner User">Partner User</option>
             </select>
           </div>
         </div>
@@ -135,7 +143,7 @@ function renderUsersRows(users, allProperties) {
           </a>
         </td>
         <td style="padding: 14px 16px;">
-          <span style="background: rgba(49,130,206,0.12); color: #3182ce; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem;">
+          <span style="background: rgba(49,130,206,0.12); color: #3182ce; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; display: inline-block; white-space: nowrap;">
             ${u.role}
           </span>
         </td>

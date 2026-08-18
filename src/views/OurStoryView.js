@@ -18,7 +18,7 @@ export function renderOurStoryView(onNavigateToDiscover) {
       ">
         <div style="
           position: absolute; inset: 0;
-          background-image: url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=2000&q=90');
+          background-image: url('${getSiteImage('our_story_hero_bg')}');
           background-size: cover; background-position: center; opacity: 0.22;
         "></div>
 
@@ -63,7 +63,7 @@ export function renderOurStoryView(onNavigateToDiscover) {
                 border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.12);
                 border: 1px solid rgba(0,0,0,0.06);
               ">
-                <img src="https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80" alt="Thanjai Heritage Architecture" style="width: 100%; height: auto; display: block;" />
+                <img src="${getSiteImage('our_philosophy_img')}" alt="Thanjai Heritage Architecture" style="width: 100%; height: auto; display: block;" />
               </div>
               <div style="
                 position: absolute; bottom: -24px; left: -24px; background: #2A1808; color: #F8F4EC;

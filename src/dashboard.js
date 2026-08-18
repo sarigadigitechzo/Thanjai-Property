@@ -15,6 +15,7 @@ import { renderPropertyApprovalsView, initPropertyApprovalsView } from './crm-vi
 import { renderAgentsDirectoryView, initAgentsDirectoryView } from './crm-views/AgentsDirectoryView.js';
 import { renderBuildersDirectoryView, initBuildersDirectoryView } from './crm-views/BuildersDirectoryView.js';
 import { renderReportsView, initReportsView } from './crm-views/ReportsView.js';
+import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const contentArea = document.getElementById('os-content');
@@ -81,6 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'audit':
         html = renderAuditLogView();
         afterRender = initAuditLogListeners;
+        break;
+      case 'settings':
+        html = renderSettingsView();
+        afterRender = initSettingsView;
         break;
       case 'users':
         html = renderUsersView();

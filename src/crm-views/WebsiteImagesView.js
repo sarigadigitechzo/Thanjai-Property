@@ -9,8 +9,12 @@ export function renderWebsiteImagesView() {
       <!-- Header -->
       <div class="view-header-flex" style="margin-bottom: 24px;">
         <div>
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-            <span class="badge badge-orange" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+          <div style="margin-bottom: 8px;">
+            <span style="
+              display: inline-flex; align-items: center; gap: 6px;
+              font-size: 0.8rem; font-weight: 800; color: var(--os-luxury-orange);
+              text-transform: uppercase; letter-spacing: 0.1em;
+            ">
               <i class="ri-image-edit-line"></i> SITE ASSETS & BANNER MANAGEMENT
             </span>
           </div>
@@ -56,21 +60,24 @@ export function renderWebsiteImagesView() {
           </p>
         </div>
       </div>
-
-      <!-- Filter Controls & Category Tabs -->
-      <div class="os-filter-bar" style="margin-bottom: 28px;">
-        <div class="search-box" style="flex: 1; max-width: 380px;">
+      <!-- Filter Controls & Category Dropdown -->
+      <div class="os-filter-bar" style="margin-bottom: 28px; display: flex; gap: 16px;">
+        <div class="search-box" style="flex: 1;">
           <i class="ri-search-line"></i>
-          <input type="text" id="img-search-input" placeholder="Search by section, banner name, category..." />
+          <input type="text" id="img-search-input" placeholder="Search by section, banner name, category..." style="width: 100%; border: none; background: transparent; outline: none;" />
         </div>
 
-        <div class="category-tabs-row" id="img-category-tabs" style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="img-tab-btn active" data-category="all">All Images (${imageList.length})</button>
-          <button class="img-tab-btn" data-category="Banners & Hero">Main Banners</button>
-          <button class="img-tab-btn" data-category="Leadership & Team">Leadership & Team</button>
-          <button class="img-tab-btn" data-category="Regional Destinations">Destinations</button>
-          <button class="img-tab-btn" data-category="Property Types">Property Types</button>
-          <button class="img-tab-btn" data-category="Brand Assets">Brand Assets</button>
+        <div style="width: 260px;">
+          <select id="img-category-dropdown" style="width: 100%; height: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--os-border); background: var(--os-gray-100); color: var(--os-text); font-size: 0.85rem; font-weight: 600; cursor: pointer; outline: none; appearance: none;">
+            <option value="all">All Images (${imageList.length})</option>
+            <option value="Home">Home</option>
+            <option value="SELL & PROMOTE YOUR LAND">Sell & Promote Your Land</option>
+            <option value="REGIONAL DESTINATIONS">Regional Destinations</option>
+            <option value="PROPERTY ASSET CLASSES">Property Asset Classes</option>
+            <option value="our story home image">Our Story Home Image</option>
+            <option value="OUR PHILOSOPHY">Our Philosophy</option>
+            <option value="Meet Our Leadership">Meet Our Leadership</option>
+          </select>
         </div>
       </div>
 
@@ -233,41 +240,35 @@ function renderImageCard(item) {
 }
 
 export function initWebsiteImagesListeners() {
-  // 1. Search Filter Listener
+  // Combined Filter Function
   const searchInput = document.getElementById('img-search-input');
-  searchInput?.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase().trim();
+  const categoryDropdown = document.getElementById('img-category-dropdown');
+
+  function applyFilters() {
+    const query = (searchInput?.value || '').toLowerCase().trim();
+    const activeCategory = categoryDropdown?.value || 'all';
     const cards = document.querySelectorAll('.site-img-card');
 
     cards.forEach(card => {
       const text = card.textContent.toLowerCase();
-      if (text.includes(query)) {
+      const cardCategory = card.dataset.category;
+      
+      const matchesSearch = query === '' || text.includes(query);
+      const matchesCategory = activeCategory === 'all' || cardCategory === activeCategory;
+
+      if (matchesSearch && matchesCategory) {
         card.style.display = 'flex';
       } else {
         card.style.display = 'none';
       }
     });
-  });
+  }
 
-  // 2. Category Tab Filter
-  const tabs = document.querySelectorAll('#img-category-tabs .img-tab-btn');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
+  // 1. Search Filter Listener
+  searchInput?.addEventListener('input', applyFilters);
 
-      const cat = tab.dataset.category;
-      const cards = document.querySelectorAll('.site-img-card');
-
-      cards.forEach(card => {
-        if (cat === 'all' || card.dataset.category === cat) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
-        }
-      });
-    });
-  });
+  // 2. Category Dropdown Listener
+  categoryDropdown?.addEventListener('change', applyFilters);
 
   // 3. File Input Change Handler (Converts File to Data URL)
   document.querySelectorAll('.site-img-file-input').forEach(input => {
