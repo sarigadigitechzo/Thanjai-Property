@@ -14,6 +14,7 @@ import { renderUsersView, initUsersView } from './crm-views/UsersView.js';
 import { renderPropertyApprovalsView, initPropertyApprovalsView } from './crm-views/PropertyApprovalsView.js';
 import { renderAgentsDirectoryView, initAgentsDirectoryView } from './crm-views/AgentsDirectoryView.js';
 import { renderBuildersDirectoryView, initBuildersDirectoryView } from './crm-views/BuildersDirectoryView.js';
+import { renderReportsView, initReportsView } from './crm-views/ReportsView.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const contentArea = document.getElementById('os-content');
@@ -59,6 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'ai':
         html = renderAIAgentView();
         afterRender = initAIAgentView;
+        break;
+      case 'reports':
+        html = renderReportsView();
+        afterRender = initReportsView;
         break;
       case 'whatsapp':
         html = renderWhatsAppLogView();
