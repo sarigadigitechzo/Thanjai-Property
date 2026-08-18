@@ -1,6 +1,6 @@
 import { renderDashboardView, initDashboardListeners } from './crm-views/DashboardView.js';
 import { renderLeadsView, initLeadsView } from './crm-views/LeadsView.js';
-import { renderPropertiesView, initPropertiesListeners } from './crm-views/PropertiesView.js';
+import { renderPropertiesView, initPropertiesListeners, resetPropertiesViewMode } from './crm-views/PropertiesView.js';
 import { renderSiteVisitsView, initSiteVisitsView } from './crm-views/SiteVisitsView.js';
 import { renderPipelineBoardView, initPipelineBoardView } from './crm-views/PipelineBoardView.js?v=2';
 import { renderPartnersView, initPartnersView } from './crm-views/PartnersView.js';
@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         afterRender = () => initLeadDetailView(param);
         break;
       case 'properties':
+        resetPropertiesViewMode();
         html = renderPropertiesView();
         afterRender = initPropertiesListeners;
         break;
@@ -105,12 +106,18 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
     
-    contentArea.innerHTML = html;
-    if (viewName === 'leads') {
-      initLeadsView();
-    }
-    if (afterRender) {
-      setTimeout(afterRender, 0); // ensure DOM is painted
+    try {
+      if (contentArea) {
+        contentArea.innerHTML = html;
+      }
+      if (viewName === 'leads') {
+        initLeadsView();
+      }
+      if (afterRender) {
+        setTimeout(afterRender, 0); // ensure DOM is painted
+      }
+    } catch (err) {
+      console.error(`Error rendering view '${viewName}':`, err);
     }
   }
 
@@ -224,12 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Properties Updated Reactive Listener
-  // Guard: skip re-routing when already on #properties — PropertiesView.js manages its own refresh.
   window.addEventListener('propertiesUpdated', () => {
-    const currentHash = window.location.hash.slice(1) || 'dashboard';
-    if (currentHash !== 'properties') {
-      handleHashChange();
-    }
+    handleHashChange();
   });
 
   window.addEventListener('storage', (e) => {

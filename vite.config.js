@@ -24,6 +24,7 @@ export default defineConfig({
         login: resolve(import.meta.dirname, 'login.html'),
         dashboard: resolve(import.meta.dirname, 'dashboard.html'),
         userDashboard: resolve(import.meta.dirname, 'user-dashboard.html'),
+        user_dashboard: resolve(import.meta.dirname, 'user-dashboard.html'),
       },
     },
   },

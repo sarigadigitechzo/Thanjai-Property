@@ -27,14 +27,26 @@
 }
 
 .user-sidebar-header {
-  padding: 24px 20px 16px;
+  padding: 20px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  justify-content: center;
+}
+
+.user-brand-pill {
+  background: #ffffff;
+  padding: 6px 14px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .user-brand-logo {
-  height: 38px;
-  filter: brightness(0) invert(1);
+  height: 36px;
   object-fit: contain;
+  filter: none;
 }
 
 /* USER PROFILE AVATAR CARD */
@@ -358,6 +370,22 @@
 .status-badge.hot { background: rgba(229,46,61,0.12); color: #E52E3D; }
 .status-badge.scheduled { background: rgba(49,130,206,0.12); color: #3182CE; }
 .status-badge.verified { background: rgba(56,161,105,0.12); color: #38a169; }
+
+.notice-banner-box {
+  transition: opacity 0.4s ease, transform 0.4s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease;
+  max-height: 100px;
+  overflow: hidden;
+}
+
+.notice-banner-box.fade-out {
+  opacity: 0;
+  transform: translateY(-8px);
+  max-height: 0;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 0 !important;
+  border: none !important;
+}
 
 @media (max-width: 900px) {
   .user-sidebar {
