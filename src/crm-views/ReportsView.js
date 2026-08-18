@@ -49,17 +49,11 @@ export function renderReportsView() {
         </div>
         <div class="reports-date-pickers">
           <div class="reports-date-input">
-            <div class="reports-date-box">
-              <span>dd-mm-yyyy</span>
-              <i class="ri-calendar-line"></i>
-            </div>
+            <input type="date" class="reports-date-box" value="2025-01-01" />
           </div>
           <div class="reports-date-input">
             <span style="font-size:0.85rem; color:var(--os-gray-500); margin-right:4px;">to</span>
-            <div class="reports-date-box">
-              <span>dd-mm-yyyy</span>
-              <i class="ri-calendar-line"></i>
-            </div>
+            <input type="date" class="reports-date-box" value="2025-12-31" />
           </div>
         </div>
       </div>

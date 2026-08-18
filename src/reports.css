@@ -64,10 +64,7 @@
   color: var(--os-gray-500);
 }
 
-.reports-date-box {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+input[type="date"].reports-date-box {
   border: 1px solid var(--os-gray-200);
   background: var(--os-white);
   border-radius: var(--os-radius-sm);
@@ -75,10 +72,16 @@
   width: 200px;
   color: var(--os-gray-600);
   font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
 }
-
-.reports-date-box i {
-  color: var(--os-gray-400);
+input[type="date"].reports-date-box::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+input[type="date"].reports-date-box:focus {
+  border-color: var(--os-luxury-orange);
 }
 
 /* Cards */
