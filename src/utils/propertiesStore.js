@@ -27,10 +27,10 @@ function savePropertiesToStorage(props) {
   } catch (e) {
     console.warn("localStorage quota exceeded or error occurred, attempting sanitization...", e);
     try {
-      // Fallback: sanitize huge base64 image strings to ensure property records fit in storage
+      // Fallback: sanitize huge uncompressed base64 image strings (>2MB) to ensure storage fits
       const sanitized = props.map(p => {
         const cleanImages = (p.images || []).map(img => {
-          if (typeof img === 'string' && img.startsWith('data:image') && img.length > 200000) {
+          if (typeof img === 'string' && img.startsWith('data:image') && img.length > 2000000) {
             return 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
           }
           return img;
@@ -46,7 +46,12 @@ function savePropertiesToStorage(props) {
 
 export function getPublicProperties() {
   const all = getProperties();
-  return all.filter(p => p.approvalStatus === 'Approved' || !p.approvalStatus || p.approvalStatus === 'Active');
+  return all.filter(p => {
+    if (p.approvalStatus === 'Pending Approval' || p.status === 'Pending Approval' || p.approvalStatus === 'Rejected') {
+      return false;
+    }
+    return p.approvalStatus === 'Approved' || !p.approvalStatus || p.approvalStatus === 'Active' || p.status === 'Available';
+  });
 }
 
 export function getPendingSubmissions() {
@@ -152,6 +157,8 @@ export function addProperty(data) {
     videoUrl: data.videoUrl || '',
     ownerName: data.ownerName || '',
     ownerPhone: data.ownerPhone || '',
+    userId: data.userId || null,
+    userEmail: data.userEmail || null,
     images: data.images && data.images.length > 0 ? data.images : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'],
     description: data.description || 'Luxury property in prime growth corridor.',
     features: data.features && data.features.length > 0 ? data.features : ['Clear Patta Title', 'Gated Community'],
@@ -311,11 +318,17 @@ function normalizePropertyRecord(p) {
     status: status,
     availability: status,
     purpose: purpose,
+    userId: p.userId || null,
+    userEmail: p.userEmail || null,
     price: numPrice,
     priceFormatted: formattedPrice,
     location: loc,
     district: dist || 'Thanjavur',
-    images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'],
+    images: (() => {
+      const rawImgs = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+      const uniqueImgs = [...new Set(rawImgs)];
+      return uniqueImgs.length > 0 ? uniqueImgs : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'];
+    })(),
     description: p.description || 'Luxury property in prime growth corridor.',
     features: Array.isArray(p.features) ? p.features : ['Clear Patta Title', 'Gated Community']
   };

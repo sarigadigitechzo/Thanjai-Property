@@ -1,159 +1,225 @@
-import { getCurrentUser, logoutUser } from './utils/userAuthStore.js';
+import { getCurrentUser, logoutUser, setCurrentUser, getRegisteredUsers } from './utils/userAuthStore.js';
 import { getProperties, addProperty, updateProperty, deleteProperty } from './utils/propertiesStore.js';
 import { showToast } from './utils/toast.js';
 
 let userUploadedImages = [];
 let userUploadedVideoUrl = '';
+let userActivePreviewId = null;
+let userActiveMediaIndex = 0;
+
+const defaultBuyersInquiries = [
+  {
+    id: 'INQ-101',
+    buyerName: 'Senthil Kumar',
+    buyerRole: 'Verified Buyer',
+    phone: '+91 98421 88921',
+    email: 'senthil.k@gmail.com',
+    propertyTitle: '3BHK Luxury Villa with Garden & Car Parking',
+    propId: 'TP-2001',
+    offeredPrice: '₹ 1.30 Crore',
+    visitDate: '20 Aug 2026 at 10:30 AM',
+    status: 'Site Visit Requested',
+    message: 'Interested in visiting the property on Sunday morning with family.'
+  },
+  {
+    id: 'INQ-102',
+    buyerName: 'Dr. Rajan Saravanan',
+    buyerRole: 'NRI Investor',
+    phone: '+91 94431 22841',
+    email: 'dr.rajan.nri@yahoo.com',
+    propertyTitle: 'Kaveri Riverfront Agricultural Farmland',
+    propId: 'TP-2003',
+    offeredPrice: '₹ 45.00 Lakhs',
+    visitDate: '22 Aug 2026 at 04:00 PM',
+    status: 'Offer Received',
+    message: 'Looking for Kaveri water source land for organic farming project.'
+  },
+  {
+    id: 'INQ-103',
+    buyerName: 'Priya Mahalingam',
+    buyerRole: 'Individual Buyer',
+    phone: '+91 95857 33412',
+    email: 'priya.m@outlook.com',
+    propertyTitle: 'DTCP Approved Residential Plot in New Bus Stand',
+    propId: 'TP-2002',
+    offeredPrice: '₹ 18.50 Lakhs',
+    visitDate: '21 Aug 2026 at 11:00 AM',
+    status: 'New Inquiry',
+    message: 'Requesting original Patta title copy and layout plan map.'
+  }
+];
+
+function compressImageFile(file, maxWidth = 1000, maxHeight = 800, quality = 0.75) {
+  return new Promise((resolve) => {
+    if (!file || !file.type.startsWith('image/')) {
+      resolve(null);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
 
 export function renderUserDashboard() {
-  const user = getCurrentUser() || {
-    fullName: 'Kani Digitechzo',
-    email: 'kanidigitechzo@gmail.com',
-    phone: '9585777772',
-    role: 'Individual Owner',
-    propertiesCount: 3,
-    visitorsCount: 142,
-    buyersCount: 18
-  };
+  const container = document.getElementById('user-dashboard-app') || document.getElementById('user-db-app');
+  if (!container) return;
+
+  const user = getCurrentUser();
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  const userName = user.fullName || user.name || (user.email ? user.email.split('@')[0] : 'Property Owner');
 
   const allProps = getProperties();
-  const userProps = allProps.filter(p => p.ownerName === user.fullName || p.ownerPhone === user.phone || p.listedBy === user.fullName);
-  const pendingProps = userProps.filter(p => p.approvalStatus === 'Pending Approval' || p.status === 'Pending Approval');
-  const approvedProps = userProps.filter(p => p.approvalStatus === 'Approved' || p.status === 'Available');
+  const userProps = allProps.filter(p => {
+    if (p.userId && user.id && p.userId === user.id) return true;
+    if (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()) return true;
+    if (!p.userId && !p.userEmail) {
+      return p.ownerPhone === user.phone && (p.listedBy === userName || p.ownerName === userName);
+    }
+    return false;
+  });
 
-  return `
+  const submittedCount = userProps.length;
+  const pendingCount = userProps.filter(p => p.approvalStatus === 'Pending Approval' || p.status === 'Pending Approval').length;
+  const approvedCount = userProps.filter(p => p.approvalStatus === 'Approved' || p.status === 'Available').length;
+
+  container.innerHTML = `
     <div class="user-db-wrapper">
       
-      <!-- LEFT DARK SLATE SIDEBAR -->
+      <!-- SIDEBAR NAVIGATION -->
       <aside class="user-sidebar">
         <div class="user-sidebar-header">
-          <a href="/" class="user-brand-link">
-            <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" class="user-brand-logo" />
-          </a>
+          <div class="user-brand-pill">
+            <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" class="user-brand-logo" onerror="this.src='https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=200&q=80'" />
+          </div>
         </div>
 
-        <!-- USER PROFILE AVATAR CARD -->
         <div class="user-profile-card">
           <div class="avatar-frame">
             <i class="ri-user-3-line avatar-icon"></i>
           </div>
-          <div class="user-info">
-            <h3 class="user-name">Hi! ${user.fullName}</h3>
-            <span class="user-role-badge">${user.role || 'Individual Owner'}</span>
-          </div>
+          <h4 class="user-name">Hi! ${userName}</h4>
+          <span class="user-role-badge">${user.role || 'Individual Owner'}</span>
         </div>
 
-        <!-- SIDEBAR NAVIGATION MENU -->
         <nav class="user-nav">
-          <a href="/" class="user-nav-item">
-            <i class="ri-home-4-line"></i>
+          <a href="index.html" class="user-nav-item nav-item" data-tab="home">
+            <i class="ri-home-5-line"></i>
             <span>Home</span>
           </a>
-          <a href="#my-properties" class="user-nav-item active" data-tab="my-properties">
-            <i class="ri-stack-line"></i>
-            <span>My Properties (${userProps.length})</span>
+          <a href="#" class="user-nav-item nav-item active" data-tab="my-properties">
+            <i class="ri-building-4-line"></i>
+            <span>My Properties (${submittedCount})</span>
           </a>
-          <a href="#post-property" class="user-nav-item" data-tab="post-property" id="sidebar-post-btn">
+          <a href="#" class="user-nav-item nav-item" data-tab="post-property">
             <i class="ri-add-circle-line"></i>
             <span>Post Property</span>
           </a>
-          <a href="#buyers-list" class="user-nav-item" data-tab="buyers-list">
-            <i class="ri-user-search-line"></i>
-            <span>Buyers Inquiries</span>
+          <a href="#" class="user-nav-item nav-item" data-tab="buyers-list" id="nav-buyers-inquiries">
+            <i class="ri-team-line"></i>
+            <span>Buyers Inquiries (${defaultBuyersInquiries.length})</span>
           </a>
-          <a href="#profile" class="user-nav-item" data-tab="profile">
-            <i class="ri-lock-password-line"></i>
+          <a href="#" class="user-nav-item nav-item" data-tab="profile">
+            <i class="ri-user-settings-line"></i>
             <span>Profile & Password</span>
           </a>
-          <button class="user-nav-item logout-btn" id="user-logout-btn">
+
+          <button id="user-logout-btn" class="user-nav-item logout-btn" style="margin-top: auto;">
             <i class="ri-logout-box-r-line"></i>
             <span>Logout</span>
           </button>
         </nav>
       </aside>
 
-      <!-- MAIN CONTENT AREA -->
+      <!-- MAIN CONTENT WORKSPACE -->
       <main class="user-main-area">
         
-        <!-- TOP HEADER BAR -->
+        <!-- HEADER TOPBAR -->
         <header class="user-top-bar">
-          <div style="font-size: 0.9rem; color: #718096; font-weight: 600;">
-            <a href="/" style="text-decoration: none; color: #718096;">Thanjai Property</a> &nbsp;/&nbsp; Client Portal Workspace
+          <div style="font-size: 0.88rem; color: #718096; font-weight: 600;">
+            <span style="color: #1A202C; font-weight: 800;">Thanjai Property</span> / Client Portal Workspace
           </div>
 
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <button class="post-prop-header-btn" id="top-post-btn">
+          <div>
+            <button class="post-prop-header-btn" id="header-post-property-btn">
               <i class="ri-add-line"></i> Post New Property
             </button>
           </div>
         </header>
 
-        <div class="user-content-body">
+        <!-- DYNAMIC CONTENT PANEL CONTAINER -->
+        <div class="user-content-body" id="user-workspace-body">
           
-          <!-- LIVE APPROVAL NOTIFICATION BANNER -->
-          ${approvedProps.length > 0 ? `
-            <div style="background: #E6FFFA; border: 1px solid #B2F5EA; color: #234E52; padding: 14px 20px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-              <div style="display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 0.92rem;">
-                <i class="ri-checkbox-circle-fill" style="color: #38A169; font-size: 1.3rem;"></i>
-                <span>Notice: You have <strong>${approvedProps.length} property</strong> approved & live on public showcase!</span>
-              </div>
-              <span style="font-size: 0.8rem; background: #38A169; color: #fff; padding: 4px 10px; border-radius: 20px; font-weight: 800;">VERIFIED LIVE</span>
-            </div>
-          ` : ''}
-
-          <!-- TOP KPI STAT CARDS -->
+          <!-- SUMMARY KPI CARDS -->
           <div class="user-kpi-grid">
-            <div class="kpi-card">
+            <div class="kpi-card" id="kpi-submitted-card" style="cursor: pointer;">
               <div class="kpi-card-inner">
-                <div class="kpi-icon-box orange">
-                  <i class="ri-stack-line"></i>
-                </div>
+                <div class="kpi-icon-box orange"><i class="ri-stack-line"></i></div>
                 <div>
-                  <h4 class="kpi-title">Total Submitted</h4>
-                  <div class="kpi-val">${userProps.length} Properties</div>
+                  <h5 class="kpi-title">Total Submitted</h5>
+                  <div class="kpi-val">${submittedCount} Properties</div>
                 </div>
               </div>
-              <div class="kpi-footer-link" id="kpi-prop-link">
-                Manage Properties <i class="ri-arrow-right-s-line"></i>
-              </div>
+              <div class="kpi-footer-link">Manage Properties &rsaquo;</div>
             </div>
 
             <div class="kpi-card">
               <div class="kpi-card-inner">
-                <div class="kpi-icon-box yellow" style="background: #FEEBC8; color: #DD6B20;">
-                  <i class="ri-time-line"></i>
-                </div>
+                <div class="kpi-icon-box blue"><i class="ri-time-line"></i></div>
                 <div>
-                  <h4 class="kpi-title">Awaiting Approval</h4>
-                  <div class="kpi-val">${pendingProps.length} Pending</div>
+                  <h5 class="kpi-title">Awaiting Approval</h5>
+                  <div class="kpi-val">${pendingCount} Pending</div>
                 </div>
               </div>
-              <div class="kpi-footer-link" id="kpi-pending-link">
-                Pending Verification <i class="ri-arrow-right-s-line"></i>
-              </div>
+              <div class="kpi-footer-link">Pending Verification &rsaquo;</div>
             </div>
 
-            <div class="kpi-card">
+            <div class="kpi-card" id="kpi-buyers-link" style="cursor: pointer;">
               <div class="kpi-card-inner">
-                <div class="kpi-icon-box green">
-                  <i class="ri-group-line"></i>
-                </div>
+                <div class="kpi-icon-box green"><i class="ri-user-heart-line"></i></div>
                 <div>
-                  <h4 class="kpi-title">Interested Buyers</h4>
-                  <div class="kpi-val">${user.buyersCount || 18} Inquiries</div>
+                  <h5 class="kpi-title">Interested Buyers</h5>
+                  <div class="kpi-val">18 Inquiries</div>
                 </div>
               </div>
-              <div class="kpi-footer-link" id="kpi-buyers-link">
-                View Buyers <i class="ri-arrow-right-s-line"></i>
-              </div>
+              <div class="kpi-footer-link" style="color: #3182ce;">View Buyers &rsaquo;</div>
             </div>
           </div>
 
-          <!-- MAIN DATA PANEL -->
-          <div class="user-data-panel" style="width: 100%; box-sizing: border-box;">
+          <!-- PROPERTIES INVENTORY TABLE PANEL -->
+          <div class="user-data-panel">
             <div class="panel-header">
-              <h2 class="panel-title" id="panel-title-text">My Listed Properties</h2>
-              <span class="panel-subtitle" id="panel-sub-text">Properties uploaded under your seller account with live approval status</span>
+              <div>
+                <h2 class="panel-title" id="panel-title-text">My Listed Properties</h2>
+                <p class="panel-subtitle" id="panel-sub-text">Properties uploaded under your seller account with live approval status</p>
+              </div>
             </div>
 
             <div class="panel-body" id="panel-body-content" style="width: 100%; box-sizing: border-box;">
@@ -166,6 +232,526 @@ export function renderUserDashboard() {
 
     </div>
   `;
+
+  // NOTICE BANNER AUTO-DISMISS & MANUAL CLOSE HANDLER
+  const noticeBanner = document.getElementById('user-notice-banner');
+  const closeNoticeBtn = document.getElementById('close-notice-btn');
+
+  const dismissNoticeBanner = () => {
+    if (noticeBanner && !noticeBanner.classList.contains('fade-out')) {
+      noticeBanner.classList.add('fade-out');
+      setTimeout(() => noticeBanner.remove(), 450);
+    }
+  };
+
+  closeNoticeBtn?.addEventListener('click', dismissNoticeBanner);
+  setTimeout(dismissNoticeBanner, 5000);
+
+  // EVENT LISTENERS
+  document.getElementById('user-logout-btn')?.addEventListener('click', () => {
+    logoutUser();
+    showToast('Logged out successfully', 'ri-logout-box-r-line');
+    window.location.href = 'login.html';
+  });
+
+  document.getElementById('header-post-property-btn')?.addEventListener('click', () => {
+    document.querySelector('[data-tab="post-property"]')?.click();
+  });
+
+  document.getElementById('kpi-submitted-card')?.addEventListener('click', () => {
+    document.querySelector('[data-tab="my-properties"]')?.click();
+  });
+
+  document.getElementById('kpi-buyers-link')?.addEventListener('click', () => {
+    document.querySelector('[data-tab="buyers-list"]')?.click();
+  });
+
+  const navItems = document.querySelectorAll('.user-nav .nav-item');
+
+  function refreshMyProperties() {
+    const currentAll = getProperties();
+    const updatedUserProps = currentAll.filter(p => {
+      if (p.userId && user.id && p.userId === user.id) return true;
+      if (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()) return true;
+      if (!p.userId && !p.userEmail) {
+        return p.ownerPhone === user.phone && (p.listedBy === userName || p.ownerName === userName);
+      }
+      return false;
+    });
+    
+    const panelTitle = document.getElementById('panel-title-text');
+    const panelSub = document.getElementById('panel-sub-text');
+    const panelBody = document.getElementById('panel-body-content');
+
+    if (panelTitle) panelTitle.textContent = 'My Listed Properties';
+    if (panelSub) panelSub.textContent = 'Properties uploaded under your seller account with live approval status';
+    if (panelBody) {
+      panelBody.innerHTML = renderMyPropertiesTableHtml(updatedUserProps);
+      bindTableActions();
+    }
+  }
+
+  function bindTableActions() {
+    // EMPTY STATE CENTER POST PROPERTY BUTTON ACTION
+    document.getElementById('empty-post-btn')?.addEventListener('click', () => {
+      document.querySelector('[data-tab="post-property"]')?.click();
+    });
+
+    // PREVIEW PROPERTY DETAILS INLINE MODAL
+    document.querySelectorAll('.user-preview-prop-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        if (id) {
+          userActivePreviewId = id;
+          userActiveMediaIndex = 0;
+          openUserPropertyPreviewModal(id);
+        }
+      });
+    });
+
+    // EDIT PROPERTY ACTION
+    document.querySelectorAll('.user-edit-prop-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const targetProp = getProperties().find(p => p.id === id);
+        if (targetProp) {
+          const panelTitle = document.getElementById('panel-title-text');
+          const panelSub = document.getElementById('panel-sub-text');
+          const panelBody = document.getElementById('panel-body-content');
+          if (panelTitle) panelTitle.textContent = `Edit Property (${id})`;
+          if (panelSub) panelSub.textContent = 'Modify your property specs, price, location, or uploaded photos';
+          if (panelBody) {
+            panelBody.innerHTML = renderPostPropertyFormHtml(targetProp);
+            attachPostFormListener(targetProp);
+          }
+        }
+      });
+    });
+
+    // DELETE PROPERTY ACTION (CUSTOM PROFESSIONAL CONFIRMATION MODAL)
+    document.querySelectorAll('.user-delete-prop-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const targetProp = getProperties().find(p => p.id === id);
+        showUserDeleteConfirmModal(id, targetProp?.title || '', () => {
+          deleteProperty(id);
+          showToast(`Property listing ${id} deleted successfully.`, 'ri-delete-bin-line');
+          refreshMyProperties();
+        });
+      });
+    });
+  }
+
+  bindTableActions();
+
+  navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      const tab = item.dataset.tab;
+      if (tab === 'home' || item.getAttribute('href') === 'index.html') {
+        window.location.href = 'index.html';
+        return;
+      }
+      e.preventDefault();
+      navItems.forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
+      bindTabClick(tab);
+    });
+  });
+
+  function bindTabClick(tab) {
+    const panelTitle = document.getElementById('panel-title-text');
+    const panelSub = document.getElementById('panel-sub-text');
+    const panelBody = document.getElementById('panel-body-content');
+
+    if (tab === 'home') {
+      refreshMyProperties();
+    } else if (tab === 'my-properties') {
+      refreshMyProperties();
+    } else if (tab === 'post-property') {
+      if (panelTitle) panelTitle.textContent = 'Post Property Listing';
+      if (panelSub) panelSub.textContent = 'Upload land, house, villa, or commercial property for review and publication';
+      if (panelBody) {
+        panelBody.innerHTML = renderPostPropertyFormHtml(null);
+        attachPostFormListener(null);
+      }
+    } else if (tab === 'buyers-list') {
+      if (panelTitle) panelTitle.textContent = 'Buyers Inquiries & Lead Desk';
+      if (panelSub) panelSub.textContent = 'Direct buyer leads, site visit requests, and offers submitted for your listings';
+      if (panelBody) {
+        panelBody.innerHTML = renderBuyersInquiriesTableHtml(defaultBuyersInquiries);
+      }
+    } else if (tab === 'profile') {
+      if (panelTitle) panelTitle.textContent = 'Owner Profile Settings';
+      if (panelSub) panelSub.textContent = 'Manage your seller account details and password';
+      if (panelBody) {
+        panelBody.innerHTML = `
+          <form id="owner-profile-form" style="max-width: 500px; padding: 10px 0;" onsubmit="return false;">
+            <div style="margin-bottom: 16px;">
+              <label style="font-size: 0.85rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Full Name</label>
+              <input type="text" id="profile-fullname-input" value="${userName}" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #ffffff; font-size: 0.9rem; outline: none;" />
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <label style="font-size: 0.85rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Phone Number</label>
+              <input type="tel" id="profile-phone-input" value="${user.phone || ''}" required maxlength="10" pattern="[0-9]{10}" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #ffffff; font-size: 0.9rem; outline: none;" />
+            </div>
+
+            <div style="margin-bottom: 24px;">
+              <label style="font-size: 0.85rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Account Role</label>
+              <input type="text" value="${user.role || 'Individual Owner'}" readonly style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #EDF2F7; font-size: 0.9rem; color: #718096;" />
+            </div>
+
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <button type="submit" id="save-profile-btn" style="background: #eb5e28; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; box-shadow: 0 4px 12px rgba(235,94,40,0.25);">
+                <i class="ri-save-line"></i> Save Profile Changes
+              </button>
+
+              <button type="button" id="reset-password-btn" style="background: #ffffff; color: #4A5568; border: 1px solid #CBD5E0; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
+                Reset Password
+              </button>
+            </div>
+          </form>
+        `;
+
+        document.getElementById('owner-profile-form')?.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const newName = document.getElementById('profile-fullname-input')?.value.trim();
+          const newPhone = document.getElementById('profile-phone-input')?.value.trim();
+
+          if (!newName || !newPhone) {
+            showToast('Please provide both Full Name and Phone Number.', 'ri-error-warning-line');
+            return;
+          }
+
+          const updatedUser = {
+            ...user,
+            fullName: newName,
+            name: newName,
+            phone: newPhone
+          };
+
+          setCurrentUser(updatedUser);
+
+          const users = getRegisteredUsers();
+          const idx = users.findIndex(u => u.email?.toLowerCase() === user.email?.toLowerCase() || u.id === user.id);
+          if (idx >= 0) {
+            users[idx] = { ...users[idx], ...updatedUser };
+            localStorage.setItem('thanjai_registered_users', JSON.stringify(users));
+          }
+
+          showToast('Profile details updated successfully!', 'ri-checkbox-circle-fill');
+          setTimeout(() => {
+            renderUserDashboard();
+          }, 300);
+        });
+
+        document.getElementById('reset-password-btn')?.addEventListener('click', () => {
+          showToast('Password reset link sent to your registered phone number via WhatsApp.', 'ri-whatsapp-line');
+        });
+      }
+    }
+  }
+
+  function attachPostFormListener(propToEdit = null) {
+    const isEdit = Boolean(propToEdit);
+    const typeInput = document.getElementById('user-prop-type');
+    const specsBox = document.getElementById('user-res-specs-box');
+    const imgUrlInput = document.getElementById('user-prop-img-url');
+    const fileInput = document.getElementById('user-prop-img-files');
+    const videoFileInput = document.getElementById('user-prop-video-file-input');
+    const videoLabelText = document.getElementById('user-video-label-text');
+    const geoBtn = document.getElementById('user-geolocation-btn');
+    const mapPinBtn = document.getElementById('user-map-pinpoint-btn');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+
+    cancelEditBtn?.addEventListener('click', () => {
+      document.querySelector('[data-tab="my-properties"]')?.click();
+    });
+
+    // SMART REAL-TIME TYPING DETECTION FOR PROPERTY TYPE
+    typeInput?.addEventListener('input', () => {
+      const val = (typeInput.value || '').toLowerCase().trim();
+      const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room', 'bhk', 'residence', 'cottage', 'bungalow', 'rowhouse', 'manor', 'studio'];
+      const isRes = resKeywords.some(k => val.includes(k));
+
+      if (specsBox) {
+        specsBox.style.display = isRes ? 'block' : 'none';
+      }
+    });
+
+    // PRIMARY IMAGE URL LIVE SYNC
+    imgUrlInput?.addEventListener('input', () => {
+      const url = imgUrlInput.value.trim();
+      if (url && !userUploadedImages.includes(url)) {
+        userUploadedImages.unshift(url);
+        userUploadedImages = [...new Set(userUploadedImages)];
+        refreshUserUploadedPhotoGrid();
+      }
+    });
+
+    // PHOTO FILES READER WITH CANVAS COMPRESSION
+    fileInput?.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      if (!files || files.length === 0) return;
+
+      showToast(`Compressing ${files.length} photo(s)...`, 'ri-loader-4-line');
+
+      for (const f of files) {
+        if (!f.type.startsWith('image/')) continue;
+        const b64 = await compressImageFile(f, 1000, 800, 0.75);
+        if (b64) {
+          userUploadedImages.push(b64);
+        }
+      }
+
+      userUploadedImages = [...new Set(userUploadedImages)];
+      refreshUserUploadedPhotoGrid();
+      showToast(`${files.length} HD photo(s) added to property!`, 'ri-image-add-line');
+    });
+
+    bindUserPhotoDeleteButtons();
+
+    // VIDEO FILE READER
+    videoFileInput?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          userUploadedVideoUrl = evt.target.result;
+          if (videoLabelText) videoLabelText.textContent = `Video Uploaded (${file.name})`;
+          showToast('Video file attached successfully!', 'ri-video-upload-line');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // GEOLOCATION BUTTON
+    geoBtn?.addEventListener('click', () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude.toFixed(6);
+            const lng = pos.coords.longitude.toFixed(6);
+            const latInp = document.getElementById('user-prop-latitude');
+            const lngInp = document.getElementById('user-prop-longitude');
+            if (latInp) latInp.value = lat;
+            if (lngInp) lngInp.value = lng;
+
+            const badge = document.getElementById('user-location-badge');
+            const badgeText = document.getElementById('user-location-badge-text');
+            if (badge) badge.style.display = 'inline-flex';
+            if (badgeText) badgeText.textContent = `Location Pinpoint Captured: Lat ${lat}, Lng ${lng}`;
+
+            showToast(`Location captured: Lat ${lat}, Lng ${lng}`, 'ri-map-pin-user-fill');
+          },
+          () => {
+            showToast('Geolocation permission denied or unavailable.', 'ri-error-warning-line');
+          }
+        );
+      }
+    });
+
+    // INTERACTIVE LEAFLET MAP PINPOINT BUTTON
+    mapPinBtn?.addEventListener('click', () => {
+      const latInp = document.getElementById('user-prop-latitude');
+      const lngInp = document.getElementById('user-prop-longitude');
+      const curLat = latInp?.value || '10.786999';
+      const curLng = lngInp?.value || '79.137827';
+
+      openUserLeafletMapModal(curLat, curLng, (newLat, newLng) => {
+        if (latInp) latInp.value = newLat;
+        if (lngInp) lngInp.value = newLng;
+
+        const badge = document.getElementById('user-location-badge');
+        const badgeText = document.getElementById('user-location-badge-text');
+        if (badge) badge.style.display = 'inline-flex';
+        if (badgeText) badgeText.textContent = `Location Pinpoint Captured: Lat ${newLat}, Lng ${newLng}`;
+
+        showToast(`Map location saved: Lat ${newLat}, Lng ${newLng}`, 'ri-compass-3-fill');
+      });
+    });
+
+    // FORM SUBMISSION HANDLER
+    const form = document.getElementById('client-post-prop-form');
+    form?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const title = document.getElementById('user-prop-title').value;
+      const type = document.getElementById('user-prop-type').value;
+      const categoryRaw = document.getElementById('user-prop-category').value;
+      const district = document.getElementById('user-prop-district').value;
+      const location = document.getElementById('user-prop-location').value;
+      const address = document.getElementById('user-prop-address').value;
+      const size = document.getElementById('user-prop-size').value;
+      const bedrooms = parseInt(document.getElementById('user-prop-bedrooms')?.value || 0);
+      const bathrooms = parseInt(document.getElementById('user-prop-bathrooms')?.value || 0);
+      const floor = document.getElementById('user-prop-floor')?.value.trim();
+      const furnishing = document.getElementById('user-prop-furnishing')?.value;
+      const price = parseFloat(document.getElementById('user-prop-price').value);
+      const imgUrl = document.getElementById('user-prop-img-url').value;
+      const videoUrl = document.getElementById('user-prop-videolink').value || userUploadedVideoUrl;
+      const latitude = document.getElementById('user-prop-latitude')?.value || '10.786999';
+      const longitude = document.getElementById('user-prop-longitude')?.value || '79.137827';
+      const desc = document.getElementById('user-prop-desc').value;
+
+      const features = Array.from(document.querySelectorAll('.user-feature-chk:checked')).map(c => c.value);
+
+      const rawImages = [...userUploadedImages];
+      if (imgUrl && !rawImages.includes(imgUrl)) rawImages.unshift(imgUrl);
+      const images = [...new Set(rawImages.filter(Boolean))];
+      if (images.length === 0) {
+        images.push('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80');
+      }
+
+      const val = type.toLowerCase().trim();
+      const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room', 'bhk', 'residence', 'cottage', 'bungalow', 'rowhouse', 'manor', 'studio'];
+      const isRes = resKeywords.some(k => val.includes(k));
+
+      const payload = {
+        title,
+        type,
+        purpose: categoryRaw === 'Rent' ? 'rent' : 'buy',
+        category: categoryRaw === 'Rent' ? 'Rent' : 'Sale',
+        categoryRaw,
+        district,
+        location,
+        address,
+        size,
+        bedrooms: isRes ? bedrooms : null,
+        bathrooms: isRes ? bathrooms : null,
+        floor: floor || null,
+        furnishing,
+        price,
+        images,
+        videoUrl,
+        latitude,
+        longitude,
+        description: desc || `${title} located at ${location}.`,
+        features: features.length > 0 ? features : ['Patta Title Verified', '24/7 Security'],
+        ownerName: userName,
+        ownerPhone: user.phone,
+        listedBy: userName,
+        userId: user.id,
+        userEmail: user.email,
+        approvalStatus: isEdit ? (propToEdit.approvalStatus || 'Pending Approval') : 'Pending Approval',
+        status: isEdit ? (propToEdit.status || 'Pending Approval') : 'Pending Approval'
+      };
+
+      if (isEdit) {
+        updateProperty(propToEdit.id, payload);
+        showToast(`Property ${propToEdit.id} updated successfully!`, 'ri-checkbox-circle-fill');
+        setTimeout(() => showUserNoticeBanner(`Property ${propToEdit.id} updated successfully!`), 100);
+      } else {
+        const created = addProperty(payload);
+        showToast(`Property ${created.id} submitted for Admin Approval!`, 'ri-time-line');
+        setTimeout(() => showUserNoticeBanner(`New property ${created.id} submitted! Sent to Admin for Approval.`), 100);
+      }
+
+      userUploadedImages = [];
+      userUploadedVideoUrl = '';
+
+      document.querySelector('[data-tab="my-properties"]')?.click();
+    });
+  }
+}
+
+function showUserNoticeBanner(message) {
+  const container = document.getElementById('user-workspace-body');
+  if (!container) return;
+
+  document.getElementById('user-action-notice-banner')?.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'user-action-notice-banner';
+  banner.className = 'notice-banner-box';
+  banner.style.cssText = `
+    background: #E6FFFA; border: 1px solid #B2F5EA; color: #234E52; border-radius: 12px;
+    padding: 14px 20px; font-size: 0.9rem; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  `;
+  banner.innerHTML = `
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <i class="ri-checkbox-circle-fill" style="color: #38A169; font-size: 1.2rem;"></i>
+      <span>Notice: ${message}</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="background: #38A169; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 12px;">VERIFIED LIVE</span>
+      <button id="close-action-notice-btn" title="Dismiss notice" style="background: none; border: none; color: #234E52; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 2px;">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+  `;
+
+  container.insertBefore(banner, container.firstElementChild);
+
+  const dismiss = () => {
+    if (banner && !banner.classList.contains('fade-out')) {
+      banner.classList.add('fade-out');
+      setTimeout(() => banner.remove(), 450);
+    }
+  };
+
+  document.getElementById('close-action-notice-btn')?.addEventListener('click', dismiss);
+  setTimeout(dismiss, 4000);
+}
+
+function showUserDeleteConfirmModal(propId, propTitle, onConfirm) {
+  document.getElementById('user-custom-confirm-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'user-custom-confirm-overlay';
+  overlay.style.cssText = `
+    position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    width: 100vw !important; height: 100vh !important; z-index: 999999 !important;
+    background: rgba(15, 23, 42, 0.75) !important; backdrop-filter: blur(6px) !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    padding: 20px !important; box-sizing: border-box !important; margin: 0 !important;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      background: #ffffff; width: 100%; max-width: 440px; border-radius: 20px;
+      padding: 32px 28px 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center;
+      box-sizing: border-box; border: 1px solid #E2E8F0;
+    ">
+      <div style="
+        width: 60px; height: 60px; border-radius: 50%; background: #FFF5F5;
+        border: 2px solid #FED7D7; color: #E52E3D; display: flex; align-items: center;
+        justify-content: center; font-size: 1.8rem; margin: 0 auto 20px;
+      ">
+        <i class="ri-delete-bin-line"></i>
+      </div>
+
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: #1A202C; margin: 0 0 8px 0;">Delete Property Listing?</h3>
+      
+      <p style="font-size: 0.9rem; color: #718096; line-height: 1.5; margin: 0 0 20px 0;">
+        Are you sure you want to permanently delete <strong style="color: #E52E3D;">${propId}</strong> (${propTitle || 'this listing'})? This action cannot be undone.
+      </p>
+
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button id="cancel-user-delete-btn" style="
+          flex: 1; padding: 12px 18px; border-radius: 12px; border: 1px solid #CBD5E0;
+          background: #EDF2F7; color: #4A5568; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+        ">Cancel</button>
+        <button id="confirm-user-delete-btn" style="
+          flex: 1; padding: 12px 18px; border-radius: 12px; border: none;
+          background: #E52E3D; color: #ffffff; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+          box-shadow: 0 4px 12px rgba(229, 46, 61, 0.3);
+        ">Yes, Delete</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const closeConfirm = () => overlay.remove();
+
+  document.getElementById('cancel-user-delete-btn')?.addEventListener('click', closeConfirm);
+  document.getElementById('confirm-user-delete-btn')?.addEventListener('click', () => {
+    closeConfirm();
+    onConfirm();
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeConfirm();
+  });
 }
 
 function renderMyPropertiesTableHtml(userProps) {
@@ -219,18 +805,38 @@ function renderMyPropertiesTableHtml(userProps) {
                       <i class="ri-checkbox-circle-fill" style="color: #38A169;"></i> Approved & Published Live
                     </span>
                   ` : `
-                    <span style="background: #FED7D7; color: #9B2C2C; font-weight: 800; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;">
-                      <i class="ri-close-circle-fill"></i> ${isRejected ? 'Rejected' : p.status}
-                    </span>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <span style="background: #FED7D7; color: #9B2C2C; font-weight: 800; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="ri-close-circle-fill"></i> ${isRejected ? 'Submission Rejected' : p.status}
+                      </span>
+                      ${p.rejectionReason ? `
+                        <span style="font-size: 0.76rem; color: #E52E3D; font-weight: 600; line-height: 1.3;">
+                          Reason: ${p.rejectionReason}
+                        </span>
+                      ` : ''}
+                    </div>
                   `}
                 </td>
                 <td>
-                  <div style="display: flex; gap: 8px;">
-                    <button class="user-edit-prop-btn" data-id="${p.id}" style="background: rgba(49,130,206,0.12); color: #3182ce; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                  <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button class="user-preview-prop-btn" data-id="${p.id}" title="Preview property details" style="
+                      background: #F7FAFC; color: #4A5568; border: 1px solid #CBD5E0; padding: 6px 12px;
+                      border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+                    ">
+                      <i class="ri-eye-line" style="color: #eb5e28;"></i> Preview
+                    </button>
+
+                    <button class="user-edit-prop-btn" data-id="${p.id}" style="
+                      background: rgba(49,130,206,0.12); color: #3182ce; border: none; padding: 6px 12px;
+                      border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+                    ">
                       <i class="ri-pencil-line"></i> Edit
                     </button>
 
-                    <button class="user-delete-prop-btn" data-id="${p.id}" style="background: rgba(229,46,61,0.12); color: #E52E3D; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                    <button class="user-delete-prop-btn" data-id="${p.id}" style="
+                      background: rgba(229,46,61,0.12); color: #E52E3D; border: none; padding: 6px 12px;
+                      border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+                    ">
                       <i class="ri-delete-bin-line"></i> Delete
                     </button>
                   </div>
@@ -244,6 +850,299 @@ function renderMyPropertiesTableHtml(userProps) {
   `;
 }
 
+function renderUserUploadedPhotoGridHtml() {
+  if (!userUploadedImages || userUploadedImages.length === 0) return '';
+  return userUploadedImages.map((img, idx) => `
+    <div style="position: relative; width: 90px; height: 90px; border-radius: 10px; overflow: hidden; border: 1px solid #CBD5E0; flex-shrink: 0; background: #111;">
+      <img src="${img}" style="width:100%; height:100%; object-fit:cover;" />
+      <button type="button" class="delete-user-img-btn" data-index="${idx}" title="Remove photo" style="
+        position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%;
+        background: rgba(229, 62, 62, 0.95); color: #ffffff; border: none; font-size: 0.85rem;
+        display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      ">
+        <i class="ri-close-line"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+function refreshUserUploadedPhotoGrid() {
+  const grid = document.getElementById('user-uploaded-preview-grid');
+  if (grid) {
+    grid.innerHTML = renderUserUploadedPhotoGridHtml();
+    bindUserPhotoDeleteButtons();
+  }
+}
+
+function bindUserPhotoDeleteButtons() {
+  document.querySelectorAll('.delete-user-img-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const index = parseInt(btn.dataset.index, 10);
+      if (!isNaN(index) && index >= 0 && index < userUploadedImages.length) {
+        userUploadedImages.splice(index, 1);
+        refreshUserUploadedPhotoGrid();
+        showToast('Photo removed', 'ri-delete-bin-line');
+      }
+    });
+  });
+}
+
+function openUserPropertyPreviewModal(id) {
+  document.getElementById('user-prop-modal-overlay')?.remove();
+  const targetProp = getProperties().find(p => p.id === id);
+  if (!targetProp) return;
+
+  const wrapperDiv = document.createElement('div');
+  wrapperDiv.innerHTML = renderUserPropertyPreviewModal(targetProp);
+  const modalEl = wrapperDiv.firstElementChild;
+  if (modalEl) {
+    document.body.appendChild(modalEl);
+    bindUserPreviewModalEvents(id);
+  }
+}
+
+function renderUserPropertyPreviewModal(prop) {
+  if (!prop) return '';
+
+  const rawImgs = Array.isArray(prop.images) ? prop.images.filter(Boolean) : [];
+  const uniqueImgs = [...new Set(rawImgs)];
+  const images = uniqueImgs.length > 0 ? uniqueImgs : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'];
+  const status = prop.status || prop.availability || 'Available';
+
+  const allMediaItems = [];
+
+  if (prop.videoUrl) {
+    let isEmbeddableVideo = false;
+    let videoEmbedSrc = prop.videoUrl;
+    if (prop.videoUrl.includes('youtube.com') || prop.videoUrl.includes('youtu.be')) {
+      const match = prop.videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      if (match && match[1]) {
+        videoEmbedSrc = `https://www.youtube.com/embed/${match[1]}?autoplay=0`;
+        isEmbeddableVideo = true;
+      }
+    }
+    allMediaItems.push({
+      type: 'video',
+      url: videoEmbedSrc,
+      rawUrl: prop.videoUrl,
+      isEmbeddable: isEmbeddableVideo,
+      title: 'Property Video Tour',
+      thumb: images[0]
+    });
+  }
+
+  images.forEach((img, idx) => {
+    allMediaItems.push({
+      type: 'image',
+      url: img,
+      title: `Photo ${idx + 1}`,
+      thumb: img
+    });
+  });
+
+  const totalMedia = allMediaItems.length;
+  if (userActiveMediaIndex >= totalMedia) userActiveMediaIndex = 0;
+  const activeItem = allMediaItems[userActiveMediaIndex] || allMediaItems[0];
+
+  let heroContentHtml = '';
+  if (activeItem.type === 'video') {
+    if (activeItem.isEmbeddable) {
+      heroContentHtml = `<iframe src="${activeItem.url}" style="width: 100%; height: 100%; border: none;" allowfullscreen></iframe>`;
+    } else {
+      heroContentHtml = `<video src="${activeItem.rawUrl}" controls autoplay style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>`;
+    }
+  } else {
+    heroContentHtml = `<img src="${activeItem.url}" alt="${prop.title}" style="width: 100%; height: 100%; object-fit: cover;" />`;
+  }
+
+  return `
+    <div id="user-prop-modal-overlay" style="
+      position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+      width: 100vw !important; height: 100vh !important; z-index: 999999 !important;
+      background: rgba(15, 23, 42, 0.82) !important; backdrop-filter: blur(8px) !important;
+      display: flex !important; align-items: center !important; justify-content: center !important;
+      padding: 24px !important; box-sizing: border-box !important; margin: 0 !important;
+    ">
+      <div style="
+        background: #ffffff; width: 100%; max-width: 920px; max-height: 90vh; border-radius: 24px;
+        overflow: hidden; box-shadow: 0 25px 60px rgba(0,0,0,0.5); border: 1px solid #e2e8f0; display: flex; flex-direction: column;
+      ">
+        
+        <!-- Modal Top Bar -->
+        <div style="padding: 18px 28px; background: #faf8f5; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+          <div>
+            <span style="font-size: 0.75rem; font-weight: 800; color: #eb5e28; letter-spacing: 0.08em; text-transform: uppercase;">
+              PROPERTY PREVIEW • ID: ${prop.id}
+            </span>
+            <h3 style="font-size: 1.3rem; font-weight: 800; color: #1a202c; margin: 2px 0 0 0;">${prop.title}</h3>
+          </div>
+
+          <button id="close-user-prop-preview-btn" style="background: #ffffff; border: 1px solid #cbd5e0; color: #4a5568; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer;">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+
+        <!-- Scrollable Modal Body -->
+        <div style="padding: 24px 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; flex: 1;">
+          
+          <!-- HERO MEDIA VIEWPORT -->
+          <div style="width: 100%;">
+            <div style="width: 100%; height: 380px; border-radius: 16px; overflow: hidden; background: #f0f4f8; position: relative; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+              ${heroContentHtml}
+
+              <!-- Counter Badge -->
+              <div style="position: absolute; top: 16px; left: 16px; background: rgba(0,0,0,0.75); color: #ffffff; font-size: 0.8rem; font-weight: 700; padding: 6px 14px; border-radius: 20px; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 6px; z-index: 10;">
+                <i class="${activeItem.type === 'video' ? 'ri-video-line' : 'ri-image-line'}" style="color: #eb5e28;"></i>
+                <span>${activeItem.type === 'video' ? 'Video Tour' : `Photo ${userActiveMediaIndex + (prop.videoUrl ? 0 : 1)} of ${totalMedia - (prop.videoUrl ? 1 : 0)}`}</span>
+              </div>
+
+              <!-- Status Badge -->
+              <span style="position: absolute; top: 16px; right: 16px; background: #eb5e28; color: #fff; font-size: 0.78rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; z-index: 10;">
+                ${status.toUpperCase()}
+              </span>
+
+              <!-- Carousel Navigation Arrows -->
+              ${totalMedia > 1 ? `
+                <button id="user-prev-preview-media-btn" title="Previous photo" style="
+                  position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%;
+                  background: rgba(0,0,0,0.65); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-size: 1.4rem;
+                  display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(6px); z-index: 10;
+                ">
+                  <i class="ri-arrow-left-s-line"></i>
+                </button>
+
+                <button id="user-next-preview-media-btn" title="Next photo" style="
+                  position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%;
+                  background: rgba(0,0,0,0.65); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-size: 1.4rem;
+                  display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(6px); z-index: 10;
+                ">
+                  <i class="ri-arrow-right-s-line"></i>
+                </button>
+              ` : ''}
+            </div>
+
+            <!-- Horizontal Thumbnail Carousel -->
+            ${totalMedia > 1 ? `
+              <div style="display: flex; gap: 12px; overflow-x: auto; padding: 14px 4px 6px 4px; margin-top: 12px; scrollbar-width: thin; scrollbar-color: #eb5e28 #edf2f7;">
+                ${allMediaItems.map((item, idx) => {
+                  const isActive = idx === userActiveMediaIndex;
+                  return `
+                    <div class="user-preview-thumb-card" data-index="${idx}" style="
+                      position: relative; flex-shrink: 0; width: 110px; height: 74px; border-radius: 10px; overflow: hidden;
+                      cursor: pointer; transition: all 0.25s ease; border: ${isActive ? '3px solid #eb5e28' : '2px solid #e2e8f0'};
+                      box-shadow: ${isActive ? '0 4px 14px rgba(235,94,40,0.35)' : '0 2px 6px rgba(0,0,0,0.06)'};
+                      opacity: ${isActive ? '1' : '0.75'}; transform: ${isActive ? 'scale(1.02)' : 'scale(1)'};
+                    ">
+                      <img src="${item.thumb}" style="width: 100%; height: 100%; object-fit: cover;" />
+                      ${item.type === 'video' ? `
+                        <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.5rem;">
+                          <i class="ri-play-circle-fill" style="color: #eb5e28;"></i>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Specs Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; background: #faf8f5; padding: 20px; border-radius: 14px; border: 1px solid #e2e8f0;">
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">EXPECTED PRICE</span>
+              <div style="font-size: 1.3rem; font-weight: 800; color: #eb5e28;">${prop.priceFormatted || '₹ ' + (prop.price || 0).toLocaleString('en-IN')}</div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">TYPE & PURPOSE</span>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.type || 'Property'} • ${prop.categoryRaw || 'Sale'}</div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">LOCATION</span>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.location || prop.district}</div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">AREA SIZE</span>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.size || 'N/A'}</div>
+            </div>
+            ${prop.bedrooms ? `
+              <div>
+                <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">BEDROOMS / BATHROOMS</span>
+                <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.bedrooms} Bed • ${prop.bathrooms || 0} Bath</div>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Description -->
+          <div>
+            <h4 style="font-size: 0.85rem; font-weight: 800; color: #4A5568; text-transform: uppercase; margin-bottom: 8px;">PROPERTY DESCRIPTION</h4>
+            <p style="font-size: 0.92rem; color: #4A5568; line-height: 1.6;">${prop.description || `${prop.title} located at ${prop.location}.`}</p>
+          </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div style="padding: 18px 28px; background: #faf8f5; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0;">
+          <button id="modal-user-edit-btn" data-id="${prop.id}" style="background: #3182CE; color: #fff; border: none; padding: 10px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="ri-pencil-line"></i> Edit Property Details
+          </button>
+          <button id="modal-user-close-btn" style="background: #ffffff; border: 1px solid #cbd5e0; color: #4a5568; padding: 10px 24px; border-radius: 10px; font-weight: 700; cursor: pointer;">
+            Close Preview
+          </button>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function bindUserPreviewModalEvents(id) {
+  const closeBtn = document.getElementById('close-user-prop-preview-btn');
+  const footerCloseBtn = document.getElementById('modal-user-close-btn');
+  const editBtn = document.getElementById('modal-user-edit-btn');
+  const prevBtn = document.getElementById('user-prev-preview-media-btn');
+  const nextBtn = document.getElementById('user-next-preview-media-btn');
+
+  const handleClose = () => {
+    document.getElementById('user-prop-modal-overlay')?.remove();
+  };
+
+  closeBtn?.addEventListener('click', handleClose);
+  footerCloseBtn?.addEventListener('click', handleClose);
+
+  editBtn?.addEventListener('click', () => {
+    handleClose();
+    const editPropBtn = document.querySelector(`.user-edit-prop-btn[data-id="${id}"]`);
+    if (editPropBtn) editPropBtn.click();
+  });
+
+  prevBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const targetProp = getProperties().find(p => p.id === id);
+    const mediaCount = (targetProp?.images?.length || 1) + (targetProp?.videoUrl ? 1 : 0);
+    userActiveMediaIndex = (userActiveMediaIndex - 1 + mediaCount) % mediaCount;
+    openUserPropertyPreviewModal(id);
+  });
+
+  nextBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const targetProp = getProperties().find(p => p.id === id);
+    const mediaCount = (targetProp?.images?.length || 1) + (targetProp?.videoUrl ? 1 : 0);
+    userActiveMediaIndex = (userActiveMediaIndex + 1) % mediaCount;
+    openUserPropertyPreviewModal(id);
+  });
+
+  document.querySelectorAll('.user-preview-thumb-card').forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      const idx = parseInt(thumb.dataset.index, 10);
+      if (!isNaN(idx)) {
+        userActiveMediaIndex = idx;
+        openUserPropertyPreviewModal(id);
+      }
+    });
+  });
+}
+
 // FULL PROPERTY FORM PRE-FILLED FOR ADD OR EDIT
 function renderPostPropertyFormHtml(propToEdit = null) {
   const isEdit = Boolean(propToEdit);
@@ -251,9 +1150,9 @@ function renderPostPropertyFormHtml(propToEdit = null) {
   userUploadedVideoUrl = propToEdit?.videoUrl || '';
 
   const currentType = propToEdit?.type || '';
-  const val = currentType.toLowerCase();
-  const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room'];
-  const isRes = resKeywords.some(k => val.includes(k)) || currentType === 'Villa';
+  const val = currentType.toLowerCase().trim();
+  const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room', 'bhk', 'residence', 'cottage', 'bungalow', 'rowhouse', 'manor', 'studio'];
+  const isRes = resKeywords.some(k => val.includes(k));
 
   return `
     <div style="background: #FAF8F5; border: 1px solid #E7E0D8; border-radius: 16px; padding: 32px; width: 100%; max-width: 980px; margin: 0 auto; box-sizing: border-box;">
@@ -308,67 +1207,67 @@ function renderPostPropertyFormHtml(propToEdit = null) {
             </div>
 
             <div>
-              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Location / Area Name *</label>
-              <input type="text" id="user-prop-location" required value="${propToEdit?.location || ''}" placeholder="e.g. Medical College Road, Thanjavur" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
-            </div>
-
-            <div style="grid-column: 1 / -1;">
-              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Street Address & Landmark</label>
-              <input type="text" id="user-prop-address" value="${propToEdit?.address || ''}" placeholder="e.g. Door No. 42, 2nd Cross Street, Opposite New Bus Stand" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Locality / Landmark *</label>
+              <input type="text" id="user-prop-location" required value="${propToEdit?.location || ''}" placeholder="e.g. Medical College Road" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
             </div>
 
             <div>
-              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Area / Size (sqft or acres) *</label>
-              <input type="text" id="user-prop-size" required value="${propToEdit?.size || ''}" placeholder="e.g. 2,600 sqft or 4.5 Acres" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Street Address</label>
+              <input type="text" id="user-prop-address" value="${propToEdit?.address || ''}" placeholder="e.g. Plot No 42, 2nd Cross Street" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
             </div>
           </div>
         </div>
 
-        <!-- DYNAMIC RESIDENTIAL STRUCTURE DETAILS -->
-        <div id="user-res-specs-box" style="background: #FFF; padding: 20px; border-radius: 12px; border: 1px dashed #CBD5E0; display: ${isRes ? 'block' : 'none'};">
-          <h4 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: #4A5568; letter-spacing: 0.08em; margin-bottom: 14px;">
-            RESIDENTIAL STRUCTURE & FLOOR DETAILS
-          </h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-            <div>
-              <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Bedrooms</label>
-              <input type="number" id="user-prop-bedrooms" value="${propToEdit?.bedrooms || 3}" placeholder="e.g. 3" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
-            </div>
-
-            <div>
-              <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Bathrooms</label>
-              <input type="number" id="user-prop-bathrooms" value="${propToEdit?.bathrooms || 3}" placeholder="e.g. 3" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
-            </div>
-
-            <div>
-              <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Floor Number (Optional)</label>
-              <input type="text" id="user-prop-floor" value="${propToEdit?.floor || ''}" placeholder="e.g. 2nd Floor (Optional)" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
-            </div>
-
-            <div>
-              <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Furnishing Status</label>
-              <select id="user-prop-furnishing" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #CBD5E0; background: #fff; box-sizing: border-box;">
-                <option value="Fully Furnished" ${propToEdit?.furnishing === 'Fully Furnished' ? 'selected' : ''}>Fully Furnished</option>
-                <option value="Semi-Furnished" ${propToEdit?.furnishing === 'Semi-Furnished' || !propToEdit ? 'selected' : ''}>Semi-Furnished</option>
-                <option value="Unfurnished" ${propToEdit?.furnishing === 'Unfurnished' ? 'selected' : ''}>Unfurnished</option>
-                <option value="Not specified" ${propToEdit?.furnishing === 'Not specified' ? 'selected' : ''}>Not specified</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- SECTION 2: FINANCIALS -->
+        <!-- SECTION 2: SPECS & PRICING -->
         <div>
           <h4 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: #4A5568; letter-spacing: 0.08em; margin-bottom: 16px;">
-            2. EXPECTED PRICE
+            2. SPECS, DIMENSIONS & PRICING
           </h4>
-          <div style="max-width: 360px;">
-            <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">EXPECTED PRICE IN INR (₹) *</label>
-            <input type="number" id="user-prop-price" required value="${propToEdit?.price || ''}" placeholder="e.g. 7500000" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px;">
+            <div>
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Total Size / Area *</label>
+              <input type="text" id="user-prop-size" required value="${propToEdit?.size || ''}" placeholder="e.g. 2,400 sq.ft or 4.5 Cents" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+            </div>
+
+            <div>
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Expected Price (INR ₹) *</label>
+              <input type="number" id="user-prop-price" required value="${propToEdit?.price || ''}" placeholder="e.g. 13500000" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+            </div>
+          </div>
+
+          <!-- DYNAMIC RESIDENTIAL STRUCTURE SPECS -->
+          <div id="user-res-specs-box" style="margin-top: 18px; display: ${isRes ? 'block' : 'none'}; background: #FFF; padding: 20px; border-radius: 12px; border: 1px dashed #CBD5E0;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Bedrooms</label>
+                <input type="number" id="user-prop-bedrooms" value="${propToEdit?.bedrooms || ''}" placeholder="e.g. 3" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Bathrooms</label>
+                <input type="number" id="user-prop-bathrooms" value="${propToEdit?.bathrooms || ''}" placeholder="e.g. 3" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Floor Number (Optional)</label>
+                <input type="text" id="user-prop-floor" value="${propToEdit?.floor || ''}" placeholder="e.g. 2nd Floor (Optional)" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Furnishing Status</label>
+                <select id="user-prop-furnishing" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #CBD5E0; background: #fff; box-sizing: border-box;">
+                  <option value="Not specified" ${propToEdit?.furnishing === 'Not specified' ? 'selected' : ''}>Not specified</option>
+                  <option value="Fully Furnished" ${propToEdit?.furnishing === 'Fully Furnished' ? 'selected' : ''}>Fully Furnished</option>
+                  <option value="Semi-Furnished" ${propToEdit?.furnishing === 'Semi-Furnished' ? 'selected' : ''}>Semi-Furnished</option>
+                  <option value="Unfurnished" ${propToEdit?.furnishing === 'Unfurnished' ? 'selected' : ''}>Unfurnished</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- SECTION 3: PHOTOS & GALLERY -->
+        <!-- SECTION 3: PROPERTY PHOTOS & GALLERY -->
         <div>
           <h4 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: #4A5568; letter-spacing: 0.08em; margin-bottom: 16px;">
             3. PROPERTY PHOTOS & GALLERY
@@ -386,11 +1285,7 @@ function renderPostPropertyFormHtml(propToEdit = null) {
             </div>
 
             <div id="user-uploaded-preview-grid" style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px;">
-              ${userUploadedImages.map(img => `
-                <div style="width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #CBD5E0;">
-                  <img src="${img}" style="width:100%; height:100%; object-fit:cover;" />
-                </div>
-              `).join('')}
+              ${renderUserUploadedPhotoGridHtml()}
             </div>
           </div>
         </div>
@@ -401,6 +1296,9 @@ function renderPostPropertyFormHtml(propToEdit = null) {
             4. VIDEO & LOCATION PINPOINT MAP
           </h4>
 
+          <input type="hidden" id="user-prop-latitude" value="${propToEdit?.latitude || '10.786999'}" />
+          <input type="hidden" id="user-prop-longitude" value="${propToEdit?.longitude || '79.137827'}" />
+
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
             <div>
               <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">YouTube Video Link</label>
@@ -409,72 +1307,59 @@ function renderPostPropertyFormHtml(propToEdit = null) {
 
             <div>
               <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Upload Video File</label>
-              <label style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px; background: #FFF; border: 1px dashed #CBD5E0; color: #4A5568; font-weight: 600; font-size: 0.88rem; cursor: pointer;">
+              <label style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px; background: #fff; border: 1px dashed #CBD5E0; color: #4A5568; font-weight: 700; font-size: 0.88rem; cursor: pointer; height: 44px; box-sizing: border-box;">
                 <i class="ri-video-upload-line" style="color: #eb5e28; font-size: 1.2rem;"></i>
                 <span id="user-video-label-text">${propToEdit?.videoUrl ? 'Video Attached' : 'Upload Video (.mp4)'}</span>
                 <input type="file" id="user-prop-video-file-input" accept="video/*" style="display: none;" />
               </label>
             </div>
-
-            <div>
-              <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Latitude (GPS)</label>
-              <input type="text" id="user-prop-latitude" value="${propToEdit?.latitude || ''}" placeholder="e.g. 10.786999" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
-            </div>
-
-            <div>
-              <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Longitude (GPS)</label>
-              <input type="text" id="user-prop-longitude" value="${propToEdit?.longitude || ''}" placeholder="e.g. 79.137827" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
-            </div>
           </div>
 
-          <!-- LOCATION MAP BUTTONS -->
-          <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
-            <button type="button" id="user-geolocation-btn" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px; background: #FFF; border: 1px solid #CBD5E0; color: #2D3748; font-weight: 600; font-size: 0.88rem; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-              <i class="ri-map-pin-user-fill" style="color: #eb5e28; font-size: 1.1rem;"></i>
-              <span>Use my current location</span>
+          <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; align-items: center;">
+            <button type="button" id="user-geolocation-btn" style="background: #fff; border: 1px solid #CBD5E0; color: #2D3748; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="ri-map-pin-user-fill" style="color: #eb5e28;"></i> Use my current location
             </button>
 
-            <button type="button" id="user-map-pinpoint-btn" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px; background: #FFF; border: 1px solid #CBD5E0; color: #2D3748; font-weight: 600; font-size: 0.88rem; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
-              <i class="ri-compass-3-fill" style="color: #3182CE; font-size: 1.1rem;"></i>
-              <span>Select Location on Interactive Map</span>
+            <button type="button" id="user-map-pinpoint-btn" style="background: #fff; border: 1px solid #CBD5E0; color: #2D3748; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="ri-compass-3-fill" style="color: #3182CE;"></i> Select Location on Interactive Map
             </button>
+          </div>
+
+          <div id="user-location-badge" style="margin-top: 12px; font-size: 0.85rem; font-weight: 700; color: #2B6CB0; display: ${propToEdit?.latitude ? 'inline-flex' : 'none'}; align-items: center; gap: 6px; background: #EBF8FF; padding: 8px 14px; border-radius: 8px; border: 1px solid #BEE3F8;">
+            <i class="ri-map-pin-2-fill" style="color: #eb5e28;"></i>
+            <span id="user-location-badge-text">Location Pinpoint Captured: Lat ${propToEdit?.latitude || '10.786999'}, Lng ${propToEdit?.longitude || '79.137827'}</span>
           </div>
         </div>
 
-        <!-- SECTION 5: DESCRIPTION & FEATURES -->
+        <!-- SECTION 5: DESCRIPTION & LEGAL AMENITIES -->
         <div>
           <h4 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: #4A5568; letter-spacing: 0.08em; margin-bottom: 16px;">
             5. DESCRIPTION & LEGAL AMENITIES
           </h4>
-          
-          <div style="margin-bottom: 18px;">
-            <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Detailed Property Description</label>
-            <textarea id="user-prop-desc" rows="4" placeholder="Describe architectural layout, Patta legal documents, surrounding landmarks, water source, and neighborhood highlights..." style="width: 100%; padding: 12px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;">${propToEdit?.description || ''}</textarea>
-          </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; background: #FFF; padding: 16px; border-radius: 10px; border: 1px solid #E2E8F0;">
-            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer;">
-              <input type="checkbox" class="user-feature-chk" value="Patta Title Verified" checked /> Patta Legal Title
-            </label>
-            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer;">
-              <input type="checkbox" class="user-feature-chk" value="DTCP Approved" checked /> DTCP Approved Layout
-            </label>
-            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer;">
-              <input type="checkbox" class="user-feature-chk" value="24/7 Security" checked /> 24/7 Security
-            </label>
-            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer;">
-              <input type="checkbox" class="user-feature-chk" value="Water Supply" checked /> Continuous Water Supply
-            </label>
-            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer;">
-              <input type="checkbox" class="user-feature-chk" value="Car Parking" checked /> Car Parking Space
-            </label>
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Detailed Property Description</label>
+              <textarea id="user-prop-desc" rows="4" style="width: 100%; padding: 12px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" placeholder="Describe water availability, road width, legal Patta title status, nearby landmarks...">${propToEdit?.description || ''}</textarea>
+            </div>
+
+            <div>
+              <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 8px;">Key Amenities & Legal Assurances</label>
+              <div style="display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.88rem; font-weight: 600; color: #4A5568;">
+                <label><input type="checkbox" class="user-feature-chk" value="Clear Patta Title Verified" checked /> Clear Patta Title Verified</label>
+                <label><input type="checkbox" class="user-feature-chk" value="24/7 Water Supply" checked /> 24/7 Water Supply</label>
+                <label><input type="checkbox" class="user-feature-chk" value="Tar Road Frontage" /> Tar Road Frontage</label>
+                <label><input type="checkbox" class="user-feature-chk" value="Gated Community" /> Gated Community</label>
+                <label><input type="checkbox" class="user-feature-chk" value="Ready for Construction" /> Ready for Construction</label>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- SUBMISSION SUBMIT BUTTON -->
-        <div style="padding-top: 16px; border-top: 1px solid #E2E8F0;">
-          <button type="submit" class="post-prop-header-btn" style="padding: 16px 36px; font-size: 1.05rem; border-radius: 12px;">
-            <i class="ri-send-plane-fill"></i> ${isEdit ? 'Update & Submit Changes' : 'Submit Property for Admin Approval'}
+        <!-- SUBMIT ACTION BUTTON -->
+        <div style="border-top: 1px solid #E2E8F0; padding-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button type="submit" style="background: #eb5e28; color: #fff; border: none; padding: 12px 32px; border-radius: 10px; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 4px 14px rgba(235,94,40,0.35);">
+            <i class="ri-send-plane-fill"></i> ${isEdit ? 'Save & Update Property' : 'Submit & Publish Listing'}
           </button>
         </div>
 
@@ -483,341 +1368,193 @@ function renderPostPropertyFormHtml(propToEdit = null) {
   `;
 }
 
-function renderProfileSettingsFormHtml(user) {
+function renderBuyersInquiriesTableHtml(inquiries) {
   return `
-    <div style="background: #FAF8F5; border: 1px solid #E7E0D8; border-radius: 16px; padding: 28px; width: 100%; max-width: 980px; margin: 0 auto; box-sizing: border-box;">
-      <div style="margin-bottom: 24px;">
-        <h3 style="font-size: 1.3rem; font-weight: 800; color: #1A202C;">Profile & Security Settings</h3>
-        <p style="font-size: 0.88rem; color: #718096;">Update your portal account credentials, contact phone, and security password.</p>
+    <div class="table-responsive">
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>Inquiry ID</th>
+            <th>Buyer Name & Role</th>
+            <th>Property Interested</th>
+            <th>Contact Info</th>
+            <th>Offered Price / Visit</th>
+            <th>Status</th>
+            <th>Direct Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${inquiries.map(inq => `
+            <tr>
+              <td style="font-weight: 700; color: #eb5e28;">${inq.id}</td>
+              <td>
+                <div style="font-weight: 700; color: #1A202C;">${inq.buyerName}</div>
+                <span style="font-size: 0.78rem; background: #EDF2F7; color: #4A5568; padding: 2px 8px; border-radius: 4px; font-weight: 600;">${inq.buyerRole}</span>
+              </td>
+              <td>
+                <div style="font-weight: 700; color: #2B6CB0; font-size: 0.9rem;">${inq.propertyTitle}</div>
+                <span style="font-size: 0.78rem; color: #718096;">ID: ${inq.propId}</span>
+              </td>
+              <td>
+                <div style="font-size: 0.88rem; font-weight: 600;">${inq.phone}</div>
+                <div style="font-size: 0.8rem; color: #718096;">${inq.email}</div>
+              </td>
+              <td>
+                <div style="font-weight: 800; color: #eb5e28;">${inq.offeredPrice}</div>
+                <div style="font-size: 0.78rem; color: #718096;"><i class="ri-calendar-line"></i> ${inq.visitDate}</div>
+              </td>
+              <td>
+                <span style="background: #EBF8FF; color: #2B6CB0; font-weight: 800; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;">
+                  <i class="ri-checkbox-circle-line"></i> ${inq.status}
+                </span>
+              </td>
+              <td>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <a href="https://wa.me/91${inq.phone.replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(inq.buyerName)},%20regarding%20your%20inquiry%20for%20${encodeURIComponent(inq.propertyTitle)}" target="_blank" style="background: #25D366; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="ri-whatsapp-line"></i> Chat
+                  </a>
+                  <a href="tel:${inq.phone}" style="background: #3182CE; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="ri-phone-line"></i> Call
+                  </a>
+                </div>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openUserLeafletMapModal(initialLat, initialLng, onConfirm) {
+  document.getElementById('user-leaflet-map-modal-overlay')?.remove();
+
+  const startLat = parseFloat(initialLat) || 10.786999;
+  const startLng = parseFloat(initialLng) || 79.137827;
+
+  let currentLat = startLat;
+  let currentLng = startLng;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'user-leaflet-map-modal-overlay';
+  overlay.style.cssText = `
+    position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    width: 100vw !important; height: 100vh !important; z-index: 9999999 !important;
+    background: rgba(15, 23, 42, 0.8) !important; backdrop-filter: blur(8px) !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    padding: 24px !important; box-sizing: border-box !important; margin: 0 !important;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      background: #ffffff; width: 100%; max-width: 820px; border-radius: 20px;
+      overflow: hidden; box-shadow: 0 24px 50px rgba(0,0,0,0.35); border: 1px solid #E2E8F0;
+      display: flex; flex-direction: column; animation: pageFadeIn 0.25s ease;
+    ">
+      <!-- HEADER -->
+      <div style="
+        padding: 16px 24px; background: #2B3648; color: #ffffff; display: flex;
+        align-items: center; justify-content: space-between;
+      ">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i class="ri-compass-3-fill" style="color: #eb5e28; font-size: 1.4rem;"></i>
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: #ffffff; margin: 0;">Interactive Location Pinpoint</h3>
+            <span style="font-size: 0.78rem; color: #A0AEC0;">Click anywhere on the map or drag the pin to set property GPS location</span>
+          </div>
+        </div>
+
+        <button id="close-user-map-modal-btn" style="
+          background: rgba(255,255,255,0.12); border: none; color: #ffffff; width: 34px; height: 34px;
+          border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer;
+        ">
+          <i class="ri-close-line"></i>
+        </button>
       </div>
 
-      <form id="profile-password-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
-        
-        <div>
-          <label style="display: block; font-size: 0.82rem; font-weight: 800; color: #4A5568; margin-bottom: 6px;">FULL NAME</label>
-          <input type="text" id="prof-name" value="${user.fullName}" required style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E0; border-radius: 8px; font-size: 0.95rem;" />
+      <!-- MAP CONTAINER -->
+      <div style="position: relative; width: 100%; height: 420px; background: #EDF2F7;">
+        <div id="user-leaflet-map-canvas" style="width: 100%; height: 100%;"></div>
+        <div style="
+          position: absolute; bottom: 16px; left: 16px; background: rgba(255,255,255,0.92);
+          padding: 8px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #1A202C;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; display: flex; align-items: center; gap: 6px;
+        ">
+          <i class="ri-map-pin-2-fill" style="color: #eb5e28;"></i>
+          <span id="user-modal-coords-text">Lat: ${currentLat.toFixed(6)}, Lng: ${currentLng.toFixed(6)}</span>
         </div>
+      </div>
 
-        <div>
-          <label style="display: block; font-size: 0.82rem; font-weight: 800; color: #4A5568; margin-bottom: 6px;">EMAIL ADDRESS</label>
-          <input type="email" id="prof-email" value="${user.email}" readonly style="width: 100%; padding: 12px 14px; border: 1px solid #E2E8F0; background: #EDF2F7; border-radius: 8px; font-size: 0.95rem; color: #718096;" />
+      <!-- FOOTER -->
+      <div style="padding: 16px 24px; background: #ffffff; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.82rem; color: #718096; font-weight: 600;">
+          <i class="ri-information-line"></i> Exact location helps buyers locate your property on map search.
+        </span>
+
+        <div style="display: flex; gap: 12px;">
+          <button id="cancel-user-map-btn" style="
+            padding: 10px 18px; border-radius: 10px; border: 1px solid #CBD5E0; background: #ffffff;
+            color: #4A5568; font-weight: 700; font-size: 0.88rem; cursor: pointer;
+          ">Cancel</button>
+
+          <button id="confirm-user-map-btn" style="
+            padding: 10px 22px; border-radius: 10px; border: none; background: #eb5e28;
+            color: #ffffff; font-weight: 700; font-size: 0.88rem; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(235,94,40,0.25);
+          ">Confirm Location</button>
         </div>
-
-        <div>
-          <label style="display: block; font-size: 0.82rem; font-weight: 800; color: #4A5568; margin-bottom: 6px;">MOBILE PHONE</label>
-          <input type="tel" id="prof-phone" value="${user.phone || '9585777772'}" required style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E0; border-radius: 8px; font-size: 0.95rem;" />
-        </div>
-
-        <div>
-          <label style="display: block; font-size: 0.82rem; font-weight: 800; color: #4A5568; margin-bottom: 6px;">ACCOUNT ROLE</label>
-          <input type="text" value="${user.role || 'Individual Owner'}" readonly style="width: 100%; padding: 12px 14px; border: 1px solid #E2E8F0; background: #EDF2F7; border-radius: 8px; font-size: 0.95rem; color: #718096;" />
-        </div>
-
-        <div style="grid-column: 1 / -1; margin-top: 12px; padding-top: 20px; border-top: 1px solid #E2E8F0;">
-          <h4 style="font-size: 1.05rem; font-weight: 800; color: #1A202C; margin-bottom: 14px;">Change Security Password</h4>
-        </div>
-
-        <div>
-          <label style="display: block; font-size: 0.82rem; font-weight: 800; color: #4A5568; margin-bottom: 6px;">CURRENT PASSWORD</label>
-          <input type="password" id="pass-current" placeholder="••••••••" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E0; border-radius: 8px; font-size: 0.95rem;" />
-        </div>
-
-        <div>
-          <label style="display: block; font-size: 0.82rem; font-weight: 800; color: #4A5568; margin-bottom: 6px;">NEW PASSWORD</label>
-          <input type="password" id="pass-new" placeholder="Enter new password" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E0; border-radius: 8px; font-size: 0.95rem;" />
-        </div>
-
-        <div>
-          <label style="display: block; font-size: 0.82rem; font-weight: 800; color: #4A5568; margin-bottom: 6px;">CONFIRM NEW PASSWORD</label>
-          <input type="password" id="pass-confirm" placeholder="Confirm new password" style="width: 100%; padding: 12px 14px; border: 1px solid #CBD5E0; border-radius: 8px; font-size: 0.95rem;" />
-        </div>
-
-        <div style="grid-column: 1 / -1;">
-          <button type="submit" class="post-prop-header-btn" style="padding: 14px 32px; font-size: 1rem;">
-            <i class="ri-shield-keyhole-line"></i> Save Profile & Password Changes
-          </button>
-        </div>
-
-      </form>
+      </div>
     </div>
   `;
-}
 
-export function initUserDashboard() {
-  const app = document.getElementById('user-db-app');
-  if (!app) return;
-  app.innerHTML = renderUserDashboard();
+  document.body.appendChild(overlay);
 
-  const user = getCurrentUser() || { fullName: 'Kani Digitechzo', phone: '9585777772' };
-  const navItems = document.querySelectorAll('.user-nav-item[data-tab]');
-  const panelTitle = document.getElementById('panel-title-text');
-  const panelSub = document.getElementById('panel-sub-text');
-  const panelBody = document.getElementById('panel-body-content');
+  const closeModal = () => overlay.remove();
+  document.getElementById('close-user-map-modal-btn')?.addEventListener('click', closeModal);
+  document.getElementById('cancel-user-map-btn')?.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
 
-  function bindTabClick(tab) {
-    if (tab === 'my-properties') {
-      if (panelTitle) panelTitle.textContent = 'My Listed Properties';
-      if (panelSub) panelSub.textContent = 'Properties uploaded under your seller account with live approval status';
-      refreshMyProperties();
-    } else if (tab === 'post-property') {
-      if (panelTitle) panelTitle.textContent = 'Post Property for Approval';
-      if (panelSub) panelSub.textContent = 'Submit your land or property details for fast Patta verification and admin approval';
-      if (panelBody) {
-        panelBody.innerHTML = renderPostPropertyFormHtml();
-        attachPostFormListener();
+  setTimeout(() => {
+    if (typeof L !== 'undefined') {
+      const map = L.map('user-leaflet-map-canvas').setView([startLat, startLng], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      const marker = L.marker([startLat, startLng], { draggable: true }).addTo(map);
+
+      function updateCoords(lat, lng) {
+        currentLat = lat;
+        currentLng = lng;
+        const txt = document.getElementById('user-modal-coords-text');
+        if (txt) txt.textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
       }
-    } else if (tab === 'profile') {
-      if (panelTitle) panelTitle.textContent = 'Profile & Password Settings';
-      if (panelSub) panelSub.textContent = 'Manage your contact details and security login password';
-      if (panelBody) {
-        panelBody.innerHTML = renderProfileSettingsFormHtml(user);
-        attachProfileFormListener();
-      }
-    } else if (tab === 'buyers-list') {
-      location.reload();
+
+      marker.on('dragend', function (e) {
+        const position = marker.getLatLng();
+        updateCoords(position.lat, position.lng);
+      });
+
+      map.on('click', function (e) {
+        marker.setLatLng(e.latlng);
+        updateCoords(e.latlng.lat, e.latlng.lng);
+      });
+
+      document.getElementById('confirm-user-map-btn')?.addEventListener('click', () => {
+        closeModal();
+        onConfirm(currentLat.toFixed(6), currentLng.toFixed(6));
+      });
+    } else {
+      document.getElementById('confirm-user-map-btn')?.addEventListener('click', () => {
+        closeModal();
+        onConfirm(currentLat.toFixed(6), currentLng.toFixed(6));
+      });
     }
-  }
-
-  function refreshMyProperties() {
-    const allProps = getProperties();
-    const userProps = allProps.filter(p => p.ownerName === user.fullName || p.ownerPhone === user.phone || p.listedBy === user.fullName);
-    if (panelBody) panelBody.innerHTML = renderMyPropertiesTableHtml(userProps);
-    bindTableActions();
-  }
-
-  function bindTableActions() {
-    document.getElementById('empty-post-btn')?.addEventListener('click', () => {
-      document.querySelector('[data-tab="post-property"]')?.click();
-    });
-
-    // EDIT PROPERTY ACTION
-    document.querySelectorAll('.user-edit-prop-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        const targetProp = getProperties().find(p => p.id === id);
-        if (targetProp) {
-          if (panelTitle) panelTitle.textContent = `Edit Property (${id})`;
-          if (panelSub) panelSub.textContent = 'Modify your property specs, price, location, or uploaded photos';
-          if (panelBody) {
-            panelBody.innerHTML = renderPostPropertyFormHtml(targetProp);
-            attachPostFormListener(targetProp);
-          }
-        }
-      });
-    });
-
-    // DELETE PROPERTY ACTION
-    document.querySelectorAll('.user-delete-prop-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id;
-        if (confirm(`Are you sure you want to delete property listing ${id}?`)) {
-          deleteProperty(id);
-          showToast(`Property listing ${id} deleted successfully.`, 'ri-delete-bin-line');
-          refreshMyProperties();
-        }
-      });
-    });
-  }
-
-  bindTableActions();
-
-  navItems.forEach(item => {
-    item.addEventListener('click', (e) => {
-      e.preventDefault();
-      navItems.forEach(n => n.classList.remove('active'));
-      item.classList.add('active');
-      bindTabClick(item.dataset.tab);
-    });
-  });
-
-  function attachPostFormListener(propToEdit = null) {
-    const isEdit = Boolean(propToEdit);
-    const typeInput = document.getElementById('user-prop-type');
-    const specsBox = document.getElementById('user-res-specs-box');
-    const fileInput = document.getElementById('user-prop-img-files');
-    const previewGrid = document.getElementById('user-uploaded-preview-grid');
-    const videoFileInput = document.getElementById('user-prop-video-file-input');
-    const videoLabelText = document.getElementById('user-video-label-text');
-    const geoBtn = document.getElementById('user-geolocation-btn');
-    const mapPinBtn = document.getElementById('user-map-pinpoint-btn');
-    const cancelEditBtn = document.getElementById('cancel-edit-btn');
-
-    cancelEditBtn?.addEventListener('click', () => {
-      document.querySelector('[data-tab="my-properties"]')?.click();
-    });
-
-    // SMART REAL-TIME TYPING DETECTION FOR PROPERTY TYPE
-    typeInput?.addEventListener('input', () => {
-      const val = (typeInput.value || '').toLowerCase();
-      const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room'];
-      const landKeywords = ['land', 'plot', 'acre', 'agricultural', 'farm', 'site', 'commercial', 'office', 'warehouse'];
-
-      const isRes = resKeywords.some(k => val.includes(k));
-      const isLand = landKeywords.some(k => val.includes(k));
-
-      if (isRes || (!isLand && val.length >= 2)) {
-        if (specsBox) specsBox.style.display = 'block';
-      } else if (isLand) {
-        if (specsBox) specsBox.style.display = 'none';
-      }
-    });
-
-    // PHOTO FILES READER
-    fileInput?.addEventListener('change', (e) => {
-      const files = Array.from(e.target.files);
-      files.forEach(f => {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          const b64 = evt.target.result;
-          userUploadedImages.push(b64);
-          if (previewGrid) {
-            const thumb = document.createElement('div');
-            thumb.style.cssText = 'width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #CBD5E0;';
-            thumb.innerHTML = `<img src="${b64}" style="width:100%; height:100%; object-fit:cover;" />`;
-            previewGrid.appendChild(thumb);
-          }
-        };
-        reader.readAsDataURL(f);
-      });
-    });
-
-    // VIDEO FILE READER
-    videoFileInput?.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-          userUploadedVideoUrl = evt.target.result;
-          if (videoLabelText) videoLabelText.textContent = `Video Uploaded (${file.name})`;
-          showToast('Video file attached successfully!', 'ri-video-upload-line');
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    // GEOLOCATION BUTTON
-    geoBtn?.addEventListener('click', () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const lat = pos.coords.latitude.toFixed(6);
-            const lng = pos.coords.longitude.toFixed(6);
-            const latInp = document.getElementById('user-prop-latitude');
-            const lngInp = document.getElementById('user-prop-longitude');
-            if (latInp) latInp.value = lat;
-            if (lngInp) lngInp.value = lng;
-            showToast(`Location captured: Lat ${lat}, Lng ${lng}`, 'ri-map-pin-user-fill');
-          },
-          () => {
-            showToast('Geolocation permission denied or unavailable.', 'ri-error-warning-line');
-          }
-        );
-      }
-    });
-
-    // MAP PINPOINT BUTTON
-    mapPinBtn?.addEventListener('click', () => {
-      const latInp = document.getElementById('user-prop-latitude');
-      const lngInp = document.getElementById('user-prop-longitude');
-      if (latInp && !latInp.value) latInp.value = '10.786999';
-      if (lngInp && !lngInp.value) lngInp.value = '79.137827';
-      showToast('Map Pinpoint helper attached. Coordinates set to Thanjavur center.', 'ri-compass-3-fill');
-    });
-
-    // FORM SUBMISSION HANDLER
-    const form = document.getElementById('client-post-prop-form');
-    form?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const title = document.getElementById('user-prop-title').value;
-      const type = document.getElementById('user-prop-type').value;
-      const categoryRaw = document.getElementById('user-prop-category').value;
-      const district = document.getElementById('user-prop-district').value;
-      const location = document.getElementById('user-prop-location').value;
-      const address = document.getElementById('user-prop-address').value;
-      const size = document.getElementById('user-prop-size').value;
-      const bedrooms = parseInt(document.getElementById('user-prop-bedrooms')?.value || 0);
-      const bathrooms = parseInt(document.getElementById('user-prop-bathrooms')?.value || 0);
-      const floor = document.getElementById('user-prop-floor')?.value || '';
-      const furnishing = document.getElementById('user-prop-furnishing')?.value || 'Not specified';
-      const price = parseFloat(document.getElementById('user-prop-price').value) || 5000000;
-      const imgUrl = document.getElementById('user-prop-img-url').value;
-      const videoUrl = document.getElementById('user-prop-videolink')?.value || userUploadedVideoUrl;
-      const latitude = document.getElementById('user-prop-latitude')?.value || '10.786999';
-      const longitude = document.getElementById('user-prop-longitude')?.value || '79.137827';
-      const desc = document.getElementById('user-prop-desc').value;
-
-      const features = Array.from(document.querySelectorAll('.user-feature-chk:checked')).map(c => c.value);
-
-      const images = [...userUploadedImages];
-      if (imgUrl && !images.includes(imgUrl)) images.unshift(imgUrl);
-      if (images.length === 0) {
-        images.push('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80');
-      }
-
-      const val = type.toLowerCase();
-      const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room'];
-      const isRes = resKeywords.some(k => val.includes(k));
-
-      const payload = {
-        title,
-        type,
-        purpose: categoryRaw === 'Rent' ? 'rent' : 'buy',
-        category: categoryRaw === 'Rent' ? 'Rent' : 'Sale',
-        categoryRaw,
-        district,
-        location,
-        address,
-        size,
-        bedrooms: isRes ? bedrooms : null,
-        bathrooms: isRes ? bathrooms : null,
-        floor: floor || null,
-        furnishing,
-        price,
-        images,
-        videoUrl,
-        latitude,
-        longitude,
-        description: desc || `${title} located at ${location}.`,
-        features: features.length > 0 ? features : ['Patta Title Verified', '24/7 Security'],
-        ownerName: user.fullName,
-        ownerPhone: user.phone || '9585777772',
-        listedBy: user.role || 'Individual Owner',
-        approvalStatus: isEdit ? (propToEdit.approvalStatus || 'Pending Approval') : 'Pending Approval',
-        status: isEdit ? (propToEdit.status || 'Pending Approval') : 'Pending Approval'
-      };
-
-      if (isEdit) {
-        updateProperty(propToEdit.id, payload);
-        showToast(`Property ${propToEdit.id} updated successfully!`, 'ri-checkbox-circle-fill');
-      } else {
-        const newP = addProperty(payload);
-        showToast(`Property ${newP.id} submitted! Awaiting admin approval before live publishing.`, 'ri-time-line');
-      }
-
-      document.querySelector('[data-tab="my-properties"]')?.click();
-    });
-  }
-
-  function attachProfileFormListener() {
-    const form = document.getElementById('profile-password-form');
-    form?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      showToast('Profile & security password updated successfully!', 'ri-checkbox-circle-fill');
-    });
-  }
-
-  // Logout Handler
-  document.getElementById('user-logout-btn')?.addEventListener('click', () => {
-    logoutUser();
-    window.location.href = '/login.html';
-  });
-
-  document.getElementById('top-post-btn')?.addEventListener('click', () => {
-    document.querySelector('[data-tab="post-property"]')?.click();
-  });
-  document.getElementById('kpi-prop-link')?.addEventListener('click', () => {
-    document.querySelector('[data-tab="my-properties"]')?.click();
-  });
+  }, 100);
 }
 
-document.addEventListener('DOMContentLoaded', initUserDashboard);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', renderUserDashboard);
+} else {
+  renderUserDashboard();
+}
