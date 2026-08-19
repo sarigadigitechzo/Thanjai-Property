@@ -207,7 +207,7 @@ export function renderAdminUsersView() {
 
           <div style="margin-bottom: 16px;">
             <label style="display: block; font-size: 0.78rem; font-weight: 800; color: var(--os-gray-600); margin-bottom: 6px;">MOBILE PHONE</label>
-            <input type="text" id="staff-phone" required placeholder="+91 98401 22334" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--os-border); font-size: 0.9rem; outline: none; box-sizing: border-box;" />
+            <input type="text" id="staff-phone" required placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--os-border); font-size: 0.9rem; outline: none; box-sizing: border-box;" />
           </div>
 
           <div style="margin-bottom: 16px;">

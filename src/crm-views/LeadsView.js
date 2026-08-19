@@ -134,13 +134,13 @@ export function renderLeadsView() {
               </div>
               <div class="form-group">
                 <label>Mobile *</label>
-                <input type="text" id="lead-mobile" placeholder="+91 9..." required />
+                <input type="text" id="lead-mobile" placeholder="10-digit number" required maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label>WhatsApp number</label>
-                <input type="text" id="lead-whatsapp" placeholder="defaults to mobile" />
+                <input type="text" id="lead-whatsapp" placeholder="defaults to mobile" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
               </div>
               <div class="form-group">
                 <label>Email</label>
@@ -393,7 +393,7 @@ function renderTable() {
     return `
       <tr data-id="${lead.id}">
         <td>
-          <div style="font-weight: 600; color: var(--os-luxury-orange);">${lead.name}</div>
+          <div class="action-view" style="font-weight: 600; color: var(--os-luxury-orange); cursor: pointer;">${lead.name}</div>
           <div style="font-size: 0.85rem; color: var(--os-gray-400);">${lead.mobile}</div>
         </td>
         <td>
@@ -537,16 +537,18 @@ export function initLeadsView() {
         assignTo,
         status: idField ? undefined : 'New', // preserve status if edit later
         followup: document.getElementById('lead-followup').value || '—',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        timeline: idField ? undefined : [{ type: 'system', message: 'Lead created manually', author: 'Aishwarya Raman', date: new Date().toISOString() }]
       };
 
       let leads = getLeads();
       if (idField) {
         const idx = leads.findIndex(l => l.id === leadData.id);
         if (idx !== -1) {
-           // preserve existing status and createdAt during edit
+           // preserve existing status, createdAt, and timeline during edit
            leadData.status = leads[idx].status; 
            leadData.createdAt = leads[idx].createdAt || Date.now();
+           leadData.timeline = leads[idx].timeline || [];
            leads[idx] = leadData;
         }
       } else {
@@ -674,9 +676,9 @@ export function initLeadsView() {
     tableContainer.addEventListener('click', (e) => {
       const tr = e.target.closest('tr');
       if (!tr) return;
-      const id = parseInt(tr.getAttribute('data-id'));
+      const id = tr.getAttribute('data-id');
       const leads = getLeads();
-      const lead = leads.find(l => l.id === id);
+      const lead = leads.find(l => l.id == id);
       if (!lead) return;
 
       if (e.target.closest('.action-view')) {

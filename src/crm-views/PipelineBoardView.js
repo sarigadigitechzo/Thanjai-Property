@@ -287,7 +287,7 @@ export function initPipelineBoardView() {
       col.addEventListener('drop', (e) => {
         e.preventDefault();
         col.parentElement.classList.remove('drag-over');
-        const leadId = parseInt(e.dataTransfer.getData('text/plain'));
+        const leadId = e.dataTransfer.getData('text/plain');
         const newStatus = col.dataset.stage;
         if (leadId && newStatus) {
           updateLeadStatus(leadId, newStatus);
@@ -302,7 +302,17 @@ export function initPipelineBoardView() {
       // Avoid unnecessary re-renders
       if (leads[idx].status === newStatus) return;
       
+      const oldStatus = leads[idx].status || 'New Lead';
       leads[idx].status = newStatus;
+      
+      if (!leads[idx].timeline) leads[idx].timeline = [];
+      leads[idx].timeline.unshift({
+        type: 'pipeline',
+        message: `Moved from ${oldStatus.toUpperCase().replace(/\s+/g, '_')} to ${newStatus.toUpperCase().replace(/\s+/g, '_')}`,
+        author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
+        date: new Date().toISOString()
+      });
+
       saveLeads(leads);
       renderBoard(); // Re-render everything to update counts and move cards
     }

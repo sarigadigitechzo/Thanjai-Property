@@ -274,7 +274,41 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('profile-logout-btn')?.addEventListener('click', handleAdminLogout);
   document.getElementById('sidebar-logout-btn')?.addEventListener('click', handleAdminLogout);
 
+  // Dynamic Follow-up Check
+  function checkFollowUps() {
+    const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+    const now = new Date();
+    const dueLeads = leads.filter(l => {
+      if (l.status === 'FOLLOW_UP_PENDING' && l.followUpDate) {
+        return new Date(l.followUpDate) <= now;
+      }
+      return false;
+    });
+
+    if (dueLeads.length > 0) {
+      if (pulseDot) pulseDot.style.display = 'block';
+      let html = '';
+      dueLeads.forEach(l => {
+        const timeStr = new Date(l.followUpDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        html += `
+          <div class="hd-item unread" onclick="window.location.hash='lead/${l.id}'" style="cursor: pointer;">
+            <i class="ri-alarm-warning-line" style="color: var(--os-error);"></i>
+            <div class="hd-text">
+              <p><strong>Follow-up Due: ${l.name}</strong></p>
+              <span>Scheduled for today at ${timeStr}</span>
+            </div>
+            <i class="ri-close-line dismiss-btn" title="Dismiss" onclick="event.stopPropagation(); this.closest('.hd-item').remove();"></i>
+          </div>
+        `;
+      });
+      if (notifList) notifList.innerHTML = html;
+    }
+  }
+
+  // Run the check on load and every 1 minute
+  checkFollowUps();
+  setInterval(checkFollowUps, 60000);
+
   // Initialize
   handleHashChange();
 });
-

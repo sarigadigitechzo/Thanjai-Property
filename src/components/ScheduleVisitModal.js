@@ -29,7 +29,7 @@ export function renderScheduleVisitModal(detail = {}) {
 
             <div class="search-field-group">
               <label class="search-field-label"><i class="ri-phone-line"></i> Phone Number</label>
-              <input type="tel" required placeholder="+91 XXXXX XXXXX" class="search-input" />
+              <input type="tel" required placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="search-input" />
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
