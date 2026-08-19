@@ -245,7 +245,7 @@
       </div>
 
       <div style="text-align: center; margin-top: 24px; font-size: 0.85rem;">
-        <a href="/login.html#user-login" style="color: #94a3b8; text-decoration: none;" onmouseover="this.style.color='#eb5e28'" onmouseout="this.style.color='#94a3b8'">
+        <a href="/user-login" style="color: #94a3b8; text-decoration: none;" onmouseover="this.style.color='#eb5e28'" onmouseout="this.style.color='#94a3b8'">
           ← Switch to Client Portal Login
         </a>
       </div>
@@ -295,7 +295,7 @@
         localStorage.setItem('thanjai_active_user', JSON.stringify(adminUser));
 
         setTimeout(() => {
-          window.location.href = '/dashboard.html';
+          window.location.href = '/admin-dashboard';
         }, 600);
       });
     </script>

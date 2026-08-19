@@ -35,7 +35,7 @@
 
 /* LEFT DARK SLATE VISUAL PANEL */
 .login-left-panel {
-  background: linear-gradient(145deg, #313B4D 0%, #222936 100%);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.92) 100%), url('/images/tn_villas.jpg') no-repeat center center / cover;
   color: #ffffff;
   padding: 40px 32px;
   display: flex;
@@ -49,8 +49,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
-  background-size: 20px 20px;
+  background: radial-gradient(circle at 20% 20%, rgba(235, 94, 40, 0.15), transparent 40%);
   pointer-events: none;
 }
 

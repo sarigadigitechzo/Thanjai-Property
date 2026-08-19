@@ -38,18 +38,18 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
           <!-- Action Buttons (Matching Screenshot 1) -->
           <div class="nav-actions" style="display: flex; align-items: center; gap: 10px;">
             ${currentUser ? `
-              <a href="/user-dashboard.html" class="nav-login-btn" id="nav-account-btn" title="View My Account Workspace">
+              <a href="/user-dashboard" class="nav-login-btn" id="nav-account-btn" title="View My Account Workspace">
                 <i class="ri-user-3-line"></i>
                 <span>My Account</span>
               </a>
             ` : `
-              <a href="/login.html" class="nav-login-btn" id="nav-login-btn" title="Sign In to your Account">
+              <a href="/user-login" class="nav-login-btn" id="nav-login-btn" title="Sign In to your Account">
                 <i class="ri-user-3-line"></i>
                 <span>Login</span>
               </a>
             `}
 
-            <a href="${currentUser ? '/user-dashboard.html' : '/login.html#register'}" class="nav-post-property-btn" id="nav-post-property-btn" title="Post Property for Sale or Rent">
+            <a href="${currentUser ? '/user-dashboard' : '/user-register'}" class="nav-post-property-btn" id="nav-post-property-btn" title="Post Property for Sale or Rent">
               <i class="ri-home-4-line"></i>
               <span>Post Property</span>
             </a>

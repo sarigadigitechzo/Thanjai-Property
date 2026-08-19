@@ -11,14 +11,8 @@ export function renderLogin(initialMode = 'signin') {
         <!-- LEFT DARK SLATE VISUAL PANEL -->
         <div class="login-left-panel">
           <div class="login-left-content">
-            <div class="login-brand-area">
-              <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 0; letter-spacing: 1px;">Thanjai<span style="color: #eb5e28;">Property</span></h2>
-            </div>
-
-            <div class="login-left-illustration">
-              <div class="house-graphic-box">
-                <i class="ri-building-4-line"></i>
-              </div>
+            <div class="login-brand-area" style="display: flex; align-items: center;">
+              <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" style="height: 52px; background: #ffffff; padding: 8px 16px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); display: block;" />
             </div>
 
             <div class="login-left-tagline" id="left-tagline">
@@ -37,6 +31,9 @@ export function renderLogin(initialMode = 'signin') {
 
           <!-- SIGN IN FORM MODE -->
           <div class="auth-mode-container ${initialMode === 'signin' ? 'active-mode' : ''}" id="mode-signin">
+            <a href="/" id="signin-back-to-home" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: #718096; text-decoration: none; margin-bottom: 24px; transition: color 0.2s;" onmouseover="this.style.color='#2d3748'" onmouseout="this.style.color='#718096'">
+              <i class="ri-arrow-left-line"></i> Back to Home
+            </a>
             <h1 class="auth-heading">Sign in to your account</h1>
 
             <form class="auth-form" id="signin-form" onsubmit="return false;">
@@ -216,17 +213,15 @@ export function initLogin() {
   const app = document.getElementById('login-app');
   if (!app) return;
 
+  const path = window.location.pathname.toLowerCase();
   const hash = window.location.hash.slice(1).toLowerCase();
   let mode = 'signin';
-  if (hash === 'register' || hash === 'user-register' || hash === 'signup') {
+  if (path.includes('user-register') || hash.includes('register') || hash.includes('signup')) {
     mode = 'register';
-    window.location.hash = 'user-register';
-  } else if (hash === 'otp') {
+  } else if (path.includes('otp') || hash.includes('otp')) {
     mode = 'otp';
-    window.location.hash = 'otp';
   } else {
     mode = 'signin';
-    window.location.hash = 'user-login';
   }
 
   app.innerHTML = renderLogin(mode);
@@ -236,18 +231,26 @@ export function initLogin() {
   const modeOtp = document.getElementById('mode-otp');
   const leftTagline = document.getElementById('left-tagline');
 
+  function updateLoginUrlSlug(slug) {
+    try {
+      window.history.replaceState(null, '', '/' + slug);
+    } catch (err) {
+      window.location.hash = slug;
+    }
+  }
+
   function showMode(targetMode) {
     [modeSignin, modeRegister, modeOtp].forEach(m => m?.classList.remove('active-mode'));
     if (targetMode === 'signin') {
-      window.location.hash = 'user-login';
+      updateLoginUrlSlug('user-login');
       modeSignin?.classList.add('active-mode');
       if (leftTagline) leftTagline.textContent = 'Welcome back! Sign in to continue exploring properties in Thanjavur & surrounding areas.';
     } else if (targetMode === 'register') {
-      window.location.hash = 'user-register';
+      updateLoginUrlSlug('user-register');
       modeRegister?.classList.add('active-mode');
       if (leftTagline) leftTagline.textContent = 'Find your perfect home in Thanjavur & surrounding areas. Trusted listings, verified owners.';
     } else if (targetMode === 'otp') {
-      window.location.hash = 'otp';
+      updateLoginUrlSlug('otp');
       modeOtp?.classList.add('active-mode');
       const pending = getPendingOTPUser();
       const email = pending ? pending.email : '';
@@ -299,7 +302,7 @@ export function initLogin() {
       if (loggedUser && (loggedUser.role === 'superadmin' || loggedUser.email === 'admin@realrest.example')) {
         window.location.href = '/dashboard.html';
       } else {
-        window.location.href = '/user-dashboard.html';
+        window.location.href = '/user-dashboard';
       }
     }, 800);
   });
@@ -370,7 +373,7 @@ export function initLogin() {
       if (btn) btn.textContent = 'Activated! Opening Dashboard...';
       alert(`Account Activated Successfully!\nYour Login Email & System Password have been dispatched to your registered email.\n\nClick OK to open your Client User Dashboard.`);
       setTimeout(() => {
-        window.location.href = '/user-dashboard.html';
+        window.location.href = '/user-dashboard';
       }, 500);
     } else {
       if (btn) btn.textContent = 'Verify & Activate Account';

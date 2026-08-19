@@ -44,8 +44,8 @@ export function renderFooter() {
               <li><a href="/discover-properties" class="nav-route-link" data-route="discover">Discover Properties</a></li>
               <li><a href="/blog" class="nav-route-link" data-route="blog">Blog</a></li>
               <li><a href="/contact-us" class="nav-route-link" data-route="contact-us">Contact Us</a></li>
-              <li><a href="/terms#term-privacy" class="nav-route-link" data-route="terms">Privacy Policy</a></li>
-              <li><a href="/terms#term-agreement" class="nav-route-link" data-route="terms">Terms of Use</a></li>
+              <li><a href="/privacy-policy" class="nav-route-link" data-route="privacy">Privacy Policy</a></li>
+              <li><a href="/terms-of-use" class="nav-route-link" data-route="terms">Terms of Use</a></li>
             </ul>
           </div>
 

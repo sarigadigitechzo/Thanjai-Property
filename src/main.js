@@ -62,15 +62,20 @@ function parseCurrentRoute() {
 
   if (path.includes('our-story') || hash === 'our-story') return 'our-story';
   if (path.includes('discover-properties') || path.includes('discover') || hash === 'discover-properties' || hash === 'discover') return 'discover';
+  if (path.startsWith('/blog/') || path.includes('/blog/')) {
+    const slug = path.split('/blog/')[1];
+    if (slug) blogState.selectedPostId = slug;
+    return 'blog';
+  }
   if (hash.startsWith('blog/')) {
     const slug = hash.replace('blog/', '');
     if (slug) blogState.selectedPostId = slug;
     return 'blog';
   }
-  if (path.includes('blog') || path.includes('journal') || hash === 'blog' || hash === 'journal') return 'blog';
+  if (path === '/blog' || hash === 'blog' || path.includes('journal') || hash === 'journal') return 'blog';
   if (path.includes('contact-us') || path.includes('contact') || hash === 'contact-us' || hash === 'contact') return 'contact';
-  if (path.includes('terms') || hash === 'terms' || hash.startsWith('term-')) return 'terms';
-  if (path.includes('privacy') || hash === 'privacy' || hash.startsWith('privacy-')) return 'privacy';
+  if (path.includes('terms-of-use') || path.includes('terms') || hash === 'terms-of-use' || hash === 'terms' || hash.startsWith('term-')) return 'terms';
+  if (path.includes('privacy-policy') || path.includes('privacy') || hash === 'privacy-policy' || hash === 'privacy' || hash.startsWith('privacy-')) return 'privacy';
 
   return 'home';
 }
@@ -79,10 +84,10 @@ function getRoutePath(route) {
   switch (route) {
     case 'our-story': return '/our-story';
     case 'discover': return '/discover-properties';
-    case 'blog': return '/blog';
+    case 'blog': return blogState.selectedPostId ? `/blog/${blogState.selectedPostId}` : '/blog';
     case 'contact': return '/contact-us';
-    case 'terms': return '/terms';
-    case 'privacy': return '/privacy';
+    case 'terms': return '/terms-of-use';
+    case 'privacy': return '/privacy-policy';
     default: return '/';
   }
 }
@@ -124,6 +129,9 @@ function navigateToRoute(route, pushState = true) {
   currentRoute = route;
   if (route !== 'discover') {
     discoverState.selectedPropertyId = null;
+  }
+  if (route !== 'blog') {
+    blogState.selectedPostId = null;
   }
   if (pushState) {
     window.history.pushState({ route }, '', getRoutePath(route));
@@ -249,7 +257,10 @@ function renderApp() {
         },
         (postId) => {
           blogState.selectedPostId = postId;
-          renderApp();
+          if (window.location.hash) {
+            history.replaceState(null, '', getRoutePath('blog'));
+          }
+          navigateToRoute('blog');
         },
         () => navigateToRoute('contact')
       );
@@ -310,15 +321,18 @@ function closeModalPropertyDetail() {
 
 function openBlogArticle(postId) {
   blogState.selectedPostId = postId;
+  if (window.location.hash) {
+    history.replaceState(null, '', getRoutePath('blog'));
+  }
   navigateToRoute('blog');
 }
 
 function openPostModal() {
   const currentUser = getCurrentUser();
   if (currentUser) {
-    window.location.href = '/user-dashboard.html';
+    window.location.href = '/user-dashboard';
   } else {
-    window.location.href = '/login.html#register';
+    window.location.href = '/user-register';
   }
 }
 

@@ -38,34 +38,11 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
         </div>
       </section>
 
-      <!-- CATEGORY FILTERS & SEARCH BAR -->
-      <section style="padding: 30px 0; background: #faf8f5; border-bottom: 1px solid rgba(0,0,0,0.06);">
-        <div class="container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-          
-          <!-- Category Filter Pills -->
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="blog-category-pills">
-            <button class="blog-pill-btn ${blogState.category === 'all' ? 'active' : ''}" data-category="all">
-              All Articles (${allPosts.length})
-            </button>
-            <button class="blog-pill-btn ${blogState.category === 'Legal & Patta' ? 'active' : ''}" data-category="Legal & Patta">
-              Legal & Patta
-            </button>
-            <button class="blog-pill-btn ${blogState.category === 'Investment' ? 'active' : ''}" data-category="Investment">
-              Investment
-            </button>
-            <button class="blog-pill-btn ${blogState.category === 'Architecture' ? 'active' : ''}" data-category="Architecture">
-              Architecture
-            </button>
-            <button class="blog-pill-btn ${blogState.category === 'Market Guide' ? 'active' : ''}" data-category="Market Guide">
-              Market Guide
-            </button>
-            <button class="blog-pill-btn ${blogState.category === 'NRI Guide' ? 'active' : ''}" data-category="NRI Guide">
-              NRI Guide
-            </button>
-          </div>
-
+      <!-- SEARCH BAR SECTION -->
+      <section style="padding: 20px 0; background: #faf8f5; border-bottom: 1px solid rgba(0,0,0,0.06);">
+        <div class="container" style="display: flex; justify-content: flex-end; align-items: center;">
           <!-- Quick Search -->
-          <div style="position: relative; width: 280px;">
+          <div style="position: relative; width: 320px;">
             <i class="ri-search-line" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #888;"></i>
             <input 
               type="text" 
@@ -78,7 +55,6 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
               "
             />
           </div>
-
         </div>
       </section>
 
@@ -251,6 +227,58 @@ function renderArticleDetailView(post, onNavigateToContact, allPosts) {
 
           <!-- Article Content Body -->
           <div class="article-body-text" style="padding: 48px; font-size: 1.12rem; color: #2D3748; line-height: 1.85;">
+            <style>
+              .article-body-text h1, .article-body-text h2, .article-body-text h3, .article-body-text h4, .article-body-text h5, .article-body-text h6 {
+                font-family: var(--font-serif, serif);
+                color: #1a202c;
+                margin-top: 1.6em;
+                margin-bottom: 0.6em;
+                line-height: 1.3;
+                font-weight: 800;
+              }
+              .article-body-text h1 { font-size: 2.2rem; }
+              .article-body-text h2 { font-size: 1.8rem; }
+              .article-body-text h3 { font-size: 1.5rem; }
+              .article-body-text h4 { font-size: 1.3rem; }
+              .article-body-text h5 { font-size: 1.15rem; }
+              .article-body-text h6 { font-size: 1.05rem; }
+              .article-body-text p { margin-bottom: 1.2em; line-height: 1.8; }
+              .article-body-text a { color: #eb5e28; text-decoration: underline; font-weight: 700; word-break: break-word; }
+              .article-body-text a:hover { color: #c84919; }
+              .article-body-text table, .article-body-text .blog-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 24px 0;
+                font-size: 0.95rem;
+                border: 1px solid #cbd5e0;
+                border-radius: 8px;
+                overflow: hidden;
+              }
+              .article-body-text th {
+                background: #f7fafc;
+                border: 1px solid #cbd5e0;
+                padding: 12px 16px;
+                font-weight: 800;
+                color: #1a202c;
+                text-align: left;
+              }
+              .article-body-text td {
+                border: 1px solid #cbd5e0;
+                padding: 12px 16px;
+                color: #2d3748;
+              }
+              .article-body-text tr:nth-child(even) {
+                background: #faf8f5;
+              }
+              .article-body-text ul, .article-body-text ol {
+                margin-bottom: 1.4em;
+                padding-left: 24px;
+              }
+              .article-body-text li {
+                margin-bottom: 0.4em;
+                line-height: 1.7;
+              }
+            </style>
             ${post.content || `<p class="blog-lead">${post.excerpt}</p>`}
           </div>
 

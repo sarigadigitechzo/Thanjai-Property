@@ -1,3 +1,5 @@
+import { getRegisteredUsers, getCurrentUser } from '../utils/userAuthStore.js';
+
 export function renderPartnersView() {
   return `
     <div class="view-enter">
@@ -97,9 +99,9 @@ export function renderPartnersView() {
 }
 
 export function initPartnersView() {
-  // Mock Data Initialization
+  // Data Initialization
   let partners = JSON.parse(localStorage.getItem('thanjai_partners'));
-  if (!partners) {
+  if (!partners || !Array.isArray(partners)) {
     partners = [
       { id: 1, company: 'Chennai Prime Realty', contact: 'Senthil Kumar', city: 'Chennai', leads: 2, status: 'Active' },
       { id: 2, company: 'digitechzo', contact: 'udhay', city: 'madurai', leads: 2, status: 'Active' },
@@ -107,8 +109,44 @@ export function initPartnersView() {
       { id: 4, company: 'IUCS', contact: 'Ram', city: '', leads: 3, status: 'Active' },
       { id: 5, company: 'Kovai Homes & Plots', contact: 'Lakshmi Narayanan', city: 'Coimbatore', leads: 1, status: 'Active' }
     ];
-    localStorage.setItem('thanjai_partners', JSON.stringify(partners));
   }
+
+  // Sync registered client portal users to Partner Network
+  const registeredUsers = getRegisteredUsers();
+  const activeUser = getCurrentUser();
+  const allUsersToSync = [...registeredUsers];
+  if (activeUser && activeUser.email && !allUsersToSync.some(u => u.email === activeUser.email)) {
+    allUsersToSync.push(activeUser);
+  }
+
+  allUsersToSync.forEach(u => {
+    if (!u || (!u.fullName && !u.name)) return;
+    const name = u.fullName || u.name;
+    const email = u.email || '';
+    const phone = u.phone || '';
+    const company = u.company || name || 'Partner Member';
+
+    const exists = partners.some(p => 
+      (email && p.email && p.email.toLowerCase() === email.toLowerCase()) || 
+      (phone && p.phone && p.phone === phone) || 
+      (p.contact && p.contact.toLowerCase() === name.toLowerCase())
+    );
+
+    if (!exists) {
+      partners.push({
+        id: u.id || `partner-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        company: company,
+        contact: name,
+        city: u.city || u.district || 'Thanjavur',
+        phone: phone,
+        email: email,
+        leads: 0,
+        status: 'Active'
+      });
+    }
+  });
+
+  localStorage.setItem('thanjai_partners', JSON.stringify(partners));
 
   // Mock Shared Leads Data
   let allSharedLeads = JSON.parse(localStorage.getItem('thanjai_shared_leads'));

@@ -141,6 +141,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function keepUrlClean() {
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, '', '/admin-dashboard');
+    }
+  }
+
   function handleHashChange() {
     const hash = window.location.hash.slice(1) || 'dashboard';
     
@@ -148,12 +154,27 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = hash.split('/')[1];
       loadView('lead-detail', id);
       setActiveNav('leads');
+      keepUrlClean();
       return;
     }
 
     loadView(hash);
     setActiveNav(hash);
+    keepUrlClean();
   }
+
+  // Intercept Sidebar Nav Clicks to keep URL clean
+  navItems.forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const view = item.dataset.view;
+      if (view) {
+        loadView(view);
+        setActiveNav(view);
+        keepUrlClean();
+      }
+    });
+  });
 
   // Event Listeners
   window.addEventListener('hashchange', handleHashChange);
@@ -167,7 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (aiBtn) {
     aiBtn.addEventListener('click', () => {
-      window.location.hash = 'ai';
+      loadView('ai');
+      setActiveNav('ai');
+      keepUrlClean();
     });
   }
 
@@ -190,7 +213,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileSettingsBtn = document.getElementById('profile-settings-btn');
   if (profileSettingsBtn) {
     profileSettingsBtn.addEventListener('click', () => {
-      window.location.hash = 'settings';
+      loadView('settings');
+      setActiveNav('settings');
+      keepUrlClean();
       if (profileMenu) profileMenu.classList.remove('show');
     });
   }
@@ -198,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileLogoutBtn = document.getElementById('profile-logout-btn');
   if (profileLogoutBtn) {
     profileLogoutBtn.addEventListener('click', () => {
-      window.location.href = '/login.html';
+      window.location.href = '/admin-login';
     });
   }
 
@@ -243,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Admin OS Logout Handlers
   const handleAdminLogout = () => {
     localStorage.removeItem('thanjai_active_user');
-    window.location.href = '/admin-login.html';
+    window.location.href = '/admin-login';
   };
 
   document.getElementById('profile-logout-btn')?.addEventListener('click', handleAdminLogout);

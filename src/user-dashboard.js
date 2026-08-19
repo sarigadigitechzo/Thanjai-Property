@@ -142,10 +142,6 @@ export function renderUserDashboard() {
             <i class="ri-add-circle-line"></i>
             <span>Post Property</span>
           </a>
-          <a href="#" class="user-nav-item nav-item" data-tab="buyers-list" id="nav-buyers-inquiries">
-            <i class="ri-team-line"></i>
-            <span>Buyers Inquiries (${defaultBuyersInquiries.length})</span>
-          </a>
           <a href="#" class="user-nav-item nav-item" data-tab="profile">
             <i class="ri-user-settings-line"></i>
             <span>Profile & Password</span>
@@ -199,17 +195,6 @@ export function renderUserDashboard() {
                 </div>
               </div>
               <div class="kpi-footer-link">Pending Verification &rsaquo;</div>
-            </div>
-
-            <div class="kpi-card" id="kpi-buyers-link" style="cursor: pointer;">
-              <div class="kpi-card-inner">
-                <div class="kpi-icon-box green"><i class="ri-user-heart-line"></i></div>
-                <div>
-                  <h5 class="kpi-title">Interested Buyers</h5>
-                  <div class="kpi-val">18 Inquiries</div>
-                </div>
-              </div>
-              <div class="kpi-footer-link" style="color: #3182ce;">View Buyers &rsaquo;</div>
             </div>
           </div>
 

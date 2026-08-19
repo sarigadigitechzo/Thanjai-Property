@@ -1,7 +1,7 @@
-import { BLOG_POSTS } from '../data/blog.js';
+import { getBlogPosts } from '../utils/blogStore.js';
 
 export function renderBlogSection(onNavigateToBlog, onSelectPost) {
-  const recentPosts = BLOG_POSTS.slice(0, 3);
+  const recentPosts = getBlogPosts().slice(0, 3);
 
   return `
     <section class="blog-home-section" id="home-blog-section" style="padding: 90px 0; background: #faf8f5; border-top: 1px solid rgba(0,0,0,0.05);">
@@ -25,7 +25,7 @@ export function renderBlogSection(onNavigateToBlog, onSelectPost) {
         <!-- 3 Cards Grid -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 28px;">
           ${recentPosts.map(post => `
-            <article class="blog-card hover-lift" data-id="${post.id}" style="
+            <article class="blog-card hover-lift" data-id="${post.id}" data-slug="${post.slug || ''}" style="
               background: #ffffff;
               border-radius: 16px;
               overflow: hidden;
@@ -77,9 +77,9 @@ export function initBlogSectionListeners(onNavigateToBlog, onSelectPost) {
 
   document.querySelectorAll('.blog-card').forEach(card => {
     card.addEventListener('click', () => {
-      const id = card.dataset.id;
-      if (id && onSelectPost) {
-        onSelectPost(id);
+      const targetId = card.dataset.slug || card.dataset.id;
+      if (targetId && onSelectPost) {
+        onSelectPost(targetId);
       }
     });
   });
