@@ -63,6 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const dateDisplay = document.getElementById('top-date-display');
+  if (dateDisplay) {
+    const today = new Date();
+    const options = { day: 'numeric', month: 'short' };
+    dateDisplay.textContent = 'Today, ' + today.toLocaleDateString('en-GB', options);
+  }
+
   function loadView(viewName, param = null) {
     // Permission guard check
     if (!isSuperAdmin && allowedModules && viewName !== 'lead-detail' && !allowedModules.includes(viewName)) {
