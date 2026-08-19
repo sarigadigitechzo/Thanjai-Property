@@ -90,6 +90,7 @@ export function addAdminUser(userData) {
     role: userData.role || 'Sales Executive',
     roleCode: (userData.role || 'Sales Executive').toLowerCase().replace(/\s+/g, ''),
     status: userData.status || 'Active',
+    allowedModules: Array.isArray(userData.allowedModules) ? userData.allowedModules : [],
     lastLogin: 'Never',
     createdAt: new Date().toISOString()
   };
@@ -115,6 +116,7 @@ export function updateAdminUser(id, updatedFields) {
   users[idx] = {
     ...users[idx],
     ...updatedFields,
+    allowedModules: Array.isArray(updatedFields.allowedModules) ? updatedFields.allowedModules : (users[idx].allowedModules || []),
     roleCode: updatedFields.role ? updatedFields.role.toLowerCase().replace(/\s+/g, '') : users[idx].roleCode
   };
 

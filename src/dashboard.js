@@ -17,12 +17,62 @@ import { renderBuildersDirectoryView, initBuildersDirectoryView } from './crm-vi
 import { renderReportsView, initReportsView } from './crm-views/ReportsView.js';
 import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.js';
 import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsersView.js';
+import { showToast } from './utils/toast.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const contentArea = document.getElementById('os-content');
   const navItems = document.querySelectorAll('.nav-item');
 
+  // Read active logged-in staff user and their module permissions
+  let activeAdminUser = null;
+  try {
+    const rawActive = localStorage.getItem('thanjai_active_user');
+    if (rawActive) activeAdminUser = JSON.parse(rawActive);
+  } catch (e) {}
+
+  const isSuperAdmin = !activeAdminUser || activeAdminUser.role === 'Super Admin' || activeAdminUser.roleCode === 'superadmin' || activeAdminUser.email === 'admin@realrest.example';
+  const allowedModules = (activeAdminUser && Array.isArray(activeAdminUser.allowedModules) && activeAdminUser.allowedModules.length > 0)
+    ? activeAdminUser.allowedModules
+    : null; // null means full access
+
+  // Filter sidebar navigation items based on allowedModules
+  navItems.forEach(item => {
+    const view = item.dataset.view;
+    if (!isSuperAdmin && allowedModules && view && !allowedModules.includes(view)) {
+      item.style.display = 'none';
+    } else {
+      item.style.display = 'flex';
+    }
+  });
+
+  // Update user profile card in sidebar
+  if (activeAdminUser) {
+    const nameEl = document.querySelector('.sidebar-footer .name');
+    const roleEl = document.querySelector('.sidebar-footer .role');
+    const avatarEl = document.querySelector('.sidebar-footer .avatar');
+    if (nameEl) nameEl.textContent = activeAdminUser.fullName || activeAdminUser.name || 'Admin Staff';
+    if (roleEl) roleEl.textContent = activeAdminUser.role || 'Admin Staff';
+    if (avatarEl) {
+      const initials = (activeAdminUser.fullName || activeAdminUser.name || 'AS')
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+      avatarEl.textContent = initials;
+    }
+  }
+
   function loadView(viewName, param = null) {
+    // Permission guard check
+    if (!isSuperAdmin && allowedModules && viewName !== 'lead-detail' && !allowedModules.includes(viewName)) {
+      const firstAllowed = allowedModules[0] || 'dashboard';
+      showToast('Access Restricted: You do not have permission for this module.', 'warning');
+      loadView(firstAllowed);
+      setActiveNav(firstAllowed);
+      return;
+    }
+
     let html = '';
     let afterRender = null;
 

@@ -186,7 +186,7 @@ export function renderAdminUsersView() {
 
     <!-- ADD / EDIT ADMIN STAFF MODAL OVERLAY -->
     <div id="admin-staff-modal" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.7); backdrop-filter: blur(4px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
-      <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 500px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);">
+      <div style="background: #ffffff; border-radius: 16px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); box-sizing: border-box;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <h3 id="modal-staff-title" style="margin: 0; font-size: 1.2rem; font-weight: 800; color: var(--os-charcoal);">Add New Admin Staff</h3>
           <button id="close-staff-modal-btn" style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--os-gray-400);">&times;</button>
@@ -228,12 +228,75 @@ export function renderAdminUsersView() {
             </select>
           </div>
 
-          <div style="margin-bottom: 24px;">
+          <div style="margin-bottom: 16px;">
             <label style="display: block; font-size: 0.78rem; font-weight: 800; color: var(--os-gray-600); margin-bottom: 6px;">ACCOUNT STATUS</label>
             <select id="staff-status" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--os-border); font-size: 0.9rem; outline: none; background: #fff; box-sizing: border-box;">
               <option value="Active" selected>Active</option>
               <option value="Inactive">Inactive</option>
             </select>
+          </div>
+
+          <!-- MODULE ACCESS PERMISSIONS GRID -->
+          <div style="margin-bottom: 24px; border-top: 1px solid var(--os-border); padding-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <label style="font-size: 0.78rem; font-weight: 800; color: var(--os-gray-600); letter-spacing: 0.05em;">MODULE ACCESS PERMISSIONS</label>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="select-all-modules-btn" style="background: none; border: none; font-size: 0.75rem; font-weight: 700; color: #eb5e28; cursor: pointer; padding: 0;">Select All</button>
+                <span style="color: #cbd5e1;">|</span>
+                <button type="button" id="deselect-all-modules-btn" style="background: none; border: none; font-size: 0.75rem; font-weight: 700; color: #64748b; cursor: pointer; padding: 0;">Clear All</button>
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; max-height: 180px; overflow-y: auto; padding: 10px; background: #f8fafc; border: 1px solid var(--os-border); border-radius: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="dashboard" checked /> Dashboard Overview
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="leads" checked /> CRM Pipeline
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="properties" checked /> Properties Inventory
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="property-approvals" checked /> Property Approvals
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="visits" checked /> Site Visits & Appts
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="partners" checked /> Partner Network
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="ai" checked /> AI Operating Agent
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="whatsapp" checked /> WhatsApp Log
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="pipeline" checked /> Pipeline Board
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="reports" checked /> Reports
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="settings" checked /> Settings
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="users" checked /> Portal Users Overview
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="audit" checked /> Audit Log
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="blog-cms" checked /> Blog Posts CMS
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="images" checked /> Website Images
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" class="staff-module-chk" value="admin-users" checked /> Admin Staff & Access
+              </label>
+            </div>
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 12px;">
@@ -306,6 +369,14 @@ export function initAdminUsersView() {
     refreshAdminUsersView();
   });
 
+  // Select All / Clear All modules handlers
+  document.getElementById('select-all-modules-btn')?.addEventListener('click', () => {
+    document.querySelectorAll('.staff-module-chk').forEach(c => c.checked = true);
+  });
+  document.getElementById('deselect-all-modules-btn')?.addEventListener('click', () => {
+    document.querySelectorAll('.staff-module-chk').forEach(c => c.checked = false);
+  });
+
   // Modal open for ADD (100% fresh clean inputs)
   addBtn?.addEventListener('click', () => {
     if (!modal) return;
@@ -319,6 +390,7 @@ export function initAdminUsersView() {
     if (togglePassBtn) togglePassBtn.className = 'ri-eye-line';
     document.getElementById('staff-role').value = 'Sales Executive';
     document.getElementById('staff-status').value = 'Active';
+    document.querySelectorAll('.staff-module-chk').forEach(c => c.checked = true);
     modal.style.display = 'flex';
   });
 
@@ -339,12 +411,13 @@ export function initAdminUsersView() {
     const password = document.getElementById('staff-password').value.trim() || 'Admin@1234';
     const role = document.getElementById('staff-role').value;
     const status = document.getElementById('staff-status').value;
+    const allowedModules = Array.from(document.querySelectorAll('.staff-module-chk:checked')).map(c => c.value);
 
     if (editId) {
-      updateAdminUser(editId, { fullName, email, phone, password, role, status });
+      updateAdminUser(editId, { fullName, email, phone, password, role, status, allowedModules });
       showToast('Admin staff updated successfully!', 'success');
     } else {
-      addAdminUser({ fullName, email, phone, password, role, status });
+      addAdminUser({ fullName, email, phone, password, role, status, allowedModules });
       showToast('New admin staff added successfully!', 'success');
     }
 
@@ -379,6 +452,16 @@ export function initAdminUsersView() {
       document.getElementById('staff-password').value = target.password || 'Admin@1234';
       document.getElementById('staff-role').value = target.role;
       document.getElementById('staff-status').value = target.status;
+
+      const allowed = Array.isArray(target.allowedModules) && target.allowedModules.length > 0 ? target.allowedModules : null;
+      document.querySelectorAll('.staff-module-chk').forEach(c => {
+        if (allowed === null) {
+          c.checked = true;
+        } else {
+          c.checked = allowed.includes(c.value);
+        }
+      });
+
       modal.style.display = 'flex';
     });
   });
