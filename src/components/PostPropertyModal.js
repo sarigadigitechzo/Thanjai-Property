@@ -75,7 +75,7 @@ export function renderPostPropertyModal() {
 
               <div class="search-field-group">
                 <label class="search-field-label"><i class="ri-phone-line"></i> Mobile Phone (+91)</label>
-                <input type="tel" id="post-owner-phone" required placeholder="10-digit number" class="search-input" />
+                <input type="tel" id="post-owner-phone" required placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="search-input" />
               </div>
             </div>
 

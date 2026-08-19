@@ -13,6 +13,33 @@ export function renderLeadDetailView(id) {
 
   const formatCurrency = (val) => val ? '₹' + parseInt(val).toLocaleString('en-IN') : '—';
   
+  const allStages = [
+    { label: 'New Lead', wa: false },
+    { label: 'Initial Contact', wa: true },
+    { label: 'Requirement Analysis', wa: false },
+    { label: 'Property Matching', wa: false },
+    { label: 'Shared To Partner (use Share to partner below)', val: 'Shared To Partner', wa: false, style: 'color: var(--os-gray-400);' },
+    { label: 'Property Shared', wa: false },
+    { label: 'Follow Up Pending', wa: true },
+    { label: 'Site Visit Scheduled', wa: true },
+    { label: 'Site Visit Completed', wa: true },
+    { label: 'Negotiation', wa: true },
+    { label: 'Bank Loan', wa: true },
+    { label: 'Registration', wa: true },
+    { label: 'Lost Closed', wa: false }
+  ];
+
+  let stagesHtml = '';
+  const currentStatus = lead.status || 'Requirement Analysis';
+  allStages.forEach(s => {
+     let optVal = s.val || s.label;
+     let isSelected = (optVal === currentStatus) ? 'selected' : '';
+     let customStyle = s.style || '';
+     let style = isSelected ? 'style="background: #2563eb; color: #fff;"' : (customStyle ? `style="${customStyle}"` : '');
+     let waIcon = s.wa ? ' <i class="ri-mail-line" style="font-size: 0.8rem; vertical-align: middle;"></i> sends WhatsApp' : '';
+     stagesHtml += `          <div class="select-option ${isSelected}" ${style}>${s.label}${waIcon}</div>\n`;
+  });
+
   return `
     <div class="lead-detail-page">
       <div class="ld-back-nav" style="margin-bottom: 24px;">
@@ -33,20 +60,7 @@ export function renderLeadDetailView(id) {
         <div class="select-value" style="padding: 12px 16px; font-weight: 500; color: var(--os-dark);">${lead.status || 'Requirement Analysis'}</div>
         <i class="ri-arrow-down-s-line" style="position: absolute; right: 16px; top: 14px; color: var(--os-gray-500);"></i>
         <div class="select-dropdown" style="top: 100%; left: 0; right: 0; border-radius: 0 0 8px 8px; border: 1px solid var(--os-luxury-orange); margin-top: -1px; box-shadow: var(--os-shadow-md);">
-          <div class="select-option">New Lead</div>
-          <div class="select-option">Initial Contact <i class="ri-mail-line" style="font-size: 0.8rem; vertical-align: middle;"></i> sends WhatsApp</div>
-          <div class="select-option selected" style="background: #2563eb; color: #fff;">Requirement Analysis</div>
-          <div class="select-option">Property Matching</div>
-          <div class="select-option" style="color: var(--os-gray-400);">Shared To Partner (use Share to partner below)</div>
-          <div class="select-option">Property Shared</div>
-          <div class="select-option">Follow Up Pending <i class="ri-mail-line" style="font-size: 0.8rem; vertical-align: middle;"></i> sends WhatsApp</div>
-          <div class="select-option">Site Visit Scheduled <i class="ri-mail-line" style="font-size: 0.8rem; vertical-align: middle;"></i> sends WhatsApp</div>
-          <div class="select-option">Site Visit Completed <i class="ri-mail-line" style="font-size: 0.8rem; vertical-align: middle;"></i> sends WhatsApp</div>
-          <div class="select-option">Negotiation <i class="ri-mail-line" style="font-size: 0.8rem; vertical-align: middle;"></i> sends WhatsApp</div>
-          <div class="select-option">Bank Loan <i class="ri-mail-line" style="font-size: 0.8rem; vertical-align: middle;"></i> sends WhatsApp</div>
-          <div class="select-option">Registration <i class="ri-mail-line" style="font-size: 0.8rem; vertical-align: middle;"></i> sends WhatsApp</div>
-          <div class="select-option">Lost Closed</div>
-        </div>
+${stagesHtml}        </div>
       </div>
 
       <div class="ld-action-toolbar" style="display: flex; gap: 12px; margin-bottom: 32px; flex-wrap: wrap;">
@@ -60,7 +74,7 @@ export function renderLeadDetailView(id) {
             <div class="select-option">Vikram Subramanian</div>
           </div>
         </div>
-        <button class="os-btn-primary" style="background: #f97316; border-color: #f97316; display: flex; align-items: center; gap: 8px;">
+        <button class="os-btn-primary" id="btn-send-whatsapp" style="background: #f97316; border-color: #f97316; display: flex; align-items: center; gap: 8px;">
           <i class="ri-send-plane-fill"></i> Send WhatsApp
         </button>
         <button class="os-btn-secondary" id="btn-schedule-visit" style="background: var(--os-white); display: flex; align-items: center; gap: 8px;">
@@ -99,16 +113,33 @@ export function renderLeadDetailView(id) {
           <div class="os-card" style="padding: 24px; background: var(--os-white); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft);">
             <h3 style="font-size: 1rem; font-weight: 600; color: var(--os-dark); margin-bottom: 16px;">Set follow-up</h3>
             <div style="display: flex; gap: 12px;">
-              <input type="datetime-local" class="os-input" style="flex: 1;" />
-              <button class="os-btn-secondary" style="background: #fcd34d; border-color: #fcd34d; color: #92400e;">Set</button>
+              <input type="datetime-local" id="follow-up-datetime" class="os-input" style="flex: 1;" />
+              <button id="btn-set-follow-up" class="os-btn-secondary" style="background: #fcd34d; border-color: #fcd34d; color: #92400e;">Set</button>
             </div>
           </div>
 
           <div class="os-card" style="padding: 24px; background: var(--os-white); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft);">
             <h3 style="font-size: 1rem; font-weight: 600; color: var(--os-dark); margin-bottom: 16px;">Notes</h3>
-            <textarea class="os-input" rows="3" placeholder="Add an internal note..." style="width: 100%; margin-bottom: 12px; resize: vertical;"></textarea>
-            <button class="os-btn-secondary" style="background: #fed7aa; border-color: #fed7aa; color: #9a3412;">Add note</button>
-            <p style="margin-top: 16px; font-size: 0.85rem; color: var(--os-gray-400);">No notes yet.</p>
+            <textarea id="ld-note-input" class="os-input" rows="3" placeholder="Add an internal note..." style="width: 100%; margin-bottom: 12px; resize: vertical;"></textarea>
+            <button id="ld-add-note-btn" class="os-btn-secondary" style="background: #fed7aa; border-color: #fed7aa; color: #9a3412;">Add note</button>
+            <div id="ld-notes-list" style="margin-top: 16px; max-height: 300px; overflow-y: auto;">
+              ${
+                lead.notes && lead.notes.length > 0 
+                ? lead.notes.map(n => `
+                    <div style="background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #fed7aa; position: relative;">
+                      <p style="font-size: 0.9rem; color: var(--os-dark); margin-bottom: 8px; padding-right: 40px;">${n.text}</p>
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.75rem; color: var(--os-gray-400);">${new Date(n.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
+                        <div style="display: flex; gap: 8px;">
+                          <button class="note-action-btn" data-action="edit" data-date="${n.date}" style="background: none; border: none; cursor: pointer; color: var(--os-gray-500); padding: 2px;" title="Edit Note"><i class="ri-edit-line"></i></button>
+                          <button class="note-action-btn" data-action="delete" data-date="${n.date}" style="background: none; border: none; cursor: pointer; color: var(--os-error); padding: 2px;" title="Delete Note"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                      </div>
+                    </div>
+                  `).join('')
+                : '<p style="font-size: 0.85rem; color: var(--os-gray-400);">No notes yet.</p>'
+              }
+            </div>
           </div>
         </div>
 
@@ -117,93 +148,76 @@ export function renderLeadDetailView(id) {
           <div class="os-card" style="padding: 24px; background: var(--os-white); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
               <h3 style="font-size: 1rem; font-weight: 600; color: var(--os-dark);">Matching properties</h3>
-              <button class="os-btn-secondary" style="font-size: 0.85rem; padding: 4px 12px; height: auto;"><i class="ri-search-line"></i> Find matches</button>
+              <button class="os-btn-secondary" id="btn-find-matches" style="font-size: 0.85rem; padding: 4px 12px; height: auto;"><i class="ri-search-line"></i> Find matches</button>
             </div>
             <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-              <input type="text" class="os-input" placeholder="Search properties by title, location or description..." style="flex: 1;" />
-              <button class="os-btn-secondary">Search</button>
+              <input type="text" class="os-input" id="matching-properties-search" placeholder="Search properties by title, location or description..." style="flex: 1;" />
+              <button class="os-btn-secondary" id="btn-search-matches">Search</button>
             </div>
-            <p style="font-size: 0.9rem; color: var(--os-gray-500); line-height: 1.5;">Click "Find matches" to score current inventory against this lead's requirements, or search properties manually above.</p>
+            <div id="matching-properties-results">
+              <p style="font-size: 0.9rem; color: var(--os-gray-500); line-height: 1.5;">Click "Find matches" to score current inventory against this lead's requirements, or search properties manually above.</p>
+            </div>
           </div>
 
           <div class="os-card" style="background: var(--os-white); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft); overflow: hidden;">
             <div class="ld-tabs" style="display: flex; border-bottom: 1px solid var(--os-gray-200); padding: 0 16px;">
-              <div class="ld-tab active" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: #ea580c; border-bottom: 2px solid #ea580c; cursor: pointer;">Activity timeline</div>
-              <div class="ld-tab" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer;">WhatsApp (1)</div>
-              <div class="ld-tab" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer;">Partner shares (0)</div>
-              <div class="ld-tab" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer;">Pipeline history</div>
+              <div class="ld-tab active" data-target="pane-timeline" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: #ea580c; border-bottom: 2px solid #ea580c; cursor: pointer;">Activity timeline</div>
+              <div class="ld-tab" data-target="pane-whatsapp" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer;">WhatsApp (${(lead.timeline && lead.timeline.filter(e => e.type === 'whatsapp').length) || 0})</div>
+              <div class="ld-tab" data-target="pane-partner" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer;">Partner shares (0)</div>
+              <div class="ld-tab" data-target="pane-pipeline" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer;">Pipeline history</div>
             </div>
             
             <div class="ld-tab-content" style="padding: 24px;">
               
               <div class="ld-tab-pane" id="pane-timeline" style="display: block;">
+                ${(!lead.timeline || lead.timeline.length === 0) ? '<p style="color: var(--os-gray-400); font-size: 0.9rem;">No activity recorded yet.</p>' : `
                 <div class="timeline" style="position: relative; padding-left: 20px;">
                   <div style="position: absolute; left: 6px; top: 8px; bottom: 0; width: 2px; background: #fed7aa;"></div>
-                  
-                  <div class="timeline-item" style="position: relative; margin-bottom: 24px;">
-                    <div style="position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #ea580c; border: 2px solid var(--os-white);"></div>
-                    <div style="font-weight: 500; color: var(--os-dark); font-size: 0.95rem; margin-bottom: 4px;">Moved from FOLLOW_UP_PENDING to REQUIREMENT_ANALYSIS</div>
-                    <div style="font-size: 0.8rem; color: var(--os-gray-400);">Aishwarya Raman - 14 Aug 2026, 11:25</div>
-                  </div>
-
-                  <div class="timeline-item" style="position: relative; margin-bottom: 24px;">
-                    <div style="position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #ef4444; border: 2px solid var(--os-white);"></div>
-                    <div style="font-weight: 500; color: #ef4444; font-size: 0.95rem; margin-bottom: 4px;">Automated WhatsApp "Follow-up message" failed to send</div>
-                    <div style="font-size: 0.8rem; color: var(--os-gray-400);">System - 14 Aug 2026, 11:25</div>
-                  </div>
-
-                  <div class="timeline-item" style="position: relative; margin-bottom: 24px;">
-                    <div style="position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #ea580c; border: 2px solid var(--os-white);"></div>
-                    <div style="font-weight: 500; color: var(--os-dark); font-size: 0.95rem; margin-bottom: 4px;">Moved from NEW_LEAD to FOLLOW_UP_PENDING</div>
-                    <div style="font-size: 0.8rem; color: var(--os-gray-400);">Aishwarya Raman - 14 Aug 2026, 11:25</div>
-                  </div>
-
-                  <div class="timeline-item" style="position: relative;">
-                    <div style="position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: #ea580c; border: 2px solid var(--os-white);"></div>
-                    <div style="font-weight: 500; color: var(--os-dark); font-size: 0.95rem; margin-bottom: 4px;">Lead created manually</div>
-                    <div style="font-size: 0.8rem; color: var(--os-gray-400);">Aishwarya Raman - 12 Aug 2026, 12:08</div>
-                  </div>
+                  ${lead.timeline.map(event => `
+                    <div class="timeline-item" style="position: relative; margin-bottom: 24px;">
+                      <div style="position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: ${event.type === 'whatsapp' ? '#16a34a' : '#ea580c'}; border: 2px solid var(--os-white);"></div>
+                      <div style="font-weight: 500; color: ${event.type === 'whatsapp' ? '#16a34a' : 'var(--os-dark)'}; font-size: 0.95rem; margin-bottom: 4px;">${event.message}</div>
+                      <div style="font-size: 0.8rem; color: var(--os-gray-400);">${event.author} - ${new Date(event.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>
+                  `).join('')}
                 </div>
+                `}
               </div>
 
               <!-- WhatsApp Tab -->
               <div class="ld-tab-pane" id="pane-whatsapp" style="display: none; background: #eae6df; padding: 20px; border-radius: 8px;">
+                ${(!lead.timeline || !lead.timeline.find(e => e.type === 'whatsapp')) ? '<p style="text-align: center; color: #555; font-size: 0.9rem;">No WhatsApp history.</p>' : `
                 <div style="text-align: center; margin-bottom: 16px;">
-                  <span style="background: #fff; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; color: #555;">Today</span>
+                  <span style="background: #fff; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; color: #555;">Logs</span>
                 </div>
-
-                <div style="background: #dcf8c6; padding: 12px; border-radius: 8px; margin-bottom: 16px; position: relative;">
-                  <div style="font-size: 0.8rem; color: #16a34a; margin-bottom: 4px;">template: Follow-up message</div>
-                  <div style="font-size: 0.95rem; color: #1f2937; line-height: 1.4;">Hi mm, just following up on the properties I shared earlier. Did any of them catch your eye? Happy to arrange a viewing. — Aishwarya Raman</div>
-                  <div style="text-align: right; font-size: 0.75rem; color: #6b7280; margin-top: 4px;">11:25 <span style="color: #ef4444; font-weight: bold; margin-left: 4px;">!</span></div>
-                </div>
-
-                <div style="background: #dcf8c6; padding: 12px; border-radius: 8px; margin-bottom: 24px; position: relative;">
-                  <div style="font-size: 0.8rem; color: #16a34a; margin-bottom: 4px;">template: Site visit confirmation (auto)</div>
-                  <div style="font-size: 0.95rem; color: #1f2937; line-height: 1.4;">Hi mm! 👋 Confirming your site visit scheduled for 22 Aug, 08:30 pm. Aishwarya Raman will meet you there — see you soon!</div>
-                  <div style="text-align: right; font-size: 0.75rem; color: #6b7280; margin-top: 4px;">15:26 <span style="color: #ef4444; font-weight: bold; margin-left: 4px;">!</span></div>
-                </div>
-
-                <div style="display: flex; gap: 12px;">
-                  <input type="text" class="os-input" placeholder="Type a reply..." style="flex: 1; border: none; padding: 12px; border-radius: 8px;" />
-                  <button class="os-btn-primary" style="background: #d6b49a; border-color: #d6b49a; color: #fff;"><i class="ri-send-plane-fill"></i> Send</button>
-                </div>
+                ${lead.timeline.filter(e => e.type === 'whatsapp').map(event => `
+                  <div style="background: #dcf8c6; padding: 12px; border-radius: 8px; margin-bottom: 16px; position: relative;">
+                    <div style="font-size: 0.8rem; color: #16a34a; margin-bottom: 4px;">Sent by ${event.author}</div>
+                    <div style="font-size: 0.95rem; color: #1f2937; line-height: 1.4;">${event.message}</div>
+                    <div style="text-align: right; font-size: 0.75rem; color: #6b7280; margin-top: 4px;">${new Date(event.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})} <span style="color: #16a34a; font-weight: bold; margin-left: 4px;">✓</span></div>
+                  </div>
+                `).join('')}
+                `}
               </div>
 
               <!-- Pipeline History Tab -->
               <div class="ld-tab-pane" id="pane-pipeline" style="display: none;">
-                <div style="margin-bottom: 16px;">
-                  <span style="color: var(--os-gray-500);">Requirement Analysis <i class="ri-arrow-right-line" style="vertical-align: middle;"></i></span> <span style="color: var(--os-dark); font-weight: 500;">Site Visit Scheduled</span>
-                  <span style="color: var(--os-gray-400); font-size: 0.85rem; margin-left: 8px;">Aishwarya Raman · 14 Aug 2026, 15:26</span>
-                </div>
-                <div style="margin-bottom: 16px;">
-                  <span style="color: var(--os-gray-500);">Follow Up Pending <i class="ri-arrow-right-line" style="vertical-align: middle;"></i></span> <span style="color: var(--os-dark); font-weight: 500;">Requirement Analysis</span>
-                  <span style="color: var(--os-gray-400); font-size: 0.85rem; margin-left: 8px;">Aishwarya Raman · 14 Aug 2026, 11:25</span>
-                </div>
-                <div>
-                  <span style="color: var(--os-gray-500);">New Lead <i class="ri-arrow-right-line" style="vertical-align: middle;"></i></span> <span style="color: var(--os-dark); font-weight: 500;">Follow Up Pending</span>
-                  <span style="color: var(--os-gray-400); font-size: 0.85rem; margin-left: 8px;">Aishwarya Raman · 14 Aug 2026, 11:25</span>
-                </div>
+                ${(!lead.timeline || !lead.timeline.find(e => e.type === 'pipeline')) ? '<p style="color: var(--os-gray-400); font-size: 0.9rem;">No pipeline history.</p>' : `
+                  ${lead.timeline.filter(e => e.type === 'pipeline').map(event => {
+                     const parts = event.message.replace('Moved from ', '').split(' to ');
+                     return `
+                     <div style="margin-bottom: 16px;">
+                       <span style="color: var(--os-gray-500);">${parts[0] || ''} <i class="ri-arrow-right-line" style="vertical-align: middle;"></i></span> <span style="color: var(--os-dark); font-weight: 500;">${parts[1] || ''}</span>
+                       <span style="color: var(--os-gray-400); font-size: 0.85rem; margin-left: 8px;">${event.author} · ${new Date(event.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
+                     </div>
+                     `;
+                  }).join('')}
+                `}
+              </div>
+
+              <!-- Partner shares Tab -->
+              <div class="ld-tab-pane" id="pane-partner" style="display: none;">
+                 <p style="color: var(--os-gray-400); font-size: 0.9rem;">No partner shares yet.</p>
               </div>
 
             </div>
@@ -232,7 +246,7 @@ export function renderLeadDetailView(id) {
               </div>
               <div class="form-group">
                 <label>Mobile *</label>
-                <input type="text" id="edit-lead-mobile" required value="${lead.mobile || ''}" />
+                <input type="text" id="edit-lead-mobile" required value="${lead.mobile || ''}" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
               </div>
             </div>
             <div class="form-row">
@@ -357,6 +371,96 @@ export function renderLeadDetailView(id) {
         </div>
       </div>
     </div>
+
+    <!-- Send WhatsApp Modal -->
+    <div class="os-modal-overlay" id="send-whatsapp-modal">
+      <div class="os-modal-card" style="max-width: 500px;">
+        <div class="os-modal-header">
+          <h2>Send WhatsApp</h2>
+          <button class="os-modal-close" id="close-whatsapp-modal"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="os-modal-body" style="padding-top: 16px;">
+          <div style="font-size: 0.9rem; color: var(--os-gray-600); margin-bottom: 20px;">
+            To <span style="font-weight: 500; color: var(--os-dark);">${lead.whatsapp || lead.mobile || '9566321457'}</span>
+          </div>
+          
+          <div class="wa-tab-group" style="display: flex; background: var(--os-white); border: 1px solid var(--os-gray-200); border-radius: 8px; margin-bottom: 24px; overflow: hidden;">
+            <button class="wa-tab-btn active" data-tab="template" style="flex: 1; padding: 12px; border: none; background: #e27c3e; color: #fff; font-weight: 500; cursor: pointer; transition: all 0.2s ease;">Use a template</button>
+            <button class="wa-tab-btn" data-tab="custom" style="flex: 1; padding: 12px; border: none; background: transparent; color: var(--os-gray-600); font-weight: 500; cursor: pointer; transition: all 0.2s ease;">Write custom message</button>
+          </div>
+
+          <!-- Template Tab -->
+          <div class="wa-tab-content active" id="wa-tab-template">
+            <div class="form-group">
+              <label>Template</label>
+              <div class="os-custom-select" style="width: 100%;">
+                <div class="select-value">Welcome message</div>
+                <i class="ri-arrow-down-s-line"></i>
+                <div class="select-dropdown">
+                  <div class="select-option selected">Welcome message</div>
+                  <div class="select-option">No template (auto message)</div>
+                  <div class="select-option">Bank loan assistance (auto)</div>
+                  <div class="select-option">Follow-up message</div>
+                  <div class="select-option">Initial contact intro (auto)</div>
+                  <div class="select-option">Negotiation check-in (auto)</div>
+                  <div class="select-option">Partner transfer notification</div>
+                  <div class="select-option">Property shortlist</div>
+                  <div class="select-option">Registration testimonial & referral (auto)</div>
+                  <div class="select-option">Site visit confirmation (auto)</div>
+                  <div class="select-option">Site visit feedback request (auto)</div>
+                  <div class="select-option">Site visit reminder</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group" style="margin-top: 16px;">
+              <label>Language</label>
+              <div class="os-custom-select" style="width: 100%;">
+                <div class="select-value">English</div>
+                <i class="ri-arrow-down-s-line"></i>
+                <div class="select-dropdown">
+                  <div class="select-option selected">English</div>
+                  <div class="select-option">Tamil · தமிழ்</div>
+                  <div class="select-option">Hindi · हिन्दी</div>
+                  <div class="select-option">Telugu · తెలుగు</div>
+                  <div class="select-option">Kannada · ಕನ್ನಡ</div>
+                  <div class="select-option">Malayalam · മലയാളം</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Custom Tab -->
+          <div class="wa-tab-content" id="wa-tab-custom" style="display: none;">
+            <div class="form-group">
+              <label>Message</label>
+              <textarea class="os-input" rows="5" placeholder="Type your message..." style="width: 100%; resize: vertical;"></textarea>
+            </div>
+            <div class="form-group" style="margin-top: 16px;">
+              <label>Language</label>
+              <div class="os-custom-select" style="width: 100%;">
+                <div class="select-value">English</div>
+                <i class="ri-arrow-down-s-line"></i>
+                <div class="select-dropdown">
+                  <div class="select-option selected">English</div>
+                  <div class="select-option">Tamil · தமிழ்</div>
+                  <div class="select-option">Hindi · हिन्दी</div>
+                  <div class="select-option">Telugu · తెలుగు</div>
+                  <div class="select-option">Kannada · ಕನ್ನಡ</div>
+                  <div class="select-option">Malayalam · മലയാളം</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="os-modal-footer">
+          <button class="os-btn-secondary" id="cancel-whatsapp-modal" style="border: 1px solid var(--os-gray-200); padding: 8px 16px; border-radius: 8px; font-weight: 500; cursor: pointer; color: var(--os-gray-700); background: #fff;">Cancel</button>
+          <button class="os-btn-primary" id="confirm-whatsapp-modal" style="background: #e27c3e; border: none; border-radius: 8px; padding: 8px 16px; color: #fff; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            <i class="ri-send-plane-fill"></i> Send
+          </button>
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -373,7 +477,7 @@ export function initLeadDetailView(id) {
     });
     shareDropdownOptions.innerHTML = optionsHtml;
     
-    // Attach custom dropdown logic
+    // Custom dropdown logic for partner share modal
     const selected = shareDropdownWrap.querySelector('.select-value');
     selected.dataset.id = 'ALL';
     selected.addEventListener('click', (e) => {
@@ -513,16 +617,268 @@ export function initLeadDetailView(id) {
   // Close modals on outside click
   window.addEventListener('click', (e) => {
     const editModal = document.getElementById('edit-lead-modal');
+    const waModal = document.getElementById('send-whatsapp-modal');
     if (e.target === scheduleModal) scheduleModal.classList.remove('show');
     if (e.target === shareModal) shareModal.classList.remove('show');
     if (editModal && e.target === editModal) editModal.classList.remove('show');
+    if (waModal && e.target === waModal) waModal.classList.remove('show');
+  });
+
+  // WhatsApp Modal Logic
+  const waModal = document.getElementById('send-whatsapp-modal');
+  const btnWA = document.getElementById('btn-send-whatsapp');
+  const closeWA = document.getElementById('close-whatsapp-modal');
+  const cancelWA = document.getElementById('cancel-whatsapp-modal');
+  const confirmWA = document.getElementById('confirm-whatsapp-modal');
+  const waTabBtns = document.querySelectorAll('.wa-tab-btn');
+  const waTabContents = document.querySelectorAll('.wa-tab-content');
+
+  if (btnWA) {
+    btnWA.addEventListener('click', () => {
+      waModal.classList.add('show');
+    });
+  }
+  
+  if (closeWA) closeWA.addEventListener('click', () => waModal.classList.remove('show'));
+  if (cancelWA) cancelWA.addEventListener('click', () => waModal.classList.remove('show'));
+  
+  if (confirmWA) {
+    confirmWA.addEventListener('click', () => {
+      waModal.classList.remove('show');
+      alert('Message sent successfully via WhatsApp.');
+      
+      let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const idx = leads.findIndex(l => l.id == id);
+      if (idx !== -1) {
+        if (!leads[idx].timeline) leads[idx].timeline = [];
+        leads[idx].timeline.unshift({
+          type: 'whatsapp',
+          message: `WhatsApp message sent`,
+          author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
+          date: new Date().toISOString()
+        });
+        localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      }
+    });
+  }
+
+  waTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      waTabBtns.forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.color = 'var(--os-gray-600)';
+      });
+      btn.classList.add('active');
+      btn.style.background = '#e27c3e';
+      btn.style.color = '#fff';
+
+      waTabContents.forEach(c => c.style.display = 'none');
+      document.getElementById('wa-tab-' + btn.dataset.tab).style.display = 'block';
+    });
   });
 
   // Edit logic
   const editModal = document.getElementById('edit-lead-modal');
   const btnEdit = document.getElementById('btn-edit-lead');
   const closeEdit = document.getElementById('close-edit-modal');
-  const cancelEdit = document.getElementById('cancel-edit-btn');
+  const cancelEdit = document.getElementById('cancel-edit-modal');
+  
+  // Set Follow-up Logic
+  const btnFollowUp = document.getElementById('btn-set-follow-up');
+  const followUpInput = document.getElementById('follow-up-datetime');
+  if (btnFollowUp && followUpInput) {
+    btnFollowUp.addEventListener('click', () => {
+      const datetime = followUpInput.value;
+      if (!datetime) {
+        alert("Please select a date and time for the follow-up.");
+        return;
+      }
+      
+      let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const idx = leads.findIndex(l => l.id == id);
+      if (idx !== -1) {
+        const oldStatus = leads[idx].status || 'New Lead';
+        leads[idx].status = 'FOLLOW_UP_PENDING';
+        leads[idx].followUpDate = datetime;
+        
+        if (!leads[idx].timeline) leads[idx].timeline = [];
+        leads[idx].timeline.unshift({
+          type: 'system',
+          message: `Follow-up set for ${new Date(datetime).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}`,
+          author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
+          date: new Date().toISOString()
+        });
+        
+        if (oldStatus !== 'FOLLOW_UP_PENDING') {
+          leads[idx].timeline.unshift({
+            type: 'pipeline',
+            message: `Moved from ${oldStatus.toUpperCase().replace(/\s+/g, '_')} to FOLLOW_UP_PENDING`,
+            author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
+            date: new Date().toISOString()
+          });
+        }
+        localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+        
+        // Show success and refresh view
+        alert(`Follow-up set for ${new Date(datetime).toLocaleString()}`);
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      }
+    });
+  }
+
+  // Notes Logic
+  const btnAddNote = document.getElementById('ld-add-note-btn');
+  const noteInput = document.getElementById('ld-note-input');
+  if (btnAddNote && noteInput) {
+    btnAddNote.addEventListener('click', () => {
+      const text = noteInput.value.trim();
+      if (!text) return;
+      
+      let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const idx = leads.findIndex(l => l.id == id);
+      if (idx !== -1) {
+        if (!leads[idx].notes) leads[idx].notes = [];
+        leads[idx].notes.unshift({
+          text: text,
+          date: new Date().toISOString()
+        });
+        localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      }
+    });
+  }
+
+  // Edit/Delete Note Logic
+  const notesList = document.getElementById('ld-notes-list');
+  if (notesList) {
+    notesList.addEventListener('click', (e) => {
+      const btn = e.target.closest('.note-action-btn');
+      if (!btn) return;
+      
+      const noteDate = btn.dataset.date;
+      let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const idx = leads.findIndex(l => l.id == id);
+      if (idx === -1 || !leads[idx].notes) return;
+      
+      const action = btn.dataset.action;
+      
+      if (action === 'delete') {
+        if (confirm('Are you sure you want to delete this note?')) {
+          leads[idx].notes = leads[idx].notes.filter(n => n.date !== noteDate);
+          localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        }
+      } else if (action === 'edit') {
+        const noteToEdit = leads[idx].notes.find(n => n.date === noteDate);
+        if (noteToEdit) {
+           const newText = prompt('Edit note:', noteToEdit.text);
+           if (newText !== null && newText.trim() !== '') {
+             noteToEdit.text = newText.trim();
+             localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+             window.dispatchEvent(new HashChangeEvent('hashchange'));
+           }
+        }
+      }
+    });
+  }
+
+  // Matching Properties Logic
+  const btnFindMatches = document.getElementById('btn-find-matches');
+  const btnSearchMatches = document.getElementById('btn-search-matches');
+  const searchInput = document.getElementById('matching-properties-search');
+  const resultsContainer = document.getElementById('matching-properties-results');
+
+  function renderMatchingProperties(results) {
+    if (!results || results.length === 0) {
+      if(resultsContainer) resultsContainer.innerHTML = `<p style="font-size: 0.9rem; color: var(--os-gray-500); padding: 12px 0;">No matching properties found.</p>`;
+      return;
+    }
+    let html = '<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px; max-height: 300px; overflow-y: auto;">';
+    results.forEach(p => {
+      html += `
+        <label style="display: flex; gap: 12px; padding: 12px; border: 1px solid var(--os-gray-200); border-radius: 8px; align-items: center; cursor: pointer; background: #f8fafc; transition: all 0.2s ease;">
+          <input type="checkbox" class="match-prop-checkbox" value="${p.id}" />
+          <div style="flex: 1;">
+            <div style="font-weight: 600; font-size: 0.9rem; color: var(--os-dark);">${p.title}</div>
+            <div style="font-size: 0.8rem; color: var(--os-gray-500); margin-top: 4px;">${p.location} • <span style="color: #ea580c; font-weight: 500;">${p.priceFormatted || p.price}</span></div>
+          </div>
+        </label>
+      `;
+    });
+    html += '</div>';
+    
+    html += `
+      <div style="margin-top: 16px; text-align: right;">
+        <button id="inline-send-wa-btn" class="os-btn-primary" style="background: #25d366; border-color: #25d366;"><i class="ri-whatsapp-line"></i> Send via WhatsApp</button>
+      </div>
+    `;
+
+    if(resultsContainer) {
+      resultsContainer.innerHTML = html;
+      const inlineBtn = document.getElementById('inline-send-wa-btn');
+      if (inlineBtn) {
+        inlineBtn.addEventListener('click', () => {
+          const checkedProps = document.querySelectorAll('.match-prop-checkbox:checked');
+          if (checkedProps.length > 0) {
+            alert(`Message sent successfully via WhatsApp along with ${checkedProps.length} property link(s).`);
+          } else {
+            alert('Please select at least one property to send.');
+          }
+        });
+      }
+    }
+  }
+
+  function doSearch(query) {
+    const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+    const lowerQuery = query.toLowerCase();
+    const matches = allProps.filter(p => {
+      return (p.title && p.title.toLowerCase().includes(lowerQuery)) ||
+             (p.location && p.location.toLowerCase().includes(lowerQuery)) ||
+             (p.description && p.description.toLowerCase().includes(lowerQuery));
+    });
+    renderMatchingProperties(matches);
+  }
+
+  if (btnSearchMatches) {
+    btnSearchMatches.addEventListener('click', () => {
+      doSearch(searchInput.value || '');
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') doSearch(searchInput.value || '');
+    });
+  }
+
+  if (btnFindMatches) {
+    btnFindMatches.addEventListener('click', () => {
+      const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+      
+      const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const currentLead = leads.find(l => l.id == id);
+      if (!currentLead) return;
+
+      const typeFilter = currentLead.type ? currentLead.type.toLowerCase() : '';
+      const budgetMax = currentLead.budgetMax ? parseInt(currentLead.budgetMax) : 9999999999;
+      
+      const matches = allProps.filter(p => {
+        const pType = p.type ? p.type.toLowerCase() : '';
+        const pCategory = p.category ? p.category.toLowerCase() : '';
+        const isTypeMatch = !typeFilter || pType.includes(typeFilter) || pCategory.includes(typeFilter);
+        
+        let pPrice = p.price || 0;
+        if(typeof pPrice === 'string') pPrice = parseInt(pPrice.replace(/\D/g, '')) || 0;
+        
+        const isBudgetMatch = pPrice <= budgetMax;
+        return isTypeMatch && isBudgetMatch;
+      });
+      renderMatchingProperties(matches);
+    });
+  }
   const saveEdit = document.getElementById('btn-save-edit');
 
   if (btnEdit) btnEdit.addEventListener('click', () => editModal.classList.add('show'));
@@ -593,7 +949,7 @@ export function initLeadDetailView(id) {
   });
 
   // Custom Select Dropdown logic for LeadDetailView
-  const customSelects = document.querySelectorAll('.lead-detail-page .os-custom-select, #share-partner-modal .os-custom-select');
+  const customSelects = document.querySelectorAll('.lead-detail-page .os-custom-select, #share-partner-modal .os-custom-select, #send-whatsapp-modal .os-custom-select');
   customSelects.forEach(select => {
     const valueEl = select.querySelector('.select-value');
     const dropdown = select.querySelector('.select-dropdown');
@@ -630,20 +986,63 @@ export function initLeadDetailView(id) {
         if (idx !== -1) {
           if (select.id === 'ld-assign-dropdown') {
              const val = option.textContent.trim();
-             leads[idx].assignTo = (val === 'Assign to...') ? 'Unassigned' : val;
-             localStorage.setItem('thanjai_leads', JSON.stringify(leads));
-             window.dispatchEvent(new HashChangeEvent('hashchange'));
+             const newAssignee = (val === 'Assign to...') ? 'Unassigned' : val;
+             if (leads[idx].assignTo !== newAssignee) {
+               leads[idx].assignTo = newAssignee;
+               if (!leads[idx].timeline) leads[idx].timeline = [];
+               leads[idx].timeline.unshift({
+                 type: 'system',
+                 message: `Assigned to ${newAssignee}`,
+                 author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
+                 date: new Date().toISOString()
+               });
+               localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+               window.dispatchEvent(new HashChangeEvent('hashchange'));
+             }
           } else if (select.classList.contains('ld-stage-selector')) {
              let rawStatus = option.textContent.trim();
              if (rawStatus.includes('sends WhatsApp')) {
                 rawStatus = rawStatus.split('sends WhatsApp')[0].trim();
              }
-             leads[idx].status = rawStatus;
-             localStorage.setItem('thanjai_leads', JSON.stringify(leads));
-             window.dispatchEvent(new HashChangeEvent('hashchange'));
+             if (leads[idx].status !== rawStatus) {
+               const oldStatus = leads[idx].status || 'New Lead';
+               leads[idx].status = rawStatus;
+               if (!leads[idx].timeline) leads[idx].timeline = [];
+               leads[idx].timeline.unshift({
+                 type: 'pipeline',
+                 message: `Moved from ${oldStatus.toUpperCase().replace(/\s+/g, '_')} to ${rawStatus.toUpperCase().replace(/\s+/g, '_')}`,
+                 author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
+                 date: new Date().toISOString()
+               });
+               localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+               window.dispatchEvent(new HashChangeEvent('hashchange'));
+             }
           }
         }
       });
+    });
+  });
+  const ldTabs = document.querySelectorAll('.ld-tab');
+  const ldPanes = document.querySelectorAll('.ld-tab-pane');
+  
+  ldTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      ldTabs.forEach(t => {
+        t.classList.remove('active');
+        t.style.color = 'var(--os-gray-500)';
+        t.style.borderBottom = 'none';
+      });
+      tab.classList.add('active');
+      tab.style.color = '#ea580c';
+      tab.style.borderBottom = '2px solid #ea580c';
+      
+      ldPanes.forEach(pane => pane.style.display = 'none');
+      
+      const targetId = tab.getAttribute('data-target');
+      if (targetId) {
+        const targetPane = document.getElementById(targetId);
+        if (targetPane) targetPane.style.display = 'block';
+      }
     });
   });
 

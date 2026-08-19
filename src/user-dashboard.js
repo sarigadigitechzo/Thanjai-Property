@@ -378,7 +378,7 @@ export function renderUserDashboard() {
 
             <div style="margin-bottom: 16px;">
               <label style="font-size: 0.85rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Phone Number</label>
-              <input type="tel" id="profile-phone-input" value="${user.phone || ''}" required maxlength="10" pattern="[0-9]{10}" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #ffffff; font-size: 0.9rem; outline: none;" />
+              <input type="tel" id="profile-phone-input" value="${user.phone || ''}" required maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #ffffff; font-size: 0.9rem; outline: none;" />
             </div>
 
             <div style="margin-bottom: 24px;">

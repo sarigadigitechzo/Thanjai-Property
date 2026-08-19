@@ -54,7 +54,7 @@ export function renderPartnersView() {
           <div class="form-row">
             <div class="form-group">
               <label>Phone</label>
-              <input type="text" id="ap-phone" style="width: 100%;" />
+              <input type="text" id="ap-phone" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%;" />
             </div>
             <div class="form-group">
               <label>WhatsApp</label>

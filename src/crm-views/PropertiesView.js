@@ -767,7 +767,7 @@ function renderFullPagePropertyForm(prop) {
 
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Contact phone</label>
-                <input type="tel" id="form-prop-contact-phone" value="${isEdit ? prop?.ownerPhone || '' : ''}" placeholder="+91 94431 25009" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <input type="tel" id="form-prop-contact-phone" value="${isEdit ? prop?.ownerPhone || '' : ''}" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
             </div>
           </div>
