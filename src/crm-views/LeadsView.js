@@ -93,7 +93,7 @@ export function renderLeadsView() {
       </div>
 
       <!-- Table View -->
-      <div class="os-table-container" style="background: var(--os-white); border: var(--os-border-thin); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft); overflow-x: auto; overflow: hidden;">
+      <div class="os-table-container" style="background: var(--os-white); border: var(--os-border-thin); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft); overflow-x: auto;">
         <table class="os-table" style="width: 100%; border-collapse: collapse; min-width: 900px;">
           <thead>
             <tr>
@@ -714,7 +714,7 @@ export function initLeadsView() {
 
       } else if (e.target.closest('.action-delete')) {
         if (confirm('Are you sure you want to delete ' + lead.name + '?')) {
-          const newLeads = leads.filter(l => l.id !== id);
+          const newLeads = leads.filter(l => String(l.id) !== String(id));
           saveLeads(newLeads);
           renderTable();
         }

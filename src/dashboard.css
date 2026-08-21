@@ -1302,6 +1302,10 @@ body.os-body {
   border-bottom: var(--os-border-thin);
   vertical-align: middle;
 }
+.os-table th:last-child,
+.os-table td:last-child {
+  padding-right: 32px;
+}
 .os-table tbody tr {
   transition: background 0.2s;
 }
@@ -1317,6 +1321,7 @@ body.os-body {
   font-weight: 700;
   letter-spacing: 0.5px;
   border: 1px solid transparent;
+  white-space: nowrap;
 }
 .badge-gray {
   background: var(--os-white);

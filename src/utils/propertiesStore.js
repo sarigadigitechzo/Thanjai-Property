@@ -1,47 +1,40 @@
 import { PROPERTIES as INITIAL_PROPERTIES } from '../data/properties.js';
 import { addAuditLog } from './siteImagesStore.js';
+import { fetchFromAPI } from './api.js';
 
-const STORAGE_KEY = 'thanjai_properties';
+let propertiesCache = [];
+let isInitialized = false;
 
-export function getProperties() {
+// Initialize cache from API on startup
+export async function initPropertiesStore() {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (data !== null) {
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) {
-        return parsed.map(p => normalizePropertyRecord(p)).filter(Boolean);
-      }
+    const data = await fetchFromAPI('/properties');
+    if (data && Array.isArray(data)) {
+      propertiesCache = data.map(p => normalizePropertyRecord(p)).filter(Boolean);
     }
-  } catch (e) {
-    console.error("Error reading properties from localStorage", e);
+    isInitialized = true;
+  } catch (error) {
+    console.error("Failed to load properties from API:", error);
+    // Fallback to defaults if API fails or is empty initially
+    propertiesCache = INITIAL_PROPERTIES.map(p => normalizePropertyRecord(p)).filter(Boolean);
+    isInitialized = true;
   }
-
-  const normalizedDefaults = INITIAL_PROPERTIES.map(p => normalizePropertyRecord(p)).filter(Boolean);
-  savePropertiesToStorage(normalizedDefaults);
-  return normalizedDefaults;
 }
 
-function savePropertiesToStorage(props) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(props));
-  } catch (e) {
-    console.warn("localStorage quota exceeded or error occurred, attempting sanitization...", e);
-    try {
-      // Fallback: sanitize huge uncompressed base64 image strings (>2MB) to ensure storage fits
-      const sanitized = props.map(p => {
-        const cleanImages = (p.images || []).map(img => {
-          if (typeof img === 'string' && img.startsWith('data:image') && img.length > 2000000) {
-            return 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
-          }
-          return img;
-        });
-        return { ...p, images: cleanImages };
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
-    } catch (retryError) {
-      console.error("Critical: Failed to save properties even after sanitization", retryError);
-    }
+// Synchronous getter for UI components
+export function getProperties() {
+  if (!isInitialized) {
+    console.warn("getProperties called before store was initialized. Returning empty array.");
+    return [];
   }
+  return propertiesCache;
+}
+
+// Internal function to sync local cache to API when modifications happen
+async function savePropertiesToStorage(props) {
+  // We no longer overwrite the whole array via API.
+  // Individual add/update/delete functions will handle API calls.
+  // This is kept empty to prevent breaking internal references.
 }
 
 export function getPublicProperties() {
@@ -167,8 +160,12 @@ export function addProperty(data) {
   };
 
   const newProp = normalizePropertyRecord(rawProp);
-  props.unshift(newProp);
-  savePropertiesToStorage(props);
+  propertiesCache.unshift(newProp);
+  
+  fetchFromAPI('/properties', {
+    method: 'POST',
+    body: JSON.stringify(newProp)
+  }).catch(err => console.error("API Error adding property:", err));
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
@@ -218,8 +215,12 @@ export function updateProperty(id, updatedFields) {
   }
 
   const updatedProp = normalizePropertyRecord(merged);
-  props[index] = updatedProp;
-  savePropertiesToStorage(props);
+  propertiesCache[index] = updatedProp;
+  
+  fetchFromAPI(`/properties/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updatedProp)
+  }).catch(err => console.error("API Error updating property:", err));
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
@@ -234,12 +235,14 @@ export function updateProperty(id, updatedFields) {
 }
 
 export function deleteProperty(id) {
-  const props = getProperties();
-  const target = props.find(p => p.id === id);
+  const target = propertiesCache.find(p => p.id === id);
   if (!target) return false;
 
-  const filtered = props.filter(p => p.id !== id);
-  savePropertiesToStorage(filtered);
+  propertiesCache = propertiesCache.filter(p => p.id !== id);
+  
+  fetchFromAPI(`/properties/${id}`, {
+    method: 'DELETE'
+  }).catch(err => console.error("API Error deleting property:", err));
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),

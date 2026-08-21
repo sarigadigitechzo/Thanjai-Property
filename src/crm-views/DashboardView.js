@@ -174,7 +174,6 @@ export function renderDashboardView() {
           <!-- LEFT: 3D Donut Chart -->
           <div class="source-left">
             <div class="donut-svg-wrapper">
-              <div class="donut-shadow"></div>
               <svg viewBox="0 0 100 100" class="premium-donut">
                 <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(0,0,0,0.03)" stroke-width="12"></circle>
                 <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-deep-brown)" stroke-width="12" stroke-dasharray="153.2 251.2" stroke-dashoffset="0" data-tooltip="Manual: 11 (61%)" data-source="manual"></circle>

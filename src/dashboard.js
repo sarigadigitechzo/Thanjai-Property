@@ -19,7 +19,11 @@ import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.j
 import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsersView.js';
 import { showToast } from './utils/toast.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+import { initPropertiesStore } from './utils/propertiesStore.js';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await initPropertiesStore();
+  
   const contentArea = document.getElementById('os-content');
   const navItems = document.querySelectorAll('.nav-item');
 
@@ -61,6 +65,13 @@ document.addEventListener('DOMContentLoaded', () => {
         .slice(0, 2);
       avatarEl.textContent = initials;
     }
+  }
+
+  const dateDisplay = document.getElementById('top-date-display');
+  if (dateDisplay) {
+    const today = new Date();
+    const options = { day: 'numeric', month: 'short' };
+    dateDisplay.textContent = 'Today, ' + today.toLocaleDateString('en-GB', options);
   }
 
   function loadView(viewName, param = null) {

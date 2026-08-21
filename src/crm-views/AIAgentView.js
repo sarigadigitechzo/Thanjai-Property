@@ -33,24 +33,7 @@ export function renderAIAgentView() {
         </div>
 
         <!-- Chat History (Hidden initially) -->
-        <div class="ai-history" style="display:none;">
-          <div class="ai-msg user">
-            <div class="ai-msg-bubble">Find properties matching Rajesh's budget (₹1.4Cr)</div>
-          </div>
-          <div class="ai-msg system">
-            <div class="ai-avatar"><i class="ri-magic-line"></i></div>
-            <div class="ai-msg-bubble">
-              <p>I found 3 properties matching Rajesh's budget of ₹1.4Cr in Coimbatore:</p>
-              <div class="ai-prop-card">
-                <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=100&q=80" />
-                <div>
-                  <h4>Premium Villa, Saravanampatti</h4>
-                  <span>₹1.4 Cr &middot; 4 Beds</span>
-                </div>
-              </div>
-              <button class="os-btn-secondary" style="margin-top:12px;">Share via WhatsApp</button>
-            </div>
-          </div>
+        <div class="ai-history" style="display:none;" id="ai-chat-history">
         </div>
 
       </div>
@@ -59,8 +42,8 @@ export function renderAIAgentView() {
       <div class="ai-input-area">
         <div class="ai-input-box">
           <button class="ai-attach-btn"><i class="ri-attachment-2"></i></button>
-          <input type="text" placeholder="Message AI Agent..." />
-          <button class="ai-send-btn"><i class="ri-arrow-up-line"></i></button>
+          <input type="text" id="ai-user-input" placeholder="Message AI Agent..." />
+          <button class="ai-send-btn" id="ai-send-button"><i class="ri-arrow-up-line"></i></button>
         </div>
         <div class="ai-disclaimer">AI can make mistakes. Verify important information.</div>
       </div>
@@ -68,43 +51,113 @@ export function renderAIAgentView() {
   `;
 }
 
+import { marked } from 'https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js';
+
 export function initAIAgentView() {
-  const sendBtn = document.querySelector('.ai-send-btn');
-  const inputField = document.querySelector('.ai-input-box input');
+  const sendBtn = document.getElementById('ai-send-button');
+  const inputField = document.getElementById('ai-user-input');
   const sugCards = document.querySelectorAll('.ai-sug-card');
   const welcomeScreen = document.querySelector('.ai-welcome');
-  const historyScreen = document.querySelector('.ai-history');
+  const historyScreen = document.getElementById('ai-chat-history');
 
-  function simulateChat(text) {
+  function appendMessage(role, text) {
+    const isUser = role === 'user';
+    const wrapper = document.createElement('div');
+    wrapper.className = `ai-msg ${isUser ? 'user' : 'system'}`;
+    
+    let innerHTML = '';
+    if (!isUser) {
+      innerHTML += `<div class="ai-avatar"><i class="ri-magic-line"></i></div>`;
+    }
+    
+    // Use marked if available for system messages to render markdown properly
+    const content = isUser ? text : marked.parse(text);
+    
+    innerHTML += `
+      <div class="ai-msg-bubble">
+        ${isUser ? text : content}
+      </div>
+    `;
+    wrapper.innerHTML = innerHTML;
+    historyScreen.appendChild(wrapper);
+    historyScreen.scrollTop = historyScreen.scrollHeight;
+  }
+
+  async function sendMessageToAI(text) {
     if (!text.trim()) return;
     
     // Hide welcome, show history
     welcomeScreen.style.display = 'none';
-    historyScreen.style.display = 'block';
+    historyScreen.style.display = 'flex';
+    historyScreen.style.flexDirection = 'column';
+    historyScreen.style.gap = '16px';
 
     // Clear input
     inputField.value = '';
     
-    // In a real app, we would append the new message to the history and auto-scroll.
-    // For this prototype, we'll just show the hardcoded history which demonstrates the layout.
-    // We can also update the user's bubble text to match what they typed/clicked.
-    const userBubble = historyScreen.querySelector('.ai-msg.user .ai-msg-bubble');
-    if (userBubble) {
-      userBubble.textContent = text;
+    // Append user message
+    appendMessage('user', text);
+    
+    // Add loading indicator
+    const loadingId = 'loading-' + Date.now();
+    const loadingWrapper = document.createElement('div');
+    loadingWrapper.className = 'ai-msg system';
+    loadingWrapper.id = loadingId;
+    loadingWrapper.innerHTML = `
+      <div class="ai-avatar"><i class="ri-magic-line"></i></div>
+      <div class="ai-msg-bubble" style="color: var(--os-gray-400);">Thinking...</div>
+    `;
+    historyScreen.appendChild(loadingWrapper);
+    historyScreen.scrollTop = historyScreen.scrollHeight;
+
+    try {
+      // Gather context
+      const propertiesContext = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+      const leadsContext = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+
+      // Determine backend URL dynamically based on environment
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const backendUrl = isLocal ? 'http://localhost:3000/api/chat' : 'https://thanjaiproperty.com/api/chat';
+
+      // Call the Node.js backend
+      const response = await fetch(backendUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, propertiesContext, leadsContext })
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      
+      // Remove loading indicator
+      const loader = document.getElementById(loadingId);
+      if (loader) loader.remove();
+      
+      // Append AI response
+      appendMessage('system', data.reply);
+
+    } catch (error) {
+      console.error('Error fetching AI response:', error);
+      const loader = document.getElementById(loadingId);
+      if (loader) loader.remove();
+      appendMessage('system', 'Sorry, I am having trouble connecting to the backend server. Please make sure the Node.js backend is running on port 3000.');
     }
   }
 
   if (sendBtn && inputField) {
-    sendBtn.addEventListener('click', () => simulateChat(inputField.value));
+    sendBtn.addEventListener('click', () => sendMessageToAI(inputField.value));
     inputField.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') simulateChat(inputField.value);
+      if (e.key === 'Enter') sendMessageToAI(inputField.value);
     });
   }
 
   sugCards.forEach(card => {
     card.addEventListener('click', () => {
       const text = card.querySelector('span').textContent;
-      simulateChat(text);
+      sendMessageToAI(text);
     });
   });
 }
