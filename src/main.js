@@ -1,5 +1,5 @@
 import './style.css';
-import { getProperties, getPublicProperties } from './utils/propertiesStore.js';
+import { getProperties, getPublicProperties, initPropertiesStore } from './utils/propertiesStore.js';
 
 // Components
 import { renderNavbar, initNavbarListeners } from './components/Navbar.js';
@@ -383,6 +383,22 @@ function handleCategorySelect(catId) {
 }
 
 // Browser Navigation Events
+window.addEventListener('popstate', () => {
+  currentRoute = parseCurrentRoute();
+  updateSeoMetadata(currentRoute);
+  renderApp();
+});
+
+// Application Initialization
+document.addEventListener('DOMContentLoaded', async () => {
+  await initPropertiesStore();
+  
+  // Set up mobile navigation
+  MobileBottomNav.init();
+  updateSeoMetadata(currentRoute);
+  renderApp();
+});
+
 window.addEventListener('popstate', () => {
   currentRoute = parseCurrentRoute();
   updateSeoMetadata(currentRoute);

@@ -19,7 +19,11 @@ import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.j
 import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsersView.js';
 import { showToast } from './utils/toast.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+import { initPropertiesStore } from './utils/propertiesStore.js';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await initPropertiesStore();
+  
   const contentArea = document.getElementById('os-content');
   const navItems = document.querySelectorAll('.nav-item');
 
