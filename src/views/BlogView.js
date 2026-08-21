@@ -27,13 +27,14 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
       ">
         <div class="container" style="max-width: 800px; position: relative; z-index: 2;">
           <span class="badge badge-orange" style="font-weight: 800; letter-spacing: 0.12em; margin-bottom: 16px;">
-            INSIGHTS & MARKET PERSPECTIVES
+            REAL-ESTATE INSIGHTS
           </span>
-          <h1 class="heading-display-light" style="font-size: clamp(2.2rem, 4.5vw, 3.8rem); color: #ffffff; margin-bottom: 16px;">
-            The Blog & Legal Journal
+          <h1 class="heading-display-light" style="font-size: clamp(2.2rem, 4.5vw, 3.8rem); color: #ffffff; margin-bottom: 12px;">
+            Real-Estate Insights & Property Guides
           </h1>
-          <p style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.85); line-height: 1.6; max-width: 680px; margin: 0 auto;">
-            Expert real estate guides, Patta legal verification checklists, architectural perspectives, and Tamil Nadu market intelligence.
+          <div style="font-size: 1.05rem; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 14px;">Learn Before You Buy, Sell or Invest</div>
+          <p style="font-size: 1.02rem; color: rgba(255, 255, 255, 0.85); line-height: 1.65; max-width: 720px; margin: 0 auto;">
+            Read property guides, legal tips, local market insights and real-estate checklists to make informed property decisions across Tamil Nadu.
           </p>
         </div>
       </section>

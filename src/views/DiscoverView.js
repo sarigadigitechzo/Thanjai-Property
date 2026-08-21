@@ -33,13 +33,14 @@ export function renderDiscoverView(discoverState, onPropertySelect, onNavigateTo
       ">
         <div class="container" style="max-width: 800px; position: relative; z-index: 2;">
           <span class="badge badge-orange" style="font-weight: 800; letter-spacing: 0.12em; margin-bottom: 16px;">
-            THANJAI DISCOVERY ENGINE
+            DISCOVER PROPERTIES
           </span>
-          <h1 class="heading-display-light" style="font-size: clamp(2.2rem, 4.5vw, 3.8rem); color: #ffffff; margin-bottom: 16px;">
-            Find a Place Worth Owning
+          <h1 class="heading-display-light" style="font-size: clamp(2.2rem, 4.5vw, 3.8rem); color: #ffffff; margin-bottom: 12px;">
+            Find Your Next Property in Tamil Nadu
           </h1>
-          <p style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.85); line-height: 1.6; max-width: 680px; margin: 0 auto;">
-            Explore our curated collection of verified luxury villas, independent homes, DTCP layout plots, and Kaveri farm estates.
+          <div style="font-size: 1.05rem; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 14px;">Search Houses, Plots, Agricultural Land & Commercial Spaces</div>
+          <p style="font-size: 1.02rem; color: rgba(255, 255, 255, 0.85); line-height: 1.65; max-width: 720px; margin: 0 auto;">
+            Explore real estate listings across Tamil Nadu. Use location, budget, and property type filters to narrow your search and find properties that match your requirements.
           </p>
         </div>
       </section>
@@ -367,31 +368,24 @@ function renderPropertyDetailView(property, onNavigateToContact) {
             </div>
 
             <!-- POSTER / OWNER INFORMATION CARD -->
-            ${(() => {
-              const primaryOwner = (property.ownerName || '').trim();
-              const listedBy = (property.listedBy || '').trim();
-              let sellerDisplayName = primaryOwner || listedBy || 'Thanjai Property Specialist';
-              if (primaryOwner && listedBy && primaryOwner.toLowerCase() !== listedBy.toLowerCase() && !listedBy.toLowerCase().includes('seller')) {
-                sellerDisplayName = `${primaryOwner} (${listedBy})`;
-              }
-              return `
-                <div style="background: #FAF8F5; padding: 20px 24px; border-radius: 16px; border: 1px solid #E7E0D8; margin-bottom: 36px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-                  <div>
-                    <span style="font-size: 0.78rem; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Verified Property Seller / Specialist:</span>
-                    <strong style="font-size: 1.1rem; color: #1A202C;">${sellerDisplayName}</strong>
-                  </div>
+            <div style="background: #FAF8F5; padding: 20px 24px; border-radius: 16px; border: 1px solid #E7E0D8; margin-bottom: 36px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <span style="font-size: 0.78rem; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Verified Property Seller / Specialist:</span>
+                <strong style="font-size: 1.1rem; color: #1A202C;">Thanjai Property</strong>
+              </div>
 
-                  <div style="display: flex; gap: 10px;">
-                    <a href="tel:${property.ownerPhone || '9585777772'}" style="background: #ffffff; border: 1px solid #CBD5E0; color: #2D3748; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                      <i class="ri-phone-line" style="color: #eb5e28;"></i> Call Seller
-                    </a>
-                    <a href="https://wa.me/91${(property.ownerPhone || '9585777772').replace(/[^0-9]/g, '')}?text=Hello%20${encodeURIComponent(sellerDisplayName)},%20interested%20in%20${encodeURIComponent(property.title)}" target="_blank" style="background: #25D366; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,211,102,0.25);">
-                      <i class="ri-whatsapp-line"></i> WhatsApp Chat
-                    </a>
-                  </div>
-                </div>
-              `;
-            })()}
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="tel:+919578311506" style="background: #ffffff; border: 1px solid #CBD5E0; color: #2D3748; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="ri-phone-line" style="color: #eb5e28;"></i> Call Seller
+                </a>
+                <a href="https://wa.me/919578311506?text=Hello%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}" target="_blank" style="background: #25D366; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,211,102,0.25);">
+                  <i class="ri-whatsapp-line"></i> WhatsApp Chat
+                </a>
+                <a href="mailto:vijayaraghavan@thanjaiproperty.com?subject=Inquiry%20for%20${encodeURIComponent(property.title)}" style="background: #1a1a1a; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                  <i class="ri-mail-line" style="color: #eb5e28;"></i> Email Us
+                </a>
+              </div>
+            </div>
 
             <!-- DESCRIPTION OVERVIEW -->
             <div style="margin-bottom: 40px;">

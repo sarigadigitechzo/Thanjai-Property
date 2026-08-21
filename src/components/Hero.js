@@ -24,11 +24,11 @@ export function renderHero() {
         </div>
         
         <h1 class="heading-display-light hero-title">
-          Discover a Place<br>Worth Calling Home.
+          Find a Property That<br>Fits Your Future.
         </h1>
 
         <p class="hero-subtitle">
-          Tamil Nadu's premier luxury property discovery platform. Curated architectural villas, high-rise residences, DTCP plots, and Kaveri farm estates.
+          Buy, Sell, Rent & Explore Properties Across Tamil Nadu. Discover homes, villas, apartments, residential plots, agricultural land, commercial spaces, and industrial real-estate opportunities built around your goals.
         </p>
       </div>
 

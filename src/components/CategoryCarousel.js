@@ -9,11 +9,14 @@ export function renderCategoryCarousel() {
       <div class="container">
         <!-- Section Header -->
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 36px; flex-wrap: wrap; gap: 20px;">
-          <div>
-            <span class="eyebrow">PROPERTY ASSET CLASSES</span>
+          <div style="max-width: 720px;">
+            <span class="eyebrow">DISCOVER BY NEED</span>
             <h2 class="heading-section" style="margin-top: 12px;">
-              Curated Property Types
+              Discover Properties Based on What You Actually Need
             </h2>
+            <p style="color: var(--color-text-muted, #666); font-size: 0.95rem; margin-top: 8px; line-height: 1.6;">
+              <strong>Search by Location. Choose by Property Type. Decide With Confidence.</strong> Every property requirement is different—whether you are a homebuyer, plot seeker, agricultural investor, or business owner.
+            </p>
           </div>
 
           <!-- Left & Right Arrow Buttons -->

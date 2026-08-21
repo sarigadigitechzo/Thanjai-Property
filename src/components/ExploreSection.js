@@ -15,7 +15,7 @@ export function renderExploreSection() {
           <div class="editorial-top-eyebrow-bar">
             <div class="editorial-eyebrow-wrap">
               <span class="editorial-vertical-line"></span>
-              <span class="eyebrow" style="color: var(--color-orange); font-weight: 800; letter-spacing: 0.12em;">SELL & PROMOTE YOUR LAND</span>
+              <span class="eyebrow" style="color: var(--color-orange); font-weight: 800; letter-spacing: 0.12em;">SELL YOUR PROPERTY TO THE RIGHT AUDIENCE</span>
             </div>
           </div>
 
@@ -23,13 +23,14 @@ export function renderExploreSection() {
           <div class="editorial-main-two-col">
             <div class="editorial-title-col">
               <h2 class="heading-display-light editorial-main-title">
-                Sell or Promote Your<br>Land & Properties.
+                Sell Your Property to<br>the Right Audience.
               </h2>
+              <div style="font-size: 1rem; font-weight: 700; color: #eb5e28; margin-top: 6px;">Turn Your Property Listing Into a New Opportunity</div>
             </div>
 
             <div class="editorial-desc-col">
               <p class="editorial-desc-text">
-                Reach thousands of genuine buyers, NRI investors, and high-net-worth clients looking for verified layout plots, agricultural farmlands, villas, and commercial spaces across Tamil Nadu.
+                Selling a property is about presenting clear details—location, size, price, and specifications—so potential buyers can understand the opportunity. With Thanjai Property, list your houses, plots, agricultural land, or commercial spaces with free basic property posting to reach active property seekers across Tamil Nadu.
               </p>
             </div>
           </div>

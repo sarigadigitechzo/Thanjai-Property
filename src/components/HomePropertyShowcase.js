@@ -18,13 +18,14 @@ export function renderHomePropertyShowcase(properties, onSelectProperty, onNavig
         <!-- Header -->
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 48px; flex-wrap: wrap; gap: 20px;">
           <div>
-            <span class="eyebrow" style="color: var(--color-orange, #eb5e28); font-weight: 800; letter-spacing: 0.12em;">FEATURED RESIDENCES & LAND</span>
+            <span class="eyebrow" style="color: var(--color-orange, #eb5e28); font-weight: 800; letter-spacing: 0.12em;">FEATURED & LATEST OPPORTUNITIES</span>
             <h2 class="heading-section" style="margin-top: 10px;">
-              Curated Architectural Portfolio
+              Featured Properties
             </h2>
+            <div style="font-size: 1rem; font-weight: 700; color: #4a5568; margin-top: 4px;">Explore Property Opportunities Worth Your Attention</div>
           </div>
-          <p style="max-width: 460px; color: var(--color-text-muted, #666); font-size: 0.95rem; line-height: 1.6;">
-            Handpicked architectural villas, Kaveri riverfront farm plots, and commercial corridors verified with 100% legal Patta titles.
+          <p style="max-width: 520px; color: var(--color-text-muted, #666); font-size: 0.95rem; line-height: 1.6;">
+            Start your search with selected property listings from across Tamil Nadu. From residential houses and premium villas to residential plots, agricultural land, and commercial properties with essential details including location, area, and asking price.
           </p>
         </div>
 

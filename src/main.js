@@ -29,6 +29,7 @@ import { renderPrivacyView, initPrivacyListeners } from './views/PrivacyView.js'
 import { getFavorites } from './utils/favorites.js';
 import { showToast } from './utils/toast.js';
 import { getCurrentUser } from './utils/userAuthStore.js';
+import { getBlogPostByIdOrSlug } from './utils/blogStore.js';
 
 // Global Route & Application State
 let currentRoute = parseCurrentRoute();
@@ -62,17 +63,21 @@ function parseCurrentRoute() {
 
   if (path.includes('our-story') || hash === 'our-story') return 'our-story';
   if (path.includes('discover-properties') || path.includes('discover') || hash === 'discover-properties' || hash === 'discover') return 'discover';
-  if (path.startsWith('/blog/') || path.includes('/blog/')) {
-    const slug = path.split('/blog/')[1];
-    if (slug) blogState.selectedPostId = slug;
-    return 'blog';
-  }
+  
   if (hash.startsWith('blog/')) {
-    const slug = hash.replace('blog/', '');
+    const slug = hash.replace('blog/', '').trim();
     if (slug) blogState.selectedPostId = slug;
     return 'blog';
   }
-  if (path === '/blog' || hash === 'blog' || path.includes('journal') || hash === 'journal') return 'blog';
+  if (path.startsWith('/blog/') || path.includes('/blog/')) {
+    const slug = path.split('/blog/')[1]?.trim();
+    if (slug) blogState.selectedPostId = slug;
+    return 'blog';
+  }
+  if (path === '/blog' || hash === 'blog' || path.includes('journal') || hash === 'journal') {
+    return 'blog';
+  }
+
   if (path.includes('contact-us') || path.includes('contact') || hash === 'contact-us' || hash === 'contact') return 'contact';
   if (path.includes('terms-of-use') || path.includes('terms') || hash === 'terms-of-use' || hash === 'terms' || hash.startsWith('term-')) return 'terms';
   if (path.includes('privacy-policy') || path.includes('privacy') || hash === 'privacy-policy' || hash === 'privacy' || hash.startsWith('privacy-')) return 'privacy';
@@ -84,7 +89,7 @@ function getRoutePath(route) {
   switch (route) {
     case 'our-story': return '/our-story';
     case 'discover': return '/discover-properties';
-    case 'blog': return blogState.selectedPostId ? `/blog/${blogState.selectedPostId}` : '/blog';
+    case 'blog': return blogState.selectedPostId ? `/#blog/${blogState.selectedPostId}` : '/#blog';
     case 'contact': return '/contact-us';
     case 'terms': return '/terms-of-use';
     case 'privacy': return '/privacy-policy';
@@ -93,8 +98,8 @@ function getRoutePath(route) {
 }
 
 function updateSeoMetadata(route) {
-  let title = "Thanjai Property — Where Tamil Nadu's Properties Meet Modern Luxury";
-  let desc = "Discover Tamil Nadu's premier luxury villas, modern apartments, DTCP plots, and Kaveri farm estates. Thanjai Property - Since 2009.";
+  let title = "Thanjai Property | Buy, Sell & Rent Properties Across Tamil Nadu";
+  let desc = "Explore houses, villas, apartments, plots, agricultural land and commercial properties for sale or rent across Tamil Nadu. Search by location, property type and budget with Thanjai Property.";
 
   switch (route) {
     case 'our-story':
@@ -134,7 +139,12 @@ function navigateToRoute(route, pushState = true) {
     blogState.selectedPostId = null;
   }
   if (pushState) {
-    window.history.pushState({ route }, '', getRoutePath(route));
+    const targetPath = getRoutePath(route);
+    if (targetPath.startsWith('/#')) {
+      window.location.hash = targetPath.replace('/#', '');
+    } else {
+      window.history.pushState({ route }, '', targetPath);
+    }
   }
   updateSeoMetadata(route);
   renderApp();
@@ -255,10 +265,15 @@ function renderApp() {
           blogState = newState;
           renderApp();
         },
-        (postId) => {
-          blogState.selectedPostId = postId;
-          if (window.location.hash) {
-            history.replaceState(null, '', getRoutePath('blog'));
+        (postIdOrSlug) => {
+          if (!postIdOrSlug) {
+            blogState.selectedPostId = null;
+            window.location.hash = '#blog';
+          } else {
+            const post = getBlogPostByIdOrSlug(postIdOrSlug);
+            const slug = post ? (post.slug || post.id) : postIdOrSlug;
+            blogState.selectedPostId = slug;
+            window.location.hash = `#blog/${slug}`;
           }
           navigateToRoute('blog');
         },
@@ -319,11 +334,11 @@ function closeModalPropertyDetail() {
   renderApp();
 }
 
-function openBlogArticle(postId) {
-  blogState.selectedPostId = postId;
-  if (window.location.hash) {
-    history.replaceState(null, '', getRoutePath('blog'));
-  }
+function openBlogArticle(postIdOrSlug) {
+  const post = getBlogPostByIdOrSlug(postIdOrSlug);
+  const slug = post ? (post.slug || post.id) : postIdOrSlug;
+  blogState.selectedPostId = slug;
+  window.location.hash = `#blog/${slug}`;
   navigateToRoute('blog');
 }
 

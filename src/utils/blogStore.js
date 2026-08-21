@@ -167,14 +167,15 @@ export function addBlogPost(data) {
 
 export function updateBlogPost(id, updatedFields) {
   const posts = getBlogPosts();
-  const index = posts.findIndex(p => p.id === id);
+  const index = posts.findIndex(p => p.id === id || p.slug === id);
   if (index === -1) return false;
 
   const current = posts[index];
   const merged = {
     ...current,
     ...updatedFields,
-    id: current.id
+    id: current.id,
+    slug: updatedFields.slug || current.slug || current.id
   };
 
   posts[index] = merged;
@@ -183,7 +184,7 @@ export function updateBlogPost(id, updatedFields) {
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
     user: 'Aishwarya R. (Super Admin)',
-    action: `Updated Blog Article (${id})`,
+    action: `Updated Blog Article (${current.id})`,
     module: 'Blog CMS',
     details: `Updated details for article "${merged.title}".`
   });

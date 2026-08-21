@@ -81,7 +81,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "3:4",
     format: "JPG / WebP / PNG",
     maxSize: "< 1 MB",
-    defaultUrl: "https://ui-avatars.com/api/?name=S+Vijayaraghavan&background=eb5e28&color=ffffff&size=256",
+    defaultUrl: "/images/vijayaraghavan.jpg",
     description: "Managing Director portrait image displayed in Our Story executive leadership section."
   },
   leader_partner: {
@@ -93,7 +93,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "3:4",
     format: "JPG / WebP / PNG",
     maxSize: "< 1 MB",
-    defaultUrl: "https://ui-avatars.com/api/?name=Radhakrishnan&background=38a169&color=ffffff&size=256",
+    defaultUrl: "/images/radhakrishnan.jpg",
     description: "Co-Partner portrait image displayed in Our Story executive leadership section."
   },
   brand_logo: {

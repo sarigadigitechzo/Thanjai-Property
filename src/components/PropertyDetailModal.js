@@ -119,21 +119,26 @@ export function renderPropertyDetailModal(property) {
           <div>
             <div class="sticky-enquiry-card">
               <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border);">
-                <img src="${property.agent.image}" alt="${property.agent.name}" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover;" />
+                <div style="width: 54px; height: 54px; border-radius: 50%; background: #2A1808; color: #eb5e28; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; border: 2px solid #eb5e28; flex-shrink: 0;">
+                  TP
+                </div>
                 <div>
-                  <h4 style="font-size: 1rem; font-weight: 800; color: var(--color-brown);">${property.agent.name}</h4>
-                  <div style="font-size: 0.75rem; color: var(--color-orange); font-weight: 700;">${property.agent.title}</div>
+                  <h4 style="font-size: 1rem; font-weight: 800; color: var(--color-brown);">Thanjai Property</h4>
+                  <div style="font-size: 0.75rem; color: var(--color-orange); font-weight: 700;">Executive Real Estate Advisory</div>
                 </div>
               </div>
 
               <h4 style="font-size: 1.125rem; font-weight: 800; color: var(--color-brown); margin-bottom: 16px;">Interested in this Property?</h4>
 
-              <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
-                <a href="tel:${property.agent.phone}" class="btn btn-brown" style="width: 100%;">
+              <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+                <a href="tel:+919578311506" class="btn btn-brown" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                   <i class="ri-phone-fill"></i> CALL AGENT NOW
                 </a>
-                <a href="https://wa.me/${property.agent.whatsapp}?text=Hi%20${encodeURIComponent(property.agent.name)},%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}%20(ID:%20${property.id})" target="_blank" class="btn btn-primary" style="width: 100%;">
+                <a href="https://wa.me/919578311506?text=Hi%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}%20(ID:%20${property.id})" target="_blank" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                   <i class="ri-whatsapp-line" style="font-size: 1.2rem;"></i> WHATSAPP CHAT
+                </a>
+                <a href="mailto:vijayaraghavan@thanjaiproperty.com?subject=Inquiry%20for%20${encodeURIComponent(property.title)}" class="btn btn-outline-dark" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                  <i class="ri-mail-line" style="color: #eb5e28;"></i> EMAIL US
                 </a>
                 <button class="btn btn-outline-dark" id="modal-schedule-btn" style="width: 100%;">
                   <i class="ri-calendar-line"></i> SCHEDULE VISIT

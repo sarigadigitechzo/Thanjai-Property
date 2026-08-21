@@ -12,14 +12,14 @@ export function renderContactSection() {
       <div style="background: #2A1808; color: #FFFFFF; padding: 48px 0 40px; position: relative; overflow: hidden; margin-bottom: 40px;">
         <div style="position: absolute; inset: 0; opacity: 0.15; background-image: radial-gradient(#eb5e28 1px, transparent 1px); background-size: 24px 24px;"></div>
         <div class="container" style="position: relative; z-index: 2;">
-          <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--color-orange, #eb5e28); margin-bottom: 10px; font-weight: 700;">
-            <a href="/" class="nav-route-link" data-route="home" style="color: rgba(255,255,255,0.7); text-decoration: none;">Home</a> &nbsp;/&nbsp; Contact Us
+          <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--color-orange, #eb5e28); margin-bottom: 10px; font-weight: 800;">
+            CONTACT US
           </div>
           <h1 style="font-family: var(--font-serif, 'DM Serif Display', serif); font-size: clamp(2.2rem, 4vw, 3.2rem); font-weight: 400; line-height: 1.15; margin-bottom: 12px;">
-            Contact Us — Advisory Desk
+            Get in Touch With Thanjai Property
           </h1>
-          <p style="font-size: 1.05rem; color: rgba(255,255,255,0.8); max-width: 680px; line-height: 1.6;">
-            Connect directly with our legal Patta experts, property specialists, and executive advisory desk in Thanjavur.
+          <p style="font-size: 1.05rem; color: rgba(255,255,255,0.85); max-width: 720px; line-height: 1.65;">
+            Whether you are searching for a residential house, plot, agricultural land or commercial space, or looking to sell your property, our team is ready to assist you. Reach out to us with your requirements or inquiries.
           </p>
         </div>
       </div>

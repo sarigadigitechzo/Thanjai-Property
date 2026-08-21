@@ -7,15 +7,15 @@ export function renderHomeContactBanner(onNavigateToContact) {
           border-radius: 24px; padding: 48px; display: flex; justify-content: space-between;
           align-items: center; flex-wrap: wrap; gap: 30px; backdrop-filter: blur(10px);
         ">
-          <div style="max-width: 620px;">
+          <div style="max-width: 680px;">
             <span class="eyebrow eyebrow-dark" style="margin-bottom: 12px; display: inline-block;">
-              <i class="ri-customer-service-2-fill" style="color: var(--color-orange, #eb5e28);"></i> DIRECT ADVISORY DESK
+              <i class="ri-search-eye-line" style="color: var(--color-orange, #eb5e28);"></i> YOUR PROPERTY SEARCH STARTS HERE
             </span>
-            <h2 class="heading-display-light" style="font-size: clamp(1.8rem, 3.5vw, 2.8rem); margin-bottom: 14px; color: #ffffff;">
-              Have a Specific Property Inquiry?
+            <h2 class="heading-display-light" style="font-size: clamp(1.8rem, 3.5vw, 2.6rem); margin-bottom: 14px; color: #ffffff;">
+              Search With Purpose.<br>Explore With Confidence.
             </h2>
-            <p style="color: rgba(255, 255, 255, 0.85); font-size: 1.05rem; line-height: 1.6; margin: 0;">
-              Speak with our senior legal advisors and regional land specialists at our Thanjavur office desk or submit your property brief on our dedicated Contact page.
+            <p style="color: rgba(255, 255, 255, 0.85); font-size: 1.02rem; line-height: 1.65; margin: 0;">
+              Whether you are looking for your first home, a residential plot, agricultural land, an apartment, a villa, a commercial property or an investment opportunity, the right starting point is a property search built around your needs across Tamil Nadu.
             </p>
           </div>
 

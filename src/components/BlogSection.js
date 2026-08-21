@@ -10,10 +10,11 @@ export function renderBlogSection(onNavigateToBlog, onSelectPost) {
         <!-- Section Header -->
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 44px; flex-wrap: wrap; gap: 20px;">
           <div>
-            <span class="eyebrow" style="color: var(--color-orange, #eb5e28); font-weight: 800; letter-spacing: 0.12em;">INSIGHTS & MARKET GUIDES</span>
+            <span class="eyebrow" style="color: var(--color-orange, #eb5e28); font-weight: 800; letter-spacing: 0.12em;">REAL-ESTATE INSIGHTS</span>
             <h2 class="heading-section" style="margin-top: 10px;">
-              From Our Blog
+              Real-Estate Insights for Better Property Decisions
             </h2>
+            <div style="font-size: 0.95rem; font-weight: 700; color: #4a5568; margin-top: 4px;">Learn Before You Buy, Sell or Invest</div>
           </div>
 
           <button class="btn btn-outline-dark explore-blog-nav-btn" id="home-explore-blog-btn" style="display: inline-flex; align-items: center; gap: 8px;">

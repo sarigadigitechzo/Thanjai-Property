@@ -180,7 +180,7 @@ function renderBlogForm() {
       </div>
 
       <form id="blog-editor-form" style="display: flex; flex-direction: column; gap: 16px;">
-        <!-- Title, Category & URL Slug -->
+        <!-- Title, Category / Keyword & URL Slug -->
         <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px;">
           <div>
             <label style="font-size: 0.8rem; font-weight: 700; color: #444; display: block; margin-bottom: 6px;">Article Title *</label>
@@ -188,13 +188,13 @@ function renderBlogForm() {
           </div>
 
           <div>
-            <label style="font-size: 0.8rem; font-weight: 700; color: #444; display: block; margin-bottom: 6px;">Category *</label>
-            <input type="text" id="form-category" value="${post ? post.category : 'Market Guide'}" required placeholder="e.g. Legal & Patta, Investment" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: white;" />
+            <label style="font-size: 0.8rem; font-weight: 700; color: #444; display: block; margin-bottom: 6px;">Category / Keyword *</label>
+            <input type="text" id="form-category" value="${post ? post.category : ''}" required placeholder="e.g. Legal & Patta, Market Guide" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: white;" />
           </div>
 
           <div>
-            <label style="font-size: 0.8rem; font-weight: 700; color: #444; display: block; margin-bottom: 6px;">URL Slug / Keyword *</label>
-            <input type="text" id="form-slug" value="${post ? (post.slug || post.id) : ''}" required placeholder="e.g. guide-to-buying-dtcp-rera-approved-plots" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: white;" />
+            <label style="font-size: 0.8rem; font-weight: 700; color: #444; display: block; margin-bottom: 6px;">URL Slug *</label>
+            <input type="text" id="form-slug" value="${post ? (post.slug || post.id) : ''}" required placeholder="e.g. market-guide-patta-verification" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: white;" />
           </div>
         </div>
 
@@ -202,7 +202,7 @@ function renderBlogForm() {
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
           <div>
             <label style="font-size: 0.8rem; font-weight: 700; color: #444; display: block; margin-bottom: 6px;">Author Name</label>
-            <input type="text" id="form-author" value="${post ? post.author : 'Thanjai Legal Advisory'}" placeholder="e.g. Senior Land Specialist" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0;" />
+            <input type="text" id="form-author" value="${post ? post.author : ''}" placeholder="e.g. Thanjai Legal Advisory" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0;" />
           </div>
 
           <div>
@@ -290,7 +290,7 @@ function renderBlogForm() {
               id="editor-visual-body" 
               contenteditable="true" 
               style="min-height: 220px; max-height: 480px; overflow-y: auto; padding: 16px; background: #ffffff; border: 1px solid #cbd5e0; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; font-size: 0.95rem; line-height: 1.6; outline: none;"
-            >${post ? post.content : '<p>Write your article content here...</p>'}</div>
+            >${post ? post.content : ''}</div>
             
             <textarea 
               id="form-content" 
@@ -398,28 +398,28 @@ export function initBlogCMSListeners() {
     }
   });
 
-  // Auto Slug Generator from Title & Category
+  // Auto Slug Generator from Category / Keyword & Title
   const titleInput = document.getElementById('form-title');
   const categoryInput = document.getElementById('form-category');
   const slugInput = document.getElementById('form-slug');
 
-  let isSlugManuallyEdited = Boolean(cmsState.editingPostId);
+  let isSlugManuallyEdited = false;
   slugInput?.addEventListener('input', () => { isSlugManuallyEdited = true; });
 
   const updateAutoSlug = () => {
     if (isSlugManuallyEdited) return;
-    const titleVal = titleInput ? titleInput.value.trim() : '';
     const catVal = categoryInput ? categoryInput.value.trim() : '';
-    const baseText = titleVal || catVal || 'article';
+    const titleVal = titleInput ? titleInput.value.trim() : '';
+    const baseText = catVal || titleVal || '';
     const generatedSlug = baseText
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
-    if (slugInput) slugInput.value = generatedSlug;
+    if (slugInput && generatedSlug) slugInput.value = generatedSlug;
   };
 
-  titleInput?.addEventListener('input', updateAutoSlug);
   categoryInput?.addEventListener('input', updateAutoSlug);
+  titleInput?.addEventListener('input', updateAutoSlug);
 
   // WYSIWYG Editor Toolbar Listeners
   const visualEditor = document.getElementById('editor-visual-body');

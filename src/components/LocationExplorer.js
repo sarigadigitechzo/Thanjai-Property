@@ -7,13 +7,14 @@ export function renderLocationExplorer() {
         <!-- Section Header -->
         <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px;">
           <div>
-            <span class="eyebrow">REGIONAL DESTINATIONS</span>
+            <span class="eyebrow">SEARCH ACROSS TAMIL NADU</span>
             <h2 class="heading-section" style="margin-top: 12px;">
-              Explore Tamil Nadu
+              Search Properties Across Tamil Nadu
             </h2>
+            <div style="font-size: 0.98rem; font-weight: 700; color: #4a5568; margin-top: 4px;">One Platform. Multiple Locations. Thousands of Property Possibilities.</div>
           </div>
-          <p style="max-width: 480px; color: var(--color-text-muted);">
-            From the royal heritage streets of Thanjavur to the coastal luxury of Chennai, find premier real estate in key Tamil Nadu growth centers.
+          <p style="max-width: 500px; color: var(--color-text-muted); font-size: 0.95rem; line-height: 1.6;">
+            Tamil Nadu offers a diverse real-estate landscape, from established cities and major urban centres to emerging residential areas, agricultural regions, and commercial corridors. Explore properties across all 38 districts of Tamil Nadu.
           </p>
         </div>
 
