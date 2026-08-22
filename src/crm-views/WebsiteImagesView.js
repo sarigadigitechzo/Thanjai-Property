@@ -70,6 +70,7 @@ export function renderWebsiteImagesView() {
         <div style="width: 260px;">
           <select id="img-category-dropdown" style="width: 100%; height: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--os-border); background: var(--os-gray-100); color: var(--os-text); font-size: 0.85rem; font-weight: 600; cursor: pointer; outline: none; appearance: none;">
             <option value="all">All Images (${imageList.length})</option>
+            <option value="LOCATION CORRIDORS (THANJAVUR)">Location Corridors (11 Locations)</option>
             <option value="Home">Home</option>
             <option value="SELL & PROMOTE YOUR LAND">Sell & Promote Your Land</option>
             <option value="REGIONAL DESTINATIONS">Regional Destinations</option>

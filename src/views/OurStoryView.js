@@ -275,157 +275,124 @@ export function renderOurStoryView(onNavigateToDiscover) {
         </div>
       </section>
 
-      <!-- 4. OUR DISTRICT PRESENCE SECTION (VISUAL CITY DESTINATION CARDS) -->
+      <!-- 4. OUR THANJAVUR FOOTPRINT SECTION (UNIQUE ZONAL CORRIDOR DIRECTORY) -->
       <section style="padding: 95px 0; background: #faf8f5; border-top: 1px solid rgba(0,0,0,0.05);">
         <div class="container">
-          <div style="text-align: center; max-width: 760px; margin: 0 auto 55px auto;">
-            <span class="eyebrow" style="color: var(--color-orange, #eb5e28); font-weight: 800; letter-spacing: 0.12em;">OUR DISTRICT PRESENCE</span>
+          <div style="text-align: center; max-width: 800px; margin: 0 auto 55px auto;">
+            <span class="eyebrow" style="color: var(--color-orange, #eb5e28); font-weight: 800; letter-spacing: 0.12em;">PRIMARY OPERATIONS HUB — THANJAVUR</span>
             <h2 class="heading-section" style="margin-top: 12px; font-size: clamp(2rem, 3.5vw, 2.8rem);">
-              Property Opportunities Across Tamil Nadu
+              Our Local Footprint Across Thanjavur
             </h2>
             <p style="color: #666; font-size: 1.05rem; margin-top: 12px; line-height: 1.65;">
-              From established cities to emerging locations, Tamil Nadu offers diverse opportunities for homebuyers, investors and property owners. Thanjai Property helps users explore properties across key locations based on their preferred district, property type and requirements.
+              Since 2009, Thanjai Property has maintained an unmatched local presence across Thanjavur. Explore our verified property footprint categorized by strategic growth corridors.
             </p>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 28px;">
-            <!-- Thanjavur (Home Base) -->
-            <div class="hover-lift" style="
-              background: #ffffff; border-radius: 22px; padding: 28px;
-              border: 1px solid rgba(235,94,40,0.25); box-shadow: 0 6px 20px rgba(235,94,40,0.06);
-              display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
-              transition: all 0.35s ease;
-            ">
-              <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #eb5e28;"></div>
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                  <span style="background: rgba(235,94,40,0.12); color: #eb5e28; font-size: 0.72rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;">
-                    HOME BASE
-                  </span>
-                  <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(235,94,40,0.1); color: #eb5e28; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                    <i class="ri-government-line"></i>
-                  </div>
-                </div>
-                <h3 style="font-family: var(--font-serif); font-size: 1.45rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Thanjavur</h3>
-                <p style="font-size: 0.92rem; color: #555; line-height: 1.6; margin: 0;">Our home base, with opportunities across residential properties, plots, farmland and commercial spaces.</p>
-              </div>
-            </div>
+          <!-- ZONAL CLUSTERS (11 INDIVIDUAL LOCATION CARDS IN ZIG-ZAG TIMELINE) -->
+          <div class="story-zigzag-timeline" style="position: relative; max-width: 1040px; margin: 0 auto;">
+            
+            <!-- Central Vertical Spine Line -->
+            <div class="timeline-center-spine"></div>
 
-            <!-- Trichy (Central Corridor) -->
-            <div class="hover-lift" style="
-              background: #ffffff; border-radius: 22px; padding: 28px;
-              border: 1px solid rgba(56,161,105,0.25); box-shadow: 0 6px 20px rgba(56,161,105,0.06);
-              display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
-              transition: all 0.35s ease;
-            ">
-              <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #38a169;"></div>
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                  <span style="background: rgba(56,161,105,0.12); color: #38a169; font-size: 0.72rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;">
-                    CENTRAL CORRIDOR
-                  </span>
-                  <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(56,161,105,0.1); color: #38a169; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                    <i class="ri-building-2-line"></i>
-                  </div>
-                </div>
-                <h3 style="font-family: var(--font-serif); font-size: 1.45rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Trichy</h3>
-                <p style="font-size: 0.92rem; color: #555; line-height: 1.6; margin: 0;">A growing central Tamil Nadu market with residential and commercial property opportunities.</p>
-              </div>
-            </div>
+            ${[
+              { num: 1, name: 'Medical College Road', category: 'Arterial Corridor', accent: '#eb5e28', icon: 'ri-hospital-line', desc: 'Healthcare & Premium Residential Hub • Multi-specialty hospitals & DTCP layouts' },
+              { num: 2, name: 'Trichy Road', category: 'Arterial Highway', accent: '#eb5e28', icon: 'ri-road-map-line', desc: 'Major Commercial Highway & Gated Villas • Direct connectivity to Trichy (NH 83)' },
+              { num: 3, name: 'Pudukkottai Road', category: 'Educational Belt', accent: '#eb5e28', icon: 'ri-book-open-line', desc: 'Educational Belt & Residential Plot Layouts • Schools & Tamil University sector' },
+              { num: 4, name: 'Madhakottai Road', category: 'Prime Residential', accent: '#38a169', icon: 'ri-home-4-line', desc: 'Rapid Urban Expansion & Modern Villas • Contemporary villa developments' },
+              { num: 5, name: 'Nanjikottai Road', category: 'Residential Enclave', accent: '#38a169', icon: 'ri-community-line', desc: 'Serene Residential Enclaves & Townhouses • Top schools & sweet groundwater' },
+              { num: 6, name: 'Villar Road', category: 'Suburban Growth', accent: '#3182ce', icon: 'ri-plant-line', desc: 'Suburban Growth & Investment Plot Layouts • Budget-friendly house sites' },
+              { num: 7, name: 'Pattukottai Bypass', category: 'Ring Road Bypass', accent: '#805ad5', icon: 'ri-compass-3-line', desc: 'Ring Road Outer Corridor & Commercial Land • Prime highway frontage' },
+              { num: 8, name: 'Mariyamman Kovil Road', category: 'Heritage Corridor', accent: '#d69e2e', icon: 'ri-ancient-gate-line', desc: 'Heritage & Temple Neighborhood Corridor • Near Punnainallur Temple' },
+              { num: 9, name: 'Srinivasapuram', category: 'Upscale Residential', accent: '#38a169', icon: 'ri-building-line', desc: 'Established Upscale Neighborhood • Luxury independent homes & civic layout' },
+              { num: 10, name: 'Reddipalayam Road', category: 'Modern Residential', accent: '#38a169', icon: 'ri-home-gear-line', desc: 'Gated Community & Modern Layouts • RERA approved house sites' },
+              { num: 11, name: 'Kumbakonam Bypass', category: 'Delta Highway', accent: '#3182ce', icon: 'ri-map-pin-line', desc: 'Delta Highway & Strategic Land Assets • Thanjavur to Kumbakonam link' }
+            ].map((c, idx) => {
+              const isLeft = idx % 2 === 0;
+              if (isLeft) {
+                return `
+                  <div class="zigzag-row left-row">
+                    <div class="zigzag-card-container">
+                      <div class="zigzag-box hover-lift" style="
+                        background: #ffffff; border-radius: 18px; padding: 20px 22px;
+                        border: 1px solid #e2e8f0; border-left: 5px solid ${c.accent};
+                        box-shadow: 0 8px 24px rgba(0,0,0,0.04); position: relative;
+                      ">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                          <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: ${c.accent}18; color: ${c.accent}; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                              <i class="${c.icon}"></i>
+                            </div>
+                            <h3 style="font-family: var(--font-serif); font-size: 1.15rem; font-weight: 800; color: #1a1a1a; margin: 0;">${c.num}. ${c.name}</h3>
+                          </div>
+                          <span class="badge" style="background: ${c.accent}15; color: ${c.accent}; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 14px;">${c.category}</span>
+                        </div>
+                        <p style="font-size: 0.83rem; color: #555; line-height: 1.5; margin: 0 0 10px 0;">${c.desc}</p>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                          <span style="font-size: 0.72rem; font-weight: 700; color: #38a169; background: rgba(56,161,105,0.1); padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="ri-checkbox-circle-fill"></i> Clear Patta Assured
+                          </span>
+                          <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-orange); cursor: pointer;" class="story-explore-loc-link" data-loc="${c.name}">
+                            View Area <i class="ri-arrow-right-line" style="vertical-align: middle;"></i>
+                          </span>
+                        </div>
+                      </div>
+                      <div class="zigzag-arrow-pointer to-right" style="border-left-color: ${c.accent};"></div>
+                    </div>
 
-            <!-- Madurai (Cultural & Commercial) -->
-            <div class="hover-lift" style="
-              background: #ffffff; border-radius: 22px; padding: 28px;
-              border: 1px solid rgba(128,90,213,0.25); box-shadow: 0 6px 20px rgba(128,90,213,0.06);
-              display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
-              transition: all 0.35s ease;
-            ">
-              <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #805ad5;"></div>
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                  <span style="background: rgba(128,90,213,0.12); color: #805ad5; font-size: 0.72rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;">
-                    CULTURAL HUB
-                  </span>
-                  <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(128,90,213,0.1); color: #805ad5; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                    <i class="ri-ancient-gate-line"></i>
-                  </div>
-                </div>
-                <h3 style="font-family: var(--font-serif); font-size: 1.45rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Madurai</h3>
-                <p style="font-size: 0.92rem; color: #555; line-height: 1.6; margin: 0;">A major cultural and commercial centre offering diverse residential and investment possibilities.</p>
-              </div>
-            </div>
+                    <div class="zigzag-node-badge" style="border-color: ${c.accent}; color: ${c.accent};">
+                      <span class="node-num" style="font-weight: 800; font-size: 0.95rem;">${c.num}</span>
+                    </div>
 
-            <!-- Chennai (Metropolitan Market) -->
-            <div class="hover-lift" style="
-              background: #ffffff; border-radius: 22px; padding: 28px;
-              border: 1px solid rgba(49,130,206,0.25); box-shadow: 0 6px 20px rgba(49,130,206,0.06);
-              display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
-              transition: all 0.35s ease;
-            ">
-              <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #3182ce;"></div>
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                  <span style="background: rgba(49,130,206,0.12); color: #3182ce; font-size: 0.72rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;">
-                    METROPOLITAN
-                  </span>
-                  <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(49,130,206,0.1); color: #3182ce; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                    <i class="ri-hotel-line"></i>
+                    <div class="zigzag-spacer"></div>
                   </div>
-                </div>
-                <h3 style="font-family: var(--font-serif); font-size: 1.45rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Chennai</h3>
-                <p style="font-size: 0.92rem; color: #555; line-height: 1.6; margin: 0;">A leading metropolitan property market with opportunities across residential and commercial segments.</p>
-              </div>
-            </div>
+                `;
+              } else {
+                return `
+                  <div class="zigzag-row right-row">
+                    <div class="zigzag-spacer"></div>
 
-            <!-- Coimbatore (Industrial Hub) -->
-            <div class="hover-lift" style="
-              background: #ffffff; border-radius: 22px; padding: 28px;
-              border: 1px solid rgba(221,107,32,0.25); box-shadow: 0 6px 20px rgba(221,107,32,0.06);
-              display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
-              transition: all 0.35s ease;
-            ">
-              <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #dd6b20;"></div>
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                  <span style="background: rgba(221,107,32,0.12); color: #dd6b20; font-size: 0.72rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;">
-                    INDUSTRIAL HUB
-                  </span>
-                  <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(221,107,32,0.1); color: #dd6b20; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                    <i class="ri-factory-line"></i>
-                  </div>
-                </div>
-                <h3 style="font-family: var(--font-serif); font-size: 1.45rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Coimbatore</h3>
-                <p style="font-size: 0.92rem; color: #555; line-height: 1.6; margin: 0;">A growing business and residential destination with diverse property options.</p>
-              </div>
-            </div>
+                    <div class="zigzag-node-badge" style="border-color: ${c.accent}; color: ${c.accent};">
+                      <span class="node-num" style="font-weight: 800; font-size: 0.95rem;">${c.num}</span>
+                    </div>
 
-            <!-- Kumbakonam (Cauvery Delta) -->
-            <div class="hover-lift" style="
-              background: #ffffff; border-radius: 22px; padding: 28px;
-              border: 1px solid rgba(43,108,176,0.25); box-shadow: 0 6px 20px rgba(43,108,176,0.06);
-              display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
-              transition: all 0.35s ease;
-            ">
-              <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #2b6cb0;"></div>
-              <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                  <span style="background: rgba(43,108,176,0.12); color: #2b6cb0; font-size: 0.72rem; font-weight: 800; padding: 5px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;">
-                    CAUVERY DELTA
-                  </span>
-                  <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(43,108,176,0.1); color: #2b6cb0; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                    <i class="ri-landscape-line"></i>
+                    <div class="zigzag-card-container">
+                      <div class="zigzag-arrow-pointer to-left" style="border-right-color: ${c.accent};"></div>
+                      <div class="zigzag-box hover-lift" style="
+                        background: #ffffff; border-radius: 18px; padding: 20px 22px;
+                        border: 1px solid #e2e8f0; border-left: 5px solid ${c.accent};
+                        box-shadow: 0 8px 24px rgba(0,0,0,0.04); position: relative;
+                      ">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                          <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: ${c.accent}18; color: ${c.accent}; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                              <i class="${c.icon}"></i>
+                            </div>
+                            <h3 style="font-family: var(--font-serif); font-size: 1.15rem; font-weight: 800; color: #1a1a1a; margin: 0;">${c.num}. ${c.name}</h3>
+                          </div>
+                          <span class="badge" style="background: ${c.accent}15; color: ${c.accent}; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 14px;">${c.category}</span>
+                        </div>
+                        <p style="font-size: 0.83rem; color: #555; line-height: 1.5; margin: 0 0 10px 0;">${c.desc}</p>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                          <span style="font-size: 0.72rem; font-weight: 700; color: #38a169; background: rgba(56,161,105,0.1); padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="ri-checkbox-circle-fill"></i> Clear Patta Assured
+                          </span>
+                          <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-orange); cursor: pointer;" class="story-explore-loc-link" data-loc="${c.name}">
+                            View Area <i class="ri-arrow-right-line" style="vertical-align: middle;"></i>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <h3 style="font-family: var(--font-serif); font-size: 1.45rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">Kumbakonam</h3>
-                <p style="font-size: 0.92rem; color: #555; line-height: 1.6; margin: 0;">A prominent Cauvery Delta location with residential, land and agricultural property opportunities.</p>
-              </div>
-            </div>
+                `;
+              }
+            }).join('')}
+
           </div>
 
-          <div style="text-align: center; margin-top: 48px;">
-            <button class="btn btn-primary story-explore-districts-btn" style="padding: 15px 38px; border-radius: 12px; font-size: 1rem; box-shadow: 0 6px 20px rgba(235,94,40,0.3);">
-              <i class="ri-compass-3-line" style="font-size: 1.2rem;"></i>
-              <span>Explore Properties by Location</span>
+          <div style="text-align: center; margin-top: 50px;">
+            <button class="btn btn-primary story-explore-districts-btn" style="padding: 16px 40px; border-radius: 12px; font-size: 1rem; box-shadow: 0 6px 20px rgba(235,94,40,0.3);">
+              <i class="ri-map-pin-line" style="font-size: 1.2rem;"></i>
+              <span>View More Properties</span>
             </button>
           </div>
         </div>
@@ -593,6 +560,16 @@ export function initOurStoryListeners(onNavigateToDiscover) {
   document.getElementById('story-cta-discover-btn')?.addEventListener('click', onNavigateToDiscover);
   document.querySelectorAll('.story-explore-districts-btn').forEach(btn => {
     btn.addEventListener('click', onNavigateToDiscover);
+  });
+  document.querySelectorAll('.story-explore-loc-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const loc = e.currentTarget.dataset.loc;
+      if (loc && onNavigateToDiscover) {
+        onNavigateToDiscover(loc);
+      } else if (onNavigateToDiscover) {
+        onNavigateToDiscover();
+      }
+    });
   });
   document.getElementById('story-cta-post-btn')?.addEventListener('click', () => {
     window.location.href = '/user-dashboard.html';

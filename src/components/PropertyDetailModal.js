@@ -131,10 +131,10 @@ export function renderPropertyDetailModal(property) {
               <h4 style="font-size: 1.125rem; font-weight: 800; color: var(--color-brown); margin-bottom: 16px;">Interested in this Property?</h4>
 
               <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
-                <a href="tel:+919578311506" class="btn btn-brown" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                <a href="tel:+918489996852" class="btn btn-brown" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                   <i class="ri-phone-fill"></i> CALL AGENT NOW
                 </a>
-                <a href="https://wa.me/919578311506?text=Hi%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}%20(ID:%20${property.id})" target="_blank" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                <a href="https://wa.me/918489996852?text=Hi%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}%20(ID:%20${property.id})" target="_blank" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                   <i class="ri-whatsapp-line" style="font-size: 1.2rem;"></i> WHATSAPP CHAT
                 </a>
                 <a href="mailto:vijayaraghavan@thanjaiproperty.com?subject=Inquiry%20for%20${encodeURIComponent(property.title)}" class="btn btn-outline-dark" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">

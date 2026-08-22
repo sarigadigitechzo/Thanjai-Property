@@ -375,10 +375,10 @@ function renderPropertyDetailView(property, onNavigateToContact) {
               </div>
 
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <a href="tel:+919578311506" style="background: #ffffff; border: 1px solid #CBD5E0; color: #2D3748; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                <a href="tel:+918489996852" style="background: #ffffff; border: 1px solid #CBD5E0; color: #2D3748; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                   <i class="ri-phone-line" style="color: #eb5e28;"></i> Call Seller
                 </a>
-                <a href="https://wa.me/919578311506?text=Hello%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}" target="_blank" style="background: #25D366; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,211,102,0.25);">
+                <a href="https://wa.me/918489996852?text=Hello%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}" target="_blank" style="background: #25D366; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,211,102,0.25);">
                   <i class="ri-whatsapp-line"></i> WhatsApp Chat
                 </a>
                 <a href="mailto:vijayaraghavan@thanjaiproperty.com?subject=Inquiry%20for%20${encodeURIComponent(property.title)}" style="background: #1a1a1a; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">

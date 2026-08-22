@@ -267,6 +267,140 @@ export const DEFAULT_SITE_IMAGES = {
     maxSize: "< 800 KB",
     defaultUrl: "/images/tn_industrial.jpg",
     description: "Marquee tile for Industrial Land asset class."
+  },
+
+  // 11 Thanjavur Location Explorer Corridors
+  loc_corridor_medical_college_road: {
+    id: "loc_corridor_medical_college_road",
+    title: "1. Medical College Road Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Medical College Road in the Homepage Interactive Location Explorer."
+  },
+  loc_corridor_trichy_road: {
+    id: "loc_corridor_trichy_road",
+    title: "2. Trichy Road (NH 83) Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Trichy Road (NH 83) in the Homepage Interactive Location Explorer."
+  },
+  loc_corridor_pudukkottai_road: {
+    id: "loc_corridor_pudukkottai_road",
+    title: "3. Pudukkottai Road Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Pudukkottai Road (Tamil University corridor) in the Homepage Interactive Location Explorer."
+  },
+  loc_corridor_madhakottai_road: {
+    id: "loc_corridor_madhakottai_road",
+    title: "4. Madhakottai Road Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Madhakottai Road in the Homepage Interactive Location Explorer."
+  },
+  loc_corridor_nanjikottai_road: {
+    id: "loc_corridor_nanjikottai_road",
+    title: "5. Nanjikottai Road Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Nanjikottai Road in the Homepage Interactive Location Explorer."
+  },
+  loc_corridor_villar_road: {
+    id: "loc_corridor_villar_road",
+    title: "6. Villar Road Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Villar Road in the Homepage Interactive Location Explorer."
+  },
+  loc_corridor_pattukottai_bypass: {
+    id: "loc_corridor_pattukottai_bypass",
+    title: "7. Pattukottai Bypass Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Pattukottai Bypass in the Homepage Interactive Location Explorer."
+  },
+  loc_corridor_mariyamman_kovil_road: {
+    id: "loc_corridor_mariyamman_kovil_road",
+    title: "8. Mariyamman Kovil Road Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1602621585695-a25e8d81f7e1?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Mariyamman Kovil Road (Punnainallur) in the Homepage Interactive Location Explorer."
+  },
+  loc_corridor_srinivasapuram: {
+    id: "loc_corridor_srinivasapuram",
+    title: "9. Srinivasapuram Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Srinivasapuram in the Homepage Interactive Location Explorer."
+  },
+  loc_corridor_reddipalayam_road: {
+    id: "loc_corridor_reddipalayam_road",
+    title: "10. Reddipalayam Road Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Reddipalayam Road in the Homepage Interactive Location Explorer."
+  },
+  loc_corridor_kumbakonam_bypass: {
+    id: "loc_corridor_kumbakonam_bypass",
+    title: "11. Kumbakonam Bypass Location Image",
+    category: "LOCATION CORRIDORS (THANJAVUR)",
+    recommendedWidth: 1200,
+    recommendedHeight: 750,
+    aspectRatio: "16:10",
+    format: "JPG / WebP / PNG",
+    maxSize: "< 1.5 MB",
+    defaultUrl: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=1200&q=80",
+    description: "Featured photo banner for Kumbakonam Bypass in the Homepage Interactive Location Explorer."
   }
 };
 
