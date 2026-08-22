@@ -4,7 +4,7 @@
 
 // Since cPanel Node.js is broken, we run the backend locally but it points to the LIVE MySQL DB.
 // This allows full local development with live data!
-const API_BASE_URL = '/api.php/';
+const API_BASE_URL = '/api.php';
 
 export async function fetchFromAPI(endpoint, options = {}) {
   try {

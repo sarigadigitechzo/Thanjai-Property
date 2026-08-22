@@ -20,7 +20,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 // Parse URL
 $path = parse_url($request_uri, PHP_URL_PATH);
-$path_parts = explode('/', trim($path, '/'));
+$path_parts = array_values(array_filter(explode('/', trim($path, '/'))));
 $resource = isset($path_parts[1]) ? $path_parts[1] : '';
 $id = isset($path_parts[2]) ? $path_parts[2] : null;
 
