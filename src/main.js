@@ -403,24 +403,16 @@ window.addEventListener('popstate', () => {
 });
 
 // Application Initialization
-async function initApp() {
-  await Promise.all([
-    initPropertiesStore(),
-    initBlogStore(),
-    initSiteImagesStore()
-  ]);
+function initApp() {
+  initPropertiesStore();
+  initBlogStore();
+  initSiteImagesStore();
   
   // Set up mobile navigation
   MobileBottomNav.init();
-  updateSeoMetadata(currentRoute);
-  renderApp();
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
-}
+initApp();
 
 window.addEventListener('popstate', () => {
   currentRoute = parseCurrentRoute();
@@ -450,6 +442,9 @@ window.addEventListener('favoritesUpdated', (e) => {
   if (countBadge) countBadge.textContent = e.detail.count;
 });
 window.addEventListener('propertiesUpdated', () => {
+  renderApp();
+});
+window.addEventListener('siteImagesUpdated', () => {
   renderApp();
 });
 window.addEventListener('blogPostsUpdated', () => {

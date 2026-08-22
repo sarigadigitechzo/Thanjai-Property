@@ -44,6 +44,7 @@ export async function initPropertiesStore() {
     if (data && Array.isArray(data)) {
       propertiesCache = data.map(p => normalizePropertyRecord(p)).filter(Boolean);
       savePropertiesToStorage(propertiesCache);
+      window.dispatchEvent(new CustomEvent('propertiesUpdated'));
     }
   } catch (error) {
     // Graceful fallback: continue with local storage / seed data

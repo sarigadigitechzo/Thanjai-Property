@@ -420,6 +420,7 @@ export async function initSiteImagesStore() {
         siteImagesCache[img.id] = img.currentUrl;
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(siteImagesCache));
+      window.dispatchEvent(new CustomEvent('siteImagesUpdated'));
     }
   } catch (error) {}
 

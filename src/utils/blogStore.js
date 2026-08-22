@@ -15,6 +15,7 @@ export async function initBlogStore() {
     if (data && Array.isArray(data)) {
       blogPostsCache = data;
       saveBlogPostsToStorage(blogPostsCache);
+      window.dispatchEvent(new CustomEvent('blogPostsUpdated'));
     }
   } catch (error) {
     // Graceful fallback to local cache
