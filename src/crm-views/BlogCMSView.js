@@ -577,7 +577,7 @@ export function initBlogCMSListeners() {
 
   // Form Submit Handler
   const form = document.getElementById('blog-editor-form');
-  form?.addEventListener('submit', (e) => {
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     // Sync content from visual editor to textarea if visual mode is active
@@ -612,17 +612,23 @@ export function initBlogCMSListeners() {
       content
     };
 
-    if (cmsState.editingPostId) {
-      updateBlogPost(cmsState.editingPostId, payload);
-      showToast('Article updated successfully!', 'ri-checkbox-circle-line');
-    } else {
-      addBlogPost(payload);
-      showToast('Article published to public website!', 'ri-checkbox-circle-fill');
-    }
+    try {
+      if (cmsState.editingPostId) {
+        // Assume update is still fire-and-forget for now, or we can make it async too later.
+        updateBlogPost(cmsState.editingPostId, payload);
+        showToast('Article updated successfully!', 'ri-checkbox-circle-line');
+      } else {
+        showToast('Publishing to database...', 'ri-loader-4-line');
+        await addBlogPost(payload);
+        showToast('Article published to public website!', 'ri-checkbox-circle-fill');
+      }
 
-    cmsState.isFormOpen = false;
-    cmsState.editingPostId = null;
-    refreshView();
+      cmsState.isFormOpen = false;
+      cmsState.editingPostId = null;
+      refreshView();
+    } catch (err) {
+      showToast('Database Error: Image or content might be too large.', 'ri-error-warning-line');
+    }
   });
 }
 
