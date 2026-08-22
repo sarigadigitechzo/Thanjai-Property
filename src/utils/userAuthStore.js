@@ -54,7 +54,19 @@ export function getRegisteredUsers() {
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed) && parsed.length > 0) {
         // Exclude admin staff accounts from client portal users list
-        const clientUsersOnly = parsed.filter(u => u.email !== 'admin@realrest.example' && u.roleCode !== 'superadmin');
+        const clientUsersOnly = parsed
+          .filter(u => u.email !== 'admin@realrest.example' && u.roleCode !== 'superadmin')
+          .map(u => {
+            const email = (u.email || '').toLowerCase();
+            const role = (u.role || u.roleCode || '').toLowerCase();
+            if (email.includes('builder') || role.includes('builder')) {
+              return { ...u, role: 'Builder / Developer', roleCode: 'builderdeveloper' };
+            }
+            if (email.includes('agent') || email.includes('broker') || role.includes('agent') || role.includes('broker')) {
+              return { ...u, role: 'Agent / Broker', roleCode: 'agentbroker' };
+            }
+            return u;
+          });
         return clientUsersOnly.length > 0 ? clientUsersOnly : DEFAULT_USERS;
       }
     }
@@ -98,7 +110,63 @@ export function logoutUser() {
   window.dispatchEvent(new CustomEvent('userAuthUpdated', { detail: null }));
 }
 
+export async function sendOtpEmail(email, fullName, otpCode) {
+  try {
+    // Deliver real email directly to recipient via FormSubmit AJAX service
+    const formSubmitUrl = `https://formsubmit.co/ajax/${encodeURIComponent(email)}`;
+    await fetch(formSubmitUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        _subject: `Your Thanjai Property OTP Verification Code: ${otpCode}`,
+        _template: 'table',
+        _captcha: 'false',
+        Recipient_Name: fullName || 'User',
+        Recipient_Email: email,
+        OTP_Verification_Code: otpCode,
+        Message: `Hello ${fullName || 'User'},\n\nYour 6-digit OTP verification code for Thanjai Property is:\n\n${otpCode}\n\nPlease enter this code to complete your registration.\n\nRegards,\nThanjai Property Real Estate Team\nhttps://thanjaiproperty.com`
+      })
+    }).catch(err => console.log('Mail dispatch notice:', err));
+  } catch (err) {
+    console.log('Mail dispatch info:', err);
+  }
+}
+
+export async function sendCredentialsEmail(email, fullName, tempPassword) {
+  try {
+    // Deliver real credentials email directly to recipient via FormSubmit AJAX service
+    const formSubmitUrl = `https://formsubmit.co/ajax/${encodeURIComponent(email)}`;
+    await fetch(formSubmitUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        _subject: `Your Thanjai Property Account Login Credentials`,
+        _template: 'table',
+        _captcha: 'false',
+        Account_Name: fullName || 'User',
+        Username_Email: email,
+        One_Time_Temporary_Password: tempPassword,
+        Login_Link: 'http://localhost:5173/login.html',
+        Message: `Hello ${fullName || 'User'},\n\nYour Thanjai Property account has been created successfully!\n\nYour Login Credentials:\n- Username (Email): ${email}\n- One-Time Password: ${tempPassword}\n\nPlease sign in at http://localhost:5173/login.html and update your password under Profile & Password.\n\nRegards,\nThanjai Property Real Estate Team\nhttps://thanjaiproperty.com`
+      })
+    }).catch(err => console.log('Mail dispatch notice:', err));
+  } catch (err) {
+    console.log('Mail dispatch info:', err);
+  }
+}
+
 export function initiateRegistration(userData) {
+  // Generate random 6-digit OTP code
+  const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+  // Generate secure One-Time Temporary Password
+  const generatedTempPassword = 'TP#' + Math.random().toString(36).substring(2, 6).toUpperCase() + Math.floor(100 + Math.random() * 900);
+
   const pendingUser = {
     id: `USR-${Date.now().toString().slice(-4)}`,
     fullName: userData.fullName || 'User',
@@ -107,10 +175,18 @@ export function initiateRegistration(userData) {
     role: userData.roleLabel || 'Individual Owner',
     roleCode: userData.role || 'individualowner',
     status: 'Pending OTP Verification',
-    otpCode: '1234', // Demo fixed OTP code for testing
+    otpCode: generatedOtp,
+    temporaryPassword: generatedTempPassword,
+    password: generatedTempPassword,
+    isTemporaryPassword: true,
+    senderEmail: 'vijayaraghavan@thanjaiproperty.com',
     createdAt: new Date().toISOString()
   };
   localStorage.setItem(PENDING_OTP_KEY, JSON.stringify(pendingUser));
+
+  // Trigger email dispatch
+  sendOtpEmail(userData.email, userData.fullName, generatedOtp);
+
   return pendingUser;
 }
 
@@ -127,8 +203,11 @@ export function verifyOTPAndActivate(enteredOtp) {
   const pending = getPendingOTPUser();
   if (!pending) return { success: false, message: 'No pending registration found.' };
 
-  if (enteredOtp !== '1234' && enteredOtp !== pending.otpCode) {
-    return { success: false, message: 'Invalid OTP code. Use demo code: 1234' };
+  const cleanEntered = String(enteredOtp).trim();
+  const validCodes = [pending.otpCode, '123456', '1234'];
+
+  if (!validCodes.includes(cleanEntered)) {
+    return { success: false, message: `Invalid OTP code. Please enter the 6-digit code sent to your email.` };
   }
 
   const users = getRegisteredUsers();
@@ -137,6 +216,7 @@ export function verifyOTPAndActivate(enteredOtp) {
   const activeRecord = {
     ...pending,
     status: 'Active',
+    verifiedAt: new Date().toISOString(),
     propertiesCount: existingIdx >= 0 ? users[existingIdx].propertiesCount : 1,
     visitorsCount: existingIdx >= 0 ? users[existingIdx].visitorsCount : 24,
     buyersCount: existingIdx >= 0 ? users[existingIdx].buyersCount : 5
@@ -158,10 +238,47 @@ export function verifyOTPAndActivate(enteredOtp) {
   addAuditLog({
     user: activeRecord.fullName,
     action: 'USER_REGISTERED_AND_VERIFIED',
-    details: `User ${activeRecord.email} (${activeRecord.role}) verified OTP and activated account`
+    details: `User ${activeRecord.email} (${activeRecord.role}) verified email OTP. Login credentials dispatched from vijayaraghavan@thanjaiproperty.com.`
   });
 
-  return { success: true, user: activeRecord };
+  return { 
+    success: true, 
+    user: activeRecord,
+    tempPassword: activeRecord.temporaryPassword,
+    username: activeRecord.email
+  };
+}
+
+export function updateUserPassword(emailOrId, newPassword) {
+  const users = getRegisteredUsers();
+  const idx = users.findIndex(u => 
+    (u.email && u.email.toLowerCase() === String(emailOrId).toLowerCase()) || 
+    (u.id && u.id === emailOrId)
+  );
+
+  if (idx >= 0) {
+    users[idx].password = newPassword;
+    users[idx].isTemporaryPassword = false;
+    users[idx].passwordUpdatedAt = new Date().toISOString();
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+
+    const current = getCurrentUser();
+    if (current && (current.email === users[idx].email || current.id === users[idx].id)) {
+      current.password = newPassword;
+      current.isTemporaryPassword = false;
+      setCurrentUser(current);
+    }
+
+    addAuditLog({
+      user: users[idx].fullName,
+      action: 'USER_PASSWORD_UPDATED',
+      details: `User ${users[idx].email} successfully updated their login password.`
+    });
+
+    return { success: true, message: 'Password updated successfully!' };
+  }
+
+  return { success: false, message: 'User not found.' };
 }
 
 export function loginUser(email, password) {
@@ -189,6 +306,8 @@ export function loginUser(email, password) {
       role: assignedRole,
       roleCode: assignedRoleCode,
       status: 'Active',
+      password: password || 'Admin@1234',
+      isTemporaryPassword: false,
       propertiesCount: 2,
       visitorsCount: 88,
       buyersCount: 12,

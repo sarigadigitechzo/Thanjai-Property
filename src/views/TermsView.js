@@ -1,6 +1,6 @@
 export function renderTermsView() {
   return `
-    <div class="view-enter terms-view" style="background: #f8fafc; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;">
+    <div class="view-enter terms-view" style="background: #f8fafc;">
       <!-- Dark Luxury Header -->
       <section style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); padding: 140px 0 80px; color: white;">
         <div class="container">
@@ -55,7 +55,7 @@ export function renderTermsView() {
           </aside>
 
           <!-- Main Content -->
-          <div id="terms-scroll-container" style="background: #ffffff; padding: 48px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.03); font-family: var(--font-secondary, 'Inter', sans-serif); color: #475569; line-height: 1.8; font-size: 1.05rem; height: calc(100vh - 160px); overflow-y: auto; position: sticky; top: 120px;">
+          <div id="terms-scroll-container" style="background: #ffffff; padding: 48px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.03); font-family: var(--font-secondary, 'Inter', sans-serif); color: #475569; line-height: 1.8; font-size: 1.05rem;">
             
             <p style="font-size: 1.15rem; color: #0f172a; font-weight: 500; margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid #e2e8f0;">
               Thanjai property Real Estate Land Promoters and Constructions in Thanjavur to buy sale and house land plot commercial industrial apartment. Unless otherwise specified, the capitalized words shall have the meanings as defined herein below:
@@ -180,10 +180,9 @@ export function initTermsListeners() {
 
   // Handle active state on scroll using IntersectionObserver
   const headings = document.querySelectorAll('.term-heading');
-  const scrollContainer = document.getElementById('terms-scroll-container');
   const observerOptions = {
-    root: scrollContainer,
-    rootMargin: '-20px 0px -80% 0px',
+    root: null,
+    rootMargin: '-80px 0px -70% 0px',
     threshold: 0
   };
 

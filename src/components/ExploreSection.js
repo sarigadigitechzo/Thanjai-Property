@@ -20,12 +20,12 @@ export function renderExploreSection() {
 
           <!-- Main Centered Content -->
           <h2 class="heading-display-light editorial-main-title" style="margin-bottom: 12px; font-size: 3.5rem;">
-            Sell Your Property to the Right Audience.
+            Sell Your Property Faster to Genuine Buyers
           </h2>
-          <div style="font-size: 1.15rem; font-weight: 700; color: #eb5e28; margin-bottom: 24px;">Turn Your Property Listing Into a New Opportunity</div>
+          <div style="font-size: 1.15rem; font-weight: 700; color: #eb5e28; margin-bottom: 24px;">List for Free & Connect with Thousands of Active Seekers</div>
           
           <p class="editorial-desc-text" style="font-size: 1.1rem; line-height: 1.7; color: #555; max-width: 800px; margin-bottom: 40px;">
-            Selling a property is about presenting clear details—location, size, price, and specifications—so potential buyers can understand the opportunity. With Thanjai Property, list your houses, plots, agricultural land, or commercial spaces with free basic property posting to reach active property seekers across Tamil Nadu.
+            Looking to sell your house, plot, farmland, or commercial space? List your property on Thanjai Property for free. We showcase your property with clear details, verified Patta support, and zero listing fees to connect you directly with genuine local and NRI buyers across Tamil Nadu.
           </p>
 
           <!-- Integrated Horizontal Stats Bar -->
@@ -69,7 +69,7 @@ export function renderExploreSection() {
 
             <div style="position: absolute; top: 24px; left: 24px;">
               <span class="badge badge-orange" style="font-size: 0.8rem; font-weight: 800;">
-                <i class="ri-rocket-fill"></i> LAND & PROPERTY SELLER DESK
+                <i class="ri-rocket-fill"></i> ALL PROPERTY SELLER DESK
               </span>
             </div>
 
@@ -81,15 +81,15 @@ export function renderExploreSection() {
               box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             ">
               <h3 style="font-family: var(--font-serif); font-size: 1.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">
-                Have Land or Property to Sell in Tamil Nadu?
+                Do You Have a Property to Sell in Tamil Nadu?
               </h3>
               <p style="font-size: 0.92rem; color: #555; line-height: 1.5; margin-bottom: 20px;">
-                Submit your land or property details in 60 seconds. Our senior legal advisors will verify Patta title documents and showcase your listing to vetted buyers.
+                Share your property details in just 60 seconds. Our expert team will verify the documents and present your listing to verified, ready-to-buy seekers.
               </p>
 
               <button class="btn btn-primary post-land-trigger-btn" style="padding: 14px 28px; font-size: 0.95rem; border-radius: 10px; width: 100%; justify-content: center;">
                 <i class="ri-add-circle-line" style="font-size: 1.25rem;"></i>
-                <span>Click Here to Sell / Promote Your Land Now</span>
+                <span>Click here to Sell / Promote your Property Now</span>
               </button>
             </div>
           </div>

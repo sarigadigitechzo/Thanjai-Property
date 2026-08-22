@@ -1,4 +1,4 @@
-import { getCurrentUser, logoutUser, setCurrentUser, getRegisteredUsers } from './utils/userAuthStore.js';
+import { getCurrentUser, logoutUser, setCurrentUser, getRegisteredUsers, updateUserPassword } from './utils/userAuthStore.js';
 import { getProperties, addProperty, updateProperty, deleteProperty } from './utils/propertiesStore.js';
 import { showToast } from './utils/toast.js';
 
@@ -6,6 +6,7 @@ let userUploadedImages = [];
 let userUploadedVideoUrl = '';
 let userActivePreviewId = null;
 let userActiveMediaIndex = 0;
+let currentSelectedAdType = 'free';
 
 const defaultBuyersInquiries = [
   {
@@ -140,7 +141,7 @@ export function renderUserDashboard() {
           </a>
           <a href="#" class="user-nav-item nav-item" data-tab="post-property">
             <i class="ri-add-circle-line"></i>
-            <span>Post Property</span>
+            <span>Add New Property</span>
           </a>
           <a href="#" class="user-nav-item nav-item" data-tab="profile">
             <i class="ri-user-settings-line"></i>
@@ -165,7 +166,7 @@ export function renderUserDashboard() {
 
           <div>
             <button class="post-prop-header-btn" id="header-post-property-btn">
-              <i class="ri-add-line"></i> Post New Property
+              <i class="ri-add-line"></i> Add New Property
             </button>
           </div>
         </header>
@@ -239,8 +240,30 @@ export function renderUserDashboard() {
     window.location.href = 'login.html';
   });
 
+  function openPostPropertyWithAdType(propToEdit = null, adType = 'free') {
+    const effectiveAdType = propToEdit?.adType || adType || 'free';
+    currentSelectedAdType = effectiveAdType;
+    const panelTitle = document.getElementById('panel-title-text');
+    const panelSub = document.getElementById('panel-sub-text');
+    const panelBody = document.getElementById('panel-body-content');
+
+    navItems.forEach(n => n.classList.remove('active'));
+    document.querySelector('[data-tab="post-property"]')?.classList.add('active');
+
+    if (panelTitle) panelTitle.textContent = propToEdit ? `Edit Property (${propToEdit.id})` : 'Add New Property';
+    if (panelSub) panelSub.textContent = propToEdit 
+      ? 'Modify your property specs, price, location, or uploaded photos' 
+      : 'Upload land, house, villa, or commercial property for review and publication';
+    if (panelBody) {
+      panelBody.innerHTML = renderPostPropertyFormHtml(propToEdit, effectiveAdType);
+      attachPostFormListener(propToEdit, effectiveAdType);
+    }
+  }
+
   document.getElementById('header-post-property-btn')?.addEventListener('click', () => {
-    document.querySelector('[data-tab="post-property"]')?.click();
+    showAdTypeSelectionModal((chosenType) => {
+      openPostPropertyWithAdType(null, chosenType);
+    });
   });
 
   document.getElementById('kpi-submitted-card')?.addEventListener('click', () => {
@@ -279,7 +302,9 @@ export function renderUserDashboard() {
   function bindTableActions() {
     // EMPTY STATE CENTER POST PROPERTY BUTTON ACTION
     document.getElementById('empty-post-btn')?.addEventListener('click', () => {
-      document.querySelector('[data-tab="post-property"]')?.click();
+      showAdTypeSelectionModal((chosenType) => {
+        openPostPropertyWithAdType(null, chosenType);
+      });
     });
 
     // PREVIEW PROPERTY DETAILS INLINE MODAL
@@ -306,8 +331,8 @@ export function renderUserDashboard() {
           if (panelTitle) panelTitle.textContent = `Edit Property (${id})`;
           if (panelSub) panelSub.textContent = 'Modify your property specs, price, location, or uploaded photos';
           if (panelBody) {
-            panelBody.innerHTML = renderPostPropertyFormHtml(targetProp);
-            attachPostFormListener(targetProp);
+            panelBody.innerHTML = renderPostPropertyFormHtml(targetProp, targetProp.adType || 'free');
+            attachPostFormListener(targetProp, targetProp.adType || 'free');
           }
         }
       });
@@ -353,12 +378,10 @@ export function renderUserDashboard() {
     } else if (tab === 'my-properties') {
       refreshMyProperties();
     } else if (tab === 'post-property') {
-      if (panelTitle) panelTitle.textContent = 'Post Property Listing';
-      if (panelSub) panelSub.textContent = 'Upload land, house, villa, or commercial property for review and publication';
-      if (panelBody) {
-        panelBody.innerHTML = renderPostPropertyFormHtml(null);
-        attachPostFormListener(null);
-      }
+      showAdTypeSelectionModal((chosenType) => {
+        currentSelectedAdType = chosenType;
+        openPostPropertyWithAdType(null, chosenType);
+      });
     } else if (tab === 'buyers-list') {
       if (panelTitle) panelTitle.textContent = 'Buyers Inquiries & Lead Desk';
       if (panelSub) panelSub.textContent = 'Direct buyer leads, site visit requests, and offers submitted for your listings';
@@ -366,36 +389,71 @@ export function renderUserDashboard() {
         panelBody.innerHTML = renderBuyersInquiriesTableHtml(defaultBuyersInquiries);
       }
     } else if (tab === 'profile') {
-      if (panelTitle) panelTitle.textContent = 'Owner Profile Settings';
-      if (panelSub) panelSub.textContent = 'Manage your seller account details and password';
+      if (panelTitle) panelTitle.textContent = 'Owner Profile & Password Settings';
+      if (panelSub) panelSub.textContent = 'Manage your seller account details and login password';
       if (panelBody) {
         panelBody.innerHTML = `
-          <form id="owner-profile-form" style="max-width: 500px; padding: 10px 0;" onsubmit="return false;">
-            <div style="margin-bottom: 16px;">
-              <label style="font-size: 0.85rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Full Name</label>
-              <input type="text" id="profile-fullname-input" value="${userName}" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #ffffff; font-size: 0.9rem; outline: none;" />
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; padding: 10px 0;">
+            <!-- LEFT: Profile Details Form -->
+            <div style="background: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+              <h3 style="font-size: 1.1rem; font-weight: 800; color: #1A202C; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                <i class="ri-user-settings-line" style="color: #eb5e28;"></i> Personal Profile
+              </h3>
+              <p style="font-size: 0.85rem; color: #718096; margin-bottom: 20px;">Update your displayed name and contact phone number</p>
+
+              <form id="owner-profile-form" onsubmit="return false;">
+                <div style="margin-bottom: 16px;">
+                  <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">FULL NAME</label>
+                  <input type="text" id="profile-fullname-input" value="${userName}" required style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #ffffff; font-size: 0.9rem; outline: none;" />
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                  <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">EMAIL ADDRESS (USERNAME)</label>
+                  <input type="email" value="${user.email || ''}" readonly style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #EDF2F7; font-size: 0.9rem; color: #718096;" />
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                  <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">PHONE NUMBER</label>
+                  <input type="tel" id="profile-phone-input" value="${user.phone || ''}" required maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #ffffff; font-size: 0.9rem; outline: none;" />
+                </div>
+
+                <div style="margin-bottom: 24px;">
+                  <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">ACCOUNT ROLE</label>
+                  <input type="text" value="${user.role || 'Individual Owner'}" readonly style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #EDF2F7; font-size: 0.9rem; color: #718096;" />
+                </div>
+
+                <button type="submit" id="save-profile-btn" style="background: #eb5e28; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; box-shadow: 0 4px 12px rgba(235,94,40,0.25);">
+                  <i class="ri-save-line"></i> Save Profile Details
+                </button>
+              </form>
             </div>
 
-            <div style="margin-bottom: 16px;">
-              <label style="font-size: 0.85rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Phone Number</label>
-              <input type="tel" id="profile-phone-input" value="${user.phone || ''}" required maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #ffffff; font-size: 0.9rem; outline: none;" />
-            </div>
+            <!-- RIGHT: Change / Set Password Form -->
+            <div style="background: #ffffff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
+              <h3 style="font-size: 1.1rem; font-weight: 800; color: #1A202C; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                <i class="ri-lock-password-line" style="color: #3182CE;"></i> Change Password
+              </h3>
+              <p style="font-size: 0.85rem; color: #718096; margin-bottom: 20px;">
+                ${user.isTemporaryPassword ? '⚠️ You are currently using a temporary password. Please set a permanent password.' : 'Update your personal account login password'}
+              </p>
 
-            <div style="margin-bottom: 24px;">
-              <label style="font-size: 0.85rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">Account Role</label>
-              <input type="text" value="${user.role || 'Individual Owner'}" readonly style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #EDF2F7; font-size: 0.9rem; color: #718096;" />
-            </div>
+              <form id="owner-password-form" onsubmit="return false;">
+                <div style="margin-bottom: 16px;">
+                  <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">NEW PASSWORD</label>
+                  <input type="password" id="profile-new-password" required minlength="6" placeholder="Enter new password (min 6 chars)" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #ffffff; font-size: 0.9rem; outline: none;" />
+                </div>
 
-            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-              <button type="submit" id="save-profile-btn" style="background: #eb5e28; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; box-shadow: 0 4px 12px rgba(235,94,40,0.25);">
-                <i class="ri-save-line"></i> Save Profile Changes
-              </button>
+                <div style="margin-bottom: 24px;">
+                  <label style="font-size: 0.82rem; font-weight: 700; color: #4A5568; display: block; margin-bottom: 6px;">CONFIRM NEW PASSWORD</label>
+                  <input type="password" id="profile-confirm-password" required minlength="6" placeholder="Confirm new password" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #CBD5E0; background: #ffffff; font-size: 0.9rem; outline: none;" />
+                </div>
 
-              <button type="button" id="reset-password-btn" style="background: #ffffff; color: #4A5568; border: 1px solid #CBD5E0; padding: 10px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
-                Reset Password
-              </button>
+                <button type="submit" id="save-password-btn" style="background: #3182CE; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; box-shadow: 0 4px 12px rgba(49,130,206,0.25);">
+                  <i class="ri-shield-keyhole-line"></i> Update Password
+                </button>
+              </form>
             </div>
-          </form>
+          </div>
         `;
 
         document.getElementById('owner-profile-form')?.addEventListener('submit', (e) => {
@@ -430,8 +488,30 @@ export function renderUserDashboard() {
           }, 300);
         });
 
-        document.getElementById('reset-password-btn')?.addEventListener('click', () => {
-          showToast('Password reset link sent to your registered phone number via WhatsApp.', 'ri-whatsapp-line');
+        document.getElementById('owner-password-form')?.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const newPass = document.getElementById('profile-new-password')?.value.trim();
+          const confPass = document.getElementById('profile-confirm-password')?.value.trim();
+
+          if (!newPass || newPass.length < 6) {
+            showToast('Password must be at least 6 characters.', 'ri-error-warning-line');
+            return;
+          }
+
+          if (newPass !== confPass) {
+            showToast('New Password and Confirm Password do not match.', 'ri-error-warning-line');
+            return;
+          }
+
+          const res = updateUserPassword(user.email || user.id, newPass);
+          if (res.success) {
+            showToast('Password updated successfully! You can now log in with your new password.', 'ri-checkbox-circle-fill');
+            setTimeout(() => {
+              renderUserDashboard();
+            }, 300);
+          } else {
+            showToast(res.message || 'Failed to update password.', 'ri-error-warning-line');
+          }
         });
       }
     }
@@ -556,6 +636,13 @@ export function renderUserDashboard() {
       });
     });
 
+    // CHANGE AD TYPE BUTTON HANDLER
+    document.getElementById('change-adtype-btn')?.addEventListener('click', () => {
+      showAdTypeSelectionModal((newType) => {
+        openPostPropertyWithAdType(propToEdit, newType);
+      });
+    });
+
     // FORM SUBMISSION HANDLER
     const form = document.getElementById('client-post-prop-form');
     form?.addEventListener('submit', (e) => {
@@ -591,6 +678,17 @@ export function renderUserDashboard() {
       const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room', 'bhk', 'residence', 'cottage', 'bungalow', 'rowhouse', 'manor', 'studio'];
       const isRes = resKeywords.some(k => val.includes(k));
 
+      const finalAdType = activeAdType || propToEdit?.adType || currentSelectedAdType || 'free';
+      let finalOwnerName = userName;
+      let finalOwnerPhone = user.phone;
+      let finalListedBy = userName;
+
+      if (finalAdType === 'free') {
+        finalOwnerName = 'Thanjai Property';
+        finalOwnerPhone = '+91 84899 96852';
+        finalListedBy = 'Thanjai Property';
+      }
+
       const payload = {
         title,
         type,
@@ -612,9 +710,12 @@ export function renderUserDashboard() {
         longitude,
         description: desc || `${title} located at ${location}.`,
         features: features.length > 0 ? features : ['Patta Title Verified', '24/7 Security'],
-        ownerName: userName,
-        ownerPhone: user.phone,
-        listedBy: userName,
+        adType: finalAdType,
+        actualOwnerName: userName,
+        actualOwnerPhone: user.phone,
+        ownerName: finalOwnerName,
+        ownerPhone: finalOwnerPhone,
+        listedBy: finalListedBy,
         userId: user.id,
         userEmail: user.email,
         approvalStatus: isEdit ? (propToEdit.approvalStatus || 'Pending Approval') : 'Pending Approval',
@@ -747,7 +848,7 @@ function renderMyPropertiesTableHtml(userProps) {
         <h3 style="font-size: 1.1rem; color: #1A202C; margin-bottom: 6px;">No Properties Uploaded Yet</h3>
         <p style="font-size: 0.9rem; margin-bottom: 20px;">Upload your land or house to reach verified buyers across Tamil Nadu.</p>
         <button class="post-prop-header-btn" id="empty-post-btn">
-          <i class="ri-add-line"></i> Post Your First Property
+          <i class="ri-add-line"></i> Add New Property
         </button>
       </div>
     `;
@@ -1129,8 +1230,9 @@ function bindUserPreviewModalEvents(id) {
 }
 
 // FULL PROPERTY FORM PRE-FILLED FOR ADD OR EDIT
-function renderPostPropertyFormHtml(propToEdit = null) {
+function renderPostPropertyFormHtml(propToEdit = null, adType = 'free') {
   const isEdit = Boolean(propToEdit);
+  const activeAdType = propToEdit?.adType || adType || 'free';
   userUploadedImages = propToEdit?.images ? [...propToEdit.images] : [];
   userUploadedVideoUrl = propToEdit?.videoUrl || '';
 
@@ -1141,13 +1243,13 @@ function renderPostPropertyFormHtml(propToEdit = null) {
 
   return `
     <div style="background: #FAF8F5; border: 1px solid #E7E0D8; border-radius: 16px; padding: 32px; width: 100%; max-width: 980px; margin: 0 auto; box-sizing: border-box;">
-      <div style="margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+      <div style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
         <div>
           <span style="font-size: 0.78rem; font-weight: 800; color: #eb5e28; letter-spacing: 0.08em; text-transform: uppercase;">
             ${isEdit ? `EDITING PROPERTY ID: ${propToEdit.id}` : 'PROPERTIES INVENTORY SUBMISSION FORM'}
           </span>
           <h3 style="font-size: 1.5rem; font-weight: 800; color: #1A202C; margin-top: 4px;">
-            ${isEdit ? `Edit Property (${propToEdit.id})` : 'Post Property Listing'}
+            ${isEdit ? `Edit Property (${propToEdit.id})` : 'Add New Property'}
           </h3>
         </div>
 
@@ -1157,6 +1259,53 @@ function renderPostPropertyFormHtml(propToEdit = null) {
           </button>
         ` : ''}
       </div>
+
+      <!-- AD TYPE ACTIVE BANNER -->
+      ${activeAdType === 'free' ? `
+        <div style="background: #EBF8FF; border: 1px solid #BEE3F8; border-left: 5px solid #3182CE; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(49,130,206,0.15); color: #3182CE; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+              <i class="ri-checkbox-circle-fill"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <strong style="color: #1A202C; font-size: 0.95rem;">Selected Plan: FREE LISTING (Thanjai Property Managed)</strong>
+                <span style="font-size: 0.72rem; font-weight: 800; background: rgba(49,130,206,0.15); color: #3182CE; padding: 2px 8px; border-radius: 6px;">FREE LISTING</span>
+              </div>
+              <span style="font-size: 0.82rem; color: #718096; display: block; margin-top: 2px;">
+                All buyer inquiries are routed to Thanjai Property (<strong style="color: #3182CE;">+91 84899 96852</strong>) • Property commission / percentage is applicable on deal closure.
+              </span>
+            </div>
+          </div>
+          ${!isEdit ? `
+            <button type="button" id="change-adtype-btn" style="background: #ffffff; border: 1px solid #CBD5E0; color: #4A5568; padding: 8px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="ri-refresh-line"></i> Change Plan
+            </button>
+          ` : ''}
+        </div>
+      ` : `
+        <div style="background: #EBF8FF; border: 1px solid #BEE3F8; border-left: 5px solid #3182CE; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(49,130,206,0.15); color: #3182CE; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+              <i class="ri-checkbox-circle-fill"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <strong style="color: #1A202C; font-size: 0.95rem;">Selected Plan: PAID LISTING (Direct Owner Listing)</strong>
+                <span style="font-size: 0.72rem; font-weight: 800; background: rgba(49,130,206,0.15); color: #3182CE; padding: 2px 8px; border-radius: 6px;">PAID LISTING</span>
+              </div>
+              <span style="font-size: 0.82rem; color: #718096; display: block; margin-top: 2px;">
+                Direct buyer inquiries will be sent to your Owner Dashboard & phone • <strong style="color: #3182CE;">0% Commission</strong> (Zero Brokerage).
+              </span>
+            </div>
+          </div>
+          ${!isEdit ? `
+            <button type="button" id="change-adtype-btn" style="background: #ffffff; border: 1px solid #CBD5E0; color: #4A5568; padding: 8px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="ri-refresh-line"></i> Change Plan
+            </button>
+          ` : ''}
+        </div>
+      `}
 
       <form id="client-post-prop-form" style="display: flex; flex-direction: column; gap: 28px;">
         
@@ -1536,6 +1685,175 @@ function openUserLeafletMapModal(initialLat, initialLng, onConfirm) {
       });
     }
   }, 100);
+}
+
+function showAdTypeSelectionModal(onSelect) {
+  document.getElementById('user-adtype-modal-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'user-adtype-modal-overlay';
+  overlay.style.cssText = `
+    position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    width: 100vw !important; height: 100vh !important; z-index: 999999 !important;
+    background: rgba(15, 23, 42, 0.8) !important; backdrop-filter: blur(8px) !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    padding: 24px !important; box-sizing: border-box !important; margin: 0 !important;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      background: #ffffff; width: 100%; max-width: 800px; max-height: calc(100vh - 48px);
+      border-radius: 20px; overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+      border: 1px solid #E2E8F0; display: flex; flex-direction: column; animation: pageFadeIn 0.25s ease;
+      margin: auto;
+    ">
+      <!-- HEADER -->
+      <div style="
+        padding: 18px 24px 14px 24px; background: linear-gradient(135deg, #1A202C 0%, #2D3748 100%);
+        color: #ffffff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+      ">
+        <div>
+          <span style="font-size: 0.74rem; font-weight: 800; color: #3182CE; letter-spacing: 0.1em; text-transform: uppercase;">STEP 1 OF 2 — CHOOSE LISTING PACKAGE</span>
+          <h2 style="font-size: 1.3rem; font-weight: 800; color: #ffffff; margin: 3px 0 0 0;">Select Your Property Listing Package</h2>
+        </div>
+
+        <button id="close-adtype-modal-btn" style="
+          background: rgba(255,255,255,0.12); border: none; color: #ffffff; width: 32px; height: 32px;
+          border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; cursor: pointer;
+        ">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <!-- CARDS COMPARISON GRID -->
+      <div style="padding: 20px 24px; background: #FAF8F5; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+        
+        <!-- CARD 1: FREE LISTING -->
+        <div class="ad-type-choice-card" style="
+          background: #ffffff; border-radius: 14px; padding: 20px 18px; border: 2px solid #3182CE;
+          box-shadow: 0 8px 20px rgba(49,130,206,0.06); display: flex; flex-direction: column; justify-content: space-between;
+          position: relative; transition: all 0.25s ease;
+        ">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span class="badge" style="background: rgba(49,130,206,0.12); color: #3182CE; font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 20px;">
+                FREE LISTING
+              </span>
+            </div>
+
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: #1A202C; margin: 0 0 6px 0;">Free Listing</h3>
+            <p style="font-size: 0.82rem; color: #718096; line-height: 1.45; margin: 0 0 14px 0;">
+              Zero upfront ad cost. Thanjai Property manages all buyer inquiries, property marketing, and client site visits for you.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 9px; margin-bottom: 18px; font-size: 0.83rem; color: #4A5568;">
+              <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <i class="ri-checkbox-circle-fill" style="color: #3182CE; font-size: 1rem; flex-shrink: 0; margin-top: 1px;"></i>
+                <span><strong>Ad Cost:</strong> Free (₹0 Upfront Cost)</span>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <i class="ri-checkbox-circle-fill" style="color: #3182CE; font-size: 1rem; flex-shrink: 0; margin-top: 1px;"></i>
+                <span><strong>Deal Commission:</strong> Commission percentage applicable on deal closure</span>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <i class="ri-checkbox-circle-fill" style="color: #3182CE; font-size: 1rem; flex-shrink: 0; margin-top: 1px;"></i>
+                <span><strong>Inquiries:</strong> Handled directly by Thanjai Property advisory team</span>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <i class="ri-checkbox-circle-fill" style="color: #3182CE; font-size: 1rem; flex-shrink: 0; margin-top: 1px;"></i>
+                <span><strong>Public Contact:</strong> Thanjai Property (<strong style="color: #3182CE;">+91 84899 96852</strong>)</span>
+              </div>
+            </div>
+          </div>
+
+          <button id="choose-free-ad-btn" style="
+            width: 100%; padding: 11px; border-radius: 10px; border: 2px solid #3182CE;
+            background: #ffffff; color: #3182CE; font-weight: 800; font-size: 0.9rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;
+          " onmouseover="this.style.background='#3182CE'; this.style.color='#ffffff';" onmouseout="this.style.background='#ffffff'; this.style.color='#3182CE';">
+            <span>Proceed with Free Listing</span>
+            <i class="ri-arrow-right-line"></i>
+          </button>
+        </div>
+
+        <!-- CARD 2: PAID LISTING -->
+        <div class="ad-type-choice-card" style="
+          background: #ffffff; border-radius: 14px; padding: 20px 18px; border: 2px solid #3182CE;
+          box-shadow: 0 8px 20px rgba(49,130,206,0.06); display: flex; flex-direction: column; justify-content: space-between;
+          position: relative; transition: all 0.25s ease;
+        ">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span class="badge" style="background: rgba(49,130,206,0.12); color: #3182CE; font-size: 0.74rem; font-weight: 800; padding: 3px 10px; border-radius: 20px;">
+                PAID LISTING
+              </span>
+            </div>
+
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: #1A202C; margin: 0 0 6px 0;">Paid Listing</h3>
+            <p style="font-size: 0.82rem; color: #718096; line-height: 1.45; margin: 0 0 14px 0;">
+              Direct buyer calls and messages sent straight to you with 0% deal commission and verified direct owner visibility.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 9px; margin-bottom: 18px; font-size: 0.83rem; color: #4A5568;">
+              <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <i class="ri-checkbox-circle-fill" style="color: #3182CE; font-size: 1rem; flex-shrink: 0; margin-top: 1px;"></i>
+                <span><strong>Ad Cost:</strong> Paid Listing Plan</span>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <i class="ri-checkbox-circle-fill" style="color: #3182CE; font-size: 1rem; flex-shrink: 0; margin-top: 1px;"></i>
+                <span><strong>Deal Commission:</strong> <strong style="color: #3182CE;">0% Commission</strong> (Zero Brokerage)</span>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <i class="ri-checkbox-circle-fill" style="color: #3182CE; font-size: 1rem; flex-shrink: 0; margin-top: 1px;"></i>
+                <span><strong>Inquiries:</strong> Direct buyer leads sent to your Dashboard & phone</span>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 8px;">
+                <i class="ri-checkbox-circle-fill" style="color: #3182CE; font-size: 1rem; flex-shrink: 0; margin-top: 1px;"></i>
+                <span><strong>Public Contact:</strong> Direct Owner Name & Contact details</span>
+              </div>
+            </div>
+          </div>
+
+          <button id="choose-paid-ad-btn" style="
+            width: 100%; padding: 11px; border-radius: 10px; border: 2px solid #3182CE;
+            background: #3182CE; color: #ffffff; font-weight: 800; font-size: 0.9rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(49,130,206,0.25); transition: all 0.2s;
+          " onmouseover="this.style.background='#2B6CB0'; this.style.borderColor='#2B6CB0';" onmouseout="this.style.background='#3182CE'; this.style.borderColor='#3182CE';">
+            <span>Proceed with Paid Listing</span>
+            <i class="ri-arrow-right-line"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- FOOTER NOTE -->
+      <div style="padding: 12px 24px; background: #ffffff; border-top: 1px solid #E2E8F0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; flex-shrink: 0;">
+        <span style="font-size: 0.78rem; color: #718096;">
+          <i class="ri-shield-check-line" style="color: #3182CE;"></i> All listings are verified and approved by Thanjai Property administration before going live.
+        </span>
+        <button id="cancel-adtype-modal-btn" style="background: none; border: none; color: #718096; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+          Cancel
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const closeModal = () => overlay.remove();
+  document.getElementById('close-adtype-modal-btn')?.addEventListener('click', closeModal);
+  document.getElementById('cancel-adtype-modal-btn')?.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+  document.getElementById('choose-free-ad-btn')?.addEventListener('click', () => {
+    closeModal();
+    onSelect('free');
+  });
+
+  document.getElementById('choose-paid-ad-btn')?.addEventListener('click', () => {
+    closeModal();
+    onSelect('paid');
+  });
 }
 
 if (document.readyState === 'loading') {

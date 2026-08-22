@@ -33,7 +33,7 @@ export function renderDiscoverView(discoverState, onPropertySelect, onNavigateTo
       ">
         <div class="container" style="max-width: 800px; position: relative; z-index: 2;">
           <span class="badge badge-orange" style="font-weight: 800; letter-spacing: 0.12em; margin-bottom: 16px;">
-            DISCOVER PROPERTIES
+            FIND YOUR PROPERTY
           </span>
           <h1 class="heading-display-light" style="font-size: clamp(2.2rem, 4.5vw, 3.8rem); color: #ffffff; margin-bottom: 12px;">
             Find Your Next Property in Tamil Nadu
@@ -241,7 +241,7 @@ function renderPropertyDetailView(property, onNavigateToContact) {
         <!-- Back Navigation & Action Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
           <button class="os-btn-secondary" id="back-to-discover-btn" style="font-size: 0.9rem; padding: 10px 20px; border-radius: 10px; font-weight: 700; background: #ffffff; border: 1px solid #E2E8F0; color: #4A5568; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-            <i class="ri-arrow-left-line" style="color: #eb5e28;"></i> Back to Discover Properties
+            <i class="ri-arrow-left-line" style="color: #eb5e28;"></i> Back to Find Your Property
           </button>
 
           <div style="display: flex; gap: 10px; align-items: center;">

@@ -189,7 +189,7 @@ export function renderLuxuryTransition() {
                 </div>
               </button>
               <div class="faq-accordion-body" style="padding: 0 24px 0 24px; max-height: 0; overflow: hidden; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
-                <p style="font-size: 0.95rem; color: #4a5568; line-height: 1.7; margin: 0;">According to the platform's FAQ, listings are reviewed for completeness and authenticity, and seller details are cross-verified before publication. Buyers should still independently verify property documents, approvals and other transaction details before proceeding.</p>
+                <p style="font-size: 0.95rem; color: #4a5568; line-height: 1.7; margin: 0;">All property listings are reviewed for authenticity by our team, and seller details are verified before publication. We also provide legal assistance to help buyers verify Patta and title deeds.</p>
               </div>
             </div>
 

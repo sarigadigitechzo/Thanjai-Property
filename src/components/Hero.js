@@ -21,6 +21,7 @@ export function renderHero() {
         <div class="hero-eyebrow-pill">
           <i class="ri-shield-star-line" style="color: var(--color-orange)"></i>
           <span>THANJAI PROPERTY • SINCE 2009</span>
+          <i class="ri-shield-star-line" style="color: var(--color-orange)"></i>
         </div>
         
         <h1 class="heading-display-light hero-title">

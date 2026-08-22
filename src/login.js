@@ -1,4 +1,4 @@
-import { initiateRegistration, verifyOTPAndActivate, loginUser, getPendingOTPUser } from './utils/userAuthStore.js';
+import { initiateRegistration, verifyOTPAndActivate, loginUser, getPendingOTPUser, updateUserPassword, sendOtpEmail, sendCredentialsEmail } from './utils/userAuthStore.js';
 
 export function renderLogin(initialMode = 'signin') {
   const pending = getPendingOTPUser();
@@ -11,16 +11,20 @@ export function renderLogin(initialMode = 'signin') {
         <!-- LEFT DARK SLATE VISUAL PANEL -->
         <div class="login-left-panel">
           <div class="login-left-content">
-            <div class="login-brand-area" style="display: flex; align-items: center;">
-              <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" style="height: 52px; background: #ffffff; padding: 8px 16px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.25); display: block;" />
+            <div class="login-brand-area" style="display: flex; align-items: center; justify-content: center; width: 100%; text-align: center; margin-bottom: 24px;">
+              <div style="background: #ffffff; padding: 12px 24px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" style="height: 68px; max-width: 100%; object-fit: contain; display: block;" />
+              </div>
             </div>
 
-            <div class="login-left-tagline" id="left-tagline">
+            <div class="login-left-tagline" id="left-tagline" style="text-align: center;">
               ${initialMode === 'otp'
-                ? `Enter the 4-digit OTP sent to ${targetEmail} to complete verification.`
-                : initialMode === 'register'
-                  ? 'Find your perfect home in Thanjavur & surrounding areas. Trusted listings, verified owners.'
-                  : 'Welcome back! Sign in to continue exploring properties in Thanjavur & surrounding areas.'
+                ? `Enter the 6-digit OTP sent to ${targetEmail} to complete verification.`
+                : initialMode === 'credentials'
+                  ? 'Your account has been created. Use your one-time password to sign in.'
+                  : initialMode === 'register'
+                    ? 'Find your perfect home in Thanjavur & surrounding areas. Trusted listings, verified owners.'
+                    : 'Welcome back! Sign in to continue exploring properties in Thanjavur & surrounding areas.'
               }
             </div>
           </div>
@@ -48,7 +52,7 @@ export function renderLogin(initialMode = 'signin') {
               <div class="auth-field">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <label class="auth-label" for="signin-password">PASSWORD</label>
-                  <a href="#" class="forgot-link">Forgot password?</a>
+                  <a href="#" class="forgot-link" id="forgot-password-link">Forgot password?</a>
                 </div>
                 <div class="input-icon-wrap">
                   <i class="ri-lock-2-line field-icon"></i>
@@ -72,25 +76,6 @@ export function renderLogin(initialMode = 'signin') {
                 Don't have an account? <a href="#" id="go-to-register" class="auth-link">Sign up for free</a>
               </div>
             </form>
-
-            <!-- DEMO LOGIN QUICK FILL -->
-            <div class="demo-logins-container">
-              <div class="demo-logins-title"><i class="ri-key-2-line"></i> Client Portal Demo Accounts — click to fill</div>
-              <div class="demo-logins-grid">
-                <div class="demo-user" data-email="kanidigitechzo@gmail.com">
-                  <div class="demo-role">Kani Digitechzo (Individual Owner)</div>
-                  <div class="demo-email">kanidigitechzo@gmail.com</div>
-                </div>
-                <div class="demo-user" data-email="senthil.agent@thanjai.example">
-                  <div class="demo-role">Senthil Kumar (Agent / Broker)</div>
-                  <div class="demo-email">senthil.agent@thanjai.example</div>
-                </div>
-                <div class="demo-user" data-email="tamilselvan.builder@thanjai.example">
-                  <div class="demo-role">Tamilselvan R. (Builder / Developer)</div>
-                  <div class="demo-email">tamilselvan.builder@thanjai.example</div>
-                </div>
-              </div>
-            </div>
           </div>
 
           <!-- CREATE ACCOUNT FORM MODE -->
@@ -138,22 +123,28 @@ export function renderLogin(initialMode = 'signin') {
                 </div>
               </div>
 
-              <!-- RECAPTCHA BOX SIMULATION -->
-              <div class="recaptcha-box">
-                <label class="recaptcha-label">
-                  <input type="checkbox" id="recaptcha-check" required />
-                  <span style="font-size: 0.88rem; color: #333; font-weight: 600;">I'm not a robot</span>
-                </label>
-                <div class="recaptcha-badge">
-                  <i class="ri-shield-check-fill" style="color: #1a73e8; font-size: 1.2rem;"></i>
-                  <span style="font-size: 0.65rem; color: #666; font-weight: 700; display: block;">reCAPTCHA</span>
+              <!-- INTERACTIVE RECAPTCHA WIDGET -->
+              <div class="recaptcha-widget" id="recaptcha-widget">
+                <div class="recaptcha-checkbox-area" id="recaptcha-trigger">
+                  <div class="recaptcha-checkbox" id="recaptcha-checkbox">
+                    <div class="recaptcha-spinner" id="recaptcha-spinner"></div>
+                    <i class="ri-check-line recaptcha-checkmark" id="recaptcha-checkmark"></i>
+                  </div>
+                  <span class="recaptcha-text" id="recaptcha-text">I'm not a robot</span>
                 </div>
+                <div class="recaptcha-brand">
+                  <i class="ri-shield-check-fill" style="color: #1a73e8; font-size: 1.35rem;"></i>
+                  <div style="font-size: 0.65rem; color: #555; font-weight: 700; line-height: 1.1;">reCAPTCHA<br><span style="font-weight: 400; color: #888;">Privacy - Terms</span></div>
+                </div>
+              </div>
+              <div id="recaptcha-error-msg" style="color: #D92332; font-size: 0.8rem; font-weight: 700; display: none;">
+                Please verify that you are not a robot before proceeding.
               </div>
 
               <div class="auth-checkbox-row">
                 <label class="checkbox-label">
                   <input type="checkbox" id="reg-terms" required />
-                  <span>I agree to the <a href="/index.html#term-privacy" target="_blank" class="auth-link">privacy policy</a> and <a href="/index.html#terms" target="_blank" class="auth-link">terms of service</a></span>
+                  <span>I agree to the <a href="/privacy-policy" target="_blank" class="auth-link">privacy policy</a> and <a href="/terms-of-use" target="_blank" class="auth-link">terms of service</a></span>
                 </label>
               </div>
 
@@ -167,18 +158,28 @@ export function renderLogin(initialMode = 'signin') {
             </form>
           </div>
 
-          <!-- OTP VERIFICATION SCREEN (MATCHING SCREENSHOT 2) -->
+          <!-- 6-DIGIT EMAIL OTP VERIFICATION SCREEN -->
           <div class="auth-mode-container ${initialMode === 'otp' ? 'active-mode' : ''}" id="mode-otp">
-            <div style="text-align: center; margin-bottom: 24px;">
+            <div style="text-align: center; margin-bottom: 20px;">
               <div class="otp-icon-circle">
-                <i class="ri-smartphone-line"></i>
+                <i class="ri-mail-check-line"></i>
               </div>
-              <h1 class="auth-heading" style="margin-bottom: 6px;">OTP Verification</h1>
-              <p style="font-size: 0.88rem; color: #718096; line-height: 1.5; max-width: 320px; margin: 0 auto;">
-                Enter the 4-digit verification code sent to you via SMS and Email to <strong id="otp-email-display">${targetEmail}</strong>.
+              <h1 class="auth-heading" style="margin-bottom: 6px; font-size: 1.6rem;">Email OTP Verification</h1>
+              <p style="font-size: 0.88rem; color: #718096; line-height: 1.5; max-width: 340px; margin: 0 auto;">
+                We have sent a 6-digit verification code to <strong id="otp-email-display" style="color: #1A202C;">${targetEmail}</strong>.
               </p>
-              <div style="font-size: 0.78rem; font-weight: 700; color: #E52E3D; background: rgba(229,46,61,0.08); padding: 4px 12px; border-radius: 20px; display: inline-block; margin-top: 10px;">
-                <i class="ri-key-fill"></i> Demo OTP Code: <strong>1234</strong>
+
+              <!-- Email Dispatch Notification Banner -->
+              <div class="email-dispatch-banner" id="email-dispatch-banner" style="margin-top: 14px; background: #EBF8FF; border: 1.5px solid #BEE3F8; border-radius: 14px; padding: 14px 18px; text-align: left; display: flex; align-items: flex-start; gap: 12px;">
+                <i class="ri-mail-send-line" style="color: #3182CE; font-size: 1.4rem; margin-top: 2px;"></i>
+                <div style="flex: 1;">
+                  <div style="font-size: 0.88rem; font-weight: 700; color: #2D3748;">
+                    Verification Code Sent to <span id="toast-email-span">${targetEmail}</span>
+                  </div>
+                  <div style="font-size: 0.82rem; color: #4A5568; margin-top: 4px; line-height: 1.45;">
+                    Please check your email inbox (and spam/junk folder) for your 6-digit OTP verification code and enter it below.
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -188,18 +189,56 @@ export function renderLogin(initialMode = 'signin') {
                 <input type="text" maxlength="1" class="otp-box" id="otp-2" pattern="[0-9]" />
                 <input type="text" maxlength="1" class="otp-box" id="otp-3" pattern="[0-9]" />
                 <input type="text" maxlength="1" class="otp-box" id="otp-4" pattern="[0-9]" />
+                <input type="text" maxlength="1" class="otp-box" id="otp-5" pattern="[0-9]" />
+                <input type="text" maxlength="1" class="otp-box" id="otp-6" pattern="[0-9]" />
               </div>
 
               <div id="otp-error-msg" style="color: #D92332; font-size: 0.82rem; font-weight: 700; text-align: center; display: none;"></div>
 
-              <button type="submit" class="auth-submit-btn" id="verify-otp-btn" style="margin-top: 16px;">
-                Verify & Activate Account
+              <button type="submit" class="auth-submit-btn" id="verify-otp-btn" style="margin-top: 14px;">
+                Verify OTP & Continue
               </button>
 
-              <div class="auth-toggle-footer" style="margin-top: 16px;">
-                Didn't receive code? <a href="#" id="resend-otp-btn" class="auth-link">Resend OTP</a> &nbsp;•&nbsp; <a href="#" id="otp-back-signin" class="auth-link">Back to Sign In</a>
+              <div class="auth-toggle-footer" style="margin-top: 14px;">
+                Didn't receive code? <button type="button" id="resend-otp-btn" class="auth-link" style="background: none; border: none; cursor: pointer; padding: 0; font-size: 0.88rem;">Resend OTP (<span id="resend-countdown">45</span>s)</button> &nbsp;•&nbsp; <a href="#" id="otp-back-signin" class="auth-link">Back to Sign In</a>
               </div>
             </form>
+          </div>
+
+          <!-- ACCOUNT CREATED & CREDENTIALS SENT TO EMAIL SCREEN -->
+          <div class="auth-mode-container ${initialMode === 'credentials' ? 'active-mode' : ''}" id="mode-credentials">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <div style="width: 68px; height: 68px; border-radius: 50%; background: #DEF7EC; color: #0E9F6E; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 16px;">
+                <i class="ri-mail-check-line"></i>
+              </div>
+              <h1 class="auth-heading" style="margin-bottom: 8px; font-size: 1.65rem; color: #1A202C;">Account Created Successfully!</h1>
+              <p style="font-size: 0.92rem; color: #718096; line-height: 1.5; max-width: 360px; margin: 0 auto;">
+                Your account is verified. Your login credentials have been sent directly to your registered email address.
+              </p>
+            </div>
+
+            <!-- Email Dispatched Notification Card -->
+            <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 22px; margin-bottom: 20px; text-align: center;">
+              <div style="font-size: 0.75rem; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">
+                LOGIN CREDENTIALS SENT TO
+              </div>
+              <div style="font-size: 1.02rem; font-weight: 800; color: #2B6CB0; background: #EBF8FF; border: 1px solid #BEE3F8; padding: 8px 16px; border-radius: 10px; display: inline-block; word-break: break-all; margin-bottom: 12px;" id="cred-username-display">
+                you@example.com
+              </div>
+
+              <p style="font-size: 0.85rem; color: #4A5568; line-height: 1.5; margin: 0;">
+                Please open your email inbox to retrieve your <strong>Username</strong> and <strong>One-Time Password</strong> for sign in.
+              </p>
+            </div>
+
+            <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 10px 14px; font-size: 0.82rem; color: #92400E; margin-bottom: 20px; line-height: 1.4; display: flex; gap: 8px; align-items: flex-start;">
+              <i class="ri-information-fill" style="font-size: 1.1rem; color: #D97706; margin-top: 1px;"></i>
+              <span>You can change the one-time password to your personal permanent password anytime under <strong>Profile & Password</strong> in your dashboard.</span>
+            </div>
+
+            <button type="button" class="auth-submit-btn" id="proceed-to-dashboard-btn">
+              Proceed to Sign In <i class="ri-arrow-right-line" style="margin-left: 6px;"></i>
+            </button>
           </div>
 
         </div>
@@ -229,7 +268,12 @@ export function initLogin() {
   const modeSignin = document.getElementById('mode-signin');
   const modeRegister = document.getElementById('mode-register');
   const modeOtp = document.getElementById('mode-otp');
+  const modeCredentials = document.getElementById('mode-credentials');
   const leftTagline = document.getElementById('left-tagline');
+
+  let isRecaptchaVerified = false;
+  let resendTimer = null;
+  let countdownSeconds = 45;
 
   function updateLoginUrlSlug(slug) {
     try {
@@ -240,7 +284,7 @@ export function initLogin() {
   }
 
   function showMode(targetMode) {
-    [modeSignin, modeRegister, modeOtp].forEach(m => m?.classList.remove('active-mode'));
+    [modeSignin, modeRegister, modeOtp, modeCredentials].forEach(m => m?.classList.remove('active-mode'));
     if (targetMode === 'signin') {
       updateLoginUrlSlug('user-login');
       modeSignin?.classList.add('active-mode');
@@ -254,16 +298,80 @@ export function initLogin() {
       modeOtp?.classList.add('active-mode');
       const pending = getPendingOTPUser();
       const email = pending ? pending.email : '';
-      if (leftTagline) leftTagline.textContent = `Enter the 4-digit OTP sent to ${email} to complete verification.`;
-      // Auto focus first OTP input box
+      const otpCode = pending ? pending.otpCode : '123456';
+      
+      const emailDisplay = document.getElementById('otp-email-display');
+      if (emailDisplay) emailDisplay.textContent = email;
+      const toastEmail = document.getElementById('toast-email-span');
+      if (toastEmail) toastEmail.textContent = email;
+      const dispatchedOtp = document.getElementById('dispatched-otp-code');
+      if (dispatchedOtp) dispatchedOtp.textContent = otpCode;
+
+      if (leftTagline) leftTagline.textContent = `Enter the 6-digit OTP sent to ${email} to complete verification.`;
+      startResendCountdown();
       setTimeout(() => document.getElementById('otp-1')?.focus(), 100);
+    } else if (targetMode === 'credentials') {
+      updateLoginUrlSlug('account-activated');
+      modeCredentials?.classList.add('active-mode');
+      if (leftTagline) leftTagline.textContent = 'Your account has been created. Use your one-time password to sign in.';
     }
   }
 
+  function startResendCountdown() {
+    clearInterval(resendTimer);
+    countdownSeconds = 45;
+    const countdownEl = document.getElementById('resend-countdown');
+    const resendBtn = document.getElementById('resend-otp-btn');
+    if (resendBtn) resendBtn.disabled = true;
+
+    resendTimer = setInterval(() => {
+      countdownSeconds--;
+      if (countdownEl) countdownEl.textContent = countdownSeconds;
+      if (countdownSeconds <= 0) {
+        clearInterval(resendTimer);
+        if (resendBtn) {
+          resendBtn.disabled = false;
+          resendBtn.innerHTML = 'Resend OTP Now';
+        }
+      }
+    }, 1000);
+  }
+
+  // Navigation Links between modes
   document.getElementById('go-to-register')?.addEventListener('click', (e) => { e.preventDefault(); showMode('register'); });
   document.getElementById('go-to-signin')?.addEventListener('click', (e) => { e.preventDefault(); showMode('signin'); });
   document.getElementById('reg-back-to-signin')?.addEventListener('click', (e) => { e.preventDefault(); showMode('signin'); });
   document.getElementById('otp-back-signin')?.addEventListener('click', (e) => { e.preventDefault(); showMode('signin'); });
+
+  // Interactive reCAPTCHA Click Simulation
+  const recaptchaTrigger = document.getElementById('recaptcha-trigger');
+  const recaptchaWidget = document.getElementById('recaptcha-widget');
+  const recaptchaSpinner = document.getElementById('recaptcha-spinner');
+  const recaptchaCheckmark = document.getElementById('recaptcha-checkmark');
+  const recaptchaErrorMsg = document.getElementById('recaptcha-error-msg');
+  const recaptchaCheckbox = document.getElementById('recaptcha-checkbox');
+
+  recaptchaTrigger?.addEventListener('click', () => {
+    if (isRecaptchaVerified) return;
+
+    if (recaptchaSpinner) recaptchaSpinner.style.display = 'block';
+    if (recaptchaCheckbox) recaptchaCheckbox.style.borderColor = '#1a73e8';
+
+    setTimeout(() => {
+      isRecaptchaVerified = true;
+      if (recaptchaSpinner) recaptchaSpinner.style.display = 'none';
+      if (recaptchaCheckmark) recaptchaCheckmark.style.display = 'block';
+      if (recaptchaCheckbox) {
+        recaptchaCheckbox.style.backgroundColor = '#1a73e8';
+        recaptchaCheckbox.style.borderColor = '#1a73e8';
+      }
+      if (recaptchaWidget) {
+        recaptchaWidget.style.borderColor = '#34D399';
+        recaptchaWidget.style.backgroundColor = '#F0FDF4';
+      }
+      if (recaptchaErrorMsg) recaptchaErrorMsg.style.display = 'none';
+    }, 600);
+  });
 
   // Password Visibility Eye Toggle
   const toggleSigninPw = document.getElementById('toggle-signin-pw');
@@ -276,17 +384,9 @@ export function initLogin() {
     }
   });
 
-  // Demo User Quick Fill
+  // Sign In Form Inputs
   const emailInput = document.getElementById('signin-email');
   const passwordInput = document.getElementById('signin-password');
-  document.querySelectorAll('.demo-user').forEach(user => {
-    user.addEventListener('click', () => {
-      const email = user.getAttribute('data-email');
-      if (emailInput) emailInput.value = email;
-      if (passwordInput) passwordInput.value = 'Admin@1234';
-      showMode('signin');
-    });
-  });
 
   // Sign In Form Submission
   document.getElementById('signin-form')?.addEventListener('submit', (e) => {
@@ -304,12 +404,21 @@ export function initLogin() {
       } else {
         window.location.href = '/user-dashboard';
       }
-    }, 800);
+    }, 600);
   });
 
-  // Register Form Submission -> Triggers OTP Verification Screen (Screenshot 2)
+  // Register Form Submission -> Validates reCAPTCHA and initiates OTP verification
   document.getElementById('register-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
+
+    if (!isRecaptchaVerified) {
+      if (recaptchaErrorMsg) recaptchaErrorMsg.style.display = 'block';
+      if (recaptchaWidget) {
+        recaptchaWidget.style.borderColor = '#E52E3D';
+        recaptchaWidget.style.backgroundColor = '#FFF5F5';
+      }
+      return;
+    }
 
     const fullName = document.getElementById('reg-fullname')?.value.trim();
     const email = document.getElementById('reg-email')?.value.trim();
@@ -320,18 +429,17 @@ export function initLogin() {
 
     initiateRegistration({ fullName, email, phone, role: roleVal, roleLabel });
 
-    const emailDisplay = document.getElementById('otp-email-display');
-    if (emailDisplay) emailDisplay.textContent = email;
-
     showMode('otp');
   });
 
-  // OTP Auto-Focus Navigation Logic
+  // 6-Digit OTP Auto-Focus Navigation Logic
   const otpBoxes = [
     document.getElementById('otp-1'),
     document.getElementById('otp-2'),
     document.getElementById('otp-3'),
-    document.getElementById('otp-4')
+    document.getElementById('otp-4'),
+    document.getElementById('otp-5'),
+    document.getElementById('otp-6')
   ];
 
   otpBoxes.forEach((box, idx) => {
@@ -348,35 +456,59 @@ export function initLogin() {
         otpBoxes[idx - 1].focus();
       }
     });
+
+    box.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const pasteData = (e.clipboardData || window.clipboardData).getData('text').trim().replace(/[^0-9]/g, '');
+      if (pasteData) {
+        for (let i = 0; i < otpBoxes.length; i++) {
+          if (pasteData[i]) {
+            otpBoxes[i].value = pasteData[i];
+          }
+        }
+        otpBoxes[Math.min(pasteData.length, otpBoxes.length - 1)].focus();
+      }
+    });
   });
 
-  // OTP Verification Form Submission
+  // OTP Verification Form Submission -> Transitions to Credentials screen
+  let verifiedCredentials = null;
+
   document.getElementById('otp-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const otpCode = otpBoxes.map(b => b?.value || '').join('');
     const errMsg = document.getElementById('otp-error-msg');
     const btn = document.getElementById('verify-otp-btn');
 
-    if (otpCode.length < 4) {
+    if (otpCode.length < 6) {
       if (errMsg) {
-        errMsg.textContent = 'Please enter all 4 digits of the OTP code.';
+        errMsg.textContent = 'Please enter all 6 digits of the OTP code.';
         errMsg.style.display = 'block';
       }
       return;
     }
 
-    if (btn) btn.textContent = 'Verifying...';
+    if (btn) btn.textContent = 'Verifying Code...';
 
     const result = verifyOTPAndActivate(otpCode);
     if (result.success) {
       if (errMsg) errMsg.style.display = 'none';
-      if (btn) btn.textContent = 'Activated! Opening Dashboard...';
-      alert(`Account Activated Successfully!\nYour Login Email & System Password have been dispatched to your registered email.\n\nClick OK to open your Client User Dashboard.`);
+      if (btn) btn.textContent = 'Verified!';
+
+      verifiedCredentials = result;
+
+      // Dispatch real credentials email to user
+      sendCredentialsEmail(result.user.email, result.user.fullName, result.tempPassword);
+
+      // Update Credentials Screen details
+      const credUserDisplay = document.getElementById('cred-username-display');
+      if (credUserDisplay) credUserDisplay.textContent = result.username || result.user.email;
+
       setTimeout(() => {
-        window.location.href = '/user-dashboard';
-      }, 500);
+        showMode('credentials');
+      }, 400);
     } else {
-      if (btn) btn.textContent = 'Verify & Activate Account';
+      if (btn) btn.textContent = 'Verify OTP & Continue';
       if (errMsg) {
         errMsg.textContent = result.message;
         errMsg.style.display = 'block';
@@ -384,11 +516,37 @@ export function initLogin() {
     }
   });
 
+  // Proceed to Sign In Button (Pre-fills Sign In form with registered email)
+  document.getElementById('proceed-to-dashboard-btn')?.addEventListener('click', () => {
+    if (verifiedCredentials && verifiedCredentials.user) {
+      if (emailInput) emailInput.value = verifiedCredentials.user.email;
+      if (passwordInput) {
+        passwordInput.value = '';
+        setTimeout(() => passwordInput.focus(), 150);
+      }
+    }
+    showMode('signin');
+  });
+
   // Resend OTP handler
   document.getElementById('resend-otp-btn')?.addEventListener('click', (e) => {
     e.preventDefault();
-    alert('A new 4-digit verification code (1234) has been sent to your email and phone.');
+    const pending = getPendingOTPUser();
+    if (!pending) return;
+
+    // Generate fresh OTP code
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    pending.otpCode = newOtp;
+    localStorage.setItem('thanjai_pending_otp_user', JSON.stringify(pending));
+
+    // Send fresh OTP email to user
+    sendOtpEmail(pending.email, pending.fullName, newOtp);
+
+    startResendCountdown();
+    otpBoxes.forEach(b => { if (b) b.value = ''; });
+    otpBoxes[0]?.focus();
   });
 }
 
 document.addEventListener('DOMContentLoaded', initLogin);
+

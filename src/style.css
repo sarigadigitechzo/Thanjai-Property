@@ -241,17 +241,21 @@ a {
 .nav-login-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
+  gap: 9px;
+  padding: 10px 24px;
   border-radius: 30px;
-  border: 1px solid #E2D9CF;
+  border: 1.5px solid #E2D9CF;
   background: #FFF8F3;
   color: #1A1A1A;
-  font-size: 0.9rem;
+  font-size: 0.98rem;
   font-weight: 700;
   text-decoration: none;
   transition: all 0.25s ease;
   box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+
+.nav-login-btn i {
+  font-size: 1.15rem;
 }
 
 .nav-login-btn:hover {
@@ -265,17 +269,21 @@ a {
 .nav-post-property-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 22px;
+  gap: 9px;
+  padding: 10px 24px;
   border-radius: 30px;
   border: none;
   background: #E52E3D;
   color: #FFFFFF;
-  font-size: 0.9rem;
+  font-size: 0.98rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.25s ease;
   box-shadow: 0 4px 14px rgba(229, 46, 61, 0.3);
+}
+
+.nav-post-property-btn i {
+  font-size: 1.15rem;
 }
 
 .nav-post-property-btn:hover {
@@ -1375,14 +1383,14 @@ a {
   width: 100%;
   z-index: 1000;
   transition: all var(--transition-normal);
-  padding: 14px 0;
+  padding: 16px 0;
   background: #FFFFFF;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
 .header-wrapper.scrolled {
-  padding: 10px 0;
+  padding: 12px 0;
   background: #FFFFFF;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
@@ -1404,12 +1412,18 @@ a {
 }
 
 .brand-logo-img {
-  height: 50px;
-  max-height: 50px;
+  height: 58px;
+  max-height: 58px;
   width: auto;
   object-fit: contain;
   mix-blend-mode: multiply;
   display: block;
+  transition: height var(--transition-normal);
+}
+
+.header-wrapper.scrolled .brand-logo-img {
+  height: 48px;
+  max-height: 48px;
 }
 
 .brand-fallback-vector {
@@ -1419,8 +1433,8 @@ a {
 }
 
 .brand-mark {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   background: var(--color-brown);
   border: 2px solid var(--color-orange);
   border-radius: 12px;
@@ -1440,7 +1454,7 @@ a {
 .brand-name {
   font-family: var(--font-sans);
   font-weight: 800;
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   letter-spacing: -0.02em;
   color: var(--color-dark);
   line-height: 1;
@@ -1451,7 +1465,7 @@ a {
 }
 
 .brand-subtext {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-text-muted);
@@ -1461,14 +1475,15 @@ a {
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 32px;
+  gap: 36px;
   list-style: none;
 }
 
 .nav-link {
   color: var(--color-dark);
-  font-weight: 600;
-  font-size: 0.9375rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
   transition: color var(--transition-fast);
   position: relative;
 }
@@ -1480,12 +1495,12 @@ a {
 .nav-link.active::after {
   content: '';
   position: absolute;
-  bottom: -6px;
+  bottom: -8px;
   left: 0;
   width: 100%;
-  height: 2px;
+  height: 3px;
   background: var(--color-orange);
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
 .nav-actions {
@@ -4498,6 +4513,15 @@ a.contact-panel-row-value:hover {
 @media (max-width: 768px) {
   .nav-links {
     display: none;
+  }
+  .nav-actions .nav-login-btn,
+  .nav-actions .nav-post-property-btn,
+  .nav-actions .nav-logout-icon-btn {
+    display: none !important;
+  }
+  .brand-logo-img {
+    height: 52px !important;
+    max-width: 220px !important;
   }
   .mobile-menu-toggle {
     display: block;

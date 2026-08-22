@@ -1,6 +1,6 @@
 export function renderPrivacyView() {
   return `
-    <div class="view-enter privacy-view" style="background: #f8fafc; user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;">
+    <div class="view-enter privacy-view" style="background: #f8fafc;">
       <!-- Dark Luxury Header -->
       <section style="background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); padding: 140px 0 80px; color: white;">
         <div class="container">
@@ -50,7 +50,7 @@ export function renderPrivacyView() {
           </aside>
 
           <!-- Main Content -->
-          <div id="privacy-scroll-container" style="background: #ffffff; padding: 48px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.03); font-family: var(--font-secondary, 'Inter', sans-serif); color: #475569; line-height: 1.8; font-size: 1.05rem; height: calc(100vh - 160px); overflow-y: auto; position: sticky; top: 120px;">
+          <div id="privacy-scroll-container" style="background: #ffffff; padding: 48px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.03); font-family: var(--font-secondary, 'Inter', sans-serif); color: #475569; line-height: 1.8; font-size: 1.05rem;">
             
             <style>
               .privacy-nav-link {
@@ -145,10 +145,9 @@ export function initPrivacyListeners() {
 
   // Handle active state on scroll using IntersectionObserver
   const headings = document.querySelectorAll('.privacy-heading');
-  const scrollContainer = document.getElementById('privacy-scroll-container');
   const observerOptions = {
-    root: scrollContainer,
-    rootMargin: '-20px 0px -80% 0px',
+    root: null,
+    rootMargin: '-80px 0px -70% 0px',
     threshold: 0
   };
 

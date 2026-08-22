@@ -250,6 +250,19 @@ function renderPropertyCard(prop) {
           width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
         " />
         
+        <!-- Ad Type Badge Top Left -->
+        <span style="
+          position: absolute; top: 12px; left: 12px; padding: 4px 10px; border-radius: 6px;
+          font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+          background: ${prop.adType === 'paid' ? '#EBF8FF' : '#FFF5EB'};
+          color: ${prop.adType === 'paid' ? '#2B6CB0' : '#C05621'};
+          border: 1px solid ${prop.adType === 'paid' ? '#BEE3F8' : '#FBD38D'};
+          box-shadow: 0 2px 6px rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 4px;
+        ">
+          <i class="${prop.adType === 'paid' ? 'ri-vip-crown-fill' : 'ri-shield-user-fill'}"></i>
+          ${prop.adType === 'paid' ? 'PAID AD' : 'FREE AD'}
+        </span>
+
         <!-- Status Badge Top Right -->
         <span style="
           position: absolute; top: 12px; right: 12px; padding: 4px 10px; border-radius: 6px;
@@ -276,7 +289,7 @@ function renderPropertyCard(prop) {
         <!-- Owner Badge -->
         <div style="font-size: 0.8rem; font-weight: 700; color: #4A5568; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
           <i class="ri-user-star-line" style="color: #eb5e28;"></i>
-          <span>Owner: ${prop.ownerName || 'Thanjai Property'} ${prop.ownerPhone ? `(${prop.ownerPhone})` : ''}</span>
+          <span>${prop.adType === 'paid' ? 'Direct Owner' : 'Listing Desk'}: ${prop.ownerName || 'Thanjai Property'} ${prop.ownerPhone ? `(${prop.ownerPhone})` : ''}</span>
         </div>
 
         <!-- Bold Price -->
@@ -292,7 +305,7 @@ function renderPropertyCard(prop) {
         <!-- Bottom Action Bar Matching Image 2 -->
         <div style="
           margin-top: auto; padding-top: 14px; border-top: 1px solid #edf2f7;
-          display: flex; justify-content: space-between; align-items: center;
+          display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
         ">
           <!-- Status Dropdown with "Update availability" Tooltip -->
           <div style="position: relative;" title="Update availability">
@@ -301,6 +314,7 @@ function renderPropertyCard(prop) {
               background: #ffffff; color: #2d3748; cursor: pointer; outline: none;
             ">
               <option value="Available" ${status === 'Available' ? 'selected' : ''}>Available</option>
+              <option value="Pending Approval" ${status === 'Pending Approval' ? 'selected' : ''}>Pending Approval</option>
               <option value="Booked" ${status === 'Booked' ? 'selected' : ''}>Booked</option>
               <option value="Sold" ${status === 'Sold' ? 'selected' : ''}>Sold</option>
               <option value="Rented" ${status === 'Rented' ? 'selected' : ''}>Rented</option>
@@ -308,8 +322,17 @@ function renderPropertyCard(prop) {
             </select>
           </div>
 
-          <!-- Icon Action Buttons -->
+          <!-- Icon & Approval Action Buttons -->
           <div style="display: flex; align-items: center; gap: 6px;">
+            ${(approvalStatus === 'Pending Approval' || status === 'Pending Approval') ? `
+              <button class="quick-approve-prop-btn" data-id="${prop.id}" title="Approve & Publish Live" style="
+                padding: 6px 10px; border-radius: 8px; border: none; background: #38A169;
+                color: #ffffff; font-weight: 700; font-size: 0.78rem; display: flex; align-items: center; gap: 4px; cursor: pointer;
+              ">
+                <i class="ri-checkbox-circle-fill"></i> Approve
+              </button>
+            ` : ''}
+
             <button class="view-website-prop-btn" data-id="${prop.id}" title="Preview property details" style="
               width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0; background: #ffffff;
               color: #718096; display: flex; align-items: center; justify-content: center; cursor: pointer;
@@ -1219,6 +1242,19 @@ export function initPropertiesViewListeners() {
         showToast(`Property ${id} deleted from inventory.`, 'ri-delete-bin-line');
         refreshPropertiesView();
       });
+    });
+  });
+
+  // Quick Approve Button
+  document.querySelectorAll('.quick-approve-prop-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (id) {
+        updateProperty(id, { status: 'Available', availability: 'Available', approvalStatus: 'Approved' });
+        showToast(`Property ${id} approved & published live to website!`, 'ri-checkbox-circle-fill');
+        refreshPropertiesView();
+      }
     });
   });
 

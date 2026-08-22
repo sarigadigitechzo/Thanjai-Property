@@ -11,12 +11,12 @@ export function renderFooter() {
           <div>
             <h4 class="footer-col-title">ABOUT THANJAI PROPERTY</h4>
             
-            <a href="/" class="footer-logo nav-route-link" data-route="home" style="display: block; margin-bottom: 16px;">
-              <img src="${brandLogo}" alt="Thanjai Property Logo" style="height: 50px; width: auto; background: #fff; border-radius: 8px; padding: 4px 8px;" />
+            <a href="/" class="footer-logo nav-route-link" data-route="home" style="display: inline-block; margin-bottom: 18px;">
+              <img src="${brandLogo}" alt="Thanjai Property Logo" style="height: 64px; max-width: 100%; width: auto; background: #ffffff; border-radius: 10px; padding: 6px 14px; display: block; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
             </a>
 
-            <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9375rem; line-height: 1.8; margin-bottom: 16px;">
-              Thanjai property Real Estate Land Promoters and Constructions in Thanjavur to buy sale and house land plot commercial industrial apartment
+            <p style="color: rgba(255, 255, 255, 0.78); font-size: 0.92rem; line-height: 1.75; margin-bottom: 16px;">
+              Thanjai Property is a leading real estate consultancy and land promoter in Thanjavur, helping you buy, sell, and rent residential, agricultural, and commercial properties across Tamil Nadu. Explore handpicked properties across Tamil Nadu. Find houses, villas, plots, farmlands, and commercial spaces with verified prices, clear sizes, and exact locations.
             </p>
 
           </div>
@@ -41,7 +41,7 @@ export function renderFooter() {
             <h4 class="footer-col-title">OVERVIEW</h4>
             <ul class="footer-links-list">
               <li><a href="/our-story" class="nav-route-link" data-route="our-story">Our Story</a></li>
-              <li><a href="/discover-properties" class="nav-route-link" data-route="discover">Discover Properties</a></li>
+              <li><a href="/find-your-property" class="nav-route-link" data-route="discover">Find Your Property</a></li>
               <li><a href="/blog" class="nav-route-link" data-route="blog">Blog</a></li>
               <li><a href="/contact-us" class="nav-route-link" data-route="contact-us">Contact Us</a></li>
               <li><a href="/privacy-policy" class="nav-route-link" data-route="privacy">Privacy Policy</a></li>
@@ -54,28 +54,23 @@ export function renderFooter() {
             <h4 class="footer-col-title">OUR SOCIAL MEDIA</h4>
             <ul class="footer-social-list">
               <li>
-                <a href="#" class="social-link">
+                <a href="https://www.facebook.com/profile.php?id=100063582174179" target="_blank" rel="noopener noreferrer" class="social-link" title="Follow Thanjai Property on Facebook">
                   <i class="ri-facebook-fill"></i> Facebook
                 </a>
               </li>
               <li>
-                <a href="#" class="social-link">
-                  <i class="ri-twitter-fill"></i> Twitter
+                <a href="https://x.com/thanjaiproperty" target="_blank" rel="noopener noreferrer" class="social-link" title="Follow Thanjai Property on X (Twitter)">
+                  <i class="ri-twitter-x-fill"></i> Twitter (X)
                 </a>
               </li>
               <li>
-                <a href="#" class="social-link">
-                  <i class="ri-google-fill"></i> Google Plus
+                <a href="https://www.youtube.com/channel/UCfAePuCC2OaNrgVT8Ix5xww?view_as=subscriber" target="_blank" rel="noopener noreferrer" class="social-link" title="Subscribe to Thanjai Property YouTube Channel">
+                  <i class="ri-youtube-fill"></i> YouTube
                 </a>
               </li>
               <li>
-                <a href="#" class="social-link">
-                  <i class="ri-youtube-fill"></i> Youtube
-                </a>
-              </li>
-              <li>
-                <a href="#" class="social-link">
-                  <i class="ri-linkedin-fill"></i> Linkedin
+                <a href="https://www.linkedin.com/in/thanjai-property-9812422b/" target="_blank" rel="noopener noreferrer" class="social-link" title="Connect with Thanjai Property on LinkedIn">
+                  <i class="ri-linkedin-fill"></i> LinkedIn
                 </a>
               </li>
             </ul>

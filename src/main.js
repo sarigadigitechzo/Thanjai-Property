@@ -63,7 +63,7 @@ function parseCurrentRoute() {
   const hash = window.location.hash.toLowerCase().replace(/^#\/?/, '');
 
   if (path.includes('our-story') || hash === 'our-story') return 'our-story';
-  if (path.includes('discover-properties') || path.includes('discover') || hash === 'discover-properties' || hash === 'discover') return 'discover';
+  if (path.includes('find-your-property') || path.includes('find-you-property') || path.includes('discover-properties') || path.includes('discover') || hash === 'find-your-property' || hash === 'discover-properties' || hash === 'discover') return 'discover';
   
   if (hash.startsWith('blog/')) {
     const slug = hash.replace('blog/', '').trim();
@@ -89,7 +89,7 @@ function parseCurrentRoute() {
 function getRoutePath(route) {
   switch (route) {
     case 'our-story': return '/our-story';
-    case 'discover': return '/discover-properties';
+    case 'discover': return '/find-your-property';
     case 'blog': return blogState.selectedPostId ? `/blog/${blogState.selectedPostId}` : '/blog';
     case 'contact': return '/contact-us';
     case 'terms': return '/terms-of-use';
@@ -108,7 +108,7 @@ function updateSeoMetadata(route) {
       desc = "Learn about Thanjai Property's history since 2009, legal Patta title assurance, and district plots presence across Tamil Nadu.";
       break;
     case 'discover':
-      title = "Discover Properties — Luxury Villas, Plots & Farmlands | Thanjai Property";
+      title = "Find Your Property — Luxury Villas, Plots & Farmlands | Thanjai Property";
       desc = "Search and filter luxury villas, independent homes, DTCP layout plots, and Kaveri farm estates across Thanjavur, Trichy, Chennai, and Madurai.";
       break;
     case 'blog':

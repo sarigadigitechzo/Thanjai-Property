@@ -47,7 +47,7 @@ export function renderPostPropertyCTA() {
             <div>
               <button class="btn btn-primary" id="post-cta-trigger-btn" style="padding: 16px 36px; font-size: 1rem;">
                 <i class="ri-add-line" style="font-size: 1.25rem;"></i>
-                <span>CREATE ACCOUNT & POST PROPERTY</span>
+                <span>CREATE ACCOUNT & ADD PROPERTY</span>
               </button>
             </div>
           </div>

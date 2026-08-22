@@ -8,8 +8,8 @@ function formatSizeDisplay(size) {
 }
 
 export function renderHomePropertyShowcase(properties, onSelectProperty, onNavigateToDiscover) {
-  // Select top 3 featured properties for editorial presentation
-  const featured = properties.slice(0, 3);
+  // Select top 4 featured properties for editorial presentation
+  const featured = properties.slice(0, 4);
 
   return `
     <section class="home-property-showcase-section" style="padding: 90px 0; background: #ffffff;">
@@ -25,12 +25,12 @@ export function renderHomePropertyShowcase(properties, onSelectProperty, onNavig
             <div style="font-size: 1rem; font-weight: 700; color: #4a5568; margin-top: 4px;">Explore Property Opportunities Worth Your Attention</div>
           </div>
           <p style="max-width: 520px; color: var(--color-text-muted, #666); font-size: 0.95rem; line-height: 1.6;">
-            Start your search with selected property listings from across Tamil Nadu. From residential houses and premium villas to residential plots, agricultural land, and commercial properties with essential details including location, area, and asking price.
+            Explore handpicked properties across Tamil Nadu. Find houses, villas, plots, farmlands, and commercial spaces with verified prices, clear sizes, and exact locations.
           </p>
         </div>
 
-        <!-- Asymmetric Editorial Showcase Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 32px; margin-bottom: 50px;">
+        <!-- Asymmetric Editorial Showcase Grid (4 Properties) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; margin-bottom: 50px;">
           ${featured.map((prop, idx) => `
             <div class="editorial-prop-card hover-lift" data-id="${prop.id}" style="
               background: #ffffff;

@@ -287,63 +287,120 @@
   text-decoration: underline;
 }
 
-/* RECAPTCHA BOX SIMULATION */
-.recaptcha-box {
+/* INTERACTIVE RECAPTCHA WIDGET */
+.recaptcha-widget {
   background: #F8FAFC;
-  border: 1px solid #E2E8F0;
+  border: 1.5px solid #E2E8F0;
   border-radius: 10px;
   padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: 4px;
+  transition: all 0.25s ease;
 }
 
-.recaptcha-label {
+.recaptcha-checkbox-area {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   cursor: pointer;
+  user-select: none;
 }
 
-.recaptcha-label input {
-  width: 20px;
-  height: 20px;
-  accent-color: #1a73e8;
+.recaptcha-checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 2px solid #C4CBD4;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
-.recaptcha-badge {
-  text-align: right;
+.recaptcha-spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid rgba(26, 115, 232, 0.2);
+  border-top-color: #1a73e8;
+  border-radius: 50%;
+  animation: spinRecaptcha 0.8s linear infinite;
 }
 
-/* OTP VERIFICATION STYLES (MATCHING SCREENSHOT 2) */
+@keyframes spinRecaptcha {
+  to { transform: rotate(360deg); }
+}
+
+.recaptcha-checkmark {
+  display: none;
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 800;
+  animation: checkPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes checkPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.recaptcha-text {
+  font-size: 0.9rem;
+  color: #2D3748;
+  font-weight: 600;
+}
+
+.recaptcha-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* EMAIL NOTIFICATION BANNER */
+.email-dispatch-banner {
+  transition: all 0.2s ease;
+}
+
+.email-dispatch-banner:hover {
+  background: #E1EFFE !important;
+  border-color: #90CDF4 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.12);
+}
+
+/* OTP VERIFICATION STYLES */
 .otp-icon-circle {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: rgba(229, 46, 61, 0.1);
   color: #E52E3D;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  margin: 0 auto 16px;
+  font-size: 1.85rem;
+  margin: 0 auto 12px;
 }
 
 .otp-inputs-row {
   display: flex;
   justify-content: center;
-  gap: 14px;
+  gap: 10px;
   margin: 10px 0;
 }
 
 .otp-box {
-  width: 58px;
-  height: 64px;
-  border-radius: 12px;
+  width: 46px;
+  height: 54px;
+  border-radius: 10px;
   border: 2px solid #E2E8F0;
   background: #F8FAFC;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 800;
   text-align: center;
   color: #1A202C;
@@ -354,7 +411,7 @@
 .otp-box:focus {
   border-color: #E52E3D;
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(229, 46, 61, 0.15);
+  box-shadow: 0 0 0 3px rgba(229, 46, 61, 0.15);
 }
 
 /* DEMO LOGIN ACCOUNTS GRID */
@@ -411,15 +468,46 @@
   text-overflow: ellipsis;
 }
 
+.login-brand-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-brand-area img {
+  height: 68px;
+  max-width: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.login-brand-area img:hover {
+  transform: scale(1.03);
+}
+
 /* RESPONSIVE DESIGN */
 @media (max-width: 768px) {
   .login-split-card {
     grid-template-columns: 1fr;
+    border-radius: 18px;
   }
   .login-left-panel {
+    padding: 24px 20px 16px 20px;
+    min-height: auto;
+  }
+  .login-brand-area {
+    margin-bottom: 0;
+  }
+  .login-brand-area img {
+    height: 54px;
+  }
+  .login-left-tagline {
     display: none;
   }
   .login-right-panel {
-    padding: 32px 24px;
+    padding: 28px 20px;
   }
 }

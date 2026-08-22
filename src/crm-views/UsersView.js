@@ -40,7 +40,7 @@ export function renderUsersView() {
             <span class="kpi-title">INDIVIDUAL OWNERS</span>
             <div class="kpi-icon" style="background: #feebc8; color: #dd6b20;"><i class="ri-user-3-line"></i></div>
           </div>
-          <div class="kpi-value">${users.filter(u => (u.role && u.role.toLowerCase().includes('owner')) || u.roleCode === 'individualowner' || u.roleCode === 'owner').length}</div>
+          <div class="kpi-value">${users.filter(u => getDisplayRole(u) === 'Individual Owner').length}</div>
           <div class="kpi-trend neutral"><i class="ri-shield-check-line"></i> Land owners</div>
         </div>
 
@@ -49,7 +49,7 @@ export function renderUsersView() {
             <span class="kpi-title">AGENTS & BROKERS</span>
             <div class="kpi-icon" style="background: #e6fffa; color: #319795;"><i class="ri-briefcase-line"></i></div>
           </div>
-          <div class="kpi-value">${users.filter(u => (u.role && u.role.toLowerCase().includes('agent')) || u.roleCode === 'agentbroker' || u.roleCode === 'agent').length}</div>
+          <div class="kpi-value">${users.filter(u => getDisplayRole(u) === 'Agent / Broker').length}</div>
           <div class="kpi-trend neutral"><i class="ri-building-line"></i> Network pros</div>
         </div>
 
@@ -58,7 +58,7 @@ export function renderUsersView() {
             <span class="kpi-title">BUILDERS & DEVS</span>
             <div class="kpi-icon" style="background: #faf5ff; color: #805ad5;"><i class="ri-community-line"></i></div>
           </div>
-          <div class="kpi-value">${users.filter(u => (u.role && u.role.toLowerCase().includes('builder')) || u.roleCode === 'builderdeveloper' || u.roleCode === 'builder').length}</div>
+          <div class="kpi-value">${users.filter(u => getDisplayRole(u) === 'Builder / Developer').length}</div>
           <div class="kpi-trend neutral"><i class="ri-layout-line"></i> Layout developers</div>
         </div>
       </div>
@@ -110,6 +110,24 @@ export function renderUsersView() {
   `;
 }
 
+function getDisplayRole(u) {
+  const r = (u.role || u.roleLabel || u.roleCode || '').toLowerCase();
+  const email = (u.email || '').toLowerCase();
+  if (r.includes('builder') || email.includes('builder')) return 'Builder / Developer';
+  if (r.includes('agent') || r.includes('broker') || email.includes('agent')) return 'Agent / Broker';
+  return 'Individual Owner';
+}
+
+function getRoleBadgeHtml(roleName) {
+  if (roleName === 'Builder / Developer') {
+    return `<span style="background: rgba(128,90,213,0.12); color: #805ad5; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; display: inline-block; white-space: nowrap;"><i class="ri-community-line" style="margin-right: 3px;"></i> Builder / Developer</span>`;
+  }
+  if (roleName === 'Agent / Broker') {
+    return `<span style="background: rgba(49,151,149,0.12); color: #319795; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; display: inline-block; white-space: nowrap;"><i class="ri-briefcase-line" style="margin-right: 3px;"></i> Agent / Broker</span>`;
+  }
+  return `<span style="background: rgba(49,130,206,0.12); color: #3182ce; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; display: inline-block; white-space: nowrap;"><i class="ri-user-3-line" style="margin-right: 3px;"></i> Individual Owner</span>`;
+}
+
 function renderUsersRows(users, allProperties) {
   if (users.length === 0) {
     return `
@@ -122,12 +140,13 @@ function renderUsersRows(users, allProperties) {
   }
 
   return users.map(u => {
+    const userRole = getDisplayRole(u);
     const userProps = allProperties.filter(p => 
       (p.userEmail && u.email && p.userEmail.toLowerCase() === u.email.toLowerCase()) || 
       (p.userId && u.id && p.userId === u.id) || 
-      (p.ownerPhone && u.phone && p.ownerPhone === u.phone) || 
-      (p.ownerName && u.fullName && p.ownerName.toLowerCase().includes(u.fullName.toLowerCase())) ||
-      (p.listedBy && u.fullName && p.listedBy.toLowerCase().includes(u.fullName.toLowerCase()))
+      (p.ownerPhone && u.phone && String(p.ownerPhone).replace(/\D/g, '') === String(u.phone).replace(/\D/g, '')) || 
+      (p.ownerName && u.fullName && (p.ownerName.toLowerCase().includes(u.fullName.toLowerCase()) || u.fullName.toLowerCase().includes(p.ownerName.toLowerCase()))) ||
+      (p.listedBy && u.fullName && (p.listedBy.toLowerCase().includes(u.fullName.toLowerCase()) || u.fullName.toLowerCase().includes(p.listedBy.toLowerCase())))
     );
     const userPropsCount = userProps.length;
     
@@ -135,16 +154,22 @@ function renderUsersRows(users, allProperties) {
       <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
         <td style="padding: 14px 16px; font-weight: 700; color: var(--os-luxury-orange);">${u.id}</td>
         <td style="padding: 14px 16px; font-weight: 700;">${u.fullName}</td>
-        <td style="padding: 14px 16px; color: var(--os-gray-600);">${u.email}</td>
+        <td style="padding: 14px 16px; color: var(--os-gray-600);">
+          <div>${u.email}</div>
+          <div style="margin-top: 4px;">
+            ${u.isTemporaryPassword 
+              ? `<span style="color: #DD6B20; font-size: 0.72rem; font-weight: 700; background: #FFFAF0; border: 1px solid #FEEBC8; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;"><i class="ri-key-2-line"></i> Temp PW: <strong>${u.temporaryPassword || u.password}</strong></span>` 
+              : `<span style="color: #38A169; font-size: 0.72rem; font-weight: 700; background: #F0FDF4; border: 1px solid #DCFCE7; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;"><i class="ri-shield-check-line"></i> Custom Password</span>`
+            }
+          </div>
+        </td>
         <td style="padding: 14px 16px;">
           <a href="tel:${u.phone}" style="color: #3182ce; font-weight: 700; text-decoration: none;">
             ${u.phone || 'N/A'}
           </a>
         </td>
         <td style="padding: 14px 16px;">
-          <span style="background: rgba(49,130,206,0.12); color: #3182ce; font-weight: 700; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; display: inline-block; white-space: nowrap;">
-            ${u.role}
-          </span>
+          ${getRoleBadgeHtml(userRole)}
         </td>
         <td style="padding: 14px 16px; font-weight: 800; color: var(--os-charcoal);">
           ${userPropsCount} Properties
@@ -179,12 +204,13 @@ export function initUsersView() {
     const role = roleFilter?.value || 'all';
 
     let filtered = getRegisteredUsers().filter(u => {
+      const uRole = getDisplayRole(u);
       const matchQuery = !query || 
         u.fullName.toLowerCase().includes(query) || 
         u.email.toLowerCase().includes(query) || 
         (u.phone && u.phone.includes(query));
       
-      const matchRole = role === 'all' || u.role.toLowerCase().includes(role.toLowerCase());
+      const matchRole = role === 'all' || uRole.toLowerCase().includes(role.toLowerCase()) || (u.role && u.role.toLowerCase().includes(role.toLowerCase()));
       return matchQuery && matchRole;
     });
 
@@ -208,6 +234,11 @@ export function initUsersView() {
   searchInput?.addEventListener('input', filterUsers);
   roleFilter?.addEventListener('change', filterUsers);
   attachRowListeners();
+
+  // Auto-refresh when user registers or updates in another view
+  window.addEventListener('userAuthUpdated', filterUsers);
+  window.addEventListener('propertiesUpdated', filterUsers);
+  window.addEventListener('storage', filterUsers);
 }
 
 function openUserPropsModalBox(userName, userEmail, userPhone) {

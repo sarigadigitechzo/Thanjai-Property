@@ -25,13 +25,13 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
               <a href="/our-story" class="nav-link nav-route-link ${currentRoute === 'our-story' ? 'active' : ''}" data-route="our-story">Our Story</a>
             </li>
             <li>
-              <a href="/discover-properties" class="nav-link nav-route-link ${currentRoute === 'discover' ? 'active' : ''}" data-route="discover">Discover Properties</a>
+              <a href="/find-your-property" class="nav-link nav-route-link ${currentRoute === 'discover' ? 'active' : ''}" data-route="discover">Find Your Property</a>
             </li>
             <li>
               <a href="/blog" class="nav-link nav-route-link ${currentRoute === 'blog' ? 'active' : ''}" data-route="blog">Blog</a>
             </li>
             <li>
-              <a href="/contact-us" class="nav-link nav-route-link ${currentRoute === 'contact' ? 'active' : ''}" data-route="contact">Contact</a>
+              <a href="/contact-us" class="nav-link nav-route-link ${currentRoute === 'contact' ? 'active' : ''}" data-route="contact">Contact Us</a>
             </li>
           </ul>
 
@@ -49,9 +49,9 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
               </a>
             `}
 
-            <a href="${currentUser ? '/user-dashboard' : '/user-register'}" class="nav-post-property-btn" id="nav-post-property-btn" title="Post Property for Sale or Rent">
+            <a href="${currentUser ? '/user-dashboard' : '/user-register'}" class="nav-post-property-btn" id="nav-post-property-btn" title="Add New Property for Sale or Rent">
               <i class="ri-home-4-line"></i>
-              <span>Post Property</span>
+              <span>Add New Property</span>
             </a>
 
             ${currentUser ? `
@@ -84,13 +84,33 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
           </button>
         </div>
 
-        <ul style="list-style: none; display: flex; flex-direction: column; gap: 20px; font-size: 1.1rem; font-weight: 600;">
+        <ul style="list-style: none; display: flex; flex-direction: column; gap: 18px; font-size: 1.1rem; font-weight: 600;">
           <li><a href="/" class="mobile-nav-link nav-route-link ${currentRoute === 'home' ? 'active' : ''}" data-route="home" style="color: #fff; text-decoration: none;">Home</a></li>
           <li><a href="/our-story" class="mobile-nav-link nav-route-link ${currentRoute === 'our-story' ? 'active' : ''}" data-route="our-story" style="color: #fff; text-decoration: none;">Our Story</a></li>
-          <li><a href="/discover-properties" class="mobile-nav-link nav-route-link ${currentRoute === 'discover' ? 'active' : ''}" data-route="discover" style="color: #fff; text-decoration: none;">Discover Properties</a></li>
+          <li><a href="/find-your-property" class="mobile-nav-link nav-route-link ${currentRoute === 'discover' ? 'active' : ''}" data-route="discover" style="color: #fff; text-decoration: none;">Find Your Property</a></li>
           <li><a href="/blog" class="mobile-nav-link nav-route-link ${currentRoute === 'blog' ? 'active' : ''}" data-route="blog" style="color: #fff; text-decoration: none;">Blog</a></li>
-          <li><a href="/contact-us" class="mobile-nav-link nav-route-link ${currentRoute === 'contact' ? 'active' : ''}" data-route="contact" style="color: #fff; text-decoration: none;">Contact</a></li>
+          <li><a href="/contact-us" class="mobile-nav-link nav-route-link ${currentRoute === 'contact' ? 'active' : ''}" data-route="contact" style="color: #fff; text-decoration: none;">Contact Us</a></li>
         </ul>
+
+        <!-- Mobile Drawer Action Buttons -->
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 28px; margin-bottom: 20px;">
+          ${currentUser ? `
+            <a href="/user-dashboard" class="mobile-drawer-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
+              <i class="ri-user-3-line"></i>
+              <span>My Account</span>
+            </a>
+          ` : `
+            <a href="/user-login" class="mobile-drawer-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
+              <i class="ri-user-3-line"></i>
+              <span>Login</span>
+            </a>
+          `}
+
+          <a href="${currentUser ? '/user-dashboard' : '/user-register'}" class="mobile-drawer-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 30px; background: #E52E3D; color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 14px rgba(229,46,61,0.4);">
+            <i class="ri-home-4-line"></i>
+            <span>Add New Property</span>
+          </a>
+        </div>
 
         <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: rgba(255,255,255,0.7);">
           <div style="margin-bottom: 6px;"><i class="ri-phone-line" style="color: var(--color-orange, #eb5e28);"></i> +91 94431 25009</div>

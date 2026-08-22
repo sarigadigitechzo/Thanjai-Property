@@ -387,6 +387,15 @@
   border: none !important;
 }
 
+.ad-type-choice-card {
+  cursor: pointer;
+}
+
+.ad-type-choice-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.08) !important;
+}
+
 @media (max-width: 900px) {
   .user-sidebar {
     width: 220px;
