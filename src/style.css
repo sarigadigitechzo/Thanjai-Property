@@ -135,6 +135,14 @@ a {
   display: inline-block;
 }
 
+.eyebrow-center::after {
+  content: '';
+  width: 24px;
+  height: 2px;
+  background: var(--color-orange);
+  display: inline-block;
+}
+
 .eyebrow-dark {
   color: var(--color-orange);
 }
@@ -462,11 +470,8 @@ a {
 
 /* 2. Asymmetric Showcase (Perfect Top Y-Alignment) */
 .editorial-asymmetric-showcase {
-  display: grid;
-  grid-template-columns: 1.65fr 1fr;
-  gap: 32px;
-  align-items: start;
-  margin-top: 0;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 /* Automatic Featured Hero Property Slider */
@@ -4443,7 +4448,7 @@ a.contact-panel-row-value:hover {
     gap: 32px;
   }
   .editorial-asymmetric-showcase {
-    grid-template-columns: 1fr;
+    max-width: 100%;
   }
   .editorial-hero-media-wrap {
     min-height: 440px;

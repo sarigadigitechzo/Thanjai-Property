@@ -65,18 +65,47 @@ export function renderSiteVisitsView() {
   `;
 }
 
-export function initSiteVisitsView() {
+import { fetchFromAPI } from '../utils/api.js';
+
+export async function initSiteVisitsView() {
   // --- Storage & Dynamic Rendering ---
-  let visits = JSON.parse(localStorage.getItem('thanjai_visits'));
-  if (!visits || visits.length === 0) {
-    // initialize mockup data
-    visits = [
-      { id: 1, date: '14', month: 'Aug', hours: '10', mins: '00', ampm: 'AM', clientName: 'Ravi Kumar', phone: '+91 98765 43210', property: 'Premium Villa, Anna Nagar' },
-      { id: 2, date: '14', month: 'Aug', hours: '02', mins: '30', ampm: 'PM', clientName: 'Priya Sharma', phone: '+91 87654 32109', property: 'Commercial Space, T. Nagar' },
-      { id: 3, date: '15', month: 'Aug', hours: '11', mins: '00', ampm: 'AM', clientName: 'Karthik V G', phone: '8015****59', property: 'Plot, Madurai' }
-    ];
-    localStorage.setItem('thanjai_visits', JSON.stringify(visits));
+  let visits = [];
+  try {
+    const data = await fetchFromAPI('/site_visits');
+    if (data && Array.isArray(data)) {
+      visits = data.map(v => {
+        const vd = new Date(v.visitDate);
+        const hours = vd.getHours();
+        const mins = vd.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const h12 = hours % 12 || 12;
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        // Use notes to store extra data if possible, or fallback to leadId
+        let clientName = v.leadId;
+        let property = v.propertyId;
+        try { if(v.notes) { const n = JSON.parse(v.notes); clientName = n.clientName || clientName; property = n.property || property; } } catch(e){}
+
+        return {
+          id: v.id,
+          date: vd.getDate().toString(),
+          month: monthNames[vd.getMonth()],
+          hours: h12.toString().padStart(2, '0'),
+          mins: mins,
+          ampm: ampm,
+          clientName: clientName,
+          phone: '', // missing
+          property: property,
+          status: v.status
+        };
+      });
+    }
+  } catch (error) {
+    console.error('API Error:', error);
+    visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
   }
+
+
 
   let currentMonth = 7; // August (0-indexed)
   let currentYear = 2026;
@@ -168,12 +197,12 @@ export function initSiteVisitsView() {
     });
   };
 
-  const renderAgenda = (day) => {
+  const renderAgenda = async (day) => {
     if (!agendaContainer) return;
     const monthStr = monthNames[currentMonth];
     
-    // Refresh from localStorage
-    visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
+    // Use the initialized visits, wait for it if needed (assuming visits is global inside initSiteVisitsView)
+    // No need to fetch from localStorage since we fetched from API on init.
     
     const dayVisits = visits.filter(v => parseInt(v.date) === parseInt(day) && v.month === monthStr);
     
@@ -261,10 +290,22 @@ export function initSiteVisitsView() {
       hours = hours % 12 || 12;
       const mins = dateObj.getMinutes().toString().padStart(2, '0');
 
-      // Save to localStorage
-      visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
+      // Save to API
+      const newVisit = {
+        id: `SV-${Date.now()}`,
+        visitDate: datetime.replace('T', ' ') + ':00',
+        status: 'Scheduled',
+        assignedTo: 'Aishwarya R.',
+        notes: JSON.stringify({ clientName, property }) // Store mock fields in notes
+      };
+
+      fetchFromAPI('/site_visits', {
+        method: 'POST',
+        body: JSON.stringify(newVisit)
+      }).catch(e => console.error("API Error", e));
+
       visits.push({
-        id: Date.now(),
+        id: newVisit.id,
         date: day,
         month: monthNames[dateObj.getMonth()],
         hours: hours.toString(),
@@ -275,7 +316,6 @@ export function initSiteVisitsView() {
         property: property || 'TBD',
         isNew: true
       });
-      localStorage.setItem('thanjai_visits', JSON.stringify(visits));
 
       // clear inputs
       document.getElementById('sv-client-name').value = '';

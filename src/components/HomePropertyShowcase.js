@@ -85,7 +85,7 @@ export function renderHomePropertyShowcase(properties, onSelectProperty, onNavig
         <div style="text-align: center;">
           <button class="btn btn-primary" id="showcase-discover-all-btn" style="padding: 16px 40px; font-size: 1.05rem; border-radius: 12px;">
             <i class="ri-compass-3-line" style="font-size: 1.25rem;"></i>
-            <span>Explore All Properties in Discover</span>
+            <span>View More Properties</span>
           </button>
         </div>
 

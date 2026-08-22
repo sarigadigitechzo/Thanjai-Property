@@ -265,7 +265,6 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
-    defaultUrl: "/images/tn_industrial.jpg",
     description: "Marquee tile for Industrial Land asset class."
   },
 
@@ -404,18 +403,48 @@ export const DEFAULT_SITE_IMAGES = {
   }
 };
 
+import { fetchFromAPI } from './api.js';
+
 const STORAGE_KEY = 'thanjai_site_images';
 const AUDIT_LOG_KEY = 'thanjai_audit_logs';
 
-// Get current saved custom images map
-export function getSavedSiteImages() {
+let siteImagesCache = null;
+let auditLogsCache = null;
+
+export async function initSiteImagesStore() {
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : {};
+    const imagesData = await fetchFromAPI('/site_images');
+    if (imagesData && Array.isArray(imagesData) && imagesData.length > 0) {
+      siteImagesCache = {};
+      imagesData.forEach(img => {
+        siteImagesCache[img.id] = img.currentUrl;
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(siteImagesCache));
+    }
+  } catch (error) {}
+
+  try {
+    const auditData = await fetchFromAPI('/audit_logs');
+    if (auditData && Array.isArray(auditData) && auditData.length > 0) {
+      auditLogsCache = auditData;
+      localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(auditLogsCache));
+    }
+  } catch (error) {}
+}
+
+function getSavedSiteImages() {
+  if (siteImagesCache) return siteImagesCache;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      siteImagesCache = JSON.parse(saved);
+      return siteImagesCache;
+    }
   } catch (e) {
-    console.error("Error reading site images from localStorage", e);
-    return {};
+    console.error("Error parsing saved site images", e);
   }
+  siteImagesCache = {};
+  return siteImagesCache;
 }
 
 // Get full image metadata with active image URL (custom or default)
@@ -470,6 +499,13 @@ export function updateSiteImage(key, newUrl) {
 
   // Notify listeners
   window.dispatchEvent(new CustomEvent('siteImagesUpdated', { detail: { key, newUrl } }));
+  
+  // Async background sync
+  fetchFromAPI(`/site_images/${key}`, {
+    method: 'PUT',
+    body: JSON.stringify({ currentUrl: newUrl })
+  }).catch(e => console.error("API sync error", e));
+  
   return true;
 }
 
@@ -511,9 +547,13 @@ export function resetAllSiteImages() {
 
 // Audit Log Helpers
 export function getAuditLogs() {
+  if (auditLogsCache) return auditLogsCache;
   try {
     const logs = localStorage.getItem(AUDIT_LOG_KEY);
-    if (logs) return JSON.parse(logs);
+    if (logs) {
+      auditLogsCache = JSON.parse(logs);
+      return auditLogsCache;
+    }
   } catch (e) {
     console.error("Error reading audit logs", e);
   }
@@ -558,5 +598,12 @@ export function addAuditLog(entry) {
     details: entry.details
   };
   logs.unshift(newEntry);
-  localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(logs.slice(0, 100))); // keep latest 100
+  auditLogsCache = logs.slice(0, 100);
+  localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(auditLogsCache)); // keep latest 100
+  
+  // Async background sync
+  fetchFromAPI(`/audit_logs`, {
+    method: 'POST',
+    body: JSON.stringify(newEntry)
+  }).catch(e => console.error("API sync error", e));
 }

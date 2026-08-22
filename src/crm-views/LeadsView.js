@@ -285,26 +285,61 @@ export function renderLeadsView() {
   `;
 }
 
+import { fetchFromAPI } from '../utils/api.js';
+let cachedLeads = [];
+
 // Data Store Initializer
-function initStore() {
-  let leads = localStorage.getItem('thanjai_leads');
-  if (!leads) {
-    const now = Date.now();
-    const dummyData = [
-      { id: 1, name: 'mm', mobile: '9566321457', type: 'Plot', area: '', budgetMin: '', budgetMax: '', source: 'Manual', status: 'Contacted', assignTo: 'Unassigned', followup: '—', createdAt: now - (10 * 86400000) },
-      { id: 2, name: 'cc', mobile: '9585598263', type: 'Any', area: '', budgetMin: '', budgetMax: '3000000', source: 'Manual', status: 'Follow Up', assignTo: 'Unassigned', followup: '—', createdAt: now - (5 * 86400000) },
-      { id: 3, name: 'esther', mobile: '9585598263', type: 'Plot', area: 'mc road', budgetMin: '', budgetMax: '3000000', source: 'Whatsapp', status: 'Follow Up', assignTo: 'Unassigned', followup: '—', createdAt: now - (2 * 86400000) },
-      { id: 4, name: 'Manikandan', mobile: '918807158206', type: 'Plot', area: 'thanjavur new bus stand', budgetMin: '', budgetMax: '10000000', source: 'Website Form', status: 'Negotiation', assignTo: 'Kavitha Murugan', followup: '12 Aug 2026', createdAt: now }
-    ];
-    localStorage.setItem('thanjai_leads', JSON.stringify(dummyData));
+export async function initLeadsView() {
+  try {
+    const data = await fetchFromAPI('/leads');
+    if (data && Array.isArray(data)) {
+      cachedLeads = data.map(l => {
+        let mobile = l.phone;
+        let budgetMax = l.budget;
+        let type = l.propertyType;
+        
+        return {
+          id: parseInt(l.id) || Date.now(),
+          name: l.name,
+          mobile: mobile,
+          whatsapp: mobile,
+          email: l.email,
+          country: 'India',
+          city: 'Thanjavur',
+          area: '',
+          budgetMin: '',
+          budgetMax: budgetMax,
+          bedrooms: '',
+          notes: '',
+          type: type,
+          source: l.source,
+          assignTo: l.assignedTo,
+          status: l.status,
+          followup: '—',
+          createdAt: Date.now(),
+          timeline: []
+        };
+      });
+    }
+  } catch (err) {
+    console.error('API Error:', err);
+    cachedLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
   }
+  
+
+  
+  // Call init logic that binds events
+  bindLeadEvents();
+  renderTable();
 }
 
 function getLeads() {
-  return JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+  return cachedLeads;
 }
 
 function saveLeads(leads) {
+  cachedLeads = leads;
+  // Fallback save just in case
   localStorage.setItem('thanjai_leads', JSON.stringify(leads));
 }
 
@@ -416,11 +451,7 @@ function renderTable() {
   }).join('');
 }
 
-
-export function initLeadsView() {
-  initStore();
-  renderTable();
-
+function bindLeadEvents() {
   // Initialize Custom Selects
   const customSelects = document.querySelectorAll('.os-custom-select');
   
@@ -504,7 +535,7 @@ export function initLeadsView() {
 
   // Save / Update Lead Logic
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       const name = document.getElementById('lead-name').value.trim();
       const mobile = document.getElementById('lead-mobile').value.trim();
       
@@ -517,10 +548,9 @@ export function initLeadsView() {
       const type = document.getElementById('lead-type-select').querySelector('.select-value').textContent;
       const source = document.getElementById('lead-source-select').querySelector('.select-value').textContent;
       const assignTo = document.getElementById('lead-assign-select').querySelector('.select-value').textContent;
-      const status = document.querySelector('.os-filter-bar .select-value').textContent === 'All statuses' ? 'New' : 'New'; // default to New for local demo
 
       const leadData = {
-        id: idField ? parseInt(idField) : Date.now(),
+        id: idField ? idField : Date.now().toString(),
         name,
         mobile,
         whatsapp: document.getElementById('lead-whatsapp').value,
@@ -535,29 +565,25 @@ export function initLeadsView() {
         type,
         source,
         assignTo,
-        status: idField ? undefined : 'New', // preserve status if edit later
+        status: idField ? undefined : 'New',
         followup: document.getElementById('lead-followup').value || '—',
-        createdAt: Date.now(),
-        timeline: idField ? undefined : [{ type: 'system', message: 'Lead created manually', author: 'Aishwarya Raman', date: new Date().toISOString() }]
+        createdAt: Date.now()
       };
 
-      let leads = getLeads();
-      if (idField) {
-        const idx = leads.findIndex(l => l.id === leadData.id);
-        if (idx !== -1) {
-           // preserve existing status, createdAt, and timeline during edit
-           leadData.status = leads[idx].status; 
-           leadData.createdAt = leads[idx].createdAt || Date.now();
-           leadData.timeline = leads[idx].timeline || [];
-           leads[idx] = leadData;
-        }
-      } else {
-        leads.unshift(leadData);
+      try {
+        await fetchFromAPI('/leads', { 
+          method: idField ? 'PUT' : 'POST', 
+          body: JSON.stringify(leadData) 
+        });
+        
+        // Refresh local cache
+        const data = await fetchFromAPI('/leads');
+        saveLeads(data);
+        renderTable();
+        closeModal();
+      } catch (e) {
+        console.error(e);
       }
-      
-      saveLeads(leads);
-      renderTable();
-      closeModal();
     });
   }
 

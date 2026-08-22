@@ -2,9 +2,10 @@
 
 // api.js - Centralized fetch wrapper for Node.js backend
 
-// Since cPanel Node.js is broken, we run the backend locally but it points to the LIVE MySQL DB.
-// This allows full local development with live data!
-const API_BASE_URL = '/api.php/';
+// Automatically use the live server database when running locally for testing.
+const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'https://thanjaiproperty.com/api.php'
+  : '/api.php';
 
 export async function fetchFromAPI(endpoint, options = {}) {
   try {

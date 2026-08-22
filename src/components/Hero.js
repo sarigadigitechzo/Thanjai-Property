@@ -27,9 +27,7 @@ export function renderHero() {
           Find a Property That<br>Fits Your Future.
         </h1>
 
-        <p class="hero-subtitle">
-          Buy, Sell, Rent & Explore Properties Across Tamil Nadu. Discover homes, villas, apartments, residential plots, agricultural land, commercial spaces, and industrial real-estate opportunities built around your goals.
-        </p>
+
       </div>
 
       <!-- 2. Floating Luxury Property Search Panel -->
