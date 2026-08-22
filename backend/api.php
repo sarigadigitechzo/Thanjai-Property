@@ -37,8 +37,12 @@ if ($resource === 'properties') {
         $images = json_encode($data['images'] ?? []);
         $features = json_encode($data['features'] ?? []);
         $stmt->bind_param("sssssssdsssssiissssssssssss", $data['id'], $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $images, $data['description'], $features);
-        $stmt->execute();
-        echo json_encode(["message" => "Property created successfully"]);
+        if ($stmt->execute()) {
+            echo json_encode(["message" => "Property created successfully"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        }
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
