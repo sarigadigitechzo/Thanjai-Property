@@ -16,11 +16,6 @@ export function renderBlogSection(onNavigateToBlog, onSelectPost) {
             </h2>
             <div style="font-size: 0.95rem; font-weight: 700; color: #4a5568; margin-top: 4px;">Learn Before You Buy, Sell or Invest</div>
           </div>
-
-          <button class="btn btn-outline-dark explore-blog-nav-btn" id="home-explore-blog-btn" style="display: inline-flex; align-items: center; gap: 8px;">
-            <span>Explore All Articles</span>
-            <i class="ri-arrow-right-line"></i>
-          </button>
         </div>
 
         <!-- 3 Cards Grid -->
@@ -68,6 +63,12 @@ export function renderBlogSection(onNavigateToBlog, onSelectPost) {
           `).join('')}
         </div>
 
+        <div style="text-align: center; margin-top: 48px;">
+          <button class="btn btn-brown explore-blog-nav-btn" id="home-explore-blog-btn" style="display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; font-size: 1.05rem; border-radius: 12px;">
+            <span>Explore All Articles</span>
+            <i class="ri-arrow-right-line"></i>
+          </button>
+        </div>
       </div>
     </section>
   `;

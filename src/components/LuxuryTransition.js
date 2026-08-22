@@ -4,7 +4,7 @@ export function renderLuxuryTransition() {
     <section class="dark-luxury-section">
       <div class="container">
         <div class="dark-luxury-inner">
-          <span class="eyebrow eyebrow-dark">WHY THANJAI PROPERTY?</span>
+          <span class="eyebrow eyebrow-center eyebrow-dark">WHY THANJAI PROPERTY?</span>
           
           <h2 class="heading-display-light" style="margin-top: 16px;">
             Local Understanding.<br>Wider Property Access.
@@ -45,10 +45,8 @@ export function renderLuxuryTransition() {
 
         <!-- Heading Block -->
         <div class="trust-heading-block" id="trust-heading-block">
-          <div class="trust-eyebrow-row">
-            <span class="trust-eyebrow-line"></span>
-            <span class="eyebrow">OUR CORE VALUES</span>
-            <span class="trust-eyebrow-line"></span>
+          <div class="trust-eyebrow-row" style="justify-content: center; margin-bottom: 16px;">
+            <span class="eyebrow eyebrow-center">OUR CORE VALUES</span>
           </div>
           <h2 class="heading-section trust-main-heading">
             Built Around the Real Needs of the Property Market
@@ -108,7 +106,7 @@ export function renderLuxuryTransition() {
         <!-- FREQUENTLY ASKED QUESTIONS ACCORDION SECTION -->
         <div style="margin-top: 80px; background: #faf8f5; border-radius: 24px; padding: 40px; border: 1px solid rgba(0,0,0,0.06);">
           <div style="text-align: center; max-width: 640px; margin: 0 auto 36px auto;">
-            <span class="eyebrow" style="color: var(--color-orange); font-weight: 800; letter-spacing: 0.12em;">FREQUENTLY ASKED QUESTIONS</span>
+            <span class="eyebrow eyebrow-center" style="color: var(--color-orange); font-weight: 800; letter-spacing: 0.12em;">FREQUENTLY ASKED QUESTIONS</span>
             <h2 style="font-family: var(--font-serif); font-size: 2.1rem; font-weight: 800; color: #1a1a1a; margin-top: 8px;">
               Everything You Need to Know
             </h2>

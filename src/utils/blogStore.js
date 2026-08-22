@@ -89,7 +89,33 @@ export const INITIAL_BLOG_POSTS = [
   }
 ];
 
+import { fetchFromAPI } from './api.js';
+
+let blogPostsCache = loadBlogPostsFromStorage();
+let isInitialized = false;
+
+export async function initBlogStore() {
+  try {
+    const data = await fetchFromAPI('/blog');
+    if (data && Array.isArray(data) && data.length > 0) {
+      blogPostsCache = data;
+      saveBlogPostsToStorage(blogPostsCache);
+    }
+  } catch (error) {
+    // Graceful fallback to local cache
+  }
+  isInitialized = true;
+  return blogPostsCache;
+}
+
 export function getBlogPosts() {
+  if (!blogPostsCache || blogPostsCache.length === 0) {
+    blogPostsCache = loadBlogPostsFromStorage();
+  }
+  return blogPostsCache;
+}
+
+function loadBlogPostsFromStorage() {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (data !== null) {
@@ -152,6 +178,12 @@ export function addBlogPost(data) {
 
   posts.unshift(newPost);
   saveBlogPostsToStorage(posts);
+  
+  // Async background sync
+  fetchFromAPI('/blog', {
+    method: 'POST',
+    body: JSON.stringify(newPost)
+  }).catch(e => console.error("Failed to sync new blog post to API", e));
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
@@ -180,6 +212,12 @@ export function updateBlogPost(id, updatedFields) {
 
   posts[index] = merged;
   saveBlogPostsToStorage(posts);
+  
+  // Async background sync
+  fetchFromAPI(`/blog/${current.id}`, {
+    method: 'PUT',
+    body: JSON.stringify(merged)
+  }).catch(e => console.error("Failed to sync updated blog post to API", e));
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
@@ -200,6 +238,11 @@ export function deleteBlogPost(id) {
 
   const filtered = posts.filter(p => p.id !== id);
   saveBlogPostsToStorage(filtered);
+  
+  // Async background sync
+  fetchFromAPI(`/blog/${id}`, {
+    method: 'DELETE'
+  }).catch(e => console.error("Failed to sync deleted blog post to API", e));
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),

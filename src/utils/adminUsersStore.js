@@ -1,6 +1,19 @@
 import { addAuditLog } from './siteImagesStore.js';
 
+import { fetchFromAPI } from './api.js';
+
 const ADMIN_USERS_STORAGE_KEY = 'thanjai_admin_users';
+let adminUsersCache = null;
+
+export async function initAdminUsersStore() {
+  try {
+    const data = await fetchFromAPI('/admin_users');
+    if (data && Array.isArray(data) && data.length > 0) {
+      adminUsersCache = data;
+      localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(adminUsersCache));
+    }
+  } catch (error) {}
+}
 
 const DEFAULT_ADMIN_USERS = [
   {
@@ -66,16 +79,20 @@ const DEFAULT_ADMIN_USERS = [
 ];
 
 export function getAdminUsers() {
+  if (adminUsersCache) return adminUsersCache;
   try {
     const data = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
     if (!data) {
       localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(DEFAULT_ADMIN_USERS));
-      return DEFAULT_ADMIN_USERS;
+      adminUsersCache = DEFAULT_ADMIN_USERS;
+      return adminUsersCache;
     }
-    return JSON.parse(data);
+    adminUsersCache = JSON.parse(data);
+    return adminUsersCache;
   } catch (err) {
     console.error('Error reading admin users:', err);
-    return DEFAULT_ADMIN_USERS;
+    adminUsersCache = DEFAULT_ADMIN_USERS;
+    return adminUsersCache;
   }
 }
 
@@ -96,7 +113,14 @@ export function addAdminUser(userData) {
   };
 
   users.unshift(newUser);
-  localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(users));
+  adminUsersCache = users;
+  localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(adminUsersCache));
+  
+  // Async background sync
+  fetchFromAPI('/admin_users', {
+    method: 'POST',
+    body: JSON.stringify(newUser)
+  }).catch(e => console.error("API sync error", e));
 
   addAuditLog({
     user: 'Aishwarya R.',
@@ -120,7 +144,14 @@ export function updateAdminUser(id, updatedFields) {
     roleCode: updatedFields.role ? updatedFields.role.toLowerCase().replace(/\s+/g, '') : users[idx].roleCode
   };
 
-  localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(users));
+  adminUsersCache = users;
+  localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(adminUsersCache));
+  
+  // Async background sync
+  fetchFromAPI(`/admin_users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(users[idx])
+  }).catch(e => console.error("API sync error", e));
 
   addAuditLog({
     user: 'Aishwarya R.',
@@ -138,7 +169,15 @@ export function toggleAdminUserStatus(id) {
   if (idx === -1) return null;
 
   users[idx].status = users[idx].status === 'Active' ? 'Inactive' : 'Active';
-  localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(users));
+  
+  adminUsersCache = users;
+  localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(adminUsersCache));
+  
+  // Async background sync
+  fetchFromAPI(`/admin_users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(users[idx])
+  }).catch(e => console.error("API sync error", e));
 
   addAuditLog({
     user: 'Aishwarya R.',
@@ -155,7 +194,13 @@ export function deleteAdminUser(id) {
   const target = users.find(u => u.id === id);
   const filtered = users.filter(u => u.id !== id);
 
-  localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(filtered));
+  adminUsersCache = filtered;
+  localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(adminUsersCache));
+  
+  // Async background sync
+  fetchFromAPI(`/admin_users/${id}`, {
+    method: 'DELETE'
+  }).catch(e => console.error("API sync error", e));
 
   if (target) {
     addAuditLog({

@@ -98,55 +98,34 @@ export function renderPartnersView() {
   `;
 }
 
-export function initPartnersView() {
+import { fetchFromAPI } from '../utils/api.js';
+
+export async function initPartnersView() {
   // Data Initialization
-  let partners = JSON.parse(localStorage.getItem('thanjai_partners'));
-  if (!partners || !Array.isArray(partners)) {
-    partners = [
-      { id: 1, company: 'Chennai Prime Realty', contact: 'Senthil Kumar', city: 'Chennai', leads: 2, status: 'Active' },
-      { id: 2, company: 'digitechzo', contact: 'udhay', city: 'madurai', leads: 2, status: 'Active' },
-      { id: 3, company: 'fvghg', contact: 'hghg', city: '', leads: 0, status: 'Active' },
-      { id: 4, company: 'IUCS', contact: 'Ram', city: '', leads: 3, status: 'Active' },
-      { id: 5, company: 'Kovai Homes & Plots', contact: 'Lakshmi Narayanan', city: 'Coimbatore', leads: 1, status: 'Active' }
-    ];
-  }
-
-  // Sync registered client portal users to Partner Network
-  const registeredUsers = getRegisteredUsers();
-  const activeUser = getCurrentUser();
-  const allUsersToSync = [...registeredUsers];
-  if (activeUser && activeUser.email && !allUsersToSync.some(u => u.email === activeUser.email)) {
-    allUsersToSync.push(activeUser);
-  }
-
-  allUsersToSync.forEach(u => {
-    if (!u || (!u.fullName && !u.name)) return;
-    const name = u.fullName || u.name;
-    const email = u.email || '';
-    const phone = u.phone || '';
-    const company = u.company || name || 'Partner Member';
-
-    const exists = partners.some(p => 
-      (email && p.email && p.email.toLowerCase() === email.toLowerCase()) || 
-      (phone && p.phone && p.phone === phone) || 
-      (p.contact && p.contact.toLowerCase() === name.toLowerCase())
-    );
-
-    if (!exists) {
-      partners.push({
-        id: u.id || `partner-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        company: company,
-        contact: name,
-        city: u.city || u.district || 'Thanjavur',
-        phone: phone,
-        email: email,
+  let partners = [];
+  try {
+    const data = await fetchFromAPI('/partners');
+    if (data && Array.isArray(data)) {
+      partners = data.map(p => ({
+        id: p.id,
+        company: p.name,
+        contact: p.type,
+        city: 'Thanjavur', // Missing in schema
+        phone: p.phone,
+        email: p.email,
         leads: 0,
-        status: 'Active'
-      });
+        status: p.status
+      }));
     }
-  });
+  } catch (error) {
+    console.error('API Error:', error);
+    partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
+  }
+  
 
-  localStorage.setItem('thanjai_partners', JSON.stringify(partners));
+
+  // Sync logic removed to avoid overriding database values on every load.
+  // We will assume the API returns the correct list of partners.
 
   // Mock Shared Leads Data
   let allSharedLeads = JSON.parse(localStorage.getItem('thanjai_shared_leads'));
@@ -218,10 +197,10 @@ export function initPartnersView() {
         }
         if (e.target.classList.contains('pn-delete-btn')) {
           e.stopPropagation();
-          const partnerId = parseInt(item.dataset.id);
+          const partnerId = item.dataset.id;
           if (confirm('Are you sure you want to delete this partner?')) {
-            partners = partners.filter(p => p.id !== partnerId);
-            localStorage.setItem('thanjai_partners', JSON.stringify(partners));
+            partners = partners.filter(p => p.id.toString() !== partnerId);
+            fetchFromAPI(`/partners/${partnerId}`, { method: 'DELETE' }).catch(e => console.error(e));
             if (activePartnerId === partnerId) {
               activePartnerId = partners.length > 0 ? partners[0].id : null;
             }
@@ -230,7 +209,7 @@ export function initPartnersView() {
           }
           return;
         }
-        activePartnerId = parseInt(item.dataset.id);
+        activePartnerId = item.dataset.id;
         renderSidebar();
         renderContent();
       });
@@ -351,18 +330,34 @@ export function initPartnersView() {
         return;
       }
 
-      partners.push({
-        id: Date.now(),
-        company,
-        contact,
-        city,
+      const newPartner = {
+        id: `PN-${Date.now()}`,
+        name: company, // MAP company to name for backend
+        type: contact, // MAP contact to type for backend
+        city: city, // Front-end only
+        phone: phone,
+        email: email,
         leads: 0,
-        status
+        status: status
+      };
+
+      fetchFromAPI('/partners', {
+        method: 'POST',
+        body: JSON.stringify(newPartner)
+      }).catch(e => console.error("API Error", e));
+
+      partners.unshift({
+        id: newPartner.id,
+        company: newPartner.name,
+        contact: newPartner.type,
+        city: newPartner.city,
+        phone: newPartner.phone,
+        email: newPartner.email,
+        leads: 0,
+        status: newPartner.status
       });
-      localStorage.setItem('thanjai_partners', JSON.stringify(partners));
-      
-      activePartnerId = partners[partners.length - 1].id;
-      
+
+      activePartnerId = newPartner.id;
       closeModal();
       renderSidebar();
       renderContent();

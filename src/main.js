@@ -29,7 +29,8 @@ import { renderPrivacyView, initPrivacyListeners } from './views/PrivacyView.js'
 import { getFavorites } from './utils/favorites.js';
 import { showToast } from './utils/toast.js';
 import { getCurrentUser } from './utils/userAuthStore.js';
-import { getBlogPostByIdOrSlug } from './utils/blogStore.js';
+import { getBlogPostByIdOrSlug, initBlogStore } from './utils/blogStore.js';
+import { initSiteImagesStore } from './utils/siteImagesStore.js';
 
 // Global Route & Application State
 let currentRoute = parseCurrentRoute();
@@ -403,7 +404,11 @@ window.addEventListener('popstate', () => {
 
 // Application Initialization
 document.addEventListener('DOMContentLoaded', async () => {
-  await initPropertiesStore();
+  await Promise.all([
+    initPropertiesStore(),
+    initBlogStore(),
+    initSiteImagesStore()
+  ]);
   
   // Set up mobile navigation
   MobileBottomNav.init();

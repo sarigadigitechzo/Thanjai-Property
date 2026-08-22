@@ -10,64 +10,52 @@ export function renderExploreSection() {
       <div class="container" style="position: relative; z-index: 2;">
         
         <!-- 1. Editorial Header for Land Owners & Sellers -->
-        <div class="editorial-intro-container">
+        <div class="editorial-intro-container" style="display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 900px; margin: 0 auto 48px auto;">
           <!-- Top Eyebrow Bar -->
-          <div class="editorial-top-eyebrow-bar">
-            <div class="editorial-eyebrow-wrap">
-              <span class="editorial-vertical-line"></span>
-              <span class="eyebrow" style="color: var(--color-orange); font-weight: 800; letter-spacing: 0.12em;">SELL YOUR PROPERTY TO THE RIGHT AUDIENCE</span>
+          <div class="editorial-top-eyebrow-bar" style="justify-content: center; margin-bottom: 24px;">
+            <div class="editorial-eyebrow-wrap" style="gap: 8px;">
+              <span class="eyebrow eyebrow-center" style="color: var(--color-orange); font-weight: 800; letter-spacing: 0.12em;">SELL YOUR PROPERTY TO THE RIGHT AUDIENCE</span>
             </div>
           </div>
 
-          <!-- Main 2-Column Row (Title Left + Description Right) -->
-          <div class="editorial-main-two-col">
-            <div class="editorial-title-col">
-              <h2 class="heading-display-light editorial-main-title">
-                Sell Your Property to<br>the Right Audience.
-              </h2>
-              <div style="font-size: 1rem; font-weight: 700; color: #eb5e28; margin-top: 6px;">Turn Your Property Listing Into a New Opportunity</div>
-            </div>
-
-            <div class="editorial-desc-col">
-              <p class="editorial-desc-text">
-                Selling a property is about presenting clear details—location, size, price, and specifications—so potential buyers can understand the opportunity. With Thanjai Property, list your houses, plots, agricultural land, or commercial spaces with free basic property posting to reach active property seekers across Tamil Nadu.
-              </p>
-            </div>
-          </div>
+          <!-- Main Centered Content -->
+          <h2 class="heading-display-light editorial-main-title" style="margin-bottom: 12px; font-size: 3.5rem;">
+            Sell Your Property to the Right Audience.
+          </h2>
+          <div style="font-size: 1.15rem; font-weight: 700; color: #eb5e28; margin-bottom: 24px;">Turn Your Property Listing Into a New Opportunity</div>
+          
+          <p class="editorial-desc-text" style="font-size: 1.1rem; line-height: 1.7; color: #555; max-width: 800px; margin-bottom: 40px;">
+            Selling a property is about presenting clear details—location, size, price, and specifications—so potential buyers can understand the opportunity. With Thanjai Property, list your houses, plots, agricultural land, or commercial spaces with free basic property posting to reach active property seekers across Tamil Nadu.
+          </p>
 
           <!-- Integrated Horizontal Stats Bar -->
-          <div class="editorial-integrated-stats-bar">
-            <div class="editorial-inline-stats">
-              <div class="inline-stat-item">
+          <div class="editorial-integrated-stats-bar" style="width: 100%; border-top: 1px solid rgba(0,0,0,0.08); padding-top: 24px; justify-content: center; gap: 40px;">
+            <div class="editorial-inline-stats" style="gap: 40px;">
+              <div class="inline-stat-item" style="flex-direction: column; align-items: center; gap: 4px;">
                 <div class="stat-num-wrap">
-                  <span class="stat-num">100%</span>
+                  <span class="stat-num" style="font-size: 1.8rem;">100%</span>
                 </div>
-                <span class="stat-lbl">Zero Listing Fees</span>
+                <span class="stat-lbl" style="text-align: center;">Zero Listing Fees</span>
               </div>
 
-              <div class="inline-stat-sep"></div>
+              <div class="inline-stat-sep" style="height: 40px;"></div>
 
-              <div class="inline-stat-item">
+              <div class="inline-stat-item" style="flex-direction: column; align-items: center; gap: 4px;">
                 <div class="stat-num-wrap">
-                  <span class="stat-num">10k+</span>
+                  <span class="stat-num" style="font-size: 1.8rem;">10k+</span>
                 </div>
-                <span class="stat-lbl">Active Buyers & NRIs</span>
+                <span class="stat-lbl" style="text-align: center;">Active Buyers & NRIs</span>
               </div>
 
-              <div class="inline-stat-sep"></div>
+              <div class="inline-stat-sep" style="height: 40px;"></div>
 
-              <div class="inline-stat-item">
+              <div class="inline-stat-item" style="flex-direction: column; align-items: center; gap: 4px;">
                 <div class="stat-num-wrap">
-                  <span class="stat-num">Since 2009</span>
+                  <span class="stat-num" style="font-size: 1.8rem;">Since 2009</span>
                 </div>
-                <span class="stat-lbl">Legal Patta Verification</span>
+                <span class="stat-lbl" style="text-align: center;">Legal Patta Verification</span>
               </div>
             </div>
-
-            <button class="editorial-scroll-down-btn post-land-trigger-btn" style="border: none; background: none; cursor: pointer;">
-              <span style="font-weight: 800; color: var(--color-orange);">PROMOTE YOUR LAND NOW</span>
-              <i class="ri-arrow-right-line scroll-arrow-icon" style="color: var(--color-orange);"></i>
-            </button>
           </div>
         </div>
 
@@ -106,51 +94,7 @@ export function renderExploreSection() {
             </div>
           </div>
 
-          <!-- RIGHT 35%: SELLER ADVANTAGES LIST -->
-          <div class="editorial-magazine-list" style="background: #ffffff; padding: 28px; border-radius: 24px; border: 1px solid rgba(0,0,0,0.07); box-shadow: 0 4px 18px rgba(0,0,0,0.03);">
-            <h4 class="magazine-list-heading" style="color: var(--color-orange); margin-bottom: 20px;">WHY SELL WITH THANJAI</h4>
 
-            <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px;">
-              
-              <!-- Advantage 1 -->
-              <div style="display: flex; gap: 14px; align-items: flex-start;">
-                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(235,94,40,0.12); color: var(--color-orange); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
-                  <i class="ri-price-tag-3-line"></i>
-                </div>
-                <div>
-                  <h5 style="font-size: 0.95rem; font-weight: 700; color: #1a1a1a; margin-bottom: 2px;">Zero Listing Commission</h5>
-                  <p style="font-size: 0.82rem; color: #666; margin: 0; line-height: 1.4;">Free property exposure for individual land owners & plot developers.</p>
-                </div>
-              </div>
-
-              <!-- Advantage 2 -->
-              <div style="display: flex; gap: 14px; align-items: flex-start;">
-                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(235,94,40,0.12); color: var(--color-orange); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
-                  <i class="ri-shield-check-line"></i>
-                </div>
-                <div>
-                  <h5 style="font-size: 0.95rem; font-weight: 700; color: #1a1a1a; margin-bottom: 2px;">Patta & Title Assistance</h5>
-                  <p style="font-size: 0.82rem; color: #666; margin: 0; line-height: 1.4;">Revenue title verification to make your property 100% deal-ready.</p>
-                </div>
-              </div>
-
-              <!-- Advantage 3 -->
-              <div style="display: flex; gap: 14px; align-items: flex-start;">
-                <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(235,94,40,0.12); color: var(--color-orange); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
-                  <i class="ri-whatsapp-line"></i>
-                </div>
-                <div>
-                  <h5 style="font-size: 0.95rem; font-weight: 700; color: #1a1a1a; margin-bottom: 2px;">Direct WhatsApp Leads</h5>
-                  <p style="font-size: 0.82rem; color: #666; margin: 0; line-height: 1.4;">Instant notifications sent straight to your phone when buyers inquire.</p>
-                </div>
-              </div>
-
-            </div>
-
-            <button class="btn btn-outline-dark post-land-trigger-btn" style="width: 100%; border-radius: 10px; font-size: 0.88rem; justify-content: center;">
-              <i class="ri-edit-2-line"></i> Fill Out Land Form
-            </button>
-          </div>
 
         </div>
 

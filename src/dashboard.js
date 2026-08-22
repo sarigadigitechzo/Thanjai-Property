@@ -20,9 +20,17 @@ import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsers
 import { showToast } from './utils/toast.js';
 
 import { initPropertiesStore } from './utils/propertiesStore.js';
+import { initBlogStore } from './utils/blogStore.js';
+import { initSiteImagesStore } from './utils/siteImagesStore.js';
+import { initAdminUsersStore } from './utils/adminUsersStore.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await initPropertiesStore();
+  await Promise.all([
+    initPropertiesStore(),
+    initBlogStore(),
+    initSiteImagesStore(),
+    initAdminUsersStore()
+  ]);
   
   const contentArea = document.getElementById('os-content');
   const navItems = document.querySelectorAll('.nav-item');

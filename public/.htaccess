@@ -2,6 +2,7 @@
   RewriteEngine On
   RewriteBase /
   RewriteRule ^api\.php - [L]
+  RewriteRule ^admin-dashboard/?$ dashboard.html [L]
   RewriteRule ^dashboard\.html$ - [L]
   RewriteRule ^login\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
