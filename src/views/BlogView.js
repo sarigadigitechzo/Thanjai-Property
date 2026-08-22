@@ -73,25 +73,25 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
                 display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
                 margin-bottom: 50px; cursor: pointer; transition: all 0.3s ease;
               ">
-                <div style="position: relative; min-height: 360px; background: #0f172a; overflow: hidden;">
+                <div style="position: relative; aspect-ratio: 16/9; background: #0f172a; overflow: hidden; align-self: center; border-radius: 16px; margin: 24px; width: calc(100% - 48px); box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
                   <img src="${featuredPost.image}" alt="${featuredPost.title}" style="width: 100%; height: 100%; object-fit: cover;" />
                   <span class="badge badge-orange" style="position: absolute; top: 20px; left: 20px; font-weight: 800; letter-spacing: 0.05em;">
                     FEATURED • ${featuredPost.category}
                   </span>
                 </div>
 
-                <div style="padding: 44px; display: flex; flex-direction: column; justify-content: center;">
+                <div style="padding: 24px 32px; display: flex; flex-direction: column; justify-content: center;">
                   <div style="display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: #718096; font-weight: 700; margin-bottom: 16px;">
                     <span><i class="ri-calendar-line" style="color: #eb5e28;"></i> ${featuredPost.date}</span>
                     <span>•</span>
                     <span><i class="ri-time-line" style="color: #eb5e28;"></i> ${featuredPost.readTime}</span>
                   </div>
 
-                  <h2 style="font-family: var(--font-serif); font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 800; color: #1A202C; line-height: 1.3; margin-bottom: 16px;">
+                  <h2 style="font-family: var(--font-serif); font-size: clamp(1.5rem, 2.8vw, 2rem); font-weight: 800; color: #1A202C; line-height: 1.3; margin-bottom: 12px;">
                     ${featuredPost.title}
                   </h2>
 
-                  <p style="font-size: 1.02rem; color: #4A5568; line-height: 1.65; margin-bottom: 28px;">
+                  <p style="font-size: 0.96rem; color: #4A5568; line-height: 1.6; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
                     ${featuredPost.excerpt}
                   </p>
 
@@ -121,7 +121,7 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
                     border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 6px 20px rgba(0,0,0,0.04);
                     display: flex; flex-direction: column; cursor: pointer; transition: all 0.3s ease;
                   ">
-                    <div style="position: relative; width: 100%; height: 230px; overflow: hidden; background: #0f172a;">
+                    <div style="position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: #0f172a;">
                       <img src="${post.image}" alt="${post.title}" style="width: 100%; height: 100%; object-fit: cover;" />
                       <span class="badge badge-orange" style="position: absolute; top: 16px; left: 16px; font-size: 0.75rem; font-weight: 800;">
                         ${post.category}
@@ -182,9 +182,49 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
 function renderArticleDetailView(post, onNavigateToContact, allPosts) {
   const relatedPosts = (allPosts || getBlogPosts()).filter(p => p.id !== post.id && p.slug !== post.slug).slice(0, 3);
 
+  // --- TOC Generation Logic ---
+  let rawContent = post.content || `<p class="blog-lead">${post.excerpt}</p>`;
+  let tocItems = [];
+  const headingRegex = /<(h[23])[^>]*>(.*?)<\/\1>/gi;
+  let match;
+  while ((match = headingRegex.exec(rawContent)) !== null) {
+    const level = match[1];
+    const text = match[2].replace(/<[^>]+>/g, '').trim();
+    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    tocItems.push({ level, text, id });
+  }
+
+  let finalContent = rawContent.replace(/<(h[23])([^>]*)>(.*?)<\/\1>/gi, (m, tag, attrs, text) => {
+    const id = text.replace(/<[^>]+>/g, '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+    return `<${tag} id="${id}"${attrs} style="scroll-margin-top: 100px;">${text}</${tag}>`;
+  });
+
+  const tocHtml = tocItems.length > 0 ? `
+    <aside style="width: 300px; flex-shrink: 0; display: none;">
+       <div style="position: sticky; top: 120px; background: #fff; padding: 28px; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 10px 30px rgba(0,0,0,0.04);">
+          <h3 style="font-family: var(--font-serif); font-size: 1.3rem; margin-bottom: 20px; color: #1a202c; font-weight: 800; border-bottom: 2px solid #eb5e28; padding-bottom: 12px; display: inline-block;">Table of Contents</h3>
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.95rem; line-height: 1.6;">
+            ${tocItems.map(item => `
+              <li style="margin-bottom: 14px; padding-left: ${item.level === 'h3' ? '18px' : '0'}; border-left: ${item.level === 'h3' ? '2px solid #EDF2F7' : 'none'};">
+                <a href="#${item.id}" style="color: #4A5568; text-decoration: none; font-weight: ${item.level === 'h2' ? '700' : '500'}; transition: color 0.2s;" onmouseover="this.style.color='#eb5e28'" onmouseout="this.style.color='#4A5568'">${item.text}</a>
+              </li>
+            `).join('')}
+          </ul>
+       </div>
+    </aside>
+    <style>
+      @media (min-width: 1024px) {
+        .article-toc-layout { display: flex !important; gap: 48px; align-items: flex-start; }
+        .article-toc-layout aside { display: block !important; }
+      }
+    </style>
+  ` : '';
+  // ----------------------------
+
+
   return `
     <div class="page-view view-enter article-detail-page" style="padding-top: 110px; padding-bottom: 90px; background: #faf8f5;">
-      <div class="container" style="max-width: 960px;">
+      <div class="container" style="max-width: 1150px;">
         
         <!-- Back Navigation Button -->
         <button class="os-btn-secondary" id="back-to-blog-btn" style="margin-bottom: 28px; font-size: 0.9rem; padding: 10px 20px; border-radius: 10px; font-weight: 700; background: #ffffff; border: 1px solid #E2E8F0; color: #4A5568; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
@@ -222,65 +262,69 @@ function renderArticleDetailView(post, onNavigateToContact, allPosts) {
           </div>
 
           <!-- Featured Image Banner -->
-          <div style="width: 100%; height: 500px; overflow: hidden; background: #0f172a; position: relative;">
+          <div style="width: calc(100% - 64px); aspect-ratio: 16/9; max-height: 550px; overflow: hidden; background: #0f172a; position: relative; margin: 32px auto; border-radius: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.08);">
             <img src="${post.image}" alt="${post.title}" style="width: 100%; height: 100%; object-fit: cover;" />
           </div>
 
-          <!-- Article Content Body -->
-          <div class="article-body-text" style="padding: 48px; font-size: 1.12rem; color: #2D3748; line-height: 1.85;">
-            <style>
-              .article-body-text h1, .article-body-text h2, .article-body-text h3, .article-body-text h4, .article-body-text h5, .article-body-text h6 {
-                font-family: var(--font-serif, serif);
-                color: #1a202c;
-                margin-top: 1.6em;
-                margin-bottom: 0.6em;
-                line-height: 1.3;
-                font-weight: 800;
-              }
-              .article-body-text h1 { font-size: 2.2rem; }
-              .article-body-text h2 { font-size: 1.8rem; }
-              .article-body-text h3 { font-size: 1.5rem; }
-              .article-body-text h4 { font-size: 1.3rem; }
-              .article-body-text h5 { font-size: 1.15rem; }
-              .article-body-text h6 { font-size: 1.05rem; }
-              .article-body-text p { margin-bottom: 1.2em; line-height: 1.8; }
-              .article-body-text a { color: #eb5e28; text-decoration: underline; font-weight: 700; word-break: break-word; }
-              .article-body-text a:hover { color: #c84919; }
-              .article-body-text table, .article-body-text .blog-table {
-                width: 100%;
-                border-collapse: collapse;
-                margin: 24px 0;
-                font-size: 0.95rem;
-                border: 1px solid #cbd5e0;
-                border-radius: 8px;
-                overflow: hidden;
-              }
-              .article-body-text th {
-                background: #f7fafc;
-                border: 1px solid #cbd5e0;
-                padding: 12px 16px;
-                font-weight: 800;
-                color: #1a202c;
-                text-align: left;
-              }
-              .article-body-text td {
-                border: 1px solid #cbd5e0;
-                padding: 12px 16px;
-                color: #2d3748;
-              }
-              .article-body-text tr:nth-child(even) {
-                background: #faf8f5;
-              }
-              .article-body-text ul, .article-body-text ol {
-                margin-bottom: 1.4em;
-                padding-left: 24px;
-              }
-              .article-body-text li {
-                margin-bottom: 0.4em;
-                line-height: 1.7;
-              }
-            </style>
-            ${post.content || `<p class="blog-lead">${post.excerpt}</p>`}
+          <!-- Article Content Body with TOC -->
+          <div class="article-toc-layout" style="padding: 48px; display: block;">
+            <div class="article-body-text" style="flex: 1; min-width: 0; font-size: 1.12rem; color: #2D3748; line-height: 1.85;">
+              <style>
+                .article-body-text h1, .article-body-text h2, .article-body-text h3, .article-body-text h4, .article-body-text h5, .article-body-text h6 {
+                  font-family: var(--font-serif, serif);
+                  color: #1a202c;
+                  margin-top: 1.6em;
+                  margin-bottom: 0.6em;
+                  line-height: 1.3;
+                  font-weight: 800;
+                }
+                .article-body-text h1 { font-size: 2.2rem; }
+                .article-body-text h2 { font-size: 1.8rem; }
+                .article-body-text h3 { font-size: 1.5rem; }
+                .article-body-text h4 { font-size: 1.3rem; }
+                .article-body-text h5 { font-size: 1.15rem; }
+                .article-body-text h6 { font-size: 1.05rem; }
+                .article-body-text p { margin-bottom: 1.2em; line-height: 1.8; }
+                .article-body-text a { color: #eb5e28; text-decoration: underline; font-weight: 700; word-break: break-word; }
+                .article-body-text a:hover { color: #c84919; }
+                .article-body-text table, .article-body-text .blog-table {
+                  width: 100%;
+                  border-collapse: collapse;
+                  margin: 24px 0;
+                  font-size: 0.95rem;
+                  border: 1px solid #cbd5e0;
+                  border-radius: 8px;
+                  overflow: hidden;
+                }
+                .article-body-text th {
+                  background: #f7fafc;
+                  border: 1px solid #cbd5e0;
+                  padding: 12px 16px;
+                  font-weight: 800;
+                  color: #1a202c;
+                  text-align: left;
+                }
+                .article-body-text td {
+                  border: 1px solid #cbd5e0;
+                  padding: 12px 16px;
+                  color: #2d3748;
+                }
+                .article-body-text tr:nth-child(even) {
+                  background: #faf8f5;
+                }
+                .article-body-text ul, .article-body-text ol {
+                  margin-bottom: 1.4em;
+                  padding-left: 24px;
+                }
+                .article-body-text li {
+                  margin-bottom: 0.4em;
+                  line-height: 1.7;
+                }
+              </style>
+              ${finalContent}
+            </div>
+            
+            ${tocHtml}
           </div>
 
           <!-- Bottom Senior Advisory CTA -->
@@ -312,7 +356,7 @@ function renderArticleDetailView(post, onNavigateToContact, allPosts) {
                   border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 18px rgba(0,0,0,0.04);
                   display: flex; flex-direction: column; cursor: pointer; transition: all 0.3s ease;
                 ">
-                  <div style="position: relative; width: 100%; height: 180px; overflow: hidden; background: #0f172a;">
+                  <div style="position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: #0f172a;">
                     <img src="${rel.image}" alt="${rel.title}" style="width: 100%; height: 100%; object-fit: cover;" />
                     <span class="badge badge-orange" style="position: absolute; top: 12px; left: 12px; font-size: 0.72rem; font-weight: 800;">
                       ${rel.category}

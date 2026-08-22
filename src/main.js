@@ -89,7 +89,7 @@ function getRoutePath(route) {
   switch (route) {
     case 'our-story': return '/our-story';
     case 'discover': return '/discover-properties';
-    case 'blog': return blogState.selectedPostId ? `/#blog/${blogState.selectedPostId}` : '/#blog';
+    case 'blog': return blogState.selectedPostId ? `/blog/${blogState.selectedPostId}` : '/blog';
     case 'contact': return '/contact-us';
     case 'terms': return '/terms-of-use';
     case 'privacy': return '/privacy-policy';
@@ -268,12 +268,10 @@ function renderApp() {
         (postIdOrSlug) => {
           if (!postIdOrSlug) {
             blogState.selectedPostId = null;
-            window.location.hash = '#blog';
           } else {
             const post = getBlogPostByIdOrSlug(postIdOrSlug);
             const slug = post ? (post.slug || post.id) : postIdOrSlug;
             blogState.selectedPostId = slug;
-            window.location.hash = `#blog/${slug}`;
           }
           navigateToRoute('blog');
         },
@@ -338,7 +336,6 @@ function openBlogArticle(postIdOrSlug) {
   const post = getBlogPostByIdOrSlug(postIdOrSlug);
   const slug = post ? (post.slug || post.id) : postIdOrSlug;
   blogState.selectedPostId = slug;
-  window.location.hash = `#blog/${slug}`;
   navigateToRoute('blog');
 }
 

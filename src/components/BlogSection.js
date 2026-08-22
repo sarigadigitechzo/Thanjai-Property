@@ -37,7 +37,7 @@ export function renderBlogSection(onNavigateToBlog, onSelectPost) {
               cursor: pointer;
               transition: transform 0.3s ease, box-shadow 0.3s ease;
             ">
-              <div style="position: relative; width: 100%; height: 210px; overflow: hidden; background: #1a1a1a;">
+              <div style="position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: #1a1a1a;">
                 <img src="${post.image}" alt="${post.title}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease;" />
                 <span class="badge badge-orange" style="position: absolute; top: 16px; left: 16px; font-size: 0.75rem;">
                   ${post.category}
