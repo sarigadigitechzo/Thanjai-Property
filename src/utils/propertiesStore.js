@@ -2,39 +2,62 @@ import { PROPERTIES as INITIAL_PROPERTIES } from '../data/properties.js';
 import { addAuditLog } from './siteImagesStore.js';
 import { fetchFromAPI } from './api.js';
 
-let propertiesCache = [];
-let isInitialized = false;
+const PROPERTIES_STORAGE_KEY = 'thanjai_properties';
 
-// Initialize cache from API on startup
+function loadPropertiesFromStorage() {
+  try {
+    const stored = localStorage.getItem(PROPERTIES_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(p => normalizePropertyRecord(p)).filter(Boolean);
+      }
+    }
+  } catch (e) {
+    console.error("Failed reading properties from localStorage", e);
+  }
+  
+  // Seed fallback
+  const defaults = INITIAL_PROPERTIES.map(p => normalizePropertyRecord(p)).filter(Boolean);
+  try {
+    localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(defaults));
+  } catch (e) {}
+  return defaults;
+}
+
+function savePropertiesToStorage(props) {
+  try {
+    localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(props));
+  } catch (e) {
+    console.error("Failed saving properties to localStorage", e);
+  }
+}
+
+// Synchronously populate propertiesCache on module load so UI gets data on very first render
+let propertiesCache = loadPropertiesFromStorage();
+let isInitialized = true;
+
+// Optional async background sync with backend API
 export async function initPropertiesStore() {
   try {
     const data = await fetchFromAPI('/properties');
-    if (data && Array.isArray(data)) {
+    if (data && Array.isArray(data) && data.length > 0) {
       propertiesCache = data.map(p => normalizePropertyRecord(p)).filter(Boolean);
+      savePropertiesToStorage(propertiesCache);
     }
-    isInitialized = true;
   } catch (error) {
-    console.error("Failed to load properties from API:", error);
-    // Fallback to defaults if API fails or is empty initially
-    propertiesCache = INITIAL_PROPERTIES.map(p => normalizePropertyRecord(p)).filter(Boolean);
-    isInitialized = true;
+    // Graceful fallback: continue with local storage / seed data
   }
+  isInitialized = true;
+  return propertiesCache;
 }
 
 // Synchronous getter for UI components
 export function getProperties() {
-  if (!isInitialized) {
-    console.warn("getProperties called before store was initialized. Returning empty array.");
-    return [];
+  if (!propertiesCache || propertiesCache.length === 0) {
+    propertiesCache = loadPropertiesFromStorage();
   }
   return propertiesCache;
-}
-
-// Internal function to sync local cache to API when modifications happen
-async function savePropertiesToStorage(props) {
-  // We no longer overwrite the whole array via API.
-  // Individual add/update/delete functions will handle API calls.
-  // This is kept empty to prevent breaking internal references.
 }
 
 export function getPublicProperties() {
@@ -43,7 +66,7 @@ export function getPublicProperties() {
     if (p.approvalStatus === 'Pending Approval' || p.status === 'Pending Approval' || p.approvalStatus === 'Rejected') {
       return false;
     }
-    return p.approvalStatus === 'Approved' || !p.approvalStatus || p.approvalStatus === 'Active' || p.status === 'Available';
+    return p.approvalStatus === 'Approved' || !p.approvalStatus || p.approvalStatus === 'Active' || p.status === 'Available' || !p.status || p.status === 'Available';
   });
 }
 
