@@ -36,7 +36,7 @@ export function renderOurStoryView(onNavigateToDiscover) {
           </h1>
 
           <p style="font-size: clamp(1.05rem, 2vw, 1.25rem); color: rgba(255, 255, 255, 0.88); line-height: 1.7; font-weight: 400; max-width: 820px; margin: 0 auto 36px auto;">
-            Founded in 2009, Thanjai Property began its journey in Thanjavur with a simple vision — to make property discovery more transparent, accessible and reliable. Today, we help buyers, sellers, investors and property owners explore residential properties, plots, agricultural land and commercial opportunities across Tamil Nadu. With strong local knowledge and a customer-first approach, we continue to connect people with property opportunities that match their needs and long-term goals.
+            Founded in 2009 in Thanjavur, Thanjai Property simplifies real estate discovery across Tamil Nadu. With deep local expertise, we connect buyers, sellers, and investors with ideal residential, agricultural, and commercial properties that match their long-term goals.
           </p>
         </div>
       </section>

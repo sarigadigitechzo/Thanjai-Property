@@ -41,7 +41,7 @@ let isInitialized = true;
 export async function initPropertiesStore() {
   try {
     const data = await fetchFromAPI('/properties');
-    if (data && Array.isArray(data) && data.length > 0) {
+    if (data && Array.isArray(data)) {
       propertiesCache = data.map(p => normalizePropertyRecord(p)).filter(Boolean);
       savePropertiesToStorage(propertiesCache);
     }
@@ -262,6 +262,7 @@ export function deleteProperty(id) {
   if (!target) return false;
 
   propertiesCache = propertiesCache.filter(p => p.id !== id);
+  savePropertiesToStorage(propertiesCache);
   
   fetchFromAPI(`/properties/${id}`, {
     method: 'DELETE'

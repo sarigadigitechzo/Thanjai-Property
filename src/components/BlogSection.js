@@ -19,7 +19,7 @@ export function renderBlogSection(onNavigateToBlog, onSelectPost) {
         </div>
 
         <!-- 3 Cards Grid -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 28px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px;">
           ${recentPosts.map(post => `
             <article class="blog-card hover-lift" data-id="${post.id}" data-slug="${post.slug || ''}" style="
               background: #ffffff;

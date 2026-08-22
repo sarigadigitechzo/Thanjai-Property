@@ -9,7 +9,10 @@ const API_BASE_URL = (window.location.hostname === 'localhost' || window.locatio
 
 export async function fetchFromAPI(endpoint, options = {}) {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const isGet = !options.method || options.method === 'GET';
+    const cacheBuster = isGet ? (endpoint.includes('?') ? `&t=${Date.now()}` : `?t=${Date.now()}`) : '';
+    
+    const response = await fetch(`${API_BASE_URL}${endpoint}${cacheBuster}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',

@@ -75,7 +75,7 @@ export function renderContactSection() {
                       <input type="email" id="cf-email" name="email" class="cf-input" placeholder="you@example.com" style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem;" />
                     </div>
                   </div>
-                  <div class="cf-field">
+                  <div class="cf-field" style="position: relative; z-index: 10;">
                     <label class="cf-label" for="cf-interest" style="font-size: 0.82rem; font-weight: 700; color: #333; display: block; margin-bottom: 6px;">Property Purpose / Type</label>
                     <div class="custom-select-wrapper" id="custom-property-type" style="position: relative;">
                       <input type="hidden" name="interest" id="cf-interest" value="">
@@ -457,8 +457,9 @@ export function initContactSectionListeners() {
     dropdownTrigger.addEventListener('click', (e) => {
       e.stopPropagation();
       const optionsContainer = dropdownWrapper.querySelector('.custom-select-options');
+      dropdownWrapper.classList.toggle('open');
       if (optionsContainer) {
-        optionsContainer.style.display = optionsContainer.style.display === 'block' ? 'none' : 'block';
+        optionsContainer.style.display = dropdownWrapper.classList.contains('open') ? 'block' : 'none';
       }
     });
 
@@ -473,12 +474,14 @@ export function initContactSectionListeners() {
           selectText.style.color = '#1a1a1a';
           selectText.style.fontWeight = '600';
         }
+        dropdownWrapper.classList.remove('open');
         const optionsContainer = dropdownWrapper.querySelector('.custom-select-options');
         if (optionsContainer) optionsContainer.style.display = 'none';
       });
     });
 
     document.addEventListener('click', () => {
+      dropdownWrapper.classList.remove('open');
       const optionsContainer = dropdownWrapper.querySelector('.custom-select-options');
       if (optionsContainer) optionsContainer.style.display = 'none';
     });
@@ -525,6 +528,32 @@ export function initContactSectionListeners() {
     }
 
     setTimeout(() => {
+      // Create Lead Object for CRM
+      const newLead = {
+        id: 'L-' + Math.floor(1000 + Math.random() * 9000),
+        name: name,
+        mobile: phone,
+        email: document.getElementById('cf-email')?.value.trim() || '',
+        type: hiddenInput ? hiddenInput.value : '',
+        budget: budgetInput ? budgetInput.value : '',
+        source: 'Website Form',
+        date: new Date().toISOString().split('T')[0],
+        status: 'new',
+        owner: 'Unassigned',
+        timestamp: Date.now()
+      };
+
+      // Save to localStorage
+      try {
+        let existingLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+        existingLeads.push(newLead);
+        localStorage.setItem('thanjai_leads', JSON.stringify(existingLeads));
+        // Notify CRM if open in another tab
+        window.dispatchEvent(new Event('storage')); 
+      } catch (e) {
+        console.error('Error saving lead:', e);
+      }
+
       form.reset();
       pills.forEach(p => {
         p.style.background = '#fff';

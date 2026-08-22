@@ -403,7 +403,7 @@ window.addEventListener('popstate', () => {
 });
 
 // Application Initialization
-document.addEventListener('DOMContentLoaded', async () => {
+async function initApp() {
   await Promise.all([
     initPropertiesStore(),
     initBlogStore(),
@@ -414,7 +414,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   MobileBottomNav.init();
   updateSeoMetadata(currentRoute);
   renderApp();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 window.addEventListener('popstate', () => {
   currentRoute = parseCurrentRoute();
