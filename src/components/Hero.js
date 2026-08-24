@@ -282,11 +282,8 @@ export function initHeroListeners(onSearchSubmit) {
         sliderDisplay.textContent = label;
         budgetDropdownText.textContent = label;
         
-        // Map to existing filters for compatibility
-        if (val <= 50) searchBudgetHidden.value = 'under-50l';
-        else if (val <= 150) searchBudgetHidden.value = '50l-1.5cr';
-        else if (val <= 300) searchBudgetHidden.value = '1.5cr-3cr';
-        else searchBudgetHidden.value = 'above-3cr';
+        // Map to exact value in Rupees
+        searchBudgetHidden.value = (val * 100000).toString();
       }
     });
 

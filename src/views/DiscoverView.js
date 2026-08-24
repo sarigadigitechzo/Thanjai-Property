@@ -112,13 +112,16 @@ export function renderDiscoverView(discoverState, onPropertySelect, onNavigateTo
 
               <!-- Budget Range -->
               <div>
-                <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #555; display: block; margin-bottom: 6px; letter-spacing: 0.05em;">Budget Range</label>
+                <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #555; display: block; margin-bottom: 6px; letter-spacing: 0.05em;">Max Budget</label>
                 <select id="filter-budget" style="width: 100%; padding: 12px 14px; font-size: 0.9rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; outline: none;">
                   <option value="all" ${discoverState.budget === 'all' ? 'selected' : ''}>Any Price</option>
-                  <option value="under-50l" ${discoverState.budget === 'under-50l' ? 'selected' : ''}>Under ₹ 50 Lakhs</option>
-                  <option value="50l-1.5cr" ${discoverState.budget === '50l-1.5cr' ? 'selected' : ''}>₹ 50 Lakhs – ₹ 1.5 Cr</option>
-                  <option value="1.5cr-3cr" ${discoverState.budget === '1.5cr-3cr' ? 'selected' : ''}>₹ 1.5 Cr – ₹ 3.0 Cr</option>
-                  <option value="above-3cr" ${discoverState.budget === 'above-3cr' ? 'selected' : ''}>Above ₹ 3.0 Cr</option>
+                  <option value="5000000" ${discoverState.budget === '5000000' ? 'selected' : ''}>Upto ₹ 50 Lakhs</option>
+                  <option value="15000000" ${discoverState.budget === '15000000' ? 'selected' : ''}>Upto ₹ 1.5 Cr</option>
+                  <option value="30000000" ${discoverState.budget === '30000000' ? 'selected' : ''}>Upto ₹ 3.0 Cr</option>
+                  <option value="50000000" ${discoverState.budget === '50000000' ? 'selected' : ''}>Upto ₹ 5.0 Cr</option>
+                  ${(discoverState.budget !== 'all' && !['5000000', '15000000', '30000000', '50000000'].includes(String(discoverState.budget))) 
+                    ? `<option value="${discoverState.budget}" selected>Upto ₹ ${(Number(discoverState.budget)/10000000).toFixed(1)} Cr</option>` 
+                    : ''}
                 </select>
               </div>
 
@@ -480,13 +483,18 @@ function filterProperties(state) {
       if (prop.purpose !== state.purpose) return false;
     }
 
-    // Budget filter
+    // Budget filter (Max Budget logic)
     if (state.budget && state.budget !== 'all') {
       const p = prop.price || 0;
-      if (state.budget === 'under-50l' && p >= 5000000) return false;
-      if (state.budget === '50l-1.5cr' && (p < 5000000 || p > 15000000)) return false;
-      if (state.budget === '1.5cr-3cr' && (p < 15000000 || p > 30000000)) return false;
-      if (state.budget === 'above-3cr' && p <= 30000000) return false;
+      let maxBudget = Number(state.budget);
+      if (isNaN(maxBudget)) {
+        // Legacy support
+        if (state.budget === 'under-50l') maxBudget = 5000000;
+        else if (state.budget === '50l-1.5cr') maxBudget = 15000000;
+        else if (state.budget === '1.5cr-3cr') maxBudget = 30000000;
+        else if (state.budget === 'above-3cr') maxBudget = 9999000000;
+      }
+      if (maxBudget > 0 && p > maxBudget) return false;
     }
 
     return true;
