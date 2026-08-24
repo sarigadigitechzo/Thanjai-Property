@@ -1,4 +1,4 @@
-import { getRegisteredUsers } from '../utils/userAuthStore.js';
+import { getRegisteredUsers, deleteRegisteredUser } from '../utils/userAuthStore.js';
 import { getProperties } from '../utils/propertiesStore.js';
 import { setPropertiesSearchFilter } from './PropertiesView.js';
 
@@ -179,7 +179,7 @@ function renderUsersRows(users, allProperties) {
             <i class="ri-checkbox-circle-fill"></i> ${u.status || 'Active'}
           </span>
         </td>
-        <td style="padding: 14px 16px;">
+        <td style="padding: 14px 16px; white-space: nowrap;">
           <button class="view-user-props-btn" data-user-name="${u.fullName}" data-user-email="${u.email}" data-user-phone="${u.phone}" style="
             background: linear-gradient(135deg, #FFF5F2 0%, #FFEBE5 100%); color: #EB5E28;
             border: 1px solid #FFD0C2; font-weight: 700; border-radius: 8px; font-size: 0.82rem;
@@ -187,6 +187,14 @@ function renderUsersRows(users, allProperties) {
             display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;
           ">
             <i class="ri-building-4-line"></i> View Props
+          </button>
+          <button class="del-user-btn" data-user-id="${u.id}" style="
+            background: linear-gradient(135deg, #FFF0F2 0%, #FFE5E8 100%); color: #E53E3E;
+            border: 1px solid #FED7D7; font-weight: 700; border-radius: 8px; font-size: 0.82rem;
+            padding: 6px 10px; box-shadow: 0 2px 6px rgba(229,62,62,0.12); cursor: pointer;
+            display: inline-flex; align-items: center; transition: all 0.2s ease; margin-left: 6px;
+          " title="Delete User">
+            <i class="ri-delete-bin-line"></i>
           </button>
         </td>
       </tr>
@@ -227,6 +235,15 @@ export function initUsersView() {
         const email = btn.dataset.userEmail;
         const phone = btn.dataset.userPhone;
         openUserPropsModalBox(name, email, phone);
+      });
+    });
+
+    document.querySelectorAll('.del-user-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const userId = btn.dataset.userId;
+        if (confirm(`Are you sure you want to delete user ${userId}? This action cannot be undone.`)) {
+          deleteRegisteredUser(userId);
+        }
       });
     });
   }

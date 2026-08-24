@@ -47,6 +47,26 @@ const DEFAULT_USERS = [
   }
 ];
 
+export function deleteRegisteredUser(userId) {
+  try {
+    let users = getRegisteredUsers();
+    users = users.filter(u => u.id !== userId);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    
+    addAuditLog({
+      user: 'Super Admin',
+      action: 'DELETED_USER',
+      details: `Deleted portal user with ID: ${userId}`
+    });
+    
+    window.dispatchEvent(new CustomEvent('userAuthUpdated'));
+    return true;
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    return false;
+  }
+}
+
 export function getRegisteredUsers() {
   try {
     const data = localStorage.getItem(USERS_STORAGE_KEY);
