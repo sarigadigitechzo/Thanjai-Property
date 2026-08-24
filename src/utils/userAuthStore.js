@@ -72,7 +72,7 @@ export function getRegisteredUsers() {
     const data = localStorage.getItem(USERS_STORAGE_KEY);
     if (data !== null) {
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         // Exclude admin staff accounts from client portal users list
         const clientUsersOnly = parsed
           .filter(u => u.email !== 'admin@realrest.example' && u.roleCode !== 'superadmin')
@@ -87,7 +87,7 @@ export function getRegisteredUsers() {
             }
             return u;
           });
-        return clientUsersOnly.length > 0 ? clientUsersOnly : DEFAULT_USERS;
+        return clientUsersOnly;
       }
     }
   } catch (err) {
