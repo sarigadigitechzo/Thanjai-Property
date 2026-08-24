@@ -85,7 +85,7 @@ export function renderUsersView() {
           </div>
         </div>
 
-        <div class="table-responsive" style="margin-top: 16px;">
+        <div class="table-responsive" style="margin-top: 16px; overflow-x: auto; width: 100%;">
           <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;" id="users-directory-table">
             <thead>
               <tr style="border-bottom: 1px solid rgba(0,0,0,0.08); text-transform: uppercase; font-size: 0.75rem; color: var(--os-gray-400);">
