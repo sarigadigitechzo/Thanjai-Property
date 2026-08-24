@@ -21,9 +21,7 @@ function cleanUrlRewritePlugin() {
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const url = req.url ? req.url.split('?')[0].split('#')[0] : '';
-        if (url === '/admin-login') {
-          req.url = '/admin-login.html';
-        } else if (url === '/admin-dashboard') {
+        if (url === '/admin-dashboard') {
           req.url = '/dashboard.html';
         } else if (url === '/user-login' || url === '/user-register' || url === '/login' || url === '/register') {
           req.url = '/login.html';
@@ -53,7 +51,6 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         login: resolve(import.meta.dirname, 'login.html'),
-        adminLogin: resolve(import.meta.dirname, 'admin-login.html'),
         dashboard: resolve(import.meta.dirname, 'dashboard.html'),
         userDashboard: resolve(import.meta.dirname, 'user-dashboard.html'),
         user_dashboard: resolve(import.meta.dirname, 'user-dashboard.html'),

@@ -15,7 +15,7 @@ export function renderCategoryCarousel() {
               Discover Properties Based on What You Actually Need
             </h2>
             <p style="color: var(--color-text-muted, #666); font-size: 0.95rem; margin-top: 8px; line-height: 1.6;">
-              <strong>Search by Location. Choose by Property Type. Decide With Confidence.</strong> Every property requirement is different—whether you are a homebuyer, plot seeker, agricultural investor, or business owner.
+              Every real estate aspiration is unique. Whether you are creating a family home, acquiring fertile farmland, or securing a strategic commercial asset, discover verified properties tailored to your vision.
             </p>
           </div>
 

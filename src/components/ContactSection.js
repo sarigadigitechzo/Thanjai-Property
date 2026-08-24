@@ -203,12 +203,12 @@ export function renderContactSection() {
                           <i class="ri-mail-star-line" style="color: #eb5e28; font-size: 1.1rem;"></i>
                           <div>
                             <span style="font-size: 0.65rem; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: 800; display: block;">DIRECT SUPPORT EMAIL</span>
-                            <a href="mailto:vijayaraghavan@thanjaiproperty.com" style="color: #fff; font-size: 0.85rem; font-weight: 700; text-decoration: none;">
+                            <a href="https://mail.google.com/mail/?view=cm&fs=1&to=vijayaraghavan@thanjaiproperty.com" target="_blank" style="color: #fff; font-size: 0.85rem; font-weight: 700; text-decoration: none;">
                               vijayaraghavan@thanjaiproperty.com
                             </a>
                           </div>
                         </div>
-                        <a href="mailto:vijayaraghavan@thanjaiproperty.com" style="background: rgba(255,255,255,0.15); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-decoration: none;">
+                        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=vijayaraghavan@thanjaiproperty.com" target="_blank" style="background: rgba(255,255,255,0.15); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-decoration: none;">
                           Email
                         </a>
                       </div>
@@ -553,6 +553,22 @@ export function initContactSectionListeners() {
       } catch (e) {
         console.error('Error saving lead:', e);
       }
+
+      // Send to email via PHP backend
+      try {
+        fetch('/send_lead.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: newLead.name,
+            phone: newLead.mobile,
+            email: newLead.email,
+            type: newLead.type,
+            location: document.getElementById('cf-location')?.value.trim() || '',
+            budget: newLead.budget
+          })
+        }).catch(e => console.error("Email send error", e));
+      } catch (e) {}
 
       form.reset();
       pills.forEach(p => {

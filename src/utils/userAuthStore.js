@@ -47,12 +47,32 @@ const DEFAULT_USERS = [
   }
 ];
 
+export function deleteRegisteredUser(userId) {
+  try {
+    let users = getRegisteredUsers();
+    users = users.filter(u => u.id !== userId);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    
+    addAuditLog({
+      user: 'Super Admin',
+      action: 'DELETED_USER',
+      details: `Deleted portal user with ID: ${userId}`
+    });
+    
+    window.dispatchEvent(new CustomEvent('userAuthUpdated'));
+    return true;
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    return false;
+  }
+}
+
 export function getRegisteredUsers() {
   try {
     const data = localStorage.getItem(USERS_STORAGE_KEY);
     if (data !== null) {
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         // Exclude admin staff accounts from client portal users list
         const clientUsersOnly = parsed
           .filter(u => u.email !== 'admin@realrest.example' && u.roleCode !== 'superadmin')
@@ -67,7 +87,7 @@ export function getRegisteredUsers() {
             }
             return u;
           });
-        return clientUsersOnly.length > 0 ? clientUsersOnly : DEFAULT_USERS;
+        return clientUsersOnly;
       }
     }
   } catch (err) {

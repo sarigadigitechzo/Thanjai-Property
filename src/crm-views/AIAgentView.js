@@ -115,35 +115,42 @@ export function initAIAgentView() {
       const propertiesContext = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
       const leadsContext = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
 
-      // Determine backend URL dynamically based on environment
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const backendUrl = isLocal ? 'http://localhost:3000/api/chat' : 'https://thanjaiproperty.com/api/chat';
-
-      // Call the Node.js backend
-      const response = await fetch(backendUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, propertiesContext, leadsContext })
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      
+      let reply = "";
+      const lowerText = text.toLowerCase();
+      
+      // Basic AI Simulation Logic
+      if (lowerText.includes('summarize') && (lowerText.includes('performance') || lowerText.includes('sales'))) {
+        const totalLeads = leadsContext.length;
+        const newLeads = leadsContext.filter(l => l.status === 'new').length;
+        reply = `**Weekly Sales Performance Summary:**\n\n- **Total Active Leads:** ${totalLeads}\n- **New Inquiries:** ${newLeads}\n\n*Overall pipeline is looking healthy. Focus on converting the ${newLeads} new leads in your queue.*`;
+      } else if (lowerText.includes('rajesh') || lowerText.includes('budget') || lowerText.includes('1.4cr')) {
+        const matching = propertiesContext.filter(p => p.price <= 14000000 && p.price >= 10000000);
+        reply = `I found **${matching.length} properties** matching Rajesh's budget of ₹1.4Cr:\n\n` + 
+          matching.slice(0, 3).map(p => `- **${p.title}** (${p.location}) - ${p.priceFormatted}`).join('\n') + 
+          `\n\n*Should I draft an email to Rajesh with these options?*`;
+      } else if (lowerText.includes('schedule') || lowerText.includes('tomorrow')) {
+        reply = `**Your Schedule for Tomorrow:**\n\n- **10:00 AM:** Site visit at Kaveri Riverfront Villas with Mr. Karthik.\n- **02:30 PM:** Follow-up call with Suresh Menon.\n- **04:00 PM:** Partner meeting with Chennai Prime Realty.\n\n*Would you like me to set reminders for these?*`;
+      } else if (lowerText.includes('suresh')) {
+        reply = `**Draft Email for Suresh Menon:**\n\nSubject: Follow-up regarding your property inquiry\n\nDear Suresh,\n\nI hope this email finds you well. I wanted to follow up on our previous conversation regarding the luxury apartments in Thanjavur. Please let me know if you are available for a quick site visit this weekend.\n\nBest regards,\nS. Vijayaraghavan\n\n*(You can edit this draft before sending)*`;
+      } else {
+        reply = `I am your AI Operating Agent simulator. I see you have **${propertiesContext.length} properties** and **${leadsContext.length} leads** in your CRM database.\n\nSince this is a simulated demo environment, I can respond to specific queries like:\n- Summarize this week's sales performance\n- Find properties matching Rajesh's budget (₹1.4Cr)\n- What is my schedule looking like for tomorrow?\n- Draft a follow-up email for Suresh Menon`;
       }
 
-      const data = await response.json();
-      
       // Remove loading indicator
       const loader = document.getElementById(loadingId);
       if (loader) loader.remove();
       
       // Append AI response
-      appendMessage('system', data.reply);
+      appendMessage('system', reply);
 
     } catch (error) {
-      console.error('Error fetching AI response:', error);
+      console.error('Error in AI simulator:', error);
       const loader = document.getElementById(loadingId);
       if (loader) loader.remove();
-      appendMessage('system', 'Sorry, I am having trouble connecting to the backend server. Please make sure the Node.js backend is running on port 3000.');
+      appendMessage('system', 'Sorry, an error occurred in the AI simulator.');
     }
   }
 

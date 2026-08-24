@@ -169,26 +169,17 @@ export function renderHero() {
                 <i class="ri-arrow-down-s-line chevron-icon"></i>
               </div>
 
-              <div class="custom-dropdown-menu">
-                <div class="dropdown-item active" data-value="all" data-label="Any Price">
-                  <span>Any Price</span>
-                  <i class="ri-check-line check-icon"></i>
+              <div class="custom-dropdown-menu" style="padding: 20px; width: 280px; left: -100px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                  <span style="font-size: 0.85rem; font-weight: 700; color: #4a5568; text-transform: uppercase;">Max Budget</span>
+                  <span id="slider-val-display" style="font-size: 0.9rem; font-weight: 800; color: #eb5e28;">Any Price</span>
                 </div>
-                <div class="dropdown-item" data-value="under-50l" data-label="Under ₹ 50 Lakhs">
-                  <span>Under ₹ 50 Lakhs</span>
-                  <i class="ri-check-line check-icon"></i>
-                </div>
-                <div class="dropdown-item" data-value="50l-1.5cr" data-label="₹ 50 Lakhs – ₹ 1.5 Cr">
-                  <span>₹ 50 Lakhs – ₹ 1.5 Cr</span>
-                  <i class="ri-check-line check-icon"></i>
-                </div>
-                <div class="dropdown-item" data-value="1.5cr-3cr" data-label="₹ 1.5 Cr – ₹ 3.0 Cr">
-                  <span>₹ 1.5 Cr – ₹ 3.0 Cr</span>
-                  <i class="ri-check-line check-icon"></i>
-                </div>
-                <div class="dropdown-item" data-value="above-3cr" data-label="Above ₹ 3.0 Cr">
-                  <span>Above ₹ 3.0 Cr</span>
-                  <i class="ri-check-line check-icon"></i>
+                <input type="range" id="budget-slider" min="0" max="500" step="10" value="0" style="width: 100%; accent-color: #eb5e28; cursor: pointer; height: 6px; border-radius: 4px; background: #e2e8f0; outline: none;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #718096; margin-top: 10px; font-weight: 600;">
+                  <span>Any</span>
+                  <span>1Cr</span>
+                  <span>3Cr</span>
+                  <span>5Cr+</span>
                 </div>
               </div>
             </div>
@@ -272,6 +263,36 @@ export function initHeroListeners(onSearchSubmit) {
       });
     });
   });
+
+  // Budget Slider Logic
+  const budgetSlider = document.getElementById('budget-slider');
+  const sliderDisplay = document.getElementById('slider-val-display');
+  const searchBudgetHidden = document.getElementById('search-budget');
+  const budgetDropdownText = document.querySelector('#dropdown-budget .selected-text');
+  
+  if (budgetSlider) {
+    budgetSlider.addEventListener('input', (e) => {
+      let val = parseInt(e.target.value);
+      if (val === 0) {
+        sliderDisplay.textContent = 'Any Price';
+        budgetDropdownText.textContent = 'Any Price';
+        searchBudgetHidden.value = 'all';
+      } else {
+        let label = val < 100 ? `Upto ₹ ${val} Lakhs` : `Upto ₹ ${(val/100).toFixed(1)} Cr`;
+        sliderDisplay.textContent = label;
+        budgetDropdownText.textContent = label;
+        
+        // Map to existing filters for compatibility
+        if (val <= 50) searchBudgetHidden.value = 'under-50l';
+        else if (val <= 150) searchBudgetHidden.value = '50l-1.5cr';
+        else if (val <= 300) searchBudgetHidden.value = '1.5cr-3cr';
+        else searchBudgetHidden.value = 'above-3cr';
+      }
+    });
+
+    // Prevent closing the dropdown when sliding
+    budgetSlider.parentElement.addEventListener('click', e => e.stopPropagation());
+  }
 
   // Close dropdowns on outside click
   document.addEventListener('click', () => {

@@ -96,6 +96,7 @@ export async function initBlogStore() {
     if (data && Array.isArray(data)) {
       blogPostsCache = data;
       saveBlogPostsToStorage(blogPostsCache);
+      window.dispatchEvent(new CustomEvent('blogPostsUpdated'));
     }
   } catch (error) {
     // Graceful fallback to local cache
@@ -108,6 +109,16 @@ export function getBlogPosts() {
   if (!blogPostsCache || blogPostsCache.length === 0) {
     blogPostsCache = loadBlogPostsFromStorage();
   }
+  
+  // HOTFIX: Remove old hardcoded dummy posts from localStorage
+  const dummyIds = ["dtcp-rera-buyer-guide", "kaveri-farmland-investment", "contemporary-villas-architecture", "central-tn-commercial-hubs", "nri-property-buying-guide", "dtcp-rera-guide-thanjavur"];
+  const originalLength = blogPostsCache.length;
+  blogPostsCache = blogPostsCache.filter(post => !dummyIds.includes(post.id));
+  
+  if (blogPostsCache.length !== originalLength) {
+    saveBlogPostsToStorage(blogPostsCache);
+  }
+
   return blogPostsCache;
 }
 

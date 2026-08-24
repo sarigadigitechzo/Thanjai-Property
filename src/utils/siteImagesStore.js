@@ -420,6 +420,7 @@ export async function initSiteImagesStore() {
         siteImagesCache[img.id] = img.currentUrl;
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(siteImagesCache));
+      window.dispatchEvent(new CustomEvent('siteImagesUpdated'));
     }
   } catch (error) {}
 
@@ -606,4 +607,9 @@ export function addAuditLog(entry) {
     method: 'POST',
     body: JSON.stringify(newEntry)
   }).catch(e => console.error("API sync error", e));
+}
+
+export function clearAuditLogs() {
+  auditLogsCache = [];
+  localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(auditLogsCache));
 }
