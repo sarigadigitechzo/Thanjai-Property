@@ -608,3 +608,8 @@ export function addAuditLog(entry) {
     body: JSON.stringify(newEntry)
   }).catch(e => console.error("API sync error", e));
 }
+
+export function clearAuditLogs() {
+  auditLogsCache = [];
+  localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(auditLogsCache));
+}

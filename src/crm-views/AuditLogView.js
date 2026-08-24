@@ -1,4 +1,4 @@
-import { getAuditLogs } from '../utils/siteImagesStore.js';
+import { getAuditLogs, clearAuditLogs } from '../utils/siteImagesStore.js';
 
 export function renderAuditLogView() {
   const logs = getAuditLogs();
@@ -39,6 +39,9 @@ export function renderAuditLogView() {
         </div>
 
         <div style="display: flex; gap: 12px; align-items: center;">
+          <button class="os-btn-secondary" id="clear-audit-btn" style="display: inline-flex; align-items: center; gap: 6px; color: #E53E3E; border-color: #FED7D7; background: #FFF5F5;">
+            <i class="ri-delete-bin-line"></i> Clear Logs
+          </button>
           <button class="os-btn-secondary" id="export-audit-btn" style="display: inline-flex; align-items: center; gap: 6px;">
             <i class="ri-download-2-line"></i> Export Audit Log
           </button>
@@ -151,4 +154,15 @@ export function initAuditLogListeners() {
       });
     });
   });
+
+  const clearBtn = document.getElementById('clear-audit-btn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to delete all audit logs? This action cannot be undone.')) {
+        clearAuditLogs();
+        // Dispatch an event to re-render the view
+        window.dispatchEvent(new CustomEvent('hashchange'));
+      }
+    });
+  }
 }
