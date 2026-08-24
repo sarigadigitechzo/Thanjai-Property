@@ -106,9 +106,12 @@ export async function initBlogStore() {
 }
 
 export function getBlogPosts() {
-  if (!blogPostsCache || blogPostsCache.length === 0) {
+  if (!blogPostsCache && !isInitialized) {
     blogPostsCache = loadBlogPostsFromStorage();
+    isInitialized = true;
   }
+  
+  if (!blogPostsCache) blogPostsCache = [];
   
   // HOTFIX: Remove old hardcoded dummy posts from localStorage
   const dummyIds = ["dtcp-rera-buyer-guide", "kaveri-farmland-investment", "contemporary-villas-architecture", "central-tn-commercial-hubs", "nri-property-buying-guide", "dtcp-rera-guide-thanjavur"];
@@ -136,12 +139,10 @@ function loadBlogPostsFromStorage() {
     const data = localStorage.getItem(STORAGE_KEY);
     if (data !== null) {
       let parsed = JSON.parse(data);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         // Remove temporary test posts if present
         parsed = parsed.filter(p => !testIds.includes(p.id) && !testIds.includes(p.slug));
-        if (parsed.length > 0) {
-          return parsed;
-        }
+        return parsed; // Return even if empty
       }
     }
   } catch (e) {
@@ -261,10 +262,10 @@ export function updateBlogPost(id, updatedFields) {
 
 export function deleteBlogPost(id) {
   const posts = getBlogPosts();
-  const target = posts.find(p => p.id === id);
+  const target = posts.find(p => String(p.id) === String(id));
   if (!target) return false;
 
-  const filtered = posts.filter(p => p.id !== id);
+  const filtered = posts.filter(p => String(p.id) !== String(id));
   saveBlogPostsToStorage(filtered);
   
   // Async background sync
