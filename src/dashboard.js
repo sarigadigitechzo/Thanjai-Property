@@ -24,13 +24,15 @@ import { initPropertiesStore } from './utils/propertiesStore.js';
 import { initBlogStore } from './utils/blogStore.js';
 import { initSiteImagesStore } from './utils/siteImagesStore.js';
 import { initAdminUsersStore } from './utils/adminUsersStore.js';
+import { initUsersStore } from './utils/userAuthStore.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([
     initPropertiesStore(),
     initBlogStore(),
     initSiteImagesStore(),
-    initAdminUsersStore()
+    initAdminUsersStore(),
+    initUsersStore()
   ]);
   
   const contentArea = document.getElementById('os-content');

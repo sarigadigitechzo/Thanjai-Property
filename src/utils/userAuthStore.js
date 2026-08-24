@@ -1,4 +1,5 @@
 import { addAuditLog } from './siteImagesStore.js';
+import { fetchFromAPI } from './api.js';
 
 const USERS_STORAGE_KEY = 'thanjai_registered_users';
 const ACTIVE_USER_KEY = 'thanjai_active_user';
@@ -47,12 +48,42 @@ const DEFAULT_USERS = [
   }
 ];
 
+let usersCache = null;
+
+export async function initUsersStore() {
+  try {
+    const data = await fetchFromAPI('/portal_users');
+    if (data && Array.isArray(data) && data.length > 0) {
+      usersCache = data;
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
+      window.dispatchEvent(new CustomEvent('userAuthUpdated'));
+      return usersCache;
+    }
+  } catch (error) {
+    console.error('Error fetching portal users from API:', error);
+  }
+  
+  // Fallback to local storage if API fails or is empty
+  const localData = localStorage.getItem(USERS_STORAGE_KEY);
+  if (localData) {
+    usersCache = JSON.parse(localData);
+  } else {
+    usersCache = [...DEFAULT_USERS];
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
+  }
+  return usersCache;
+}
+
 export function deleteRegisteredUser(userId) {
   try {
-    let users = getRegisteredUsers();
-    users = users.filter(u => u.id !== userId);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    if (!usersCache) usersCache = [...DEFAULT_USERS];
+    usersCache = usersCache.filter(u => u.id !== userId);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
     
+    // Async background sync
+    fetchFromAPI(`/portal_users/${userId}`, { method: 'DELETE' })
+      .catch(e => console.error('API sync error', e));
+
     addAuditLog({
       user: 'Super Admin',
       action: 'DELETED_USER',
@@ -68,34 +99,31 @@ export function deleteRegisteredUser(userId) {
 }
 
 export function getRegisteredUsers() {
-  try {
+  if (!usersCache) {
     const data = localStorage.getItem(USERS_STORAGE_KEY);
-    if (data !== null) {
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) {
-        // Exclude admin staff accounts from client portal users list
-        const clientUsersOnly = parsed
-          .filter(u => u.email !== 'admin@realrest.example' && u.roleCode !== 'superadmin')
-          .map(u => {
-            const email = (u.email || '').toLowerCase();
-            const role = (u.role || u.roleCode || '').toLowerCase();
-            if (email.includes('builder') || role.includes('builder')) {
-              return { ...u, role: 'Builder / Developer', roleCode: 'builderdeveloper' };
-            }
-            if (email.includes('agent') || email.includes('broker') || role.includes('agent') || role.includes('broker')) {
-              return { ...u, role: 'Agent / Broker', roleCode: 'agentbroker' };
-            }
-            return u;
-          });
-        return clientUsersOnly;
-      }
+    if (data) {
+      try { usersCache = JSON.parse(data); } catch(e){}
     }
-  } catch (err) {
-    console.error('Error reading registered users:', err);
+    if (!usersCache || !Array.isArray(usersCache) || usersCache.length === 0) {
+      usersCache = [...DEFAULT_USERS];
+    }
   }
 
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
-  return DEFAULT_USERS;
+  // Exclude admin staff accounts from client portal users list
+  const clientUsersOnly = usersCache
+    .filter(u => u.email !== 'admin@realrest.example' && u.roleCode !== 'superadmin')
+    .map(u => {
+      const email = (u.email || '').toLowerCase();
+      const role = (u.role || u.roleCode || '').toLowerCase();
+      if (email.includes('builder') || role.includes('builder')) {
+        return { ...u, role: 'Builder / Developer', roleCode: 'builderdeveloper' };
+      }
+      if (email.includes('agent') || email.includes('broker') || role.includes('agent') || role.includes('broker')) {
+        return { ...u, role: 'Agent / Broker', roleCode: 'agentbroker' };
+      }
+      return u;
+    });
+  return clientUsersOnly;
 }
 
 export function getCurrentUser() {
@@ -245,12 +273,14 @@ export function verifyOTPAndActivate(enteredOtp) {
   delete activeRecord.otpCode;
 
   if (existingIdx >= 0) {
-    users[existingIdx] = activeRecord;
+    usersCache[existingIdx] = activeRecord;
+    fetchFromAPI(`/portal_users/${activeRecord.id}`, { method: 'PUT', body: JSON.stringify(activeRecord) }).catch(e => console.error(e));
   } else {
-    users.unshift(activeRecord);
+    usersCache.unshift(activeRecord);
+    fetchFromAPI(`/portal_users`, { method: 'POST', body: JSON.stringify(activeRecord) }).catch(e => console.error(e));
   }
 
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
   localStorage.removeItem(PENDING_OTP_KEY);
 
   setCurrentUser(activeRecord);
@@ -277,10 +307,13 @@ export function updateUserPassword(emailOrId, newPassword) {
   );
 
   if (idx >= 0) {
-    users[idx].password = newPassword;
-    users[idx].isTemporaryPassword = false;
-    users[idx].passwordUpdatedAt = new Date().toISOString();
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    usersCache[idx].password = newPassword;
+    usersCache[idx].isTemporaryPassword = false;
+    usersCache[idx].passwordUpdatedAt = new Date().toISOString();
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
+    
+    // API Sync (Note: backend may not store password, but we push the updated status)
+    fetchFromAPI(`/portal_users/${usersCache[idx].id}`, { method: 'PUT', body: JSON.stringify(usersCache[idx]) }).catch(e => console.error(e));
 
     const current = getCurrentUser();
     if (current && (current.email === users[idx].email || current.id === users[idx].id)) {
@@ -333,8 +366,10 @@ export function loginUser(email, password) {
       buyersCount: 12,
       createdAt: new Date().toISOString()
     };
-    users.unshift(found);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    usersCache.unshift(found);
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
+    
+    fetchFromAPI(`/portal_users`, { method: 'POST', body: JSON.stringify(found) }).catch(e => console.error(e));
   }
 
   setCurrentUser(found);

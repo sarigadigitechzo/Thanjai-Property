@@ -528,8 +528,13 @@ elseif ($resource === 'audit_logs') {
         }
     }
     elseif ($method === 'DELETE' && $id) {
-        $stmt = $conn->prepare("DELETE FROM audit_logs WHERE id=?");
-        $stmt->bind_param("s", $id);
+        if ($id === 'clear') {
+            $stmt = $conn->prepare("TRUNCATE TABLE audit_logs");
+        } else {
+            $stmt = $conn->prepare("DELETE FROM audit_logs WHERE id=?");
+            $stmt->bind_param("s", $id);
+        }
+        
         if ($stmt->execute()) {
             echo json_encode(["message" => "Deleted successfully"]);
         } else {
@@ -667,6 +672,27 @@ elseif ($resource === 'property_approvals') {
         $stmt->bind_param("s", $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Deleted successfully"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        }
+    }
+}
+
+elseif ($resource === 'site_images') {
+    if ($method === 'GET') {
+        $result = $conn->query("SELECT * FROM site_images");
+        $rows = [];
+        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        echo json_encode($rows);
+    } 
+    elseif ($method === 'POST') {
+        $data = json_decode(file_get_contents("php://input"), true);
+        
+        $stmt = $conn->prepare("INSERT INTO site_images (id, image_key, url) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE url = ?");
+        $stmt->bind_param("ssss", $data['id'], $data['image_key'], $data['url'], $data['url']);
+        if ($stmt->execute()) {
+            echo json_encode(["message" => "Created/Updated successfully"]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);

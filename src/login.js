@@ -1,4 +1,4 @@
-import { initiateRegistration, verifyOTPAndActivate, loginUser, getPendingOTPUser, updateUserPassword, sendOtpEmail, sendCredentialsEmail } from './utils/userAuthStore.js';
+import { initiateRegistration, verifyOTPAndActivate, loginUser, getPendingOTPUser, updateUserPassword, sendOtpEmail, sendCredentialsEmail, initUsersStore } from './utils/userAuthStore.js';
 
 export function renderLogin(initialMode = 'signin') {
   const pending = getPendingOTPUser();
@@ -248,9 +248,11 @@ export function renderLogin(initialMode = 'signin') {
   `;
 }
 
-export function initLogin() {
+export async function initLogin() {
   const app = document.getElementById('login-app');
   if (!app) return;
+
+  await initUsersStore().catch(() => {});
 
   const path = window.location.pathname.toLowerCase();
   const hash = window.location.hash.slice(1).toLowerCase();

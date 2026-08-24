@@ -182,13 +182,12 @@ export async function initSiteVisitsView() {
   const agendaContainer = document.getElementById('agenda-side-container');
 
   const updateCalendarDots = () => {
-    const currentVisits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
     const days = document.querySelectorAll('.cal-day:not(.muted)');
     days.forEach(day => {
       const dayNum = day.dataset.day;
       const monthStr = monthNames[currentMonth];
       // Only show dots for the current month and year
-      const hasVisit = currentVisits.some(v => parseInt(v.date) === parseInt(dayNum) && v.month === monthStr);
+      const hasVisit = visits.some(v => parseInt(v.date) === parseInt(dayNum) && v.month === monthStr);
       if (hasVisit) {
         day.classList.add('has-event');
       } else {

@@ -502,9 +502,9 @@ export function updateSiteImage(key, newUrl) {
   window.dispatchEvent(new CustomEvent('siteImagesUpdated', { detail: { key, newUrl } }));
   
   // Async background sync
-  fetchFromAPI(`/site_images/${key}`, {
-    method: 'PUT',
-    body: JSON.stringify({ currentUrl: newUrl })
+  fetchFromAPI(`/site_images`, {
+    method: 'POST',
+    body: JSON.stringify({ id: `img-${key}`, image_key: key, url: newUrl })
   }).catch(e => console.error("API sync error", e));
   
   return true;
@@ -612,4 +612,7 @@ export function addAuditLog(entry) {
 export function clearAuditLogs() {
   auditLogsCache = [];
   localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(auditLogsCache));
+  
+  // Sync clear with database
+  fetchFromAPI(`/audit_logs/clear`, { method: 'DELETE' }).catch(e => console.error("API sync error", e));
 }
