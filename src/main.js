@@ -13,7 +13,7 @@ import { renderBlogSection, initBlogSectionListeners } from './components/BlogSe
 import { renderPostPropertyCTA, initPostPropertyCTAListeners } from './components/PostPropertyCTA.js';
 import { renderHomeContactBanner, initHomeContactBannerListeners } from './components/HomeContactBanner.js';
 import { renderFooter } from './components/Footer.js';
-import { renderMobileBottomNav, initMobileBottomNavListeners } from './components/MobileBottomNav.js';
+import { renderMobileBottomNav, initMobileBottomNavListeners, MobileBottomNav } from './components/MobileBottomNav.js';
 import { renderPropertyDetailModal, initPropertyDetailModalListeners } from './components/PropertyDetailModal.js';
 import { renderPostPropertyModal, initPostPropertyModalListeners } from './components/PostPropertyModal.js';
 import { renderScheduleVisitModal, initScheduleVisitModalListeners } from './components/ScheduleVisitModal.js';
@@ -152,9 +152,25 @@ function navigateToRoute(route, pushState = true) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+let isAppReady = false;
+
 // Primary Render Engine
 function renderApp() {
   const appContainer = document.getElementById('app');
+
+  if (!isAppReady) {
+    appContainer.innerHTML = `
+      ${renderNavbar(currentRoute, navigateToRoute)}
+      <main style="min-height: 75vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #faf8f5;">
+         <i class="ri-loader-4-line" style="font-size: 3rem; color: #eb5e28; animation: spin 1s linear infinite;"></i>
+         <div style="margin-top: 16px; font-size: 1.1rem; font-weight: 700; color: #4A5568; letter-spacing: 0.5px;">Loading Thanjai Property...</div>
+         <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+      </main>
+      ${renderFooter()}
+      ${renderMobileBottomNav()}
+    `;
+    return;
+  }
   const allProperties = getPublicProperties();
   const selectedModalProperty = appState.selectedPropertyId 
     ? allProperties.find(p => p.id === appState.selectedPropertyId) 
@@ -403,16 +419,18 @@ window.addEventListener('popstate', () => {
 });
 
 // Application Initialization
-function initApp() {
-  initPropertiesStore();
-  initBlogStore();
+async function initApp() {
+  // Await the API data fetches to prevent flashing of old cached data
+  await Promise.all([
+    initPropertiesStore().catch(() => {}),
+    initBlogStore().catch(() => {})
+  ]);
+  
   initSiteImagesStore();
   
   // Set up mobile navigation
   MobileBottomNav.init();
 }
-
-initApp();
 
 window.addEventListener('popstate', () => {
   currentRoute = parseCurrentRoute();
@@ -457,6 +475,15 @@ window.addEventListener('storage', (e) => {
 });
 
 // Initial Load & Render
-updateSeoMetadata(currentRoute);
-renderApp();
+initApp().then(() => {
+  isAppReady = true;
+  updateSeoMetadata(currentRoute);
+  renderApp();
+}).catch((err) => {
+  console.error("Critical error starting app:", err);
+  // Fallback to ensure spinner hides even if initialization fails
+  isAppReady = true;
+  updateSeoMetadata(currentRoute);
+  renderApp();
+});
 

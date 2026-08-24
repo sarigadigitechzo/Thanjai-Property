@@ -1,11 +1,16 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /
-  RewriteRule ^api\.php - [L]
+
+  # Handle Clean URLs directly first
   RewriteRule ^admin-dashboard/?$ dashboard.html [L]
-  RewriteRule ^dashboard\.html$ - [L]
-  RewriteRule ^login\.html$ - [L]
+  RewriteRule ^user-login/?$ login.html [L]
+  RewriteRule ^user-register/?$ login.html [L]
+  RewriteRule ^login/?$ login.html [L]
+  RewriteRule ^register/?$ login.html [L]
+  RewriteRule ^user-dashboard/?$ user-dashboard.html [L]
+
+  # If it's a real file or directory, serve it directly
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^ index.html [QSA,L]
+  RewriteRule ^(.*)$ index.html [L]
 </IfModule>

@@ -54,11 +54,7 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
               <span>Add New Property</span>
             </a>
 
-            ${currentUser ? `
-              <button class="nav-logout-icon-btn" id="nav-logout-header-btn" title="Logout" style="width: 38px; height: 38px; border-radius: 50%; background: rgba(229,46,61,0.12); color: #E52E3D; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer;">
-                <i class="ri-logout-box-r-line"></i>
-              </button>
-            ` : ''}
+
 
             <button class="mobile-menu-toggle" id="mobile-menu-btn" aria-label="Toggle Menu">
               <i class="ri-menu-4-line"></i>
@@ -132,10 +128,7 @@ export function initNavbarListeners(onNavigate, onSavedClick) {
   });
 
   document.getElementById('saved-properties-btn')?.addEventListener('click', onSavedClick);
-  document.getElementById('nav-logout-header-btn')?.addEventListener('click', () => {
-    logoutUser();
-    window.location.reload();
-  });
+
   
   // Route Navigation Clicks
   document.querySelectorAll('.nav-route-link').forEach(link => {

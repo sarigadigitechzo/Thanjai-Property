@@ -4,6 +4,30 @@ import { getRegisteredUsers } from '../utils/userAuthStore.js';
 export function renderDashboardView() {
   const activePropertiesCount = getProperties().length;
   const users = getRegisteredUsers();
+  const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+  const totalLeads = leads.length;
+  
+  // Calculate new leads today
+  const today = new Date().toISOString().split('T')[0];
+  const newToday = leads.filter(l => l.date === today && l.status === 'new').length;
+
+
+  // Pipeline Distribution
+  const newCount = leads.filter(l => l.status?.toLowerCase() === 'new').length;
+  const followUpCount = leads.filter(l => ['contacted', 'property shared', 'follow up'].includes(l.status?.toLowerCase())).length;
+  const siteVisitCount = leads.filter(l => ['interested'].includes(l.status?.toLowerCase())).length;
+  const regCount = leads.filter(l => ['negotiation', 'converted'].includes(l.status?.toLowerCase())).length;
+  const pipeTotal = newCount + followUpCount + siteVisitCount + regCount || 1; // avoid division by 0
+
+  const newPct = Math.round((newCount / pipeTotal) * 100);
+  const fupPct = Math.round((followUpCount / pipeTotal) * 100);
+  const svPct = Math.round((siteVisitCount / pipeTotal) * 100);
+  const regPct = Math.round((regCount / pipeTotal) * 100);
+
+  const flexNew = Math.max(newPct, 10);
+  const flexFup = Math.max(fupPct, 10);
+  const flexSv = Math.max(svPct, 10);
+  const flexReg = Math.max(regPct, 10);
 
   return `
     <div class="view-enter">
@@ -19,9 +43,9 @@ export function renderDashboardView() {
             <i class="ri-sparkling-line"></i> AI Morning Brief
           </div>
           <ul class="ai-summary-list">
-            <li><i class="ri-fire-fill"></i> 3 high-priority follow-ups due</li>
-            <li><i class="ri-time-line"></i> 2 registrations pending signatures</li>
-            <li><i class="ri-vip-crown-line"></i> 1 hot lead ready for site visit</li>
+            <li><i class="ri-fire-fill"></i> ${followUpCount} high-priority follow-ups due</li>
+            <li><i class="ri-time-line"></i> ${regCount} registrations pending signatures</li>
+            <li><i class="ri-vip-crown-line"></i> ${siteVisitCount} hot lead ready for site visit</li>
           </ul>
         </div>
       </div>
@@ -34,8 +58,8 @@ export function renderDashboardView() {
             <span class="kpi-title">TOTAL LEADS</span>
             <div class="kpi-icon" style="background: #ebf8ff; color: #3182ce;"><i class="ri-user-line"></i></div>
           </div>
-          <div class="kpi-value count-up">18</div>
-          <div class="kpi-trend up"><i class="ri-arrow-up-line"></i> 12% this week</div>
+          <div class="kpi-value count-up">${totalLeads}</div>
+          <div class="kpi-trend up"><i class="ri-arrow-up-line"></i> Live count</div>
         </div>
 
         <!-- 2. NEW TODAY -->
@@ -44,7 +68,7 @@ export function renderDashboardView() {
             <span class="kpi-title">NEW TODAY</span>
             <div class="kpi-icon" style="background: #e6fffa; color: #319795;"><i class="ri-sparkling-fill"></i></div>
           </div>
-          <div class="kpi-value count-up">0</div>
+          <div class="kpi-value count-up">${newToday}</div>
           <div class="kpi-trend neutral"><i class="ri-subtract-line"></i> Just arrived</div>
         </div>
 
@@ -54,7 +78,7 @@ export function renderDashboardView() {
             <span class="kpi-title">FOLLOW-UPS DUE</span>
             <div class="kpi-icon" style="background: #feebc8; color: #dd6b20;"><i class="ri-calendar-event-line"></i></div>
           </div>
-          <div class="kpi-value count-up">11</div>
+          <div class="kpi-value count-up">${followUpCount}</div>
           <div class="kpi-trend neutral"><i class="ri-time-line"></i> today</div>
         </div>
 
@@ -64,8 +88,8 @@ export function renderDashboardView() {
             <span class="kpi-title">CONVERSION RATE</span>
             <div class="kpi-icon" style="background: #faf5ff; color: #805ad5;"><i class="ri-pie-chart-line"></i></div>
           </div>
-          <div class="kpi-value">11.1%</div>
-          <div class="kpi-trend up"><i class="ri-arrow-up-line"></i> 2.4% vs last mo</div>
+          <div class="kpi-value">${totalLeads > 0 ? Math.round((regCount / totalLeads) * 100) : 0}%</div>
+          <div class="kpi-trend up"><i class="ri-arrow-up-line"></i> based on data</div>
         </div>
 
         <!-- 5. PROPERTIES AVAILABLE -->
@@ -84,7 +108,7 @@ export function renderDashboardView() {
             <span class="kpi-title">SHARED TODAY</span>
             <div class="kpi-icon" style="background: #ebf8ff; color: #4299e1;"><i class="ri-send-plane-line"></i></div>
           </div>
-          <div class="kpi-value count-up">1</div>
+          <div class="kpi-value count-up">0</div>
           <div class="kpi-trend neutral"><i class="ri-whatsapp-line"></i> via WhatsApp</div>
         </div>
 
@@ -94,7 +118,7 @@ export function renderDashboardView() {
             <span class="kpi-title">WHATSAPP SENT TODAY</span>
             <div class="kpi-icon" style="background: #f0fff4; color: #38a169;"><i class="ri-whatsapp-line"></i></div>
           </div>
-          <div class="kpi-value count-up">2</div>
+          <div class="kpi-value count-up">0</div>
           <div class="kpi-trend neutral"><i class="ri-chat-3-line"></i> Client logs</div>
         </div>
 
@@ -104,7 +128,7 @@ export function renderDashboardView() {
             <span class="kpi-title">PARTNER-SHARED LEADS</span>
             <div class="kpi-icon" style="background: #fff5f5; color: #d53f8c;"><i class="ri-briefcase-4-line"></i></div>
           </div>
-          <div class="kpi-value count-up">8</div>
+          <div class="kpi-value count-up">0</div>
           <div class="kpi-trend neutral"><i class="ri-user-shared-line"></i> Partner network</div>
         </div>
       </div>
@@ -128,26 +152,26 @@ export function renderDashboardView() {
             </svg>
 
             <div class="pipeline-stages">
-              <div class="pg-stage" style="flex: 21.4;" data-tooltip="New Leads • 21%">
-                <div class="pg-val count-up">3</div>
+              <div class="pg-stage" style="flex: ${flexNew};" data-tooltip="New Leads • ${newPct}%">
+                <div class="pg-val count-up">${newCount}</div>
                 <div class="pg-node" style="border-color: var(--os-charcoal);"><div class="pg-inner" style="background: var(--os-charcoal);"></div></div>
                 <div class="pg-label">New</div>
               </div>
 
-              <div class="pg-stage pulse-highest" style="flex: 35.7;" data-tooltip="Follow Up Pending • 36%">
-                <div class="pg-val count-up">5</div>
+              <div class="pg-stage ${fupPct > 0 ? 'pulse-highest' : ''}" style="flex: ${flexFup};" data-tooltip="Follow Up Pending • ${fupPct}%">
+                <div class="pg-val count-up">${followUpCount}</div>
                 <div class="pg-node" style="border-color: var(--os-deep-brown);"><div class="pg-inner" style="background: var(--os-deep-brown);"></div></div>
                 <div class="pg-label">Follow Up</div>
               </div>
 
-              <div class="pg-stage" style="flex: 28.6;" data-tooltip="Site Visit Scheduled • 29%">
-                <div class="pg-val count-up">4</div>
+              <div class="pg-stage" style="flex: ${flexSv};" data-tooltip="Site Visit Scheduled • ${svPct}%">
+                <div class="pg-val count-up">${siteVisitCount}</div>
                 <div class="pg-node" style="border-color: var(--os-luxury-orange);"><div class="pg-inner" style="background: var(--os-luxury-orange);"></div></div>
                 <div class="pg-label">Site Visit</div>
               </div>
 
-              <div class="pg-stage" style="flex: 14.3;" data-tooltip="Registration • 14%">
-                <div class="pg-val count-up">2</div>
+              <div class="pg-stage" style="flex: ${flexReg};" data-tooltip="Registration • ${regPct}%">
+                <div class="pg-val count-up">${regCount}</div>
                 <div class="pg-node" style="border-color: var(--os-rich-red);"><div class="pg-inner" style="background: var(--os-rich-red);"></div></div>
                 <div class="pg-label">Register</div>
               </div>

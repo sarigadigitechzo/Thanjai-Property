@@ -13,7 +13,7 @@ export function renderLuxuryTransition() {
           <div class="orange-divider-line"></div>
 
           <p style="color: rgba(255, 255, 255, 0.85); font-size: 1.05rem; max-width: 780px; margin: 0 auto; line-height: 1.7;">
-            Real estate is local. The value, suitability and potential of a property change significantly based on its exact location, surrounding development, infrastructure, and intended use. Thanjai Property combines location-focused property discovery with a broad selection of categories across Tamil Nadu.
+            Location drives property value. We combine on-the-ground local expertise with verified listings across Tamil Nadu, making it easy to find land and homes that fit your goals.
           </p>
 
           <!-- Key Metrics Counter Grid -->

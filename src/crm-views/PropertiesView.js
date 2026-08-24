@@ -117,6 +117,11 @@ export function renderPropertiesView() {
             <span>Export CSV</span>
           </button>
 
+          <button class="os-btn-secondary" id="export-props-sql-btn" title="Export currently listed properties to SQL for phpMyAdmin" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 0.88rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #ffffff; color: #4a5568; font-weight: 600; cursor: pointer;">
+            <i class="ri-database-2-line" style="font-size: 1.1rem; color: #38a169;"></i>
+            <span>Export SQL</span>
+          </button>
+
           <button class="os-btn-primary" id="open-add-property-form-btn" style="
             display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px; font-size: 0.9rem; font-weight: 700;
             border-radius: 10px; background: var(--color-orange, #eb5e28); color: #ffffff; border: none; cursor: pointer;
@@ -1202,6 +1207,7 @@ export function initPropertiesViewListeners() {
 
   // CSV Export ONLY Filtered / Listed Properties
   document.getElementById('export-props-csv-btn')?.addEventListener('click', exportFilteredPropertiesToCSV);
+  document.getElementById('export-props-sql-btn')?.addEventListener('click', exportFilteredPropertiesToSQL);
 
   // Edit Buttons
   document.querySelectorAll('.edit-prop-btn').forEach(btn => {
@@ -1633,6 +1639,75 @@ function exportFilteredPropertiesToCSV() {
   });
 
   showToast(`Exported ${filtered.length} filtered property records to CSV`, 'ri-file-download-line');
+}
+
+function exportFilteredPropertiesToSQL() {
+  const allProperties = getProperties();
+  const filtered = filterPropertiesList(allProperties);
+
+  if (filtered.length === 0) {
+    showToast('No properties available to export under current filters.', 'ri-error-warning-line');
+    return;
+  }
+
+  const sqlStatements = [];
+  sqlStatements.push('-- Thanjai Property CRM - SQL Export');
+  sqlStatements.push(`-- Exported ${filtered.length} properties on ${new Date().toISOString()}`);
+  sqlStatements.push('SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";');
+  sqlStatements.push('START TRANSACTION;\n');
+
+  filtered.forEach(p => {
+    const id = p.id || '';
+    const title = (p.title || '').replace(/'/g, "''");
+    const type = p.type || '';
+    const category = p.category || '';
+    const categoryRaw = p.categoryRaw || p.category || '';
+    const categoryLabel = p.categoryLabel || '';
+    const purpose = p.purpose || '';
+    const price = p.price || 0;
+    const priceFormatted = p.priceFormatted || '';
+    const location = (p.location || '').replace(/'/g, "''");
+    const district = (p.district || '').replace(/'/g, "''");
+    const address = (p.address || '').replace(/'/g, "''");
+    const size = (p.size || '').replace(/'/g, "''");
+    const bedrooms = p.bedrooms || 'NULL';
+    const bathrooms = p.bathrooms || 'NULL';
+    const furnishing = p.furnishing || '';
+    const status = p.status || p.availability || 'Available';
+    const availability = p.availability || p.status || 'Available';
+    const latitude = p.latitude || '';
+    const longitude = p.longitude || '';
+    const videoUrl = p.videoUrl || '';
+    const ownerName = (p.ownerName || '').replace(/'/g, "''");
+    const ownerPhone = p.ownerPhone || '';
+    const listedBy = p.listedBy || '';
+    const images = JSON.stringify(p.images || []).replace(/'/g, "''");
+    const description = (p.description || '').replace(/'/g, "''");
+    const features = JSON.stringify(p.features || []).replace(/'/g, "''");
+    const createdAt = p.createdAt ? p.createdAt.slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+    sqlStatements.push(`INSERT IGNORE INTO \`properties\` (\`id\`, \`title\`, \`type\`, \`category\`, \`categoryRaw\`, \`categoryLabel\`, \`purpose\`, \`price\`, \`priceFormatted\`, \`location\`, \`district\`, \`address\`, \`size\`, \`bedrooms\`, \`bathrooms\`, \`furnishing\`, \`status\`, \`availability\`, \`latitude\`, \`longitude\`, \`videoUrl\`, \`ownerName\`, \`ownerPhone\`, \`listedBy\`, \`images\`, \`description\`, \`features\`, \`createdAt\`) VALUES ('${id}', '${title}', '${type}', '${category}', '${categoryRaw}', '${categoryLabel}', '${purpose}', ${price}, '${priceFormatted}', '${location}', '${district}', '${address}', '${size}', ${bedrooms}, ${bathrooms}, '${furnishing}', '${status}', '${availability}', '${latitude}', '${longitude}', '${videoUrl}', '${ownerName}', '${ownerPhone}', '${listedBy}', '${images}', '${description}', '${features}', '${createdAt}');`);
+  });
+
+  sqlStatements.push('\nCOMMIT;');
+
+  const sqlString = sqlStatements.join('\n');
+  const blob = new Blob([sqlString], { type: 'text/sql;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `Thanjai_Properties_Export_${new Date().toISOString().slice(0, 10)}.sql`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  addAuditLog({
+    action: 'EXPORT_PROPERTIES_SQL',
+    details: `Exported ${filtered.length} property listings matching current filters to SQL file.`
+  });
+
+  showToast(`Exported ${filtered.length} filtered property records to SQL`, 'ri-file-download-line');
 }
 
 function refreshPropertiesView() {

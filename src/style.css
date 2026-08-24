@@ -1732,6 +1732,7 @@ a {
 .search-field-pill {
   flex: 1;
   position: relative;
+  min-width: 0;
 }
 
 .search-field-inner {

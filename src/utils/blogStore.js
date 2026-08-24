@@ -28,6 +28,16 @@ export function getBlogPosts() {
   if (!blogPostsCache || blogPostsCache.length === 0) {
     blogPostsCache = loadBlogPostsFromStorage();
   }
+  
+  // HOTFIX: Remove old hardcoded dummy posts from localStorage
+  const dummyIds = ["dtcp-rera-buyer-guide", "kaveri-farmland-investment", "contemporary-villas-architecture", "central-tn-commercial-hubs", "nri-property-buying-guide", "dtcp-rera-guide-thanjavur"];
+  const originalLength = blogPostsCache.length;
+  blogPostsCache = blogPostsCache.filter(post => !dummyIds.includes(post.id));
+  
+  if (blogPostsCache.length !== originalLength) {
+    saveBlogPostsToStorage(blogPostsCache);
+  }
+
   return blogPostsCache;
 }
 
@@ -50,7 +60,6 @@ function loadBlogPostsFromStorage() {
 
 function saveBlogPostsToStorage(posts) {
   try {
-    blogPostsCache = posts;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
   } catch (e) {
     console.error("Error saving blog posts to localStorage", e);

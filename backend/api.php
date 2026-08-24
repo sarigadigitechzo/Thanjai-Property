@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-$conn = new mysqli("localhost", "thanjaiproperty_dbuser", "zo7yNf^Jf!SLh3f[", "thanjaiproperty_crm");
+$conn = new mysqli("localhost", "thanjaiproperty_thanjaiproperty", "q-i_$^HnE{OnhY%E", "thanjaiproperty_crm");
 if ($conn->connect_error) {
     echo json_encode(["error" => "Database Connection failed"]);
     exit();

@@ -42,8 +42,104 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (rawActive) activeAdminUser = JSON.parse(rawActive);
   } catch (e) {}
 
-  const isSuperAdmin = !activeAdminUser || activeAdminUser.role === 'Super Admin' || activeAdminUser.roleCode === 'superadmin' || activeAdminUser.email === 'admin@realrest.example';
-  const allowedModules = (activeAdminUser && Array.isArray(activeAdminUser.allowedModules) && activeAdminUser.allowedModules.length > 0)
+  // Guard check: Render inline login if not authenticated
+  if (!activeAdminUser) {
+    document.body.className = '';
+    document.getElementById('os-app').style.display = 'none';
+    const loginStyle = document.createElement('style');
+    loginStyle.textContent = `
+      body { margin: 0; padding: 0; font-family: 'Manrope', 'Inter', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #f8fafc; }
+      .admin-card { width: 100%; max-width: 480px; background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 24px; padding: 44px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); backdrop-filter: blur(12px); box-sizing: border-box; }
+      .admin-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(235, 94, 40, 0.15); color: #eb5e28; font-size: 0.78rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(235, 94, 40, 0.3); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.08em; }
+      .admin-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; margin: 0 0 8px 0; color: #ffffff; }
+      .admin-subtitle { color: #94a3b8; font-size: 0.95rem; margin: 0 0 32px 0; line-height: 1.5; }
+      .admin-form-group { margin-bottom: 20px; }
+      .admin-label { display: block; font-size: 0.78rem; font-weight: 800; color: #cbd5e1; margin-bottom: 8px; letter-spacing: 0.05em; text-transform: uppercase; }
+      .admin-input-wrap { position: relative; }
+      .admin-input-wrap i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 1.1rem; }
+      .admin-input { width: 100%; padding: 12px 16px 12px 46px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 12px; color: #ffffff; font-size: 0.95rem; outline: none; box-sizing: border-box; transition: border-color 0.2s; }
+      .admin-input:focus { border-color: #eb5e28; }
+      .admin-submit-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #eb5e28 0%, #d94e18 100%); border: none; border-radius: 12px; color: #ffffff; font-size: 1rem; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(235, 94, 40, 0.35); margin-top: 10px; }
+      .admin-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(235, 94, 40, 0.45); }
+      .demo-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+      .demo-title { font-size: 0.82rem; font-weight: 700; color: #94a3b8; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+      .demo-pill { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+      .demo-pill:hover { background: rgba(235, 94, 40, 0.15); border-color: rgba(235, 94, 40, 0.4); }
+      .demo-name { font-size: 0.88rem; font-weight: 700; color: #f1f5f9; }
+      .demo-role { font-size: 0.78rem; color: #eb5e28; font-weight: 700; }
+    `;
+    document.head.appendChild(loginStyle);
+
+    const loginContainer = document.createElement('div');
+    loginContainer.className = 'admin-card';
+    loginContainer.innerHTML = `
+      <div style="text-align: center; margin-bottom: 24px;">
+        <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" style="height: 48px; background: #fff; padding: 6px 12px; border-radius: 8px; margin-bottom: 16px;" />
+        <div style="display: block;">
+          <span class="admin-badge"><i class="ri-shield-keyhole-line"></i> Administrative Operating System</span>
+        </div>
+        <h1 class="admin-title">Admin Staff Login</h1>
+        <p class="admin-subtitle">Sign in with your administrative credentials to access CRM Pipeline, Property Inventory & System Controls.</p>
+      </div>
+
+      <form id="admin-login-form">
+        <div class="admin-form-group">
+          <label class="admin-label" for="admin-email">STAFF EMAIL ADDRESS</label>
+          <div class="admin-input-wrap">
+            <i class="ri-mail-line"></i>
+            <input type="email" id="admin-email" value="admin@realrest.example" required class="admin-input" placeholder="admin@realrest.example" />
+          </div>
+        </div>
+        <div class="admin-form-group">
+          <label class="admin-label" for="admin-password">SYSTEM PASSWORD</label>
+          <div class="admin-input-wrap">
+            <i class="ri-lock-2-line"></i>
+            <input type="password" id="admin-password" value="Admin@1234" required class="admin-input" placeholder="••••••••" />
+          </div>
+        </div>
+        <button type="submit" class="admin-submit-btn" id="admin-signin-btn">
+          <i class="ri-login-circle-line"></i> Sign In to Admin OS
+        </button>
+      </form>
+
+    `;
+    document.body.appendChild(loginContainer);
+
+    document.getElementById('admin-login-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('admin-signin-btn');
+      if (btn) btn.textContent = 'Authenticating...';
+      
+      const email = document.getElementById('admin-email').value.trim() || 'admin@realrest.example';
+      
+      let staffUser = null;
+      try {
+        const stored = localStorage.getItem('thanjai_admin_users');
+        if (stored) {
+          staffUser = JSON.parse(stored).find(u => u.email.toLowerCase() === email.toLowerCase());
+        }
+      } catch (err) {}
+
+      const adminUser = staffUser ? staffUser : {
+        id: 'ADM-001',
+        fullName: email.includes('admin') ? 'Aishwarya R.' : email.includes('manager') ? 'Sales Manager' : 'Kavitha S.',
+        email: email,
+        role: email.includes('admin') ? 'Super Admin' : email.includes('manager') ? 'Sales Manager' : 'Sales Executive',
+        roleCode: 'superadmin'
+      };
+      
+      localStorage.setItem('thanjai_active_user', JSON.stringify(adminUser));
+      setTimeout(() => { window.location.reload(); }, 400);
+    });
+
+    return;
+  }
+
+  // User is authenticated, reveal the dashboard UI
+  document.getElementById('os-app').style.display = 'flex';
+
+  const isSuperAdmin = activeAdminUser.role === 'Super Admin' || activeAdminUser.roleCode === 'superadmin' || activeAdminUser.email === 'admin@realrest.example';
+  const allowedModules = (Array.isArray(activeAdminUser.allowedModules) && activeAdminUser.allowedModules.length > 0)
     ? activeAdminUser.allowedModules
     : null; // null means full access
 
@@ -292,7 +388,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const profileLogoutBtn = document.getElementById('profile-logout-btn');
   if (profileLogoutBtn) {
     profileLogoutBtn.addEventListener('click', () => {
-      window.location.href = '/admin-login';
+      window.location.href = '/admin-dashboard';
     });
   }
 
@@ -337,7 +433,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Admin OS Logout Handlers
   const handleAdminLogout = () => {
     localStorage.removeItem('thanjai_active_user');
-    window.location.href = '/admin-login';
+    window.location.href = '/admin-dashboard';
   };
 
   document.getElementById('profile-logout-btn')?.addEventListener('click', handleAdminLogout);
