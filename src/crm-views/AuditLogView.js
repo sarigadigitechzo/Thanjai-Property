@@ -65,7 +65,8 @@ export function renderAuditLogView() {
         background: #ffffff;
         border-radius: 16px;
         border: 1px solid rgba(0,0,0,0.08);
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: hidden;
         box-shadow: 0 4px 16px rgba(0,0,0,0.03);
       ">
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
