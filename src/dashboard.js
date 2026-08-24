@@ -15,6 +15,7 @@ import { renderPropertyApprovalsView, initPropertyApprovalsView } from './crm-vi
 import { renderAgentsDirectoryView, initAgentsDirectoryView } from './crm-views/AgentsDirectoryView.js';
 import { renderBuildersDirectoryView, initBuildersDirectoryView } from './crm-views/BuildersDirectoryView.js';
 import { renderReportsView, initReportsView } from './crm-views/ReportsView.js';
+import { renderStatCounterView } from './crm-views/StatCounterView.js';
 import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.js';
 import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsersView.js';
 import { showToast } from './utils/toast.js';
@@ -136,6 +137,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       case 'reports':
         html = renderReportsView();
         afterRender = initReportsView;
+        break;
+      case 'statcounter':
+      case 'analytics':
+        html = renderStatCounterView();
         break;
       case 'whatsapp':
         html = renderWhatsAppLogView();

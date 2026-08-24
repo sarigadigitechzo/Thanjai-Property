@@ -112,6 +112,14 @@ function updateSeoMetadata(route) {
       desc = "Search and filter luxury villas, independent homes, DTCP layout plots, and Kaveri farm estates across Thanjavur, Trichy, Chennai, and Madurai.";
       break;
     case 'blog':
+      if (blogState.selectedPostId) {
+        const post = getBlogPostByIdOrSlug(blogState.selectedPostId);
+        if (post) {
+          title = post.metaTitle || `${post.title} | Thanjai Property`;
+          desc = post.metaDescription || post.excerpt || "Expert real estate articles, DTCP/RERA approval checklists, and legal verification guides.";
+          break;
+        }
+      }
       title = "The Blog — Real Estate Guides & Insights | Thanjai Property";
       desc = "Expert real estate articles, DTCP/RERA approval checklists, Kaveri delta farmland guides, and architectural perspectives.";
       break;

@@ -123,13 +123,15 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
 
 export function initNavbarListeners(onNavigate, onSavedClick) {
   const header = document.getElementById('main-header');
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 40) {
+  const handleScroll = () => {
+    if (window.scrollY > 20) {
       header?.classList.add('scrolled');
     } else {
       header?.classList.remove('scrolled');
     }
-  });
+  };
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  handleScroll();
 
   document.getElementById('saved-properties-btn')?.addEventListener('click', onSavedClick);
   document.getElementById('nav-logout-header-btn')?.addEventListener('click', () => {

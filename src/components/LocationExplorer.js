@@ -61,7 +61,7 @@ export function renderLocationExplorer() {
             
             <!-- Re-center Control Button -->
             <button id="explorer-recenter-btn" style="
-              position: absolute; bottom: 18px; left: 18px; z-index: 1000;
+              position: absolute; bottom: 18px; left: 18px; z-index: 400;
               background: #ffffff; color: #1a1a1a; border: 1px solid #cbd5e0;
               padding: 8px 15px; border-radius: 24px; font-size: 0.82rem; font-weight: 700;
               cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12);

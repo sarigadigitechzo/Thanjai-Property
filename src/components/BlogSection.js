@@ -40,10 +40,9 @@ export function renderBlogSection(onNavigateToBlog, onSelectPost) {
               </div>
 
               <div style="padding: 24px; display: flex; flex-direction: column; flex: 1;">
-                <div style="display: flex; align-items: center; gap: 12px; font-size: 0.82rem; color: #777; margin-bottom: 12px;">
-                  <span><i class="ri-calendar-line"></i> ${post.date}</span>
-                  <span>•</span>
-                  <span><i class="ri-time-line"></i> ${post.readTime}</span>
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #777; margin-bottom: 12px;">
+                  <i class="ri-calendar-line" style="color: #eb5e28;"></i>
+                  <span>Published on ${post.date}</span>
                 </div>
 
                 <h3 style="font-family: var(--font-serif); font-size: 1.25rem; font-weight: 700; color: #1a1a1a; line-height: 1.4; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">

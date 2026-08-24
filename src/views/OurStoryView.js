@@ -219,11 +219,11 @@ export function renderOurStoryView(onNavigateToDiscover) {
               </div>
 
               <div style="padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.12); display: flex; gap: 10px; flex-wrap: wrap;">
-                <a href="tel:+919578311506" style="flex: 1; background: #eb5e28; color: #fff; padding: 12px 16px; border-radius: 12px; font-size: 0.88rem; font-weight: 700; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(235,94,40,0.3);">
+                <a href="tel:+919578311506" style="flex: 1; background: rgba(255,255,255,0.12); color: #fff; padding: 12px 16px; border-radius: 12px; font-size: 0.88rem; font-weight: 700; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
                   <i class="ri-phone-line"></i> +91 95783 11506
                 </a>
-                <a href="mailto:vijayaraghavan@thanjaiproperty.com" style="flex: 1; background: rgba(255,255,255,0.12); color: #fff; padding: 12px 16px; border-radius: 12px; font-size: 0.88rem; font-weight: 700; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                  <i class="ri-mail-line"></i> Direct Email
+                <a href="https://wa.me/919578311506" target="_blank" style="flex: 1; background: #25D366; color: #fff; padding: 12px 16px; border-radius: 12px; font-size: 0.88rem; font-weight: 700; text-decoration: none; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(37,211,102,0.3);">
+                  <i class="ri-whatsapp-line"></i> WhatsApp
                 </a>
               </div>
             </div>
