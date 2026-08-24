@@ -96,7 +96,7 @@ export function renderUsersView() {
                 <th style="padding: 14px 16px;">Role</th>
                 <th style="padding: 14px 16px;">Listed Properties</th>
                 <th style="padding: 14px 16px;">Status</th>
-                <th style="padding: 14px 16px;">Actions</th>
+                <th style="padding: 14px 16px; text-align: right;">Actions</th>
               </tr>
             </thead>
             <tbody id="users-tbody">
@@ -179,23 +179,25 @@ function renderUsersRows(users, allProperties) {
             <i class="ri-checkbox-circle-fill"></i> ${u.status || 'Active'}
           </span>
         </td>
-        <td style="padding: 14px 16px; white-space: nowrap;">
-          <button class="view-user-props-btn" data-user-name="${u.fullName}" data-user-email="${u.email}" data-user-phone="${u.phone}" style="
-            background: linear-gradient(135deg, #FFF5F2 0%, #FFEBE5 100%); color: #EB5E28;
-            border: 1px solid #FFD0C2; font-weight: 700; border-radius: 8px; font-size: 0.82rem;
-            padding: 6px 14px; box-shadow: 0 2px 6px rgba(235,94,40,0.12); cursor: pointer;
-            display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;
-          ">
-            <i class="ri-building-4-line"></i> View Props
-          </button>
-          <button class="del-user-btn" data-user-id="${u.id}" style="
-            background: linear-gradient(135deg, #FFF0F2 0%, #FFE5E8 100%); color: #E53E3E;
-            border: 1px solid #FED7D7; font-weight: 700; border-radius: 8px; font-size: 0.82rem;
-            padding: 6px 10px; box-shadow: 0 2px 6px rgba(229,62,62,0.12); cursor: pointer;
-            display: inline-flex; align-items: center; transition: all 0.2s ease; margin-left: 6px;
-          " title="Delete User">
-            <i class="ri-delete-bin-line"></i>
-          </button>
+        <td style="padding: 14px 16px; white-space: nowrap; text-align: right;">
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
+            <button class="view-user-props-btn" data-user-name="${u.fullName}" data-user-email="${u.email}" data-user-phone="${u.phone}" style="
+              background: linear-gradient(135deg, #FFF5F2 0%, #FFEBE5 100%); color: #EB5E28;
+              border: 1px solid #FFD0C2; font-weight: 700; border-radius: 8px; font-size: 0.82rem;
+              padding: 6px 14px; box-shadow: 0 2px 6px rgba(235,94,40,0.12); cursor: pointer;
+              display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;
+            ">
+              <i class="ri-building-4-line"></i> View Props
+            </button>
+            <button class="del-user-btn" data-user-id="${u.id}" style="
+              background: linear-gradient(135deg, #FFF0F2 0%, #FFE5E8 100%); color: #E53E3E;
+              border: 1px solid #FED7D7; font-weight: 700; border-radius: 8px; font-size: 0.82rem;
+              padding: 6px 10px; box-shadow: 0 2px 6px rgba(229,62,62,0.12); cursor: pointer;
+              display: inline-flex; align-items: center; transition: all 0.2s ease;
+            " title="Delete User">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </div>
         </td>
       </tr>
     `;
