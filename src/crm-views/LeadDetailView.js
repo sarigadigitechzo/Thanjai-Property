@@ -149,14 +149,14 @@ ${(() => {
             <div id="ld-notes-list" style="margin-top: 16px; max-height: 300px; overflow-y: auto;">
               ${
                 Array.isArray(lead.notes) && lead.notes.length > 0 
-                ? lead.notes.map(n => `
+                ? lead.notes.map((n, i) => `
                     <div style="background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #fed7aa; position: relative;">
                       <p style="font-size: 0.9rem; color: var(--os-dark); margin-bottom: 8px; padding-right: 40px;">${n.text}</p>
                       <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.75rem; color: var(--os-gray-400);">${new Date(n.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
+                        <span style="font-size: 0.75rem; color: var(--os-gray-400);">${n.date ? new Date(n.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'Just now'}</span>
                         <div style="display: flex; gap: 8px;">
-                          <button class="note-action-btn" data-action="edit" data-date="${n.date}" style="background: none; border: none; cursor: pointer; color: var(--os-gray-500); padding: 2px;" title="Edit Note"><i class="ri-edit-line"></i></button>
-                          <button class="note-action-btn" data-action="delete" data-date="${n.date}" style="background: none; border: none; cursor: pointer; color: var(--os-error); padding: 2px;" title="Delete Note"><i class="ri-delete-bin-line"></i></button>
+                          <button class="note-action-btn" data-action="edit" data-index="${i}" style="background: none; border: none; cursor: pointer; color: var(--os-gray-500); padding: 2px;" title="Edit Note"><i class="ri-edit-line"></i></button>
+                          <button class="note-action-btn" data-action="delete" data-index="${i}" style="background: none; border: none; cursor: pointer; color: var(--os-error); padding: 2px;" title="Delete Note"><i class="ri-delete-bin-line"></i></button>
                         </div>
                       </div>
                     </div>
@@ -886,7 +886,7 @@ export function initLeadDetailView(id) {
       const btn = e.target.closest('.note-action-btn');
       if (!btn) return;
       
-      const noteDate = btn.dataset.date;
+      const noteIndex = parseInt(btn.dataset.index, 10);
       let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
       const idx = leads.findIndex(l => l.id == id);
       if (idx === -1 || !leads[idx].notes) return;
@@ -895,12 +895,12 @@ export function initLeadDetailView(id) {
       
       if (action === 'delete') {
         if (confirm('Are you sure you want to delete this note?')) {
-          leads[idx].notes = leads[idx].notes.filter(n => n.date !== noteDate);
+          leads[idx].notes.splice(noteIndex, 1);
           localStorage.setItem('thanjai_leads', JSON.stringify(leads));
           window.dispatchEvent(new HashChangeEvent('hashchange'));
         }
       } else if (action === 'edit') {
-        const noteToEdit = leads[idx].notes.find(n => n.date === noteDate);
+        const noteToEdit = leads[idx].notes[noteIndex];
         if (noteToEdit) {
            const newText = prompt('Edit note:', noteToEdit.text);
            if (newText !== null && newText.trim() !== '') {
