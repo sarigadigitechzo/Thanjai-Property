@@ -161,18 +161,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nameEl = document.querySelector('.sidebar-footer .name');
     const roleEl = document.querySelector('.sidebar-footer .role');
     const avatarEl = document.querySelector('.sidebar-footer .avatar');
+    const topAvatarEl = document.querySelector('.profile-pill .avatar');
+    
     if (nameEl) nameEl.textContent = activeAdminUser.fullName || activeAdminUser.name || 'Admin Staff';
     if (roleEl) roleEl.textContent = activeAdminUser.role || 'Admin Staff';
-    if (avatarEl) {
-      const initials = (activeAdminUser.fullName || activeAdminUser.name || 'AS')
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-      avatarEl.textContent = initials;
-    }
+    
+    const initials = (activeAdminUser.fullName || activeAdminUser.name || 'AS')
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+      
+    if (avatarEl) avatarEl.textContent = initials;
+    if (topAvatarEl) topAvatarEl.textContent = initials;
   }
+
 
   const dateDisplay = document.getElementById('top-date-display');
   if (dateDisplay) {

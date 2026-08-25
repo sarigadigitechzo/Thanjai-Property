@@ -43,6 +43,17 @@ addCol($conn, 'blog_posts', 'authorRole', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'blog_posts', 'authorBio', 'text DEFAULT NULL');
 addCol($conn, 'blog_posts', 'authorSocial', 'varchar(255) DEFAULT NULL');
 
+// Fix admin_staff schema
+addCol($conn, 'admin_staff', 'fullName', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'admin_staff', 'email', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'admin_staff', 'phone', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'admin_staff', 'password', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'admin_staff', 'role', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'admin_staff', 'roleCode', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'admin_staff', 'status', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'admin_staff', 'lastLogin', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'admin_staff', 'allowedModules', 'longtext DEFAULT NULL');
+
 // Fix all created_at to createdAt
 $tables = ['dashboard_stats', 'leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'pipeline_stages', 'reports'];
 foreach($tables as $t) {
@@ -360,7 +371,7 @@ elseif ($resource === 'site_images') {
 
 elseif ($resource === 'admin_users') {
     if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM admin_users");
+        $result = $conn->query("SELECT * FROM admin_staff");
         $rows = [];
         while($row = $result->fetch_assoc()) { $rows[] = $row; }
         echo json_encode($rows);
@@ -369,7 +380,7 @@ elseif ($resource === 'admin_users') {
         $data = json_decode(file_get_contents("php://input"), true);
         
         $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
-        $stmt = $conn->prepare("INSERT INTO admin_users (id, fullName, email, phone, password, role, roleCode, status, lastLogin, allowedModules) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO admin_staff (id, fullName, email, phone, password, role, roleCode, status, lastLogin, allowedModules) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("ssssssssss", $data['id'], $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules']);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Created successfully"]);
@@ -382,7 +393,7 @@ elseif ($resource === 'admin_users') {
         $data = json_decode(file_get_contents("php://input"), true);
         
         $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
-        $stmt = $conn->prepare("UPDATE admin_users SET fullName=?, email=?, phone=?, password=?, role=?, roleCode=?, status=?, lastLogin=?, allowedModules=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE admin_staff SET fullName=?, email=?, phone=?, password=?, role=?, roleCode=?, status=?, lastLogin=?, allowedModules=? WHERE id=?");
         $stmt->bind_param("ssssssssss", $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules'], $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Updated successfully"]);
@@ -392,7 +403,7 @@ elseif ($resource === 'admin_users') {
         }
     }
     elseif ($method === 'DELETE' && $id) {
-        $stmt = $conn->prepare("DELETE FROM admin_users WHERE id=?");
+        $stmt = $conn->prepare("DELETE FROM admin_staff WHERE id=?");
         $stmt->bind_param("s", $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Deleted successfully"]);
