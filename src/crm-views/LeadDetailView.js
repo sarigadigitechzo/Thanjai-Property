@@ -738,7 +738,11 @@ export function initLeadDetailView(id) {
         phone = '91' + phone;
       }
 
-      const apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ5MCIsIm5hbWUiOiJUaGFuamFpIFByb3BlcnR5IiwiYXBwTmFtZSI6IkFpU2Vuc3kiLCJjbGllbnRJZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ4OSIsImFjdGl2ZVBsYW4iOiJQUk9fTU9OVEhMWSIsImlhdCI6MTc4NzYzNjQ0NX0._dLYfSPK5DvcDsNtUZ3l2UJlhUPA3V8cjkRHKLi5NlM";
+      const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
+      if (!apiKey) {
+        alert('Please go to Settings > Integrations and paste your WhatsApp API Key first.');
+        return;
+      }
       
       const originalBtnText = confirmWA.innerHTML;
       confirmWA.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sending...';

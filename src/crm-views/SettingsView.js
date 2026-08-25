@@ -213,7 +213,7 @@ export function renderSettingsView() {
           <div class="settings-grid-2">
             <div class="settings-form-group">
               <label class="settings-label">API Key</label>
-              <input type="password" class="settings-input" value="••••••••••••" />
+              <input type="password" id="settings-wa-api-key" class="settings-input" placeholder="Paste API Key here" />
             </div>
             <div class="settings-form-group">
               <label class="settings-label">Campaign Name (Live, not the template name)</label>
@@ -227,10 +227,10 @@ export function renderSettingsView() {
 
           <div class="settings-form-group" style="max-width: 400px; margin-bottom: 16px;">
             <label class="settings-label">Status Webhook Secret</label>
-            <input type="password" class="settings-input" value="••••••••••••" />
+            <input type="password" class="settings-input" placeholder="Webhook Secret" />
           </div>
 
-          <button class="settings-btn-save-small">Save</button>
+          <button id="settings-wa-save-btn" class="settings-btn-save-small">Save</button>
         </div>
 
         <!-- 2. AI Operating Agent -->
@@ -445,4 +445,21 @@ export function initSettingsView() {
       updateColor(newColor);
     }
   });
+
+  // WhatsApp API Key Save Logic
+  const waApiKeyInput = document.getElementById('settings-wa-api-key');
+  const waSaveBtn = document.getElementById('settings-wa-save-btn');
+  
+  if (waApiKeyInput) {
+    waApiKeyInput.value = localStorage.getItem('thanjai_whatsapp_api_key') || '';
+  }
+
+  if (waSaveBtn) {
+    waSaveBtn.addEventListener('click', () => {
+      if (waApiKeyInput) {
+        localStorage.setItem('thanjai_whatsapp_api_key', waApiKeyInput.value.trim());
+        showToast('WhatsApp API Key saved successfully!', 'success');
+      }
+    });
+  }
 }
