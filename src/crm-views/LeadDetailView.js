@@ -732,33 +732,34 @@ export function initLeadDetailView(id) {
           userName: lead.name || "Client",
           templateParams: templateParams
         })
-      }).then(res => res.json()).then(data => {
+      }).then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || data.error || JSON.stringify(data));
+        }
+        return data;
+      }).then(data => {
         confirmWA.innerHTML = originalBtnText;
         confirmWA.disabled = false;
         waModal.classList.remove('show');
         
-        // AiSensy returns error field if invalid
-        if (data && !data.error) {
-          alert('Message sent successfully via AiSensy WhatsApp API.');
-          
-          if (idx !== -1) {
-            if (!leads[idx].timeline) leads[idx].timeline = [];
-            leads[idx].timeline.unshift({
-              type: 'whatsapp',
-              message: `WhatsApp sent: ${isCustom ? 'Custom message' : campaignName}`,
-              author: localStorage.getItem('thanjai_active_user') || 'System',
-              date: new Date().toISOString()
-            });
-            localStorage.setItem('thanjai_leads', JSON.stringify(leads));
-            window.dispatchEvent(new HashChangeEvent('hashchange'));
-          }
-        } else {
-          alert('AiSensy API Error: ' + (data.error || JSON.stringify(data)));
+        alert('Message sent successfully via AiSensy WhatsApp API.');
+        
+        if (idx !== -1) {
+          if (!leads[idx].timeline) leads[idx].timeline = [];
+          leads[idx].timeline.unshift({
+            type: 'whatsapp',
+            message: `WhatsApp sent: ${isCustom ? 'Custom message' : campaignName}`,
+            author: localStorage.getItem('thanjai_active_user') || 'System',
+            date: new Date().toISOString()
+          });
+          localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
         }
       }).catch(err => {
         confirmWA.innerHTML = originalBtnText;
         confirmWA.disabled = false;
-        alert('Failed to send WhatsApp message: ' + err.message);
+        alert('Failed to send WhatsApp message:\n' + err.message);
       });
     });
   }
