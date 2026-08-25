@@ -731,17 +731,17 @@ export function initLeadDetailView(id) {
       } else {
         const templateText = document.querySelector('#wa-tab-template .os-custom-select .select-value').innerText.trim();
         
-        // Map UI dropdown text to exact AiSensy campaign names
+        // Map UI dropdown text to exact Smartping campaign names
         const campaignMap = {
-          "Welcome message": "welcome",
-          "Bank loan assistance (auto)": "bank_loan_assist",
-          "Follow-up message": "follow_up",
+          "Welcome message": "welcome_message",
+          "Bank loan assistance (auto)": "bank_loan_assistance",
+          "Follow-up message": "property_follow_up",
           "Initial contact intro (auto)": "initial_contact_intro",
-          "Negotiation check-in (auto)": "negotiation_update",
-          "Partner transfer notification": "partner_transfer",
+          "Negotiation check-in (auto)": "negotiation_check_in",
+          "Partner transfer notification": "partner_transfer_notification",
           "Property shortlist": "property_shortlist",
-          "Registration testimonial & referral (auto)": "registration_testimonial",
-          "Site visit confirmation (auto)": "site_visit_before",
+          "Registration testimonial & referral (auto)": "registration_testimonial_referral",
+          "Site visit confirmation (auto)": "site_visit_confirmation",
           "Site visit feedback request (auto)": "site_visit_feedback",
           "Site visit reminder": "site_visit_reminder"
         };
@@ -794,7 +794,7 @@ export function initLeadDetailView(id) {
         confirmWA.disabled = false;
         waModal.classList.remove('show');
         
-        alert('Message sent successfully via AiSensy WhatsApp API.');
+        alert(`Message sent successfully via ${provider === 'smartping' ? 'SmartPing' : 'AiSensy'} WhatsApp API.`);
         
         if (idx !== -1) {
           if (!leads[idx].timeline) leads[idx].timeline = [];
