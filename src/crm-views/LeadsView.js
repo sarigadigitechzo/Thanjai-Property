@@ -299,7 +299,7 @@ export async function initLeadsView() {
         let type = l.propertyType;
         
         return {
-          id: parseInt(l.id) || Date.now(),
+          id: l.id || 'L-' + Date.now(),
           name: l.name,
           mobile: mobile,
           whatsapp: mobile,
@@ -320,6 +320,7 @@ export async function initLeadsView() {
           timeline: []
         };
       });
+      saveLeads(cachedLeads);
     }
   } catch (err) {
     console.error('API Error:', err);
