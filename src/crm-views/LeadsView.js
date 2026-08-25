@@ -549,23 +549,42 @@ function bindLeadEvents() {
       const source = document.getElementById('lead-source-select').querySelector('.select-value').textContent;
       const assignTo = document.getElementById('lead-assign-select').querySelector('.select-value').textContent;
 
+      const area = document.getElementById('lead-area').value;
+      const city = document.getElementById('lead-city').value;
+      const country = document.getElementById('lead-country').value;
+      const locationStr = [area, city, country].filter(Boolean).join(', ');
+
+      const beds = document.getElementById('lead-bedrooms').value;
+      const requirementStr = beds ? `${type} - ${beds} Beds` : type;
+
+      const bMin = document.getElementById('lead-budget-min').value;
+      const bMax = document.getElementById('lead-budget-max').value;
+      const budgetStr = bMin && bMax ? `${bMin} - ${bMax}` : (bMax || bMin || '');
+
       const leadData = {
-        id: idField ? idField : Date.now().toString(),
-        name,
-        mobile,
-        whatsapp: document.getElementById('lead-whatsapp').value,
+        id: idField ? idField : 'L-' + Math.floor(1000 + Math.random() * 9000),
+        name: name,
+        phone: mobile,
         email: document.getElementById('lead-email').value,
-        country: document.getElementById('lead-country').value,
-        city: document.getElementById('lead-city').value,
-        area: document.getElementById('lead-area').value,
-        budgetMin: document.getElementById('lead-budget-min').value,
-        budgetMax: document.getElementById('lead-budget-max').value,
-        bedrooms: document.getElementById('lead-bedrooms').value,
+        source: source,
+        status: idField ? undefined : 'New Lead',
+        budget: budgetStr,
+        requirement: requirementStr,
+        location: locationStr,
+        timeline: document.getElementById('lead-followup').value || '—',
+        assignedTo: assignTo,
         notes: document.getElementById('lead-notes').value,
-        type,
-        source,
-        assignTo,
-        status: idField ? undefined : 'New',
+        // Keep original fields for local app usage if needed
+        mobile: mobile,
+        whatsapp: document.getElementById('lead-whatsapp').value,
+        country: country,
+        city: city,
+        area: area,
+        budgetMin: bMin,
+        budgetMax: bMax,
+        bedrooms: beds,
+        type: type,
+        assignTo: assignTo,
         followup: document.getElementById('lead-followup').value || '—',
         createdAt: Date.now()
       };
