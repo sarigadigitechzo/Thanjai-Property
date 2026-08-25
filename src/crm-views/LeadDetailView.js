@@ -596,7 +596,7 @@ export function initLeadDetailView(id) {
           localStorage.setItem('thanjai_visits', JSON.stringify(visits));
         }).catch(err => {
           console.error("Failed to schedule visit", err);
-          alert("Failed to schedule visit on the server.");
+          alert("Failed to schedule visit: " + err.message);
         });
       });
     });

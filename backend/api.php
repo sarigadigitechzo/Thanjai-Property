@@ -490,13 +490,18 @@ elseif ($resource === 'site_visits') {
         $data = json_decode(file_get_contents("php://input"), true);
         
         
-        $stmt = $conn->prepare("INSERT INTO site_visits (id, leadId, propertyId, visitDate, status, assignedTo, notes) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssss", $data['id'], $data['leadId'], $data['propertyId'], $data['visitDate'], $data['status'], $data['assignedTo'], $data['notes']);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Created successfully"]);
-        } else {
+        try {
+            $stmt = $conn->prepare("INSERT INTO site_visits (id, leadId, propertyId, visitDate, status, assignedTo, notes) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssssss", $data['id'], $data['leadId'], $data['propertyId'], $data['visitDate'], $data['status'], $data['assignedTo'], $data['notes']);
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Created successfully"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => "Database error: " . $stmt->error]);
+            }
+        } catch (Throwable $e) {
             http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+            echo json_encode(["error" => "Fatal Exception: " . $e->getMessage()]);
         }
     }
     elseif ($method === 'PUT' && $id) {

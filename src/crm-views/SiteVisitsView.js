@@ -293,6 +293,8 @@ export async function initSiteVisitsView() {
       // Save to API
       const newVisit = {
         id: `SV-${Date.now()}`,
+        leadId: clientName,
+        propertyId: property || 'TBD',
         visitDate: datetime.replace('T', ' ') + ':00',
         status: 'Scheduled',
         assignedTo: 'Aishwarya R.',
@@ -302,7 +304,10 @@ export async function initSiteVisitsView() {
       fetchFromAPI('/site_visits', {
         method: 'POST',
         body: JSON.stringify(newVisit)
-      }).catch(e => console.error("API Error", e));
+      }).catch(e => {
+        console.error("API Error", e);
+        alert("Failed to schedule visit: " + e.message);
+      });
 
       visits.push({
         id: newVisit.id,
