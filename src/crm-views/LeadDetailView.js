@@ -559,25 +559,46 @@ export function initLeadDetailView(id) {
       const mins = dateObj.getMinutes().toString().padStart(2, '0');
       
       const propertyText = (lead.area || '') + ' ' + (lead.type || '');
+      
+      const visitData = {
+        id: 'SV-' + Date.now(),
+        leadId: lead.name,
+        propertyId: propertyText.trim() || 'TBD',
+        visitDate: dateObj.toISOString(),
+        status: 'Scheduled',
+        assignedTo: lead.assignTo || 'Unassigned',
+        notes: JSON.stringify({ clientName: lead.name, property: propertyText.trim() || 'TBD', phone: lead.mobile })
+      };
 
-      let visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
-      visits.push({
-        id: Date.now(),
-        date: day,
-        month: 'Aug',
-        hours: hours.toString(),
-        mins: mins,
-        ampm: ampm,
-        clientName: lead.name,
-        phone: lead.mobile || 'New Visit',
-        property: propertyText.trim() || 'TBD',
-        isNew: true
+      import('../utils/api.js').then(({ fetchFromAPI }) => {
+        fetchFromAPI('/site_visits', {
+          method: 'POST',
+          body: JSON.stringify(visitData)
+        }).then(() => {
+          scheduleModal.classList.remove('show');
+          alert("Visit scheduled successfully! You can view it in the Site Visits Planner.");
+          
+          // Also save locally as fallback/cache update
+          let visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
+          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          visits.push({
+            id: visitData.id,
+            date: day,
+            month: monthNames[dateObj.getMonth()],
+            hours: hours.toString(),
+            mins: mins,
+            ampm: ampm,
+            clientName: lead.name,
+            phone: lead.mobile || 'New Visit',
+            property: propertyText.trim() || 'TBD',
+            isNew: true
+          });
+          localStorage.setItem('thanjai_visits', JSON.stringify(visits));
+        }).catch(err => {
+          console.error("Failed to schedule visit", err);
+          alert("Failed to schedule visit on the server.");
+        });
       });
-      localStorage.setItem('thanjai_visits', JSON.stringify(visits));
-
-      // Close modal
-      scheduleModal.classList.remove('show');
-      alert("Visit scheduled successfully! You can view it in the Site Visits Planner.");
     });
   }
 

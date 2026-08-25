@@ -107,9 +107,10 @@ export async function initSiteVisitsView() {
 
 
 
-  let currentMonth = 7; // August (0-indexed)
-  let currentYear = 2026;
-  let selectedDay = 14;
+  const today = new Date();
+  let currentMonth = today.getMonth(); // 0-indexed
+  let currentYear = today.getFullYear();
+  let selectedDay = today.getDate();
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const fullMonthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
