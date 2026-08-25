@@ -1216,6 +1216,8 @@ export function initBlogCMSListeners() {
       return;
     }
 
+    const post = cmsState.editingPostId ? getBlogPosts().find(p => p.id === cmsState.editingPostId) : null;
+
     const payload = {
       title,
       category: category || 'Market Guide',
