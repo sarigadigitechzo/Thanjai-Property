@@ -378,39 +378,61 @@ elseif ($resource === 'admin_users') {
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
-        $stmt = $conn->prepare("INSERT INTO `admin_staff` (`id`, `fullName`, `email`, `phone`, `password`, `role`, `roleCode`, `status`, `lastLogin`, `allowedModules`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        if (!$stmt) {
+        try {
+            $input = file_get_contents("php://input");
+            $data = json_decode($input, true);
+            if (!$data) {
+                http_response_code(400);
+                echo json_encode(["error" => "Invalid JSON or empty body", "input" => $input]);
+                exit;
+            }
+            
+            $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
+            $stmt = $conn->prepare("INSERT INTO `admin_staff` (`id`, `fullName`, `email`, `phone`, `password`, `role`, `roleCode`, `status`, `lastLogin`, `allowedModules`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            if (!$stmt) {
+                http_response_code(500);
+                echo json_encode(["error" => "Prepare failed: " . $conn->error]);
+                exit;
+            }
+            $stmt->bind_param("ssssssssss", $data['id'], $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules']);
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Created successfully"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => "Database error: " . $stmt->error]);
+            }
+        } catch (\Throwable $e) {
             http_response_code(500);
-            echo json_encode(["error" => "Prepare failed: " . $conn->error]);
-            exit;
-        }
-        $stmt->bind_param("ssssssssss", $data['id'], $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules']);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Created successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+            echo json_encode(["error" => "Fatal PHP Error: " . $e->getMessage(), "line" => $e->getLine()]);
         }
     }
     elseif ($method === 'PUT' && $id) {
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
-        $stmt = $conn->prepare("UPDATE `admin_staff` SET `fullName`=?, `email`=?, `phone`=?, `password`=?, `role`=?, `roleCode`=?, `status`=?, `lastLogin`=?, `allowedModules`=? WHERE `id`=?");
-        if (!$stmt) {
+        try {
+            $input = file_get_contents("php://input");
+            $data = json_decode($input, true);
+            if (!$data) {
+                http_response_code(400);
+                echo json_encode(["error" => "Invalid JSON or empty body"]);
+                exit;
+            }
+            
+            $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
+            $stmt = $conn->prepare("UPDATE `admin_staff` SET `fullName`=?, `email`=?, `phone`=?, `password`=?, `role`=?, `roleCode`=?, `status`=?, `lastLogin`=?, `allowedModules`=? WHERE `id`=?");
+            if (!$stmt) {
+                http_response_code(500);
+                echo json_encode(["error" => "Prepare failed: " . $conn->error]);
+                exit;
+            }
+            $stmt->bind_param("ssssssssss", $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules'], $id);
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Updated successfully"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => "Database error: " . $stmt->error]);
+            }
+        } catch (\Throwable $e) {
             http_response_code(500);
-            echo json_encode(["error" => "Prepare failed: " . $conn->error]);
-            exit;
-        }
-        $stmt->bind_param("ssssssssss", $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules'], $id);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Updated successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+            echo json_encode(["error" => "Fatal PHP Error: " . $e->getMessage()]);
         }
     }
     elseif ($method === 'DELETE' && $id) {
