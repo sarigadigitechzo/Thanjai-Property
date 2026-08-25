@@ -374,7 +374,13 @@ elseif ($resource === 'admin_users') {
     if ($method === 'GET') {
         $result = $conn->query("SELECT * FROM admin_staff");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        while($row = $result->fetch_assoc()) { 
+            if (isset($row['allowedModules']) && is_string($row['allowedModules'])) {
+                $decoded = json_decode($row['allowedModules'], true);
+                $row['allowedModules'] = is_array($decoded) ? $decoded : [];
+            }
+            $rows[] = $row; 
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
