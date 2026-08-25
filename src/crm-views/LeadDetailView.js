@@ -852,7 +852,11 @@ export function initLeadDetailView(id) {
         
         // Show success and refresh view
         alert(`Follow-up set for ${new Date(datetime).toLocaleString()}`);
-        window.dispatchEvent(new HashChangeEvent('hashchange'));
+        const content = document.getElementById('os-content');
+        if (content) {
+          content.innerHTML = renderLeadDetailView(id);
+          initLeadDetailView(id);
+        }
       }
     });
   }
@@ -874,7 +878,11 @@ export function initLeadDetailView(id) {
           date: new Date().toISOString()
         });
         localStorage.setItem('thanjai_leads', JSON.stringify(leads));
-        window.dispatchEvent(new HashChangeEvent('hashchange'));
+        const content = document.getElementById('os-content');
+        if (content) {
+          content.innerHTML = renderLeadDetailView(id);
+          initLeadDetailView(id);
+        }
       }
     });
   }
@@ -897,7 +905,11 @@ export function initLeadDetailView(id) {
         if (confirm('Are you sure you want to delete this note?')) {
           leads[idx].notes.splice(noteIndex, 1);
           localStorage.setItem('thanjai_leads', JSON.stringify(leads));
-          window.dispatchEvent(new HashChangeEvent('hashchange'));
+          const content = document.getElementById('os-content');
+          if (content) {
+            content.innerHTML = renderLeadDetailView(id);
+            initLeadDetailView(id);
+          }
         }
       } else if (action === 'edit') {
         const noteToEdit = leads[idx].notes[noteIndex];
@@ -906,7 +918,11 @@ export function initLeadDetailView(id) {
            if (newText !== null && newText.trim() !== '') {
              noteToEdit.text = newText.trim();
              localStorage.setItem('thanjai_leads', JSON.stringify(leads));
-             window.dispatchEvent(new HashChangeEvent('hashchange'));
+             const content = document.getElementById('os-content');
+             if (content) {
+               content.innerHTML = renderLeadDetailView(id);
+               initLeadDetailView(id);
+             }
            }
         }
       }
