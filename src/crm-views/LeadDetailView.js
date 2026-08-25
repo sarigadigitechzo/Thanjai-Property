@@ -710,7 +710,7 @@ export function initLeadDetailView(id) {
   if (cancelWA) cancelWA.addEventListener('click', () => waModal.classList.remove('show'));
   
   if (confirmWA) {
-    confirmWA.addEventListener('click', () => {
+    confirmWA.addEventListener('click', async () => {
       let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
       const idx = leads.findIndex(l => l.id == id);
       const lead = leads[idx];
@@ -821,19 +821,73 @@ export function initLeadDetailView(id) {
         ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
         : 'https://backend.aisensy.com/campaign/t1/api/v2';
 
-      fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          apiKey: apiKey,
-          campaignName: campaignName,
-          destination: phone,
-          userName: lead.name || "Client",
-          templateParams: templateParams
-        })
-      }).then(async res => {
+        const sendSmartpingRequest = async (paramsArray) => {
+          const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              apiKey: apiKey,
+              campaignName: campaignName,
+              destination: phone,
+              userName: lead.name || "Client",
+              templateParams: paramsArray
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(`[${provider.toUpperCase()}] ${data.message || data.error || JSON.stringify(data)}`);
+          }
+          return data;
+        };
+
+        if (campaignName.includes('property_shortlist') && provider === 'smartping') {
+          confirmWA.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Auto-detecting params...';
+          let found = false;
+          let successCount = 0;
+          for (let i = 1; i <= 15; i++) {
+            try {
+              let testParams = Array(i).fill("Test");
+              testParams[0] = lead.name || "Client";
+              await sendSmartpingRequest(testParams);
+              found = true;
+              successCount = i;
+              break; // Success!
+            } catch (err) {
+              if (!err.message.includes("Template params does not match")) {
+                // If it's a different error, stop and throw
+                throw err;
+              }
+              // Otherwise, continue to next count
+            }
+          }
+          
+          if (found) {
+            alert(`SUCCESS! The property_shortlist campaign expects EXACTLY ${successCount} parameters! Message sent! Please tell the AI assistant this number.`);
+            confirmWA.innerHTML = originalBtnText;
+            confirmWA.disabled = false;
+            waModal.classList.remove('show');
+            return;
+          } else {
+            throw new Error("Could not find the correct parameter count between 1 and 15!");
+          }
+        }
+
+        // --- Standard Logic for other campaigns ---
+        fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            apiKey: apiKey,
+            campaignName: campaignName,
+            destination: phone,
+            userName: lead.name || "Client",
+            templateParams: templateParams
+          })
+        }).then(async res => {
         const data = await res.json();
         if (!res.ok) {
           throw new Error(`[${provider.toUpperCase()}] ${data.message || data.error || JSON.stringify(data)}`);
