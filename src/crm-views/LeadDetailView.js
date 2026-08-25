@@ -748,13 +748,55 @@ export function initLeadDetailView(id) {
         
         campaignName = campaignMap[templateText] || templateText.replace('(auto)', '').trim().toLowerCase().replace(/[\s-]/g, '_');
         
-        // Match the number of parameters to what is approved in Smartping
-        if (campaignName === 'welcome_message') {
-          templateParams = [lead.name || "Client"]; // only {{1}}
+        // --- Language Logic ---
+        const langDropdown = document.querySelectorAll('#wa-tab-template .os-custom-select')[1];
+        if (langDropdown) {
+          const langText = langDropdown.querySelector('.select-value').innerText.trim();
+          const langSuffix = {
+            "Tamil · தமிழ்": "_ta",
+            "Hindi · हिन्दी": "_hi",
+            "Telugu · తెలుగు": "_te",
+            "Kannada · ಕನ್ನಡ": "_kn",
+            "Malayalam · മലയാളം": "_ml"
+          }[langText] || "";
+          campaignName += langSuffix;
+        }
+
+        // --- Template Parameters Logic ---
+        const cName = campaignName.replace(/(_ta|_hi|_te|_kn|_ml)$/, ''); // get base name for logic
+        const cNameParamCount = {
+          "general_property_update": 2, "registration_testimonial_referral": 3, 
+          "partner_transfer_notification": 4, "bank_loan_assistance": 2, 
+          "negotiation_check_in": 3, "property_follow_up": 3, 
+          "site_visit_feedback": 2, "site_visit_reminder": 4, 
+          "site_visit_confirmation": 5, "property_shortlist": 10, 
+          "initial_contact_intro": 4, "welcome_message": 1
+        }[cName] || 1;
+
+        const clientName = lead.name || "Client";
+        const agentName = lead.assignTo || "Our Team";
+        const agentPhone = "+91 95857 77772";
+        
+        if (cNameParamCount === 1) {
+          templateParams = [clientName];
+        } else if (cNameParamCount === 2) {
+          templateParams = [clientName, agentName];
+        } else if (cNameParamCount === 3) {
+          templateParams = [clientName, "Thanjavur", agentName];
+        } else if (cNameParamCount === 4) {
+          templateParams = [clientName, lead.type || "Property", agentName, agentPhone];
+        } else if (cNameParamCount === 5) {
+          templateParams = [clientName, "Tomorrow at 10 AM", lead.type || "Property", agentName, agentPhone];
+        } else if (cNameParamCount === 10) {
+          // Property Shortlist Carousel (1 client name + 3 cards x 3 params)
+          templateParams = [
+            clientName, 
+            "DTCP Approved Plot", "Thanjavur", "25 Lakhs",
+            "Independent Villa", "Kumbakonam", "65 Lakhs",
+            "Agricultural Land", "Thanjavur", "40 Lakhs"
+          ];
         } else {
-          // Default to 1 parameter (client name) for now, as most templates only use {{1}}. 
-          // If any template uses 2, we can add it here.
-          templateParams = [lead.name || "Client"];
+          templateParams = [clientName];
         }
       }
 
