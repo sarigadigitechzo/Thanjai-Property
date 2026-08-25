@@ -590,7 +590,8 @@ function bindLeadEvents() {
       };
 
       try {
-        await fetchFromAPI('/leads', { 
+        const url = idField ? '/leads/' + idField : '/leads';
+        await fetchFromAPI(url, { 
           method: idField ? 'PUT' : 'POST', 
           body: JSON.stringify(leadData) 
         });
@@ -759,9 +760,22 @@ function bindLeadEvents() {
 
       } else if (e.target.closest('.action-delete')) {
         if (confirm('Are you sure you want to delete ' + lead.name + '?')) {
-          const newLeads = leads.filter(l => String(l.id) !== String(id));
-          saveLeads(newLeads);
-          renderTable();
+          fetchFromAPI('/leads/' + id, { method: 'DELETE' })
+            .then(async () => {
+              // Refresh local cache from server
+              const data = await fetchFromAPI('/leads');
+              saveLeads(data);
+              renderTable();
+              const { showToast } = await import('../utils/toast.js');
+              showToast('Lead deleted successfully', 'success');
+            })
+            .catch(err => {
+              console.error(err);
+              // Fallback to local deletion
+              const newLeads = leads.filter(l => String(l.id) !== String(id));
+              saveLeads(newLeads);
+              renderTable();
+            });
         }
       }
     });
