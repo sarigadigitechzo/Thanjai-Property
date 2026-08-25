@@ -310,13 +310,13 @@ export async function initLeadsView() {
           budgetMin: '',
           budgetMax: budgetMax,
           bedrooms: '',
-          notes: '',
+          notes: l.notes || '',
           type: type,
           source: l.source,
           assignTo: l.assignedTo,
           status: l.status,
-          followup: '—',
-          createdAt: Date.now(),
+          followup: l.timeline || '—',
+          createdAt: l.createdAt ? new Date(l.createdAt).getTime() : Date.now(),
           timeline: []
         };
       });

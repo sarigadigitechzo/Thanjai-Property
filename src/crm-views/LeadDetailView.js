@@ -11,6 +11,22 @@ export function renderLeadDetailView(id) {
     `;
   }
 
+  // Sanitize notes and timeline (convert strings to arrays to prevent .map crashes)
+  if (typeof lead.notes === 'string') {
+    if (lead.notes.trim() !== '') {
+      lead.notes = [{ text: lead.notes, date: lead.createdAt || new Date().toISOString() }];
+    } else {
+      lead.notes = [];
+    }
+  }
+  if (typeof lead.timeline === 'string') {
+    if (lead.timeline.trim() !== '' && lead.timeline !== '—') {
+      lead.timeline = [{ type: 'pipeline', message: 'Follow-up: ' + lead.timeline, author: lead.assignTo || 'System', date: lead.createdAt || new Date().toISOString() }];
+    } else {
+      lead.timeline = [];
+    }
+  }
+
   const formatCurrency = (val) => val ? '₹' + parseInt(val).toLocaleString('en-IN') : '—';
   
   const allStages = [
@@ -124,7 +140,7 @@ ${stagesHtml}        </div>
             <button id="ld-add-note-btn" class="os-btn-secondary" style="background: #fed7aa; border-color: #fed7aa; color: #9a3412;">Add note</button>
             <div id="ld-notes-list" style="margin-top: 16px; max-height: 300px; overflow-y: auto;">
               ${
-                lead.notes && lead.notes.length > 0 
+                Array.isArray(lead.notes) && lead.notes.length > 0 
                 ? lead.notes.map(n => `
                     <div style="background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #fed7aa; position: relative;">
                       <p style="font-size: 0.9rem; color: var(--os-dark); margin-bottom: 8px; padding-right: 40px;">${n.text}</p>
@@ -137,7 +153,11 @@ ${stagesHtml}        </div>
                       </div>
                     </div>
                   `).join('')
-                : '<p style="font-size: 0.85rem; color: var(--os-gray-400);">No notes yet.</p>'
+                : (typeof lead.notes === 'string' && lead.notes.trim() !== '' ? `
+                    <div style="background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #fed7aa; position: relative;">
+                      <p style="font-size: 0.9rem; color: var(--os-dark); margin-bottom: 8px; padding-right: 40px;">${lead.notes}</p>
+                    </div>
+                  ` : '<p style="font-size: 0.85rem; color: var(--os-gray-400);">No notes yet.</p>')
               }
             </div>
           </div>
