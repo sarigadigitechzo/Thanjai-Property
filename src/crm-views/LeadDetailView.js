@@ -1213,6 +1213,13 @@ async function saveAndSyncLeads(leads, changedLeadId = null) {
       try {
         const payload = {
           ...lead,
+          phone: lead.mobile || '',
+          budget: lead.budgetMax ? lead.budgetMax : (lead.budgetMin || ''),
+          requirement: lead.type || '',
+          location: lead.city || lead.area || '',
+          source: lead.source || '',
+          status: lead.status || '',
+          assignedTo: lead.assignTo || '',
           notes: typeof lead.notes === 'string' ? lead.notes : JSON.stringify(lead.notes || []),
           timeline: typeof lead.timeline === 'string' ? lead.timeline : JSON.stringify(lead.timeline || []),
           followup: lead.followUpDate || lead.followup || ''
