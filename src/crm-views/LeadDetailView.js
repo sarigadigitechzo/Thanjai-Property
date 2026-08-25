@@ -12,12 +12,14 @@ export function renderLeadDetailView(id) {
   }
 
   // Sanitize notes and timeline (convert strings to arrays to prevent .map crashes)
+  let needsSave = false;
   if (typeof lead.notes === 'string') {
     if (lead.notes.trim() !== '') {
       lead.notes = [{ text: lead.notes, date: lead.createdAt || new Date().toISOString() }];
     } else {
       lead.notes = [];
     }
+    needsSave = true;
   }
   if (typeof lead.timeline === 'string') {
     if (lead.timeline.trim() !== '' && lead.timeline !== '—') {
@@ -25,6 +27,11 @@ export function renderLeadDetailView(id) {
     } else {
       lead.timeline = [];
     }
+    needsSave = true;
+  }
+  
+  if (needsSave) {
+    localStorage.setItem('thanjai_leads', JSON.stringify(leads));
   }
 
   const formatCurrency = (val) => val ? '₹' + parseInt(val).toLocaleString('en-IN') : '—';
