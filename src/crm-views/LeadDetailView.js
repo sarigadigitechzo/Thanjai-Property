@@ -769,7 +769,7 @@ export function initLeadDetailView(id) {
           "partner_transfer_notification": 4, "bank_loan_assistance": 2, 
           "negotiation_check_in": 3, "property_follow_up": 3, 
           "site_visit_feedback": 2, "site_visit_reminder": 4, 
-          "site_visit_confirmation": 5, "property_shortlist": 10, 
+          "site_visit_confirmation": 5, "property_shortlist": 4, 
           "initial_contact_intro": 4, "welcome_message": 1
         }[cName] || 1;
 
@@ -784,17 +784,13 @@ export function initLeadDetailView(id) {
         } else if (cNameParamCount === 3) {
           templateParams = [clientName, "Thanjavur", agentName];
         } else if (cNameParamCount === 4) {
-          templateParams = [clientName, lead.type || "Property", agentName, agentPhone];
+          if (cName === 'property_shortlist') {
+            templateParams = [clientName, "DTCP Approved Plot", "Thanjavur", "25 Lakhs"];
+          } else {
+            templateParams = [clientName, lead.type || "Property", agentName, agentPhone];
+          }
         } else if (cNameParamCount === 5) {
           templateParams = [clientName, "Tomorrow at 10 AM", lead.type || "Property", agentName, agentPhone];
-        } else if (cNameParamCount === 10) {
-          // Property Shortlist Carousel (1 client name + 3 cards x 3 params)
-          templateParams = [
-            clientName, 
-            "DTCP Approved Plot", "Thanjavur", "25 Lakhs",
-            "Independent Villa", "Kumbakonam", "65 Lakhs",
-            "Agricultural Land", "Thanjavur", "40 Lakhs"
-          ];
         } else {
           templateParams = [clientName];
         }
