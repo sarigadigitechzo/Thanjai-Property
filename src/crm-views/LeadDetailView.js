@@ -836,7 +836,7 @@ export function initLeadDetailView(id) {
       }).then(async res => {
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.message || data.error || JSON.stringify(data));
+          throw new Error(`[${provider.toUpperCase()}] ${data.message || data.error || JSON.stringify(data)}`);
         }
         return data;
       }).then(data => {
