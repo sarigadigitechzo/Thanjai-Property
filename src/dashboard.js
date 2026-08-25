@@ -90,14 +90,14 @@ document.addEventListener('DOMContentLoaded', async () => {
           <label class="admin-label" for="admin-email">STAFF EMAIL ADDRESS</label>
           <div class="admin-input-wrap">
             <i class="ri-mail-line"></i>
-            <input type="email" id="admin-email" value="admin@realrest.example" required class="admin-input" placeholder="admin@realrest.example" />
+            <input type="email" id="admin-email" value="" required class="admin-input" placeholder="admin@realrest.example" />
           </div>
         </div>
         <div class="admin-form-group">
           <label class="admin-label" for="admin-password">SYSTEM PASSWORD</label>
           <div class="admin-input-wrap">
             <i class="ri-lock-2-line"></i>
-            <input type="password" id="admin-password" value="Admin@1234" required class="admin-input" placeholder="••••••••" />
+            <input type="password" id="admin-password" value="" required class="admin-input" placeholder="••••••••" />
           </div>
         </div>
         <button type="submit" class="admin-submit-btn" id="admin-signin-btn">
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const btn = document.getElementById('admin-signin-btn');
       if (btn) btn.textContent = 'Authenticating...';
       
-      const email = document.getElementById('admin-email').value.trim() || 'admin@realrest.example';
+      const email = document.getElementById('admin-email').value.trim();
       
       let staffUser = null;
       try {
