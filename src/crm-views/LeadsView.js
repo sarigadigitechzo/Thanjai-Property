@@ -81,9 +81,18 @@ export function renderLeadsView() {
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
             <div class="select-option selected">All staff</div>
-            <div class="select-option">Kavitha Murugan</div>
-            <div class="select-option">Udhay</div>
-            <div class="select-option">Vikram Subramanian</div>
+${(() => {
+              const adminUsers = JSON.parse(localStorage.getItem('thanjai_admin_users')) || [];
+              let html = '';
+              if (adminUsers.length > 0) {
+                adminUsers.filter(u => u.status === 'Active').forEach(u => {
+                  html += `<div class="select-option">${u.fullName}</div>`;
+                });
+              } else {
+                html += `<div class="select-option" style="color:var(--os-gray-400);">No staff found</div>`;
+              }
+              return html;
+            })()}
           </div>
         </div>
 
@@ -256,9 +265,18 @@ export function renderLeadsView() {
                   <i class="ri-arrow-down-s-line"></i>
                   <div class="select-dropdown">
                     <div class="select-option selected">Unassigned</div>
-                    <div class="select-option">Kavitha Murugan</div>
-                    <div class="select-option">Udhay</div>
-                    <div class="select-option">Vikram Subramanian</div>
+${(() => {
+              const adminUsers = JSON.parse(localStorage.getItem('thanjai_admin_users')) || [];
+              let html = '';
+              if (adminUsers.length > 0) {
+                adminUsers.filter(u => u.status === 'Active').forEach(u => {
+                  html += `<div class="select-option">${u.fullName}</div>`;
+                });
+              } else {
+                html += `<div class="select-option" style="color:var(--os-gray-400);">No staff found</div>`;
+              }
+              return html;
+            })()}
                   </div>
                 </div>
               </div>

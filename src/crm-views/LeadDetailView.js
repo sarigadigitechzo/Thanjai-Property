@@ -84,10 +84,18 @@ ${stagesHtml}        </div>
           <div class="select-value">${lead.assignTo && lead.assignTo !== 'Unassigned' ? lead.assignTo : 'Assign to...'}</div>
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
-            <div class="select-option ${(!lead.assignTo || lead.assignTo === 'Unassigned') ? 'selected' : ''}">Assign to...</div>
-            <div class="select-option">Kavitha Murugan</div>
-            <div class="select-option">Udhay</div>
-            <div class="select-option">Vikram Subramanian</div>
+${(() => {
+              const adminUsers = JSON.parse(localStorage.getItem('thanjai_admin_users')) || [];
+              let html = `<div class="select-option ${(!lead.assignTo || lead.assignTo === 'Unassigned') ? 'selected' : ''}">Assign to...</div>`;
+              if (adminUsers.length > 0) {
+                adminUsers.filter(u => u.status === 'Active').forEach(u => {
+                  html += `<div class="select-option ${lead.assignTo === u.fullName ? 'selected' : ''}">${u.fullName}</div>`;
+                });
+              } else {
+                html += `<div class="select-option" style="color:var(--os-gray-400);">No staff found</div>`;
+              }
+              return html;
+            })()}
           </div>
         </div>
         <button class="os-btn-primary" id="btn-send-whatsapp" style="background: #f97316; border-color: #f97316; display: flex; align-items: center; gap: 8px;">
