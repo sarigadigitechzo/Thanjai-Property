@@ -35,6 +35,14 @@ addCol($conn, 'leads', 'notes', 'longtext DEFAULT NULL');
 $conn->query("ALTER TABLE leads MODIFY COLUMN timeline LONGTEXT");
 $conn->query("ALTER TABLE leads MODIFY COLUMN notes LONGTEXT");
 
+// Fix blog_posts schema
+addCol($conn, 'blog_posts', 'slug', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'blog_posts', 'metaTitle', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'blog_posts', 'metaDescription', 'text DEFAULT NULL');
+addCol($conn, 'blog_posts', 'authorRole', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'blog_posts', 'authorBio', 'text DEFAULT NULL');
+addCol($conn, 'blog_posts', 'authorSocial', 'varchar(255) DEFAULT NULL');
+
 // Fix all created_at to createdAt
 $tables = ['dashboard_stats', 'leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'pipeline_stages', 'reports'];
 foreach($tables as $t) {
@@ -136,8 +144,8 @@ elseif ($resource === 'blog') {
         $data = json_decode(file_get_contents("php://input"), true);
         
         
-        $stmt = $conn->prepare("INSERT INTO blog_posts (id, slug, title, category, date, readTime, author, authorAvatar, image, excerpt, content) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssssssss", $data['id'], $data['slug'], $data['title'], $data['category'], $data['date'], $data['readTime'], $data['author'], $data['authorAvatar'], $data['image'], $data['excerpt'], $data['content']);
+        $stmt = $conn->prepare("INSERT INTO blog_posts (id, slug, title, category, date, readTime, author, authorAvatar, image, excerpt, content, metaTitle, metaDescription, authorRole, authorBio, authorSocial) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssssssssssssssss", $data['id'], $data['slug'], $data['title'], $data['category'], $data['date'], $data['readTime'], $data['author'], $data['authorAvatar'], $data['image'], $data['excerpt'], $data['content'], $data['metaTitle'], $data['metaDescription'], $data['authorRole'], $data['authorBio'], $data['authorSocial']);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Created successfully"]);
         } else {
@@ -149,8 +157,8 @@ elseif ($resource === 'blog') {
         $data = json_decode(file_get_contents("php://input"), true);
         
         
-        $stmt = $conn->prepare("UPDATE blog_posts SET slug=?, title=?, category=?, date=?, readTime=?, author=?, authorAvatar=?, image=?, excerpt=?, content=? WHERE id=?");
-        $stmt->bind_param("sssssssssss", $data['slug'], $data['title'], $data['category'], $data['date'], $data['readTime'], $data['author'], $data['authorAvatar'], $data['image'], $data['excerpt'], $data['content'], $id);
+        $stmt = $conn->prepare("UPDATE blog_posts SET slug=?, title=?, category=?, date=?, readTime=?, author=?, authorAvatar=?, image=?, excerpt=?, content=?, metaTitle=?, metaDescription=?, authorRole=?, authorBio=?, authorSocial=? WHERE id=?");
+        $stmt->bind_param("ssssssssssssssss", $data['slug'], $data['title'], $data['category'], $data['date'], $data['readTime'], $data['author'], $data['authorAvatar'], $data['image'], $data['excerpt'], $data['content'], $data['metaTitle'], $data['metaDescription'], $data['authorRole'], $data['authorBio'], $data['authorSocial'], $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Updated successfully"]);
         } else {
