@@ -124,11 +124,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch (err) {}
 
       const adminUser = staffUser ? staffUser : {
-        id: 'ADM-001',
-        fullName: email.includes('admin') ? 'Aishwarya R.' : email.includes('manager') ? 'Sales Manager' : 'Kavitha S.',
+        id: 'ADM-' + Math.floor(Math.random() * 10000),
+        fullName: email.includes('admin') ? 'Aishwarya R.' : email.includes('manager') ? 'Sales Manager' : (email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1)),
         email: email,
         role: email.includes('admin') ? 'Super Admin' : email.includes('manager') ? 'Sales Manager' : 'Sales Executive',
-        roleCode: 'superadmin'
+        roleCode: email.includes('admin') ? 'superadmin' : 'salesexecutive'
       };
       
       localStorage.setItem('thanjai_active_user', JSON.stringify(adminUser));
