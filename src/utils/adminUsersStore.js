@@ -8,7 +8,7 @@ let adminUsersCache = null;
 export async function initAdminUsersStore() {
   try {
     const data = await fetchFromAPI('/admin_users');
-    if (data && Array.isArray(data) && data.length > 0) {
+    if (data && Array.isArray(data)) {
       adminUsersCache = data;
       localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(adminUsersCache));
     }
