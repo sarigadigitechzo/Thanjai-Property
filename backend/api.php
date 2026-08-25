@@ -15,6 +15,27 @@ if ($conn->connect_error) {
     exit();
 }
 
+// Auto-migration for schema mismatches
+function addCol($conn, $t, $c, $d) {
+    $r = $conn->query("SHOW COLUMNS FROM `$t` LIKE '$c'");
+    if ($r && $r->num_rows == 0) $conn->query("ALTER TABLE `$t` ADD COLUMN `$c` $d");
+}
+function renCol($conn, $t, $o, $n, $d) {
+    $r = $conn->query("SHOW COLUMNS FROM `$t` LIKE '$o'");
+    if ($r && $r->num_rows > 0) $conn->query("ALTER TABLE `$t` CHANGE `$o` `$n` $d");
+}
+// Fix leads schema
+addCol($conn, 'leads', 'source', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'leads', 'requirement', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'leads', 'timeline', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'leads', 'assignedTo', 'varchar(255) DEFAULT NULL');
+// Fix all created_at to createdAt
+$tables = ['dashboard_stats', 'leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'pipeline_stages', 'reports'];
+foreach($tables as $t) {
+    renCol($conn, $t, 'created_at', 'createdAt', 'datetime DEFAULT CURRENT_TIMESTAMP');
+}
+
+
 $request_uri = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -70,9 +91,18 @@ elseif ($resource === 'leads') {
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
         $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, email, source, status, budget, requirement, location, timeline, assignedTo, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode(["error" => "Database prepare error: " . $conn->error]);
+            exit();
+        }
         $stmt->bind_param("ssssssssssss", $data['id'], $data['name'], $data['phone'], $data['email'], $data['source'], $data['status'], $data['budget'], $data['requirement'], $data['location'], $data['timeline'], $data['assignedTo'], $data['notes']);
-        $stmt->execute();
-        echo json_encode(["message" => "Lead created successfully"]);
+        if ($stmt->execute()) {
+            echo json_encode(["message" => "Lead created successfully"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        }
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
