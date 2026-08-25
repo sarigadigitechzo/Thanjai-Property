@@ -44,6 +44,7 @@ addCol($conn, 'blog_posts', 'authorBio', 'text DEFAULT NULL');
 addCol($conn, 'blog_posts', 'authorSocial', 'varchar(255) DEFAULT NULL');
 
 // Fix admin_staff schema
+addCol($conn, 'admin_staff', 'id', 'varchar(255) PRIMARY KEY');
 addCol($conn, 'admin_staff', 'fullName', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'email', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'phone', 'varchar(255) DEFAULT NULL');
@@ -380,7 +381,12 @@ elseif ($resource === 'admin_users') {
         $data = json_decode(file_get_contents("php://input"), true);
         
         $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
-        $stmt = $conn->prepare("INSERT INTO admin_staff (id, fullName, email, phone, password, role, roleCode, status, lastLogin, allowedModules) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO `admin_staff` (`id`, `fullName`, `email`, `phone`, `password`, `role`, `roleCode`, `status`, `lastLogin`, `allowedModules`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode(["error" => "Prepare failed: " . $conn->error]);
+            exit;
+        }
         $stmt->bind_param("ssssssssss", $data['id'], $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules']);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Created successfully"]);
@@ -393,7 +399,12 @@ elseif ($resource === 'admin_users') {
         $data = json_decode(file_get_contents("php://input"), true);
         
         $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
-        $stmt = $conn->prepare("UPDATE admin_staff SET fullName=?, email=?, phone=?, password=?, role=?, roleCode=?, status=?, lastLogin=?, allowedModules=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE `admin_staff` SET `fullName`=?, `email`=?, `phone`=?, `password`=?, `role`=?, `roleCode`=?, `status`=?, `lastLogin`=?, `allowedModules`=? WHERE `id`=?");
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode(["error" => "Prepare failed: " . $conn->error]);
+            exit;
+        }
         $stmt->bind_param("ssssssssss", $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules'], $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Updated successfully"]);
