@@ -16,7 +16,12 @@ export function renderLeadDetailView(id) {
   let needsSave = false;
   if (typeof lead.notes === 'string') {
     if (lead.notes.trim() !== '') {
-      lead.notes = [{ text: lead.notes, date: lead.createdAt || new Date().toISOString() }];
+      try {
+        const parsedNotes = JSON.parse(lead.notes);
+        lead.notes = Array.isArray(parsedNotes) ? parsedNotes : [{ text: lead.notes, date: lead.createdAt || new Date().toISOString() }];
+      } catch (e) {
+        lead.notes = [{ text: lead.notes, date: lead.createdAt || new Date().toISOString() }];
+      }
     } else {
       lead.notes = [];
     }
@@ -24,7 +29,12 @@ export function renderLeadDetailView(id) {
   }
   if (typeof lead.timeline === 'string') {
     if (lead.timeline.trim() !== '' && lead.timeline !== '—') {
-      lead.timeline = [{ type: 'pipeline', message: 'Follow-up: ' + lead.timeline, author: lead.assignTo || 'System', date: lead.createdAt || new Date().toISOString() }];
+      try {
+        const parsedTimeline = JSON.parse(lead.timeline);
+        lead.timeline = Array.isArray(parsedTimeline) ? parsedTimeline : [{ type: 'pipeline', message: 'Follow-up: ' + lead.timeline, author: lead.assignTo || 'System', date: lead.createdAt || new Date().toISOString() }];
+      } catch (e) {
+        lead.timeline = [{ type: 'pipeline', message: 'Follow-up: ' + lead.timeline, author: lead.assignTo || 'System', date: lead.createdAt || new Date().toISOString() }];
+      }
     } else {
       lead.timeline = [];
     }
@@ -159,9 +169,9 @@ ${(() => {
                 Array.isArray(lead.notes) && lead.notes.length > 0 
                 ? lead.notes.map((n, i) => `
                     <div style="background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #fed7aa; position: relative;">
-                      <p style="font-size: 0.9rem; color: var(--os-dark); margin-bottom: 8px; padding-right: 40px;">${n.text}</p>
+                      <p style="font-size: 0.9rem; color: var(--os-dark); margin-bottom: 8px; padding-right: 40px;">${typeof n === 'string' ? n : n.text}</p>
                       <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.75rem; color: var(--os-gray-400);">${n.date ? new Date(n.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'Just now'}</span>
+                        <span style="font-size: 0.75rem; color: var(--os-gray-400);"><i class="ri-calendar-line"></i> ${n.date ? new Date(n.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : 'Just now'}</span>
                         <div style="display: flex; gap: 8px;">
                           <button class="note-action-btn" data-action="edit" data-index="${i}" style="background: none; border: none; cursor: pointer; color: var(--os-gray-500); padding: 2px;" title="Edit Note"><i class="ri-edit-line"></i></button>
                           <button class="note-action-btn" data-action="delete" data-index="${i}" style="background: none; border: none; cursor: pointer; color: var(--os-error); padding: 2px;" title="Delete Note"><i class="ri-delete-bin-line"></i></button>
@@ -922,9 +932,14 @@ export function initLeadDetailView(id) {
       } else if (action === 'edit') {
         const noteToEdit = leads[idx].notes[noteIndex];
         if (noteToEdit) {
-           const newText = prompt('Edit note:', noteToEdit.text);
+           const currentText = typeof noteToEdit === 'string' ? noteToEdit : (noteToEdit.text || '');
+           const newText = prompt('Edit note:', currentText);
            if (newText !== null && newText.trim() !== '') {
-             noteToEdit.text = newText.trim();
+             if (typeof noteToEdit === 'string') {
+               leads[idx].notes[noteIndex] = { text: newText.trim(), date: new Date().toISOString() };
+             } else {
+               noteToEdit.text = newText.trim();
+             }
              saveAndSyncLeads(leads, id);
              const content = document.getElementById('os-content');
              if (content) {

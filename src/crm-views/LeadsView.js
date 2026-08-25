@@ -328,7 +328,7 @@ export async function initLeadsView() {
           budgetMin: '',
           budgetMax: budgetMax,
           bedrooms: '',
-          notes: l.notes || '',
+          notes: l.notes ? (typeof l.notes === 'string' && l.notes.startsWith('[') ? JSON.parse(l.notes) : l.notes) : '',
           type: type,
           source: l.source,
           assignTo: l.assignedTo,
