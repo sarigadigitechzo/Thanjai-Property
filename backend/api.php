@@ -388,14 +388,15 @@ elseif ($resource === 'admin_users') {
             }
             
             $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
-            $stmt = $conn->prepare("INSERT INTO `admin_staff` (`id`, `fullName`, `name`, `email`, `phone`, `password`, `role`, `roleCode`, `status`, `lastLogin`, `allowedModules`, `permissions_json`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO `admin_staff` (`id`, `fullName`, `name`, `email`, `phone`, `password`, `role`, `roleCode`, `status`, `lastLogin`, `allowedModules`, `permissions_json`, `created_at`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if (!$stmt) {
                 http_response_code(500);
                 echo json_encode(["error" => "Prepare failed: " . $conn->error]);
                 exit;
             }
             $empty_permissions = '[]';
-            $stmt->bind_param("ssssssssssss", $data['id'], $data['fullName'], $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules'], $empty_permissions);
+            $created_at = date('Y-m-d H:i:s');
+            $stmt->bind_param("sssssssssssss", $data['id'], $data['fullName'], $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules'], $empty_permissions, $created_at);
             if ($stmt->execute()) {
                 echo json_encode(["message" => "Created successfully"]);
             } else {
