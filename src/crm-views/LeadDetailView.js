@@ -747,7 +747,15 @@ export function initLeadDetailView(id) {
         };
         
         campaignName = campaignMap[templateText] || templateText.replace('(auto)', '').trim().toLowerCase().replace(/[\s-]/g, '_');
-        templateParams = [lead.name || "Client", lead.assignTo || "Our Team"];
+        
+        // Match the number of parameters to what is approved in Smartping
+        if (campaignName === 'welcome_message') {
+          templateParams = [lead.name || "Client"]; // only {{1}}
+        } else {
+          // Default to 1 parameter (client name) for now, as most templates only use {{1}}. 
+          // If any template uses 2, we can add it here.
+          templateParams = [lead.name || "Client"];
+        }
       }
 
       let rawPhone = lead.whatsapp || lead.mobile || '9566321457';
