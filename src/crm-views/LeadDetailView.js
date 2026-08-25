@@ -766,7 +766,12 @@ export function initLeadDetailView(id) {
       confirmWA.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sending...';
       confirmWA.disabled = true;
 
-      fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
+      const provider = localStorage.getItem('thanjai_wa_provider') || 'aisensy';
+      const apiUrl = provider === 'smartping' 
+        ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
+        : 'https://backend.aisensy.com/campaign/t1/api/v2';
+
+      fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

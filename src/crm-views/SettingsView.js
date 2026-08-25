@@ -204,7 +204,7 @@ export function renderSettingsView() {
           
           <div class="settings-form-group" style="max-width: 400px;">
             <label class="settings-label">Provider</label>
-            <select class="settings-input">
+            <select class="settings-input" id="settings-wa-provider">
               <option value="smartping">SmartPing</option>
               <option value="aisensy">AiSensy</option>
             </select>
@@ -449,17 +449,24 @@ export function initSettingsView() {
   // WhatsApp API Key Save Logic
   const waApiKeyInput = document.getElementById('settings-wa-api-key');
   const waSaveBtn = document.getElementById('settings-wa-save-btn');
+  const waProviderSelect = document.getElementById('settings-wa-provider');
   
   if (waApiKeyInput) {
     waApiKeyInput.value = localStorage.getItem('thanjai_whatsapp_api_key') || '';
+  }
+  if (waProviderSelect) {
+    waProviderSelect.value = localStorage.getItem('thanjai_wa_provider') || 'aisensy';
   }
 
   if (waSaveBtn) {
     waSaveBtn.addEventListener('click', () => {
       if (waApiKeyInput) {
         localStorage.setItem('thanjai_whatsapp_api_key', waApiKeyInput.value.trim());
-        showToast('WhatsApp API Key saved successfully!', 'success');
       }
+      if (waProviderSelect) {
+        localStorage.setItem('thanjai_wa_provider', waProviderSelect.value);
+      }
+      showToast('WhatsApp Settings saved successfully!', 'success');
     });
   }
 }
