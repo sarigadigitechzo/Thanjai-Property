@@ -711,8 +711,24 @@ export function initLeadDetailView(id) {
         campaignName = 'custom_message';
         templateParams = [lead.name || "Client", customText];
       } else {
-        const templateText = document.querySelector('#wa-tab-template .os-custom-select .select-value').innerText;
-        campaignName = templateText.replace('(auto)', '').trim().toLowerCase().replace(/[\s-]/g, '_');
+        const templateText = document.querySelector('#wa-tab-template .os-custom-select .select-value').innerText.trim();
+        
+        // Map UI dropdown text to exact AiSensy campaign names
+        const campaignMap = {
+          "Welcome message": "welcome",
+          "Bank loan assistance (auto)": "bank_loan_assist",
+          "Follow-up message": "follow_up",
+          "Initial contact intro (auto)": "initial_contact_intro",
+          "Negotiation check-in (auto)": "negotiation_update",
+          "Partner transfer notification": "partner_transfer",
+          "Property shortlist": "property_shortlist",
+          "Registration testimonial & referral (auto)": "registration_testimonial",
+          "Site visit confirmation (auto)": "site_visit_before",
+          "Site visit feedback request (auto)": "site_visit_feedback",
+          "Site visit reminder": "site_visit_reminder"
+        };
+        
+        campaignName = campaignMap[templateText] || templateText.replace('(auto)', '').trim().toLowerCase().replace(/[\s-]/g, '_');
         templateParams = [lead.name || "Client", lead.assignTo || "Our Team"];
       }
 
