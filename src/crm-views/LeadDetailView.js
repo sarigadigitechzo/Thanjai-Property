@@ -693,22 +693,73 @@ export function initLeadDetailView(id) {
   
   if (confirmWA) {
     confirmWA.addEventListener('click', () => {
-      waModal.classList.remove('show');
-      alert('Message sent successfully via WhatsApp.');
-      
       let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
       const idx = leads.findIndex(l => l.id == id);
-      if (idx !== -1) {
-        if (!leads[idx].timeline) leads[idx].timeline = [];
-        leads[idx].timeline.unshift({
-          type: 'whatsapp',
-          message: `WhatsApp message sent`,
-          author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
-          date: new Date().toISOString()
-        });
-        localStorage.setItem('thanjai_leads', JSON.stringify(leads));
-        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      const lead = leads[idx];
+      if (!lead) return;
+
+      const isCustom = document.querySelector('.wa-tab-btn[data-tab="custom"]').classList.contains('active');
+      let campaignName = 'custom_message';
+      let templateParams = [];
+      
+      if (!isCustom) {
+        const templateText = document.querySelector('#wa-tab-template .os-custom-select .select-value').innerText;
+        campaignName = templateText.replace('(auto)', '').trim().toLowerCase().replace(/[\s-]/g, '_');
+        templateParams = [lead.name || "Client", lead.assignTo || "Our Team"];
       }
+
+      let rawPhone = lead.whatsapp || lead.mobile || '9566321457';
+      let phone = rawPhone.replace(/\D/g, '');
+      if (phone.length === 10) {
+        phone = '91' + phone;
+      }
+
+      const apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ5MCIsIm5hbWUiOiJUaGFuamFpIFByb3BlcnR5IiwiYXBwTmFtZSI6IkFpU2Vuc3kiLCJjbGllbnRJZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ4OSIsImFjdGl2ZVBsYW4iOiJQUk9fTU9OVEhMWSIsImlhdCI6MTc4NzYzNjQ0NX0._dLYfSPK5DvcDsNtUZ3l2UJlhUPA3V8cjkRHKLi5NlM";
+      
+      const originalBtnText = confirmWA.innerHTML;
+      confirmWA.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sending...';
+      confirmWA.disabled = true;
+
+      fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          apiKey: apiKey,
+          campaignName: campaignName,
+          destination: phone,
+          userName: lead.name || "Client",
+          templateParams: templateParams
+        })
+      }).then(res => res.json()).then(data => {
+        confirmWA.innerHTML = originalBtnText;
+        confirmWA.disabled = false;
+        waModal.classList.remove('show');
+        
+        // AiSensy returns error field if invalid
+        if (data && !data.error) {
+          alert('Message sent successfully via AiSensy WhatsApp API.');
+          
+          if (idx !== -1) {
+            if (!leads[idx].timeline) leads[idx].timeline = [];
+            leads[idx].timeline.unshift({
+              type: 'whatsapp',
+              message: `WhatsApp sent: ${isCustom ? 'Custom message' : campaignName}`,
+              author: localStorage.getItem('thanjai_active_user') || 'System',
+              date: new Date().toISOString()
+            });
+            localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+            window.dispatchEvent(new HashChangeEvent('hashchange'));
+          }
+        } else {
+          alert('AiSensy API Error: ' + (data.error || JSON.stringify(data)));
+        }
+      }).catch(err => {
+        confirmWA.innerHTML = originalBtnText;
+        confirmWA.disabled = false;
+        alert('Failed to send WhatsApp message: ' + err.message);
+      });
     });
   }
 
