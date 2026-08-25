@@ -166,10 +166,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nameEl = document.querySelector('.sidebar-footer .name');
     const roleEl = document.querySelector('.sidebar-footer .role');
     const avatarEl = document.querySelector('.sidebar-footer .avatar');
-    const topAvatarEl = document.querySelector('.profile-pill .avatar');
+    
+    // Header elements
+    const headerAvatarBtn = document.getElementById('header-avatar-btn');
+    const headerDropdownName = document.getElementById('header-dropdown-name');
+    const headerDropdownRole = document.getElementById('header-dropdown-role');
     
     if (nameEl) nameEl.textContent = activeAdminUser.fullName || activeAdminUser.name || 'Admin Staff';
     if (roleEl) roleEl.textContent = activeAdminUser.role || 'Admin Staff';
+    if (headerDropdownName) headerDropdownName.textContent = activeAdminUser.fullName || activeAdminUser.name || 'Admin Staff';
+    if (headerDropdownRole) headerDropdownRole.textContent = activeAdminUser.role || 'Admin Staff';
     
     const initials = (activeAdminUser.fullName || activeAdminUser.name || 'AS')
       .split(' ')
@@ -179,7 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .slice(0, 2);
       
     if (avatarEl) avatarEl.textContent = initials;
-    if (topAvatarEl) topAvatarEl.textContent = initials;
+    if (headerAvatarBtn) headerAvatarBtn.textContent = initials;
   }
 
 

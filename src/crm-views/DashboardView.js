@@ -29,12 +29,15 @@ export function renderDashboardView() {
   const flexSv = Math.max(svPct, 10);
   const flexReg = Math.max(regPct, 10);
 
+  const activeUser = JSON.parse(localStorage.getItem('thanjai_active_user')) || { fullName: 'Admin' };
+  const firstName = (activeUser.fullName || activeUser.name || 'Admin').split(' ')[0];
+
   return `
     <div class="view-enter">
       <!-- Luxury Hero -->
       <div class="os-hero">
         <div class="hero-text">
-          <h1>Good Morning,<br/>Aishwarya</h1>
+          <h1>Good Morning,<br/>${firstName}</h1>
           <p>Here's what's happening across your business today.</p>
         </div>
         
