@@ -564,7 +564,7 @@ export function initLeadDetailView(id) {
         id: 'SV-' + Date.now(),
         leadId: lead.name,
         propertyId: propertyText.trim() || 'TBD',
-        visitDate: dateObj.toISOString(),
+        visitDate: datetime.replace('T', ' ') + ':00',
         status: 'Scheduled',
         assignedTo: lead.assignTo || 'Unassigned',
         notes: JSON.stringify({ clientName: lead.name, property: propertyText.trim() || 'TBD', phone: lead.mobile })
