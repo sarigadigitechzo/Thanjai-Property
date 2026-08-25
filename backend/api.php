@@ -388,13 +388,14 @@ elseif ($resource === 'admin_users') {
             }
             
             $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
-            $stmt = $conn->prepare("INSERT INTO `admin_staff` (`id`, `fullName`, `email`, `phone`, `password`, `role`, `roleCode`, `status`, `lastLogin`, `allowedModules`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO `admin_staff` (`id`, `fullName`, `name`, `email`, `phone`, `password`, `role`, `roleCode`, `status`, `lastLogin`, `allowedModules`, `permissions_json`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             if (!$stmt) {
                 http_response_code(500);
                 echo json_encode(["error" => "Prepare failed: " . $conn->error]);
                 exit;
             }
-            $stmt->bind_param("ssssssssss", $data['id'], $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules']);
+            $empty_permissions = '[]';
+            $stmt->bind_param("ssssssssssss", $data['id'], $data['fullName'], $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules'], $empty_permissions);
             if ($stmt->execute()) {
                 echo json_encode(["message" => "Created successfully"]);
             } else {
@@ -417,13 +418,13 @@ elseif ($resource === 'admin_users') {
             }
             
             $data['allowedModules'] = json_encode($data['allowedModules'] ?? []);
-            $stmt = $conn->prepare("UPDATE `admin_staff` SET `fullName`=?, `email`=?, `phone`=?, `password`=?, `role`=?, `roleCode`=?, `status`=?, `lastLogin`=?, `allowedModules`=? WHERE `id`=?");
+            $stmt = $conn->prepare("UPDATE `admin_staff` SET `fullName`=?, `name`=?, `email`=?, `phone`=?, `password`=?, `role`=?, `roleCode`=?, `status`=?, `lastLogin`=?, `allowedModules`=? WHERE `id`=?");
             if (!$stmt) {
                 http_response_code(500);
                 echo json_encode(["error" => "Prepare failed: " . $conn->error]);
                 exit;
             }
-            $stmt->bind_param("ssssssssss", $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules'], $id);
+            $stmt->bind_param("sssssssssss", $data['fullName'], $data['fullName'], $data['email'], $data['phone'], $data['password'], $data['role'], $data['roleCode'], $data['status'], $data['lastLogin'], $data['allowedModules'], $id);
             if ($stmt->execute()) {
                 echo json_encode(["message" => "Updated successfully"]);
             } else {
