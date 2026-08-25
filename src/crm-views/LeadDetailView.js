@@ -1220,7 +1220,7 @@ export function initLeadDetailView(id) {
 }
 
 async function saveAndSyncLeads(leads, changedLeadId = null) {
-  saveAndSyncLeads(leads, id);
+  localStorage.setItem('thanjai_leads', JSON.stringify(leads));
   
   if (changedLeadId) {
     const lead = leads.find(l => l.id == changedLeadId);
