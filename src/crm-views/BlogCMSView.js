@@ -197,60 +197,10 @@ function renderBlogForm() {
             <input type="text" id="form-slug" value="${post ? (post.slug || post.id) : ''}" required placeholder="e.g. market-guide-patta-verification" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: white;" />
           </div>
         </div>
-
-        <!-- Author & Date -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <div>
-            <label style="font-size: 0.8rem; font-weight: 700; color: #444; display: block; margin-bottom: 6px;">Author Name</label>
-            <input type="text" id="form-author" value="${post ? post.author : ''}" placeholder="e.g. Aishwarya R. / Thanjai Legal Advisory" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #ffffff;" />
-          </div>
-
-          <div>
-            <label style="font-size: 0.8rem; font-weight: 700; color: #444; display: block; margin-bottom: 6px;">Publish Date</label>
-            <input type="text" id="form-date" value="${post ? post.date : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #ffffff;" />
-          </div>
-        </div>
-
-        <!-- Author Credentials & Social Media / Contact -->
-        <div style="background: #faf8f5; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-            <span style="font-size: 0.85rem; font-weight: 800; color: #1a202c; display: flex; align-items: center; gap: 6px;">
-              <i class="ri-user-star-line" style="color: #eb5e28;"></i> Author Profile Credentials & Social Media
-            </span>
-            <span style="font-size: 0.75rem; color: #718096; font-style: italic;">Renders in the article header & author bio card</span>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px;">
-            <div>
-              <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Author Role / Designation</label>
-              <input type="text" id="form-author-role" value="${post ? (post.authorRole || '') : ''}" placeholder="e.g. Senior Legal & Patta Verification Specialist" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #ffffff;" />
-            </div>
-
-            <div>
-              <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Social Media / Contact (LinkedIn, WhatsApp, or Phone)</label>
-              <input type="text" id="form-author-social" value="${post ? (post.authorSocial || '') : ''}" placeholder="e.g. https://linkedin.com/in/... or +91 95783 11506" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #ffffff;" />
-            </div>
-          </div>
-
-          <!-- Author Photo / Avatar Field with Live Preview & File Picker -->
-          <div style="margin-bottom: 12px;">
-            <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Author Photo / Avatar (URL or Upload Image)</label>
-            <div style="display: flex; gap: 10px; align-items: center;">
-              <div style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; border: 2px solid #eb5e28; flex-shrink: 0; background: #2A1808;">
-                <img id="form-author-avatar-preview" src="${post && post.authorAvatar ? post.authorAvatar : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80'}" alt="Author Preview" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://ui-avatars.com/api/?name=Author&background=2A1808&color=F8F4EC'" />
-              </div>
-              <input type="url" id="form-author-avatar" value="${post && post.authorAvatar ? post.authorAvatar : ''}" placeholder="https://images.unsplash.com/... or choose file" style="flex: 1; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #ffffff;" />
-              <label style="cursor: pointer; padding: 10px 16px; border-radius: 8px; background: #ffffff; border: 1px dashed #cbd5e0; font-size: 0.85rem; font-weight: 600; color: #444; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
-                <i class="ri-upload-cloud-line" style="color: #eb5e28;"></i> Upload Photo
-                <input type="file" id="form-author-file-input" accept="image/*" style="display: none;" />
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Author Bio / Experience Credentials</label>
-            <textarea id="form-author-bio" rows="2" placeholder="e.g. Over 12 years of hands-on expertise in Tamil Nadu revenue administration, 30-year parent document tracing..." style="width: 100%; padding: 10px 14px; font-size: 0.88rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #ffffff; font-family: inherit;">${post ? (post.authorBio || '') : ''}</textarea>
-          </div>
+        <!-- Publish Date -->
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 700; color: #444; display: block; margin-bottom: 6px;">Publish Date</label>
+          <input type="text" id="form-date" value="${post ? post.date : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #ffffff;" />
         </div>
 
         <!-- Cover Image URL & File Upload -->
@@ -1249,11 +1199,11 @@ export function initBlogCMSListeners() {
     const title = document.getElementById('form-title').value.trim();
     const category = document.getElementById('form-category').value.trim();
     const slug = document.getElementById('form-slug').value.trim();
-    const author = document.getElementById('form-author').value.trim();
-    const authorRole = document.getElementById('form-author-role')?.value.trim() || '';
-    const authorBio = document.getElementById('form-author-bio')?.value.trim() || '';
-    const authorSocial = document.getElementById('form-author-social')?.value.trim() || '';
-    const authorAvatar = document.getElementById('form-author-avatar')?.value.trim() || '';
+    const author = document.getElementById('form-author')?.value.trim() || 'Admin';
+    const authorRole = '';
+    const authorBio = '';
+    const authorSocial = '';
+    const authorAvatar = '';
     const date = document.getElementById('form-date').value.trim();
     const image = document.getElementById('form-image').value.trim();
     const excerpt = document.getElementById('form-excerpt').value.trim();
