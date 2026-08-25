@@ -699,10 +699,18 @@ export function initLeadDetailView(id) {
       if (!lead) return;
 
       const isCustom = document.querySelector('.wa-tab-btn[data-tab="custom"]').classList.contains('active');
-      let campaignName = 'custom_message';
+      let campaignName = '';
       let templateParams = [];
       
-      if (!isCustom) {
+      if (isCustom) {
+        const customText = document.querySelector('#wa-tab-custom textarea').value;
+        if (!customText.trim()) {
+          alert('Please enter a custom message.');
+          return;
+        }
+        campaignName = 'custom_message';
+        templateParams = [lead.name || "Client", customText];
+      } else {
         const templateText = document.querySelector('#wa-tab-template .os-custom-select .select-value').innerText;
         campaignName = templateText.replace('(auto)', '').trim().toLowerCase().replace(/[\s-]/g, '_');
         templateParams = [lead.name || "Client", lead.assignTo || "Our Team"];
