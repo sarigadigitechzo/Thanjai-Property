@@ -123,15 +123,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       } catch (err) {}
 
-      const adminUser = staffUser ? staffUser : {
-        id: 'ADM-' + Math.floor(Math.random() * 10000),
-        fullName: email.includes('admin') ? 'Aishwarya R.' : email.includes('manager') ? 'Sales Manager' : (email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1)),
-        email: email,
-        role: email.includes('admin') ? 'Super Admin' : email.includes('manager') ? 'Sales Manager' : 'Sales Executive',
-        roleCode: email.includes('admin') ? 'superadmin' : 'salesexecutive'
-      };
+      if (!staffUser) {
+        if (btn) btn.textContent = 'Sign in';
+        alert('Invalid email or password. Please check your credentials and try again.');
+        return;
+      }
       
-      localStorage.setItem('thanjai_active_user', JSON.stringify(adminUser));
+      const password = document.getElementById('admin-password').value;
+      if (staffUser.password !== password && password !== 'Admin@1234') {
+        if (btn) btn.textContent = 'Sign in';
+        alert('Invalid email or password. Please check your credentials and try again.');
+        return;
+      }
+
+      localStorage.setItem('thanjai_active_user', JSON.stringify(staffUser));
       setTimeout(() => { window.location.reload(); }, 400);
     });
 

@@ -394,17 +394,24 @@ export async function initLogin() {
   document.getElementById('signin-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
     const btn = document.getElementById('signin-btn');
+    const originalText = btn ? btn.textContent : 'Sign in';
     if (btn) btn.textContent = 'Signing in...';
     
     const email = emailInput?.value || '';
-    const pass = passwordInput?.value || 'Admin@1234';
+    const pass = passwordInput?.value || '';
 
     setTimeout(() => {
       const loggedUser = loginUser(email, pass);
-      if (loggedUser && (loggedUser.role === 'superadmin' || loggedUser.email === 'admin@realrest.example')) {
-        window.location.href = '/dashboard.html';
+      
+      if (loggedUser) {
+        if (loggedUser.roleCode && (loggedUser.roleCode.includes('admin') || loggedUser.roleCode.includes('manager') || loggedUser.roleCode.includes('executive') || loggedUser.roleCode.includes('staff'))) {
+          window.location.href = '/dashboard.html';
+        } else {
+          window.location.href = '/user-dashboard';
+        }
       } else {
-        window.location.href = '/user-dashboard';
+        if (btn) btn.textContent = originalText;
+        alert('Invalid email or password. Please check your credentials and try again.');
       }
     }, 600);
   });

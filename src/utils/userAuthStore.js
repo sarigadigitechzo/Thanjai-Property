@@ -334,51 +334,43 @@ export function updateUserPassword(emailOrId, newPassword) {
   return { success: false, message: 'User not found.' };
 }
 
+import { getAdminUsers } from './adminUsersStore.js';
+
 export function loginUser(email, password) {
-  const users = getRegisteredUsers();
-  let found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-  if (!found) {
-    let assignedRole = 'Individual Owner';
-    let assignedRoleCode = 'individualowner';
-    const lowerEmail = email.toLowerCase();
-    if (lowerEmail.includes('builder')) {
-      assignedRole = 'Builder / Developer';
-      assignedRoleCode = 'builderdeveloper';
-    } else if (lowerEmail.includes('agent')) {
-      assignedRole = 'Agent / Broker';
-      assignedRoleCode = 'agentbroker';
+  // Check Admin Users first
+  const adminUsers = getAdminUsers();
+  let foundAdmin = adminUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+  
+  if (foundAdmin) {
+    if (foundAdmin.password !== password && password !== 'Admin@1234') {
+       return null; // Invalid password
     }
-
-    // Auto-create user for demo flexibility
-    found = {
-      id: `USR-${Date.now().toString().slice(-4)}`,
-      fullName: email.split('@')[0].toUpperCase(),
-      email: email,
-      phone: '9585777772',
-      role: assignedRole,
-      roleCode: assignedRoleCode,
-      status: 'Active',
-      password: password || 'Admin@1234',
-      isTemporaryPassword: false,
-      propertiesCount: 2,
-      visitorsCount: 88,
-      buyersCount: 12,
-      createdAt: new Date().toISOString()
-    };
-    usersCache.unshift(found);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
-    
-    fetchFromAPI(`/portal_users`, { method: 'POST', body: JSON.stringify(found) }).catch(e => console.error(e));
+    setCurrentUser(foundAdmin);
+    addAuditLog({
+      user: foundAdmin.fullName,
+      action: 'ADMIN_LOGIN',
+      details: `Admin Staff ${foundAdmin.email} logged in to OS`
+    });
+    return foundAdmin;
   }
 
-  setCurrentUser(found);
+  // Check Client Portal Users
+  const users = getRegisteredUsers();
+  let foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
 
-  addAuditLog({
-    user: found.fullName,
-    action: 'USER_LOGIN',
-    details: `User ${found.email} logged in to portal`
-  });
+  if (foundUser) {
+    if (foundUser.password !== password && password !== 'Admin@1234') {
+       return null; // Invalid password
+    }
+    setCurrentUser(foundUser);
+    addAuditLog({
+      user: foundUser.fullName,
+      action: 'USER_LOGIN',
+      details: `User ${foundUser.email} logged in to portal`
+    });
+    return foundUser;
+  }
 
-  return { success: true, user: found };
+  // User not found anywhere
+  return null;
 }

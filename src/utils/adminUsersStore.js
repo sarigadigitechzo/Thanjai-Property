@@ -15,83 +15,20 @@ export async function initAdminUsersStore() {
   } catch (error) {}
 }
 
-const DEFAULT_ADMIN_USERS = [
-  {
-    id: 'ADM-1001',
-    fullName: 'Aishwarya R.',
-    email: 'admin@realrest.example',
-    phone: '+91 94431 25009',
-    password: 'Admin@1234',
-    role: 'Super Admin',
-    roleCode: 'superadmin',
-    status: 'Active',
-    lastLogin: 'Today, 17:00',
-    createdAt: '2026-08-01T10:00:00Z'
-  },
-  {
-    id: 'ADM-1002',
-    fullName: 'Sales Manager Desk',
-    email: 'manager@realrest.example',
-    phone: '+91 94431 25010',
-    password: 'Admin@1234',
-    role: 'Sales Manager',
-    roleCode: 'salesmanager',
-    status: 'Active',
-    lastLogin: 'Yesterday, 14:20',
-    createdAt: '2026-08-05T11:30:00Z'
-  },
-  {
-    id: 'ADM-1003',
-    fullName: 'Kavitha S.',
-    email: 'kavitha@realrest.example',
-    phone: '+91 98401 99881',
-    password: 'Admin@1234',
-    role: 'Sales Executive',
-    roleCode: 'salesexecutive',
-    status: 'Active',
-    lastLogin: '18 Aug, 11:45',
-    createdAt: '2026-08-10T09:15:00Z'
-  },
-  {
-    id: 'ADM-1004',
-    fullName: 'Arun Prakash',
-    email: 'arun@realrest.example',
-    phone: '+91 98401 99882',
-    password: 'Admin@1234',
-    role: 'Sales Executive',
-    roleCode: 'salesexecutive',
-    status: 'Active',
-    lastLogin: '17 Aug, 09:30',
-    createdAt: '2026-08-12T14:20:00Z'
-  },
-  {
-    id: 'ADM-1005',
-    fullName: 'Priya K.',
-    email: 'priya@realrest.example',
-    phone: '+91 98401 99883',
-    password: 'Admin@1234',
-    role: 'Property Staff',
-    roleCode: 'propertystaff',
-    status: 'Active',
-    lastLogin: '16 Aug, 16:10',
-    createdAt: '2026-08-14T16:00:00Z'
-  }
-];
-
 export function getAdminUsers() {
   if (adminUsersCache) return adminUsersCache;
   try {
     const data = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
     if (!data) {
-      localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(DEFAULT_ADMIN_USERS));
-      adminUsersCache = DEFAULT_ADMIN_USERS;
+      localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify([]));
+      adminUsersCache = [];
       return adminUsersCache;
     }
     adminUsersCache = JSON.parse(data);
     return adminUsersCache;
   } catch (err) {
     console.error('Error reading admin users:', err);
-    adminUsersCache = DEFAULT_ADMIN_USERS;
+    adminUsersCache = [];
     return adminUsersCache;
   }
 }
