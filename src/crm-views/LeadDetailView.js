@@ -797,6 +797,16 @@ export function initLeadDetailView(id) {
       if (phone.length === 10) {
         phone = '91' + phone;
       }
+      
+      const provider = localStorage.getItem('thanjai_wa_provider') || 'aisensy';
+      const apiUrl = provider === 'smartping' 
+        ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
+        : 'https://backend.aisensy.com/campaign/t1/api/v2';
+
+      // Smartping specifically requests a + sign (e.g. +91XXXXXXXXXX)
+      if (provider === 'smartping' && !phone.startsWith('+')) {
+        phone = '+' + phone;
+      }
 
       const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
       if (!apiKey) {
@@ -807,11 +817,6 @@ export function initLeadDetailView(id) {
       const originalBtnText = confirmWA.innerHTML;
       confirmWA.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sending...';
       confirmWA.disabled = true;
-
-      const provider = localStorage.getItem('thanjai_wa_provider') || 'aisensy';
-      const apiUrl = provider === 'smartping' 
-        ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
-        : 'https://backend.aisensy.com/campaign/t1/api/v2';
 
         // --- Standard Logic for other campaigns ---
         fetch(apiUrl, {
