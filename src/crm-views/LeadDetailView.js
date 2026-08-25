@@ -1,3 +1,4 @@
+import { fetchFromAPI } from '../utils/api.js';
 export function renderLeadDetailView(id) {
   const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
   const lead = leads.find(l => l.id == id);
@@ -31,7 +32,7 @@ export function renderLeadDetailView(id) {
   }
   
   if (needsSave) {
-    localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+    saveAndSyncLeads(leads, id);
   }
 
   const formatCurrency = (val) => val ? '₹' + parseInt(val).toLocaleString('en-IN') : '—';
@@ -788,7 +789,7 @@ export function initLeadDetailView(id) {
             author: localStorage.getItem('thanjai_active_user') || 'System',
             date: new Date().toISOString()
           });
-          localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+          saveAndSyncLeads(leads, id);
           window.dispatchEvent(new HashChangeEvent('hashchange'));
         }
       }).catch(err => {
@@ -855,7 +856,7 @@ export function initLeadDetailView(id) {
             date: new Date().toISOString()
           });
         }
-        localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+        saveAndSyncLeads(leads, id);
         
         // Show success and refresh view
         alert(`Follow-up set for ${new Date(datetime).toLocaleString()}`);
@@ -884,7 +885,7 @@ export function initLeadDetailView(id) {
           text: text,
           date: new Date().toISOString()
         });
-        localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+        saveAndSyncLeads(leads, id);
         const content = document.getElementById('os-content');
         if (content) {
           content.innerHTML = renderLeadDetailView(id);
@@ -911,7 +912,7 @@ export function initLeadDetailView(id) {
       if (action === 'delete') {
         if (confirm('Are you sure you want to delete this note?')) {
           leads[idx].notes.splice(noteIndex, 1);
-          localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+          saveAndSyncLeads(leads, id);
           const content = document.getElementById('os-content');
           if (content) {
             content.innerHTML = renderLeadDetailView(id);
@@ -924,7 +925,7 @@ export function initLeadDetailView(id) {
            const newText = prompt('Edit note:', noteToEdit.text);
            if (newText !== null && newText.trim() !== '') {
              noteToEdit.text = newText.trim();
-             localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+             saveAndSyncLeads(leads, id);
              const content = document.getElementById('os-content');
              if (content) {
                content.innerHTML = renderLeadDetailView(id);
@@ -1068,7 +1069,7 @@ export function initLeadDetailView(id) {
           followup: document.getElementById('edit-lead-followup').value || '—',
           notes: document.getElementById('edit-lead-notes').value
         };
-        localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+        saveAndSyncLeads(leads, id);
         
         editModal.classList.remove('show');
         
@@ -1148,7 +1149,7 @@ export function initLeadDetailView(id) {
                  author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
                  date: new Date().toISOString()
                });
-               localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+               saveAndSyncLeads(leads, id);
                window.dispatchEvent(new HashChangeEvent('hashchange'));
              }
           } else if (select.classList.contains('ld-stage-selector')) {
@@ -1166,7 +1167,7 @@ export function initLeadDetailView(id) {
                  author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
                  date: new Date().toISOString()
                });
-               localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+               saveAndSyncLeads(leads, id);
                window.dispatchEvent(new HashChangeEvent('hashchange'));
              }
           }
@@ -1201,4 +1202,28 @@ export function initLeadDetailView(id) {
   document.addEventListener('click', () => {
     customSelects.forEach(select => select.classList.remove('open'));
   });
+}
+
+async function saveAndSyncLeads(leads, changedLeadId = null) {
+  saveAndSyncLeads(leads, id);
+  
+  if (changedLeadId) {
+    const lead = leads.find(l => l.id == changedLeadId);
+    if (lead) {
+      try {
+        const payload = {
+          ...lead,
+          notes: typeof lead.notes === 'string' ? lead.notes : JSON.stringify(lead.notes || []),
+          timeline: typeof lead.timeline === 'string' ? lead.timeline : JSON.stringify(lead.timeline || []),
+          followup: lead.followUpDate || lead.followup || ''
+        };
+        await fetchFromAPI('/leads/' + changedLeadId, {
+          method: 'PUT',
+          body: JSON.stringify(payload)
+        });
+      } catch (err) {
+        console.error('Failed to sync lead update to backend:', err);
+      }
+    }
+  }
 }

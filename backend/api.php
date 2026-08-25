@@ -27,8 +27,14 @@ function renCol($conn, $t, $o, $n, $d) {
 // Fix leads schema
 addCol($conn, 'leads', 'source', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'requirement', 'varchar(255) DEFAULT NULL');
-addCol($conn, 'leads', 'timeline', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'leads', 'timeline', 'longtext DEFAULT NULL');
+addCol($conn, 'leads', 'followup', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'assignedTo', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'leads', 'notes', 'longtext DEFAULT NULL');
+
+$conn->query("ALTER TABLE leads MODIFY COLUMN timeline LONGTEXT");
+$conn->query("ALTER TABLE leads MODIFY COLUMN notes LONGTEXT");
+
 // Fix all created_at to createdAt
 $tables = ['dashboard_stats', 'leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'pipeline_stages', 'reports'];
 foreach($tables as $t) {
@@ -106,8 +112,8 @@ elseif ($resource === 'leads') {
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("UPDATE leads SET name=?, phone=?, email=?, source=?, status=?, budget=?, requirement=?, location=?, timeline=?, assignedTo=?, notes=? WHERE id=?");
-        $stmt->bind_param("ssssssssssss", $data['name'], $data['phone'], $data['email'], $data['source'], $data['status'], $data['budget'], $data['requirement'], $data['location'], $data['timeline'], $data['assignedTo'], $data['notes'], $id);
+        $stmt = $conn->prepare("UPDATE leads SET name=?, phone=?, email=?, source=?, status=?, budget=?, requirement=?, location=?, timeline=?, assignedTo=?, notes=?, followup=? WHERE id=?");
+        $stmt->bind_param("sssssssssssss", $data['name'], $data['phone'], $data['email'], $data['source'], $data['status'], $data['budget'], $data['requirement'], $data['location'], $data['timeline'], $data['assignedTo'], $data['notes'], $data['followup'], $id);
         $stmt->execute();
         echo json_encode(["message" => "Lead updated successfully"]);
     }

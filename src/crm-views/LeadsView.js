@@ -333,9 +333,9 @@ export async function initLeadsView() {
           source: l.source,
           assignTo: l.assignedTo,
           status: l.status,
-          followup: l.timeline || '—',
+          followup: l.followup || (l.timeline && typeof l.timeline === 'string' && !l.timeline.startsWith('[') ? l.timeline : '—'),
           createdAt: l.createdAt ? new Date(l.createdAt).getTime() : Date.now(),
-          timeline: []
+          timeline: l.timeline && typeof l.timeline === 'string' && l.timeline.startsWith('[') ? JSON.parse(l.timeline) : []
         };
       });
       saveLeads(cachedLeads);
@@ -564,6 +564,8 @@ function bindLeadEvents() {
       }
 
       const idField = document.getElementById('lead-id').value;
+      const leads = getLeads();
+      const leadToUpdate = idField ? leads.find(l => l.id == idField) : null;
       const type = document.getElementById('lead-type-select').querySelector('.select-value').textContent;
       const source = document.getElementById('lead-source-select').querySelector('.select-value').textContent;
       const assignTo = document.getElementById('lead-assign-select').querySelector('.select-value').textContent;
@@ -586,13 +588,14 @@ function bindLeadEvents() {
         phone: mobile,
         email: document.getElementById('lead-email').value,
         source: source,
-        status: idField ? undefined : 'New Lead',
+        status: idField ? (leadToUpdate ? leadToUpdate.status : 'New Lead') : 'New Lead',
         budget: budgetStr,
         requirement: requirementStr,
         location: locationStr,
-        timeline: document.getElementById('lead-followup').value || '—',
+        timeline: idField ? (leadToUpdate ? (typeof leadToUpdate.timeline === 'string' ? leadToUpdate.timeline : JSON.stringify(leadToUpdate.timeline || [])) : '[]') : JSON.stringify([{ type: 'pipeline', message: 'Lead created', author: localStorage.getItem('thanjai_active_user') || 'System', date: new Date().toISOString() }]),
+        followup: document.getElementById('lead-followup').value || '—',
         assignedTo: assignTo,
-        notes: document.getElementById('lead-notes').value,
+        notes: idField ? (leadToUpdate ? (typeof leadToUpdate.notes === 'string' ? leadToUpdate.notes : JSON.stringify(leadToUpdate.notes || [])) : '[]') : document.getElementById('lead-notes').value,
         // Keep original fields for local app usage if needed
         mobile: mobile,
         whatsapp: document.getElementById('lead-whatsapp').value,
@@ -604,8 +607,7 @@ function bindLeadEvents() {
         bedrooms: beds,
         type: type,
         assignTo: assignTo,
-        followup: document.getElementById('lead-followup').value || '—',
-        createdAt: Date.now()
+        createdAt: idField ? (leadToUpdate ? leadToUpdate.createdAt : Date.now()) : Date.now()
       };
 
       try {
@@ -749,6 +751,11 @@ function bindLeadEvents() {
       if (e.target.closest('.action-view')) {
          window.location.hash = 'lead/' + id;
       } else if (e.target.closest('.action-edit')) {
+         const notesField = document.getElementById('lead-notes');
+         if (notesField) {
+           notesField.value = '';
+           notesField.disabled = false;
+         }
          openModal(true);
          modalTitle.textContent = 'Edit lead';
          saveBtn.textContent = 'Save Changes';
@@ -764,7 +771,10 @@ function bindLeadEvents() {
          document.getElementById('lead-budget-min').value = lead.budgetMin || '';
          document.getElementById('lead-budget-max').value = lead.budgetMax || '';
          document.getElementById('lead-bedrooms').value = lead.bedrooms || '';
-         document.getElementById('lead-notes').value = lead.notes || '';
+         if (notesField) {
+           notesField.value = 'Notes are managed in the Lead Details page.';
+           notesField.disabled = true;
+         }
          document.getElementById('lead-followup').value = (lead.followup && lead.followup !== '—') ? lead.followup : '';
          
          // Set selects visually
