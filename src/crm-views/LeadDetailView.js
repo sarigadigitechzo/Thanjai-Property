@@ -769,7 +769,7 @@ export function initLeadDetailView(id) {
           "partner_transfer_notification": 4, "bank_loan_assistance": 2, 
           "negotiation_check_in": 3, "property_follow_up": 3, 
           "site_visit_feedback": 2, "site_visit_reminder": 4, 
-          "site_visit_confirmation": 5, "property_shortlist": 10, 
+          "site_visit_confirmation": 5, "property_shortlist": 1, 
           "initial_contact_intro": 4, "welcome_message": 1
         }[cName] || 1;
 
@@ -787,14 +787,6 @@ export function initLeadDetailView(id) {
           templateParams = [clientName, lead.type || "Property", agentName, agentPhone];
         } else if (cNameParamCount === 5) {
           templateParams = [clientName, "Tomorrow at 10 AM", lead.type || "Property", agentName, agentPhone];
-        } else if (cNameParamCount === 10) {
-          // Property Shortlist Carousel (1 client name + 3 cards x 3 params)
-          templateParams = [
-            clientName, 
-            "DTCP Approved Plot", "Thanjavur", "25 Lakhs",
-            "Independent Villa", "Kumbakonam", "65 Lakhs",
-            "Agricultural Land", "Thanjavur", "40 Lakhs"
-          ];
         } else {
           templateParams = [clientName];
         }
@@ -820,59 +812,6 @@ export function initLeadDetailView(id) {
       const apiUrl = provider === 'smartping' 
         ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
         : 'https://backend.aisensy.com/campaign/t1/api/v2';
-
-        const sendSmartpingRequest = async (paramsArray) => {
-          const res = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              apiKey: apiKey,
-              campaignName: campaignName,
-              destination: phone,
-              userName: lead.name || "Client",
-              templateParams: paramsArray
-            })
-          });
-          const data = await res.json();
-          if (!res.ok) {
-            throw new Error(`[${provider.toUpperCase()}] ${data.message || data.error || JSON.stringify(data)}`);
-          }
-          return data;
-        };
-
-        if (campaignName.includes('property_shortlist') && provider === 'smartping') {
-          confirmWA.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Auto-detecting params...';
-          let found = false;
-          let successCount = 0;
-          for (let i = 1; i <= 15; i++) {
-            try {
-              let testParams = Array(i).fill("Test");
-              testParams[0] = lead.name || "Client";
-              await sendSmartpingRequest(testParams);
-              found = true;
-              successCount = i;
-              break; // Success!
-            } catch (err) {
-              if (!err.message.includes("Template params does not match")) {
-                // If it's a different error, stop and throw
-                throw err;
-              }
-              // Otherwise, continue to next count
-            }
-          }
-          
-          if (found) {
-            alert(`SUCCESS! The property_shortlist campaign expects EXACTLY ${successCount} parameters! Message sent! Please tell the AI assistant this number.`);
-            confirmWA.innerHTML = originalBtnText;
-            confirmWA.disabled = false;
-            waModal.classList.remove('show');
-            return;
-          } else {
-            throw new Error("Could not find the correct parameter count between 1 and 15!");
-          }
-        }
 
         // --- Standard Logic for other campaigns ---
         fetch(apiUrl, {
