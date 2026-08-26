@@ -246,7 +246,7 @@ export function renderContactSection() {
 
                 <!-- Hours -->
                 <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6); text-align: center;">
-                  <i class="ri-time-line" style="color: #eb5e28;"></i> Working Hours: Mon – Sat: 9 AM – 7 PM | Sun: By Appointment
+                  <i class="ri-time-line" style="color: #eb5e28;"></i> Working Hours: Mon – Sun: 9:00 AM – 7:00 PM (Appointments Preferred)
                 </div>
 
               </div>

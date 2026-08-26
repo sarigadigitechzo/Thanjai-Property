@@ -26,7 +26,7 @@ export function renderTermsView() {
               <i class="ri-refresh-line" style="color: #ff6b6b;"></i> Reviewed periodically
             </div>
             <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px 16px; border-radius: 30px; font-size: 0.9rem; color: rgba(255,255,255,0.8);">
-              <i class="ri-mail-line" style="color: #ff6b6b;"></i> thanjaiproperty@gmail.com
+              <i class="ri-mail-line" style="color: #ff6b6b;"></i> vijayaraghavan@thanjaiproperty.com
             </div>
           </div>
         </div>

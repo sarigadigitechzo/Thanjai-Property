@@ -162,7 +162,7 @@ export function renderPropertyDetailModal(property) {
                   <a href="https://wa.me/918489996852?text=Hi%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}%20(ID:%20${property.id})" target="_blank" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                     <i class="ri-whatsapp-line" style="font-size: 1.2rem;"></i> WHATSAPP CHAT
                   </a>
-                  <a href="mailto:thanjaiproperty@gmail.com?subject=Inquiry%20for%20${encodeURIComponent(property.title)}" class="btn btn-outline-dark" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                  <a href="mailto:vijayaraghavan@thanjaiproperty.com?subject=Inquiry%20for%20${encodeURIComponent(property.title)}" class="btn btn-outline-dark" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
                     <i class="ri-mail-line" style="color: #eb5e28;"></i> EMAIL ADVISORY DESK
                   </a>
                   <button class="btn btn-outline-dark" id="modal-schedule-btn" style="width: 100%;">

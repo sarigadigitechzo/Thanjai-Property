@@ -15,7 +15,7 @@ export function renderFooter() {
               <img src="${brandLogo}" alt="Thanjai Property Logo" style="height: 64px; max-width: 100%; width: auto; background: #ffffff; border-radius: 10px; padding: 6px 14px; display: block; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
             </a>
 
-            <p style="color: rgba(255, 255, 255, 0.78); font-size: 0.92rem; line-height: 1.75; margin-bottom: 16px; text-align: justify;">
+            <p style="color: rgba(255, 255, 255, 0.78); font-size: 0.92rem; line-height: 1.75; margin-bottom: 16px;">
               Thanjai Property is a leading real estate consultancy and land promoter in Thanjavur, helping you buy, sell, and rent residential, agricultural, and commercial properties across Tamil Nadu. Explore handpicked properties across Tamil Nadu. Find houses, villas, plots, farmlands, and commercial spaces with verified prices, clear sizes, and exact locations.
             </p>
 
@@ -43,7 +43,7 @@ export function renderFooter() {
               <li><a href="/our-story" class="nav-route-link" data-route="our-story">Our Story</a></li>
               <li><a href="/find-your-property" class="nav-route-link" data-route="discover">Find Your Property</a></li>
               <li><a href="/blog" class="nav-route-link" data-route="blog">Blog</a></li>
-              <li><a href="/contact-us" class="nav-route-link" data-route="contact-us">Contact Us</a></li>
+              <li><a href="/contact" class="nav-route-link" data-route="contact">Contact Us</a></li>
               <li><a href="/privacy-policy" class="nav-route-link" data-route="privacy">Privacy Policy</a></li>
               <li><a href="/terms-of-use" class="nav-route-link" data-route="terms">Terms of Use</a></li>
             </ul>

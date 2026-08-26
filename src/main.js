@@ -104,7 +104,7 @@ function updateSeoMetadata(route) {
 
   switch (route) {
     case 'our-story':
-      title = "Our Story — Thanjai Property | 15+ Years of Real Estate Trust";
+      title = "Our Story — Thanjai Property | 17+ Years of Real Estate Trust";
       desc = "Learn about Thanjai Property's history since 2009, legal Patta title assurance, and district plots presence across Tamil Nadu.";
       break;
     case 'discover':

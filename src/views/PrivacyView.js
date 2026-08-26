@@ -26,7 +26,7 @@ export function renderPrivacyView() {
               <i class="ri-refresh-line" style="color: #ff6b6b;"></i> Reviewed periodically
             </div>
             <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px 16px; border-radius: 30px; font-size: 0.9rem; color: rgba(255,255,255,0.8);">
-              <i class="ri-mail-line" style="color: #ff6b6b;"></i> thanjaiproperty@gmail.com
+              <i class="ri-mail-line" style="color: #ff6b6b;"></i> vijayaraghavan@thanjaiproperty.com
             </div>
           </div>
         </div>
@@ -90,14 +90,14 @@ export function renderPrivacyView() {
             </style>
 
             <h3 id="privacy-info" class="privacy-heading" style="margin-top: 0;">Information Collection</h3>
-            <p class="privacy-para">In Thanjai Property's site we do not collect any personal information like email address or name. Thanjai Property's site provides information about the Product and Services offered by Thanjai Property's, Thanjavur. For more information of Products and Services we highly recommend to send email to thanjaiproperty@gmail.com Upon the request we will use your email address to further communicate with you. We will not sell or share this information to any third party.</p>
+            <p class="privacy-para">In Thanjai Property's site we do not collect any personal information like email address or name. Thanjai Property's site provides information about the Product and Services offered by Thanjai Property's, Thanjavur. For more information of Products and Services we highly recommend to send email to vijayaraghavan@thanjaiproperty.com Upon the request we will use your email address to further communicate with you. We will not sell or share this information to any third party.</p>
 
             <h3 id="privacy-cookies" class="privacy-heading">Use of Cookies</h3>
             <p class="privacy-para">Cookies are used to measure the number of visits, page views, average time spent, relating to your use of Thanjai Property's site. We are not collecting any personal information through these cookies. We also recommend you to set your browser to notify you when you receive a cookie or to prevent cookies from being sent.</p>
 
             <h3 id="privacy-liability" class="privacy-heading">Limitation of Liability</h3>
             <p class="privacy-para">Thanjai Property's WILL NOT BE LIABLE FOR ANY LOST PROFITS, ANY DAMAGES, THAT ARISE OUT THIS WEBSITE OR ANY LINKED WEBSITE. THANJAI PROPERTY'S IS NOT RESPONSIBLE FOR THE PRIVACY PRACTIES OR THE CONTENT OF SUCH WEBSITES.</p>
-            <p class="privacy-para">If you have any questions regarding this privacy statement of Thanjai Property's send an email to thanjaiproperty@gmail.com</p>
+            <p class="privacy-para">If you have any questions regarding this privacy statement of Thanjai Property's send an email to vijayaraghavan@thanjaiproperty.com</p>
 
             <h3 id="privacy-changes" class="privacy-heading">Notification of Changes</h3>
             <p class="privacy-para">Thanjai Property.com may modify this policy from time to time. Any amendment on privacy policy will be updated on our website time to time for your reference.</p>

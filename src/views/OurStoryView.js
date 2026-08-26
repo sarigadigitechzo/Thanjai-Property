@@ -36,7 +36,7 @@ export function renderOurStoryView(onNavigateToDiscover) {
           </h1>
 
           <p style="font-size: clamp(1.05rem, 2vw, 1.25rem); color: rgba(255, 255, 255, 0.88); line-height: 1.7; font-weight: 400; max-width: 820px; margin: 0 auto 36px auto;">
-            Founded in 2009 in Thanjavur, Thanjai Property simplifies real estate discovery across Tamil Nadu. With deep local expertise, we connect buyers, sellers, and investors with ideal residential, agricultural, and commercial properties that match their long-term goals.
+            Founded in Thanjavur in 2009, Thanjai Property simplifies real estate discovery across Tamil Nadu. Backed by deep local expertise, we connect buyers, sellers, and investors with verified residential, agricultural, and commercial properties tailored to their long-term goals.
           </p>
         </div>
       </section>
@@ -51,22 +51,22 @@ export function renderOurStoryView(onNavigateToDiscover) {
                 Where Local Knowledge Meets Modern Property Search.
               </h2>
               <p style="font-size: 1.05rem; color: #555; line-height: 1.75; margin-bottom: 24px;">
-                We believe finding the right property is about more than location and price. It requires the right information, clear communication and an understanding of the property's potential. Our approach combines local real-estate knowledge, property information and modern digital search to make the property journey simpler and more informed.
+                We believe finding the right property goes beyond just location and price. It demands accurate data, clear communication, and an eye for future potential. By combining on-the-ground market expertise with modern digital search, we make every step of your property journey seamless, transparent, and informed.
               </p>
 
               <!-- 3 Philosophy Value Cards -->
               <div style="display: flex; flex-direction: column; gap: 16px;">
                 <div style="background: #faf8f5; border-left: 4px solid #eb5e28; padding: 16px 20px; border-radius: 0 12px 12px 0;">
                   <strong style="font-size: 1rem; color: #1a1a1a; display: block; margin-bottom: 4px;">Trust</strong>
-                  <span style="font-size: 0.9rem; color: #555; line-height: 1.5;">We believe property decisions should begin with clear and relevant information.</span>
+                  <span style="font-size: 0.9rem; color: #555; line-height: 1.5;">Sound property decisions start with honest guidance, verified documentation, and complete transparency.</span>
                 </div>
                 <div style="background: #faf8f5; border-left: 4px solid #eb5e28; padding: 16px 20px; border-radius: 0 12px 12px 0;">
                   <strong style="font-size: 1rem; color: #1a1a1a; display: block; margin-bottom: 4px;">Local Expertise</strong>
-                  <span style="font-size: 0.9rem; color: #555; line-height: 1.5;">Our roots in Thanjavur and our presence across Tamil Nadu help us understand diverse property markets and locations.</span>
+                  <span style="font-size: 0.9rem; color: #555; line-height: 1.5;">Deeply rooted in Thanjavur with a growing footprint across Tamil Nadu, we provide sharp insights into micro-markets and emerging corridors.</span>
                 </div>
                 <div style="background: #faf8f5; border-left: 4px solid #eb5e28; padding: 16px 20px; border-radius: 0 12px 12px 0;">
                   <strong style="font-size: 1rem; color: #1a1a1a; display: block; margin-bottom: 4px;">Long-Term Value</strong>
-                  <span style="font-size: 0.9rem; color: #555; line-height: 1.5;">We look beyond the immediate transaction and focus on properties that can support future plans and investment goals.</span>
+                  <span style="font-size: 0.9rem; color: #555; line-height: 1.5;">We look beyond the single transaction, focusing on properties that protect your capital and support your future lifestyle or investment goals.</span>
                 </div>
               </div>
             </div>
@@ -84,7 +84,7 @@ export function renderOurStoryView(onNavigateToDiscover) {
               ">
                 <div style="font-family: var(--font-serif); font-size: 2.2rem; font-weight: 700; color: var(--color-orange, #eb5e28);">Since 2009</div>
                 <div style="font-size: 0.85rem; font-weight: 600; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;">
-                  15+ Years of Dedicated Real Estate Service
+                  17+ Years of Dedicated Real Estate Service
                 </div>
               </div>
             </div>
@@ -214,7 +214,7 @@ export function renderOurStoryView(onNavigateToDiscover) {
 
                 <!-- Justified Bio Text -->
                 <p style="font-size: 0.92rem; color: rgba(255,255,255,0.85); line-height: 1.75; margin-bottom: 22px; text-align: justify; text-justify: inter-word;">
-                  S. Vijayaraghavan has been instrumental in shaping the vision of Thanjai Property since its foundation in 2009. He oversees administrative operations, corporate governance, legal title verification, and Patta clearance standards, ensuring every transaction delivers unmatched legal security, transparency, and clarity for property buyers across Tamil Nadu.
+                  S. Vijayaraghavan has been instrumental in shaping the vision of Thanjai Property since its foundation in 2009. He oversees operations, corporate governance, legal title verification, and Patta clearance standards, ensuring every transaction delivers unmatched legal security and transparency for property buyers across Tamil Nadu.
                 </p>
               </div>
 
@@ -250,13 +250,13 @@ export function renderOurStoryView(onNavigateToDiscover) {
 
                 <!-- Centered Name & Role -->
                 <div style="margin-bottom: 14px;">
-                  <h3 style="font-family: var(--font-serif); font-size: 1.75rem; font-weight: 700; color: #ffffff; line-height: 1.25; margin-bottom: 6px;">Radhakrishnan</h3>
-                  <p style="font-size: 0.92rem; color: #38a169; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">Co-Partner</p>
+                  <h3 style="font-family: var(--font-serif); font-size: 1.75rem; font-weight: 700; color: #ffffff; line-height: 1.25; margin-bottom: 6px;">G. Radhakrishnan</h3>
+                  <p style="font-size: 0.92rem; color: #38a169; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">Managing Partner</p>
                 </div>
 
                 <!-- Justified Bio Text -->
                 <p style="font-size: 0.92rem; color: rgba(255,255,255,0.85); line-height: 1.75; margin-bottom: 22px; text-align: justify; text-justify: inter-word;">
-                  Radhakrishnan drives strategic sales, client relations, property marketing, and buyer advisory operations across Tamil Nadu. His dynamic approach brings buyers, plot investors, and NRI clients closer to prime real estate opportunities, guiding every customer with tailored property selection, site visit coordination, and market insights.
+                  G. Radhakrishnan leads strategic sales, investor relations, and property advisory across Tamil Nadu. Bringing a dynamic, customer-centric approach, he connects homebuyers, plot investors, and NRI clients with prime real estate opportunities through personalized property matching, curated site visits, and actionable market insights.
                 </p>
               </div>
 
