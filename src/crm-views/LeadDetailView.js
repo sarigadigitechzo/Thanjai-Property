@@ -763,32 +763,53 @@ export function initLeadDetailView(id) {
         }
 
         // --- Template Parameters Logic ---
-        const cName = campaignName.replace(/(_ta|_hi|_te|_kn|_ml)$/, ''); // get base name for logic
-        const cNameParamCount = {
-          "general_property_update": 2, "registration_testimonial_referral": 3, 
-          "partner_transfer_notification": 4, "bank_loan_assistance": 2, 
-          "negotiation_check_in": 3, "property_follow_up": 3, 
-          "site_visit_feedback": 2, "site_visit_reminder": 4, 
-          "site_visit_confirmation": 5, "property_shortlist": 1, 
-          "initial_contact_intro": 4, "welcome_message": 1
-        }[cName] || 1;
-
+        const cName = campaignName.replace(/(_ta|_hi|_te|_kn|_ml)$/, ''); 
+        
         const clientName = lead.name || "Client";
         const agentName = lead.assignTo || "Our Team";
         const agentPhone = "+91 95857 77772";
         
-        if (cNameParamCount === 1) {
-          templateParams = [clientName];
-        } else if (cNameParamCount === 2) {
-          templateParams = [clientName, agentName];
-        } else if (cNameParamCount === 3) {
-          templateParams = [clientName, "Thanjavur", agentName];
-        } else if (cNameParamCount === 4) {
-          templateParams = [clientName, lead.type || "Property", agentName, agentPhone];
-        } else if (cNameParamCount === 5) {
-          templateParams = [clientName, "Tomorrow at 10 AM", lead.type || "Property", agentName, agentPhone];
-        } else {
-          templateParams = [clientName];
+        // Derive contextual details from lead
+        const propName = lead.propertyMatch || lead.type || "the requested property";
+        const loc = "Thanjavur";
+        const price = "Negotiable";
+        
+        switch (cName) {
+          case "property_shortlist":
+          case "welcome_message":
+            templateParams = [clientName];
+            break;
+          case "site_visit_feedback":
+          case "bank_loan_assistance":
+            templateParams = [clientName, propName];
+            break;
+          case "general_property_update":
+            templateParams = [clientName, propName, "Status Updated"];
+            break;
+          case "property_follow_up":
+            templateParams = [clientName, propName, loc];
+            break;
+          case "negotiation_check_in":
+            templateParams = [clientName, propName, "Tomorrow at 11 AM"];
+            break;
+          case "registration_testimonial_referral":
+            templateParams = [clientName, propName, "https://g.page/r/thanjai"];
+            break;
+          case "partner_transfer_notification":
+            templateParams = [clientName, loc, agentName, agentPhone];
+            break;
+          case "site_visit_reminder":
+            templateParams = [clientName, propName, "10:30 AM", "Our Office"];
+            break;
+          case "initial_contact_intro":
+            templateParams = [clientName, propName, loc, price];
+            break;
+          case "site_visit_confirmation":
+            templateParams = [clientName, propName, "Tomorrow at 10 AM", loc, "https://maps.app.goo.gl/thanjai"];
+            break;
+          default:
+            templateParams = [clientName];
+            break;
         }
       }
 
@@ -819,18 +840,26 @@ export function initLeadDetailView(id) {
       confirmWA.disabled = true;
 
         // --- Standard Logic for other campaigns ---
+        const payload = {
+          apiKey: apiKey,
+          campaignName: campaignName,
+          destination: phone,
+          userName: lead.name || "Client",
+          templateParams: templateParams
+        };
+        
+        if (campaignName.includes('initial_contact_intro')) {
+          const dummyImg = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+          payload.media = { url: dummyImg, filename: "property.jpg" };
+          payload.mediaUrl = dummyImg;
+        }
+
         fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            apiKey: apiKey,
-            campaignName: campaignName,
-            destination: phone,
-            userName: lead.name || "Client",
-            templateParams: templateParams
-          })
+          body: JSON.stringify(payload)
         }).then(async res => {
         const data = await res.json();
         if (!res.ok) {
@@ -1058,7 +1087,9 @@ export function initLeadDetailView(id) {
     const matches = allProps.filter(p => {
       return (p.title && p.title.toLowerCase().includes(lowerQuery)) ||
              (p.location && p.location.toLowerCase().includes(lowerQuery)) ||
-             (p.description && p.description.toLowerCase().includes(lowerQuery));
+             (p.description && p.description.toLowerCase().includes(lowerQuery)) ||
+             (p.categoryLabel && p.categoryLabel.toLowerCase().includes(lowerQuery)) ||
+             (p.category && p.category.toLowerCase().includes(lowerQuery));
     });
     renderMatchingProperties(matches);
   }
@@ -1070,8 +1101,8 @@ export function initLeadDetailView(id) {
   }
 
   if (searchInput) {
-    searchInput.addEventListener('keyup', (e) => {
-      if (e.key === 'Enter') doSearch(searchInput.value || '');
+    searchInput.addEventListener('input', (e) => {
+      doSearch(searchInput.value || '');
     });
   }
 

@@ -595,13 +595,36 @@ function renderAdminPropertyPreviewModal(prop) {
         </div>
 
         <!-- Modal Fixed Bottom Action Bar -->
-        <div style="padding: 18px 28px; background: #faf8f5; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0;">
+        <div style="padding: 18px 28px; background: #faf8f5; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0; flex-wrap: wrap;">
+          <button id="modal-share-wa-btn" data-id="${prop.id}" style="background: #25D366; color: #fff; border: none; padding: 10px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.2);">
+            <i class="ri-whatsapp-line"></i> Share via WhatsApp
+          </button>
           <button id="modal-edit-prop-btn" data-id="${prop.id}" style="background: #3182CE; color: #fff; border: none; padding: 10px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
             <i class="ri-pencil-line"></i> Edit Property Details
           </button>
           <button id="modal-close-prop-btn" style="background: #ffffff; border: 1px solid #cbd5e0; color: #4a5568; padding: 10px 24px; border-radius: 10px; font-weight: 700; cursor: pointer;">
             Close Preview
           </button>
+        </div>
+
+        </div>
+
+        <!-- WhatsApp Share Lead Selector Overlay (Hidden by default) -->
+        <div id="wa-share-lead-overlay" style="display: none; position: absolute; inset: 0; background: rgba(255,255,255,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; padding: 32px; text-align: center; backdrop-filter: blur(4px); border-radius: 20px;">
+          <div style="background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; border: 1px solid #e2e8f0;">
+            <i class="ri-whatsapp-line" style="font-size: 2.5rem; color: #25D366; margin-bottom: 12px; display: block;"></i>
+            <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; color: #1a202c;">Share via CRM</h3>
+            <p style="margin: 0 0 20px 0; font-size: 0.9rem; color: #4a5568;">Select a lead to send this property directly via WhatsApp.</p>
+            
+            <select id="wa-share-lead-select" style="width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; margin-bottom: 16px; font-size: 0.95rem; outline: none;"></select>
+            
+            <div style="display: flex; gap: 12px;">
+              <button id="wa-share-cancel-btn" style="flex: 1; padding: 10px; background: #edf2f7; color: #4a5568; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+              <button id="wa-share-confirm-btn" style="flex: 1; padding: 10px; background: #25D366; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="ri-send-plane-fill"></i> Send
+              </button>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -1047,6 +1070,11 @@ function bindModalPreviewListeners() {
   const closePreviewBtn = document.getElementById('close-admin-prop-preview-btn');
   const modalCloseBtn = document.getElementById('modal-close-prop-btn');
   const modalEditBtn = document.getElementById('modal-edit-prop-btn');
+  const modalShareWaBtn = document.getElementById('modal-share-wa-btn');
+  const waShareOverlay = document.getElementById('wa-share-lead-overlay');
+  const waShareCancelBtn = document.getElementById('wa-share-cancel-btn');
+  const waShareConfirmBtn = document.getElementById('wa-share-confirm-btn');
+  const waShareSelect = document.getElementById('wa-share-lead-select');
   const prevMediaBtn = document.getElementById('prev-preview-media-btn');
   const nextMediaBtn = document.getElementById('next-preview-media-btn');
 
@@ -1059,6 +1087,109 @@ function bindModalPreviewListeners() {
 
   closePreviewBtn?.addEventListener('click', handleClosePreview);
   modalCloseBtn?.addEventListener('click', handleClosePreview);
+
+  modalShareWaBtn?.addEventListener('click', () => {
+    const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+    waShareSelect.innerHTML = leads.map(l => `<option value="${l.id}">${l.name} (${l.mobile || l.whatsapp || 'No Phone'})</option>`).join('');
+    
+    if (leads.length === 0) {
+      waShareSelect.innerHTML = '<option value="">No leads available</option>';
+      waShareConfirmBtn.disabled = true;
+    } else {
+      waShareConfirmBtn.disabled = false;
+    }
+
+    waShareOverlay.style.display = 'flex';
+  });
+
+  waShareCancelBtn?.addEventListener('click', () => {
+    waShareOverlay.style.display = 'none';
+  });
+
+  waShareConfirmBtn?.addEventListener('click', async () => {
+    const leadId = waShareSelect.value;
+    if (!leadId) return;
+    
+    const id = modalShareWaBtn.dataset.id;
+    const prop = getProperties().find(p => p.id === id);
+    if (!prop) return;
+
+    const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+
+    let rawPhone = lead.whatsapp || lead.mobile;
+    if (!rawPhone) {
+      alert('This lead has no phone number.');
+      return;
+    }
+
+    let phone = rawPhone.replace(/\D/g, '');
+    if (phone.length === 10) phone = '91' + phone;
+
+    const provider = localStorage.getItem('thanjai_wa_provider') || 'aisensy';
+    const apiUrl = provider === 'smartping' 
+      ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
+      : 'https://backend.aisensy.com/campaign/t1/api/v2';
+
+    if (provider === 'smartping' && !phone.startsWith('+')) {
+      phone = '+' + phone;
+    }
+
+    const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
+    if (!apiKey) {
+      alert('Please go to Settings > Integrations and paste your WhatsApp API Key first.');
+      return;
+    }
+
+    const originalHtml = waShareConfirmBtn.innerHTML;
+    waShareConfirmBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i>';
+    waShareConfirmBtn.disabled = true;
+
+    try {
+      const payload = {
+        apiKey: apiKey,
+        campaignName: 'initial_contact_intro',
+        destination: phone,
+        userName: lead.name || "Client",
+        templateParams: [lead.name || "Client", prop.title, prop.location, prop.priceFormatted || prop.price]
+      };
+      
+      const dummyImg = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+      payload.media = { url: dummyImg, filename: "property.jpg" };
+      payload.mediaUrl = dummyImg;
+
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(`[${provider.toUpperCase()}] ${data.message || data.error || JSON.stringify(data)}`);
+
+      if (!lead.timeline) lead.timeline = [];
+      lead.timeline.unshift({
+        type: 'whatsapp',
+        message: `WhatsApp sent: Property - ${prop.title}`,
+        author: localStorage.getItem('thanjai_active_user') ? JSON.parse(localStorage.getItem('thanjai_active_user')).fullName : 'System',
+        date: new Date().toISOString()
+      });
+      
+      localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+      window.dispatchEvent(new CustomEvent('leadsUpdated'));
+      
+      if (window.showToast) window.showToast('Property shared via WhatsApp successfully!', 'success');
+      waShareOverlay.style.display = 'none';
+      
+    } catch (e) {
+      console.error(e);
+      alert('Failed to send WhatsApp message: ' + e.message);
+    } finally {
+      waShareConfirmBtn.innerHTML = originalHtml;
+      waShareConfirmBtn.disabled = false;
+    }
+  });
 
   modalEditBtn?.addEventListener('click', () => {
     const id = modalEditBtn.dataset.id;

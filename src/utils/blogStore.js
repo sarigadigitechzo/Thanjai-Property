@@ -207,7 +207,7 @@ export async function addBlogPost(data) {
   
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: `Published Blog Article (${newPost.id})`,
     module: 'Blog CMS',
     details: `Published article "${newPost.title}" under ${newPost.category}.`
@@ -250,7 +250,7 @@ export function updateBlogPost(id, updatedFields) {
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: `Updated Blog Article (${current.id})`,
     module: 'Blog CMS',
     details: `Updated details for article "${merged.title}".`
@@ -275,7 +275,7 @@ export function deleteBlogPost(id) {
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: `Deleted Blog Article (${id})`,
     module: 'Blog CMS',
     details: `Deleted article "${target.title}".`
@@ -289,7 +289,7 @@ export function resetBlogPostsToDefault() {
   saveBlogPostsToStorage(INITIAL_BLOG_POSTS);
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: 'Reset Blog CMS Catalog',
     module: 'Blog CMS',
     details: 'Restored factory seed blog articles.'

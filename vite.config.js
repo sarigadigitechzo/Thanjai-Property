@@ -46,6 +46,9 @@ function cleanUrlRewritePlugin() {
 
 export default defineConfig({
   plugins: [adminLinkPlugin(), cleanUrlRewritePlugin()],
+  server: {
+    open: '/admin-dashboard'
+  },
   build: {
     rollupOptions: {
       input: {

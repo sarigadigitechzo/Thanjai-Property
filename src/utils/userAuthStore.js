@@ -278,6 +278,40 @@ export function verifyOTPAndActivate(enteredOtp) {
   } else {
     usersCache.unshift(activeRecord);
     fetchFromAPI(`/portal_users`, { method: 'POST', body: JSON.stringify(activeRecord) }).catch(e => console.error(e));
+    
+    // Inject into CRM Pipeline
+    try {
+      const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const newLead = {
+        id: `LD-${Date.now().toString().slice(-4)}`,
+        name: activeRecord.fullName || 'User',
+        mobile: activeRecord.phone || '',
+        whatsapp: activeRecord.phone || '',
+        email: activeRecord.email,
+        source: 'WEBSITE FORM',
+        priority: 'MEDIUM',
+        status: 'NEW',
+        budget: '₹0',
+        area: '',
+        type: 'Any',
+        propertyMatch: null,
+        assignedTo: 'Unassigned',
+        date: new Date().toISOString(),
+        timeline: [{
+          type: 'pipeline',
+          message: 'Lead created from Portal Registration',
+          author: 'System',
+          date: new Date().toISOString()
+        }],
+        notes: [],
+        partnerShares: []
+      };
+      leads.unshift(newLead);
+      localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+      window.dispatchEvent(new CustomEvent('leadsUpdated'));
+    } catch (e) {
+      console.error('Error syncing portal user to leads pipeline:', e);
+    }
   }
 
   localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));

@@ -5,7 +5,7 @@ import { renderSiteVisitsView, initSiteVisitsView } from './crm-views/SiteVisits
 import { renderPipelineBoardView, initPipelineBoardView } from './crm-views/PipelineBoardView.js?v=2';
 import { renderPartnersView, initPartnersView } from './crm-views/PartnersView.js';
 import { renderAIAgentView, initAIAgentView } from './crm-views/AIAgentView.js';
-import { renderWhatsAppLogView } from './crm-views/WhatsAppLogView.js';
+import { renderWhatsAppLogView, initWhatsAppLogView } from './crm-views/WhatsAppLogView.js';
 import { renderWebsiteImagesView, initWebsiteImagesListeners } from './crm-views/WebsiteImagesView.js';
 import { renderAuditLogView, initAuditLogListeners } from './crm-views/AuditLogView.js';
 import { renderLeadDetailView, initLeadDetailView } from './crm-views/LeadDetailView.js';
@@ -42,7 +42,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   let activeAdminUser = null;
   try {
     const rawActive = localStorage.getItem('thanjai_active_user');
-    if (rawActive) activeAdminUser = JSON.parse(rawActive);
+    if (rawActive) {
+      activeAdminUser = JSON.parse(rawActive);
+      const allAdmins = JSON.parse(localStorage.getItem('thanjai_admin_users')) || [];
+      const stillExists = allAdmins.find(a => a.email === activeAdminUser.email);
+      if (!stillExists) {
+        activeAdminUser = null;
+        localStorage.removeItem('thanjai_active_user');
+      } else {
+        activeAdminUser = stillExists;
+        localStorage.setItem('thanjai_active_user', JSON.stringify(stillExists));
+      }
+    }
   } catch (e) {}
 
   // Guard check: Render inline login if not authenticated
@@ -257,6 +268,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         break;
       case 'whatsapp':
         html = renderWhatsAppLogView();
+        afterRender = initWhatsAppLogView;
         break;
       case 'blog-cms':
       case 'blogs':

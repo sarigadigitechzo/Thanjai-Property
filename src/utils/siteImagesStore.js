@@ -490,7 +490,7 @@ export function updateSiteImage(key, newUrl) {
   // Log to Audit Trail
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: `Updated ${DEFAULT_SITE_IMAGES[key].title}`,
     module: 'Website Images',
     details: `Image asset "${DEFAULT_SITE_IMAGES[key].title}" was updated by admin.`,
@@ -521,7 +521,7 @@ export function resetSiteImage(key) {
 
     addAuditLog({
       timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-      user: 'Aishwarya R. (Super Admin)',
+      
       action: `Reset ${DEFAULT_SITE_IMAGES[key].title}`,
       module: 'Website Images',
       details: `Restored default factory image for "${DEFAULT_SITE_IMAGES[key].title}".`,
@@ -538,7 +538,7 @@ export function resetAllSiteImages() {
   localStorage.removeItem(STORAGE_KEY);
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: 'Reset All Website Images',
     module: 'Website Images',
     details: 'Restored factory default images for all website sections.'
@@ -590,10 +590,19 @@ export function getAuditLogs() {
 
 export function addAuditLog(entry) {
   const logs = getAuditLogs();
+  
+  let activeUserDisplay = entry.user || 'System / Guest';
+  try {
+    const active = JSON.parse(localStorage.getItem('thanjai_active_user'));
+    if (active && active.fullName) {
+      activeUserDisplay = `${active.fullName} (${active.role || 'Admin'})`;
+    }
+  } catch(e) {}
+
   const newEntry = {
     id: `log-${Date.now()}`,
     timestamp: entry.timestamp || new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: entry.user || 'Aishwarya R. (Super Admin)',
+    user: activeUserDisplay,
     action: entry.action,
     module: entry.module || 'Website Images',
     details: entry.details

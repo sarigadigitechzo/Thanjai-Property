@@ -88,7 +88,7 @@ export function approveSubmission(id) {
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: `Approved Property Submission (${id})`,
     module: 'Property Approvals',
     details: `Approved & Published user property "${props[idx].title}" submitted by ${props[idx].ownerName || 'User'}.`
@@ -110,7 +110,7 @@ export function rejectSubmission(id, reason = 'Did not meet Patta title guidelin
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: `Rejected Property Submission (${id})`,
     module: 'Property Approvals',
     details: `Declined property submission "${props[idx].title}" by ${props[idx].ownerName || 'User'}. Reason: ${reason}`
@@ -193,7 +193,7 @@ export function addProperty(data) {
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: `Added Property Listing (${newProp.id})`,
     module: 'Properties Inventory',
     details: `Added new property listing "${newProp.title}" (${newProp.type}) in ${newProp.location} priced at ${newProp.priceFormatted}.`
@@ -248,7 +248,7 @@ export function updateProperty(id, updatedFields) {
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: `Updated Property Listing (${id})`,
     module: 'Properties Inventory',
     details: `Updated property details for "${updatedProp.title}".`
@@ -271,7 +271,7 @@ export function deleteProperty(id) {
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: `Deleted Property Listing (${id})`,
     module: 'Properties Inventory',
     details: `Deleted property listing "${target.title}" from inventory.`
@@ -286,7 +286,7 @@ export function resetPropertiesToDefault() {
   savePropertiesToStorage(normalizedDefaults);
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    user: 'Aishwarya R. (Super Admin)',
+    
     action: 'Reset Properties Inventory',
     module: 'Properties Inventory',
     details: 'Restored initial default property portfolio.'

@@ -60,7 +60,7 @@ export function addAdminUser(userData) {
   }).catch(e => console.error("API sync error", e));
 
   addAuditLog({
-    user: 'Aishwarya R.',
+    
     action: 'ADMIN_USER_CREATED',
     details: `Created new admin staff account: ${newUser.fullName} (${newUser.role}) - ${newUser.email}`
   });
@@ -91,7 +91,7 @@ export function updateAdminUser(id, updatedFields) {
   }).catch(e => console.error("API sync error", e));
 
   addAuditLog({
-    user: 'Aishwarya R.',
+    
     action: 'ADMIN_USER_UPDATED',
     details: `Updated admin staff account ${id}: ${users[idx].fullName} (${users[idx].role})`
   });
@@ -117,7 +117,7 @@ export function toggleAdminUserStatus(id) {
   }).catch(e => console.error("API sync error", e));
 
   addAuditLog({
-    user: 'Aishwarya R.',
+    
     action: 'ADMIN_USER_STATUS_TOGGLED',
     details: `Toggled admin staff status ${id} to ${users[idx].status}`
   });
@@ -141,7 +141,7 @@ export function deleteAdminUser(id) {
 
   if (target) {
     addAuditLog({
-      user: 'Aishwarya R.',
+      
       action: 'ADMIN_USER_DELETED',
       details: `Deleted admin staff account ${id} (${target.fullName})`
     });
