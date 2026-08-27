@@ -474,6 +474,16 @@ ${(() => {
                 </div>
               </div>
             </div>
+
+            <!-- Dynamic Template Parameter Customizer -->
+            <div id="wa-template-params-container" style="margin-top: 16px; background: #faf8f5; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px;">
+              <div style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                <i class="ri-equalizer-line" style="color: #e27c3e;"></i> Template Parameters (Editable)
+              </div>
+              <div id="wa-params-fields" style="display: flex; flex-direction: column; gap: 10px;">
+                <!-- Injected dynamically -->
+              </div>
+            </div>
           </div>
 
           <!-- Custom Tab -->
@@ -700,8 +710,425 @@ export function initLeadDetailView(id) {
   const waTabBtns = document.querySelectorAll('.wa-tab-btn');
   const waTabContents = document.querySelectorAll('.wa-tab-content');
 
+  function getCampaignKey(templateText) {
+    const campaignMap = {
+      "Welcome message": "welcome_message",
+      "No template (auto message)": "general_property_update",
+      "Bank loan assistance (auto)": "bank_loan_assistance",
+      "Follow-up message": "property_follow_up",
+      "Initial contact intro (auto)": "initial_contact_intro",
+      "Negotiation check-in (auto)": "negotiation_check_in",
+      "Partner transfer notification": "partner_transfer_notification",
+      "Property shortlist": "property_shortlist",
+      "Registration testimonial & referral (auto)": "registration_testimonial_referral",
+      "Site visit confirmation (auto)": "site_visit_confirmation",
+      "Site visit feedback request (auto)": "site_visit_feedback",
+      "Site visit reminder": "site_visit_reminder"
+    };
+    return campaignMap[templateText] || templateText.replace('(auto)', '').trim().toLowerCase().replace(/[\s-]/g, '_');
+  }
+
+  function renderTemplateParamsFields(templateKey, currentLead) {
+    const container = document.getElementById('wa-params-fields');
+    if (!container) return;
+
+    const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+    const matchedProp = allProps.find(p => p.title === currentLead.propertyMatch) || allProps[0] || {};
+    const clientName = currentLead.name || "Client";
+    const propTitle = currentLead.propertyMatch || matchedProp.title || currentLead.type || "DTCP Approved Plot - Trichy Road";
+    const propLoc = matchedProp.location || currentLead.city || "Medical College Road, Thanjavur";
+    const propPrice = matchedProp.priceFormatted || "₹ 25 Lakhs";
+    const validMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(propLoc + ' Thanjavur')}`;
+    const validReviewUrl = "https://g.page/r/thanjaiproperty/review";
+
+    let fieldsHtml = '';
+
+    switch (templateKey) {
+      case "property_shortlist":
+        fieldsHtml = `
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+            <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+          </div>
+          <div style="margin-top: 10px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:flex; justify-content:space-between; margin-bottom:6px;">
+              <span><i class="ri-checkbox-multiple-line" style="color:#e27c3e;"></i> Select 3 Properties from Inventory</span>
+              <span id="wa-shortlist-count" style="color:#e27c3e; font-weight:800;">3/3 selected</span>
+            </label>
+            <div id="wa-shortlist-picker" style="max-height: 180px; overflow-y: auto; background: #ffffff; border: 1px solid #cbd5e0; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 6px;">
+              ${allProps.map((p, idx) => `
+                <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; cursor: pointer; padding: 6px; border-radius: 4px; background: #f8fafc; border: 1px solid #e2e8f0;">
+                  <input type="checkbox" class="wa-prop-checkbox" data-title="${p.title}" data-price="${p.priceFormatted || 'Price on request'}" data-loc="${p.location || 'Thanjavur'}" ${idx < 3 ? 'checked' : ''} style="margin-top: 2px; accent-color: #e27c3e;" />
+                  <div style="flex: 1;">
+                    <div style="font-weight: 700; color: #1e293b;">${p.title}</div>
+                    <div style="color: #64748b; font-size: 0.73rem;">📍 ${p.location || 'Thanjavur'} • 💰 <strong style="color:#e27c3e;">${p.priceFormatted || ''}</strong></div>
+                  </div>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        break;
+
+      case "welcome_message":
+        fieldsHtml = `
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+            <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+          </div>
+        `;
+        break;
+
+      case "initial_contact_intro":
+        fieldsHtml = `
+          <div style="margin-bottom: 8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
+              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory (Auto-fills Title, Location & Price)
+            </label>
+            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
+              ${allProps.map(p => `
+                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" data-price="${p.priceFormatted || '₹ 25 Lakhs'}" ${p.title === propTitle ? 'selected' : ''}>
+                  ${p.title} (${p.location || 'Thanjavur'} - ${p.priceFormatted || ''})
+                </option>
+              `).join('')}
+            </select>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
+              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Location</label>
+              <input type="text" id="wa-p3" class="os-input" value="${propLoc}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Price</label>
+              <input type="text" id="wa-p4" class="os-input" value="${propPrice}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+        `;
+        break;
+
+      case "site_visit_confirmation":
+        fieldsHtml = `
+          <div style="margin-bottom: 8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
+              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory (Auto-fills Title, Location & Map Link)
+            </label>
+            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
+              ${allProps.map(p => `
+                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" data-price="${p.priceFormatted || ''}" ${p.title === propTitle ? 'selected' : ''}>
+                  ${p.title} (${p.location || 'Thanjavur'})
+                </option>
+              `).join('')}
+            </select>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
+              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Date & Time</label>
+              <input type="text" id="wa-p3" class="os-input" value="Tomorrow at 10:30 AM" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Location</label>
+              <input type="text" id="wa-p4" class="os-input" value="${propLoc}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{5}} Google Map Link (Direct URL)</label>
+            <input type="url" id="wa-p5" class="os-input" value="${validMapUrl}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+          </div>
+        `;
+        break;
+
+      case "site_visit_reminder":
+        fieldsHtml = `
+          <div style="margin-bottom: 8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
+              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory
+            </label>
+            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
+              ${allProps.map(p => `
+                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" ${p.title === propTitle ? 'selected' : ''}>
+                  ${p.title} (${p.location || 'Thanjavur'})
+                </option>
+              `).join('')}
+            </select>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
+              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Time</label>
+              <input type="text" id="wa-p3" class="os-input" value="11:00 AM" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Meeting Point</label>
+              <input type="text" id="wa-p4" class="os-input" value="${propLoc}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+        `;
+        break;
+
+      case "site_visit_feedback":
+      case "bank_loan_assistance":
+        fieldsHtml = `
+          <div style="margin-bottom: 8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
+              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory
+            </label>
+            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
+              ${allProps.map(p => `
+                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" ${p.title === propTitle ? 'selected' : ''}>
+                  ${p.title}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
+              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+        `;
+        break;
+
+      case "property_follow_up":
+        fieldsHtml = `
+          <div style="margin-bottom: 8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
+              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory
+            </label>
+            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
+              ${allProps.map(p => `
+                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" ${p.title === propTitle ? 'selected' : ''}>
+                  ${p.title} (${p.location || 'Thanjavur'})
+                </option>
+              `).join('')}
+            </select>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
+              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Location</label>
+            <input type="text" id="wa-p3" class="os-input" value="${propLoc}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+          </div>
+        `;
+        break;
+
+      case "negotiation_check_in":
+        fieldsHtml = `
+          <div style="margin-bottom: 8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
+              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory
+            </label>
+            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
+              ${allProps.map(p => `
+                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" ${p.title === propTitle ? 'selected' : ''}>
+                  ${p.title}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
+              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Suggested Meeting Time</label>
+            <input type="text" id="wa-p3" class="os-input" value="Tomorrow at 4:00 PM" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+          </div>
+        `;
+        break;
+
+      case "partner_transfer_notification":
+        fieldsHtml = `
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} City Name</label>
+              <input type="text" id="wa-p2" class="os-input" value="${currentLead.city || 'Thanjavur'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Executive Name</label>
+              <input type="text" id="wa-p3" class="os-input" value="${currentLead.assignTo || 'S. Vijayaraghavan'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Executive Mobile</label>
+              <input type="text" id="wa-p4" class="os-input" value="+91 95783 11506" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+        `;
+        break;
+
+      case "registration_testimonial_referral":
+        fieldsHtml = `
+          <div style="margin-bottom: 8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
+              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Registered Property from Inventory
+            </label>
+            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
+              ${allProps.map(p => `
+                <option value="${p.id}" data-title="${p.title}" ${p.title === propTitle ? 'selected' : ''}>
+                  ${p.title}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Registered Property Title</label>
+              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Google Review Link</label>
+            <input type="url" id="wa-p3" class="os-input" value="${validReviewUrl}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+          </div>
+        `;
+        break;
+
+      case "general_property_update":
+      default:
+        fieldsHtml = `
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Ref / Title</label>
+              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Update Details</label>
+            <input type="text" id="wa-p3" class="os-input" value="Your property verification file has been processed." style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+          </div>
+        `;
+        break;
+    }
+
+    container.innerHTML = fieldsHtml;
+
+    // Attach listener to Quick Property Select dropdown if rendered
+    const quickSelect = container.querySelector('#wa-quick-prop-select');
+    if (quickSelect) {
+      quickSelect.addEventListener('change', (e) => {
+        const opt = e.target.selectedOptions[0];
+        if (opt) {
+          const selTitle = opt.dataset.title || '';
+          const selLoc = opt.dataset.loc || '';
+          const selPrice = opt.dataset.price || '';
+          const p2Input = container.querySelector('#wa-p2');
+          const p3Input = container.querySelector('#wa-p3');
+          const p4Input = container.querySelector('#wa-p4');
+          const p5Input = container.querySelector('#wa-p5');
+
+          if (p2Input) p2Input.value = selTitle;
+          if (p3Input && templateKey === 'initial_contact_intro') p3Input.value = selLoc;
+          if (p4Input && (templateKey === 'initial_contact_intro' || templateKey === 'site_visit_confirmation')) {
+            p4Input.value = templateKey === 'initial_contact_intro' ? selPrice : selLoc;
+          }
+          if (p5Input) {
+            p5Input.value = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selLoc + ' Thanjavur')}`;
+          }
+        }
+      });
+    }
+
+    // Attach listener to 3-Property Shortlist checkboxes if rendered
+    const checkboxes = container.querySelectorAll('.wa-prop-checkbox');
+    const countDisplay = container.querySelector('#wa-shortlist-count');
+    if (checkboxes.length > 0) {
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+          const checkedCount = container.querySelectorAll('.wa-prop-checkbox:checked').length;
+          if (checkedCount > 3) {
+            cb.checked = false;
+            alert('You can select a maximum of 3 properties for the shortlist.');
+            return;
+          }
+          if (countDisplay) {
+            countDisplay.innerText = `${container.querySelectorAll('.wa-prop-checkbox:checked').length}/3 selected`;
+          }
+        });
+      });
+    }
+  }
+
+  // Hook into template select dropdown changes to re-render params
+  const templateSelect = document.querySelector('#wa-tab-template .os-custom-select');
+  if (templateSelect) {
+    const options = templateSelect.querySelectorAll('.select-option');
+    options.forEach(opt => {
+      opt.addEventListener('click', () => {
+        const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+        const currentLead = leads.find(l => l.id == id) || {};
+        const key = getCampaignKey(opt.innerText.trim());
+        renderTemplateParamsFields(key, currentLead);
+      });
+    });
+  }
+
   if (btnWA) {
     btnWA.addEventListener('click', () => {
+      const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const currentLead = leads.find(l => l.id == id) || {};
+      const currentTemplateText = document.querySelector('#wa-tab-template .os-custom-select .select-value')?.innerText.trim() || 'Welcome message';
+      renderTemplateParamsFields(getCampaignKey(currentTemplateText), currentLead);
       waModal.classList.add('show');
     });
   }
@@ -730,23 +1157,7 @@ export function initLeadDetailView(id) {
         templateParams = [lead.name || "Client", customText];
       } else {
         const templateText = document.querySelector('#wa-tab-template .os-custom-select .select-value').innerText.trim();
-        
-        // Map UI dropdown text to exact Smartping campaign names
-        const campaignMap = {
-          "Welcome message": "welcome_message",
-          "Bank loan assistance (auto)": "bank_loan_assistance",
-          "Follow-up message": "property_follow_up",
-          "Initial contact intro (auto)": "initial_contact_intro",
-          "Negotiation check-in (auto)": "negotiation_check_in",
-          "Partner transfer notification": "partner_transfer_notification",
-          "Property shortlist": "property_shortlist",
-          "Registration testimonial & referral (auto)": "registration_testimonial_referral",
-          "Site visit confirmation (auto)": "site_visit_confirmation",
-          "Site visit feedback request (auto)": "site_visit_feedback",
-          "Site visit reminder": "site_visit_reminder"
-        };
-        
-        campaignName = campaignMap[templateText] || templateText.replace('(auto)', '').trim().toLowerCase().replace(/[\s-]/g, '_');
+        campaignName = getCampaignKey(templateText);
         
         // --- Language Logic ---
         const langDropdown = document.querySelectorAll('#wa-tab-template .os-custom-select')[1];
@@ -762,53 +1173,40 @@ export function initLeadDetailView(id) {
           campaignName += langSuffix;
         }
 
-        // --- Template Parameters Logic ---
+        // Collect custom edited parameter values from fields if present
+        const p1 = document.getElementById('wa-p1')?.value.trim() || lead.name || "Client";
+        const p2 = document.getElementById('wa-p2')?.value.trim() || lead.propertyMatch || "DTCP Approved Plot";
+        const p3 = document.getElementById('wa-p3')?.value.trim() || "Tomorrow at 10:30 AM";
+        const p4 = document.getElementById('wa-p4')?.value.trim() || "Thanjavur";
+        const p5 = document.getElementById('wa-p5')?.value.trim() || "https://www.google.com/maps/search/?api=1&query=Thanjavur";
+
         const cName = campaignName.replace(/(_ta|_hi|_te|_kn|_ml)$/, ''); 
-        
-        const clientName = lead.name || "Client";
-        const agentName = lead.assignTo || "Our Team";
-        const agentPhone = "+91 95857 77772";
-        
-        // Derive contextual details from lead
-        const propName = lead.propertyMatch || lead.type || "the requested property";
-        const loc = "Thanjavur";
-        const price = "Negotiable";
         
         switch (cName) {
           case "property_shortlist":
           case "welcome_message":
-            templateParams = [clientName];
+            templateParams = [p1];
             break;
           case "site_visit_feedback":
           case "bank_loan_assistance":
-            templateParams = [clientName, propName];
+            templateParams = [p1, p2];
             break;
           case "general_property_update":
-            templateParams = [clientName, propName, "Status Updated"];
-            break;
           case "property_follow_up":
-            templateParams = [clientName, propName, loc];
-            break;
           case "negotiation_check_in":
-            templateParams = [clientName, propName, "Tomorrow at 11 AM"];
-            break;
           case "registration_testimonial_referral":
-            templateParams = [clientName, propName, "https://g.page/r/thanjai"];
+            templateParams = [p1, p2, p3];
             break;
           case "partner_transfer_notification":
-            templateParams = [clientName, loc, agentName, agentPhone];
-            break;
           case "site_visit_reminder":
-            templateParams = [clientName, propName, "10:30 AM", "Our Office"];
-            break;
           case "initial_contact_intro":
-            templateParams = [clientName, propName, loc, price];
+            templateParams = [p1, p2, p3, p4];
             break;
           case "site_visit_confirmation":
-            templateParams = [clientName, propName, "Tomorrow at 10 AM", loc, "https://maps.app.goo.gl/thanjai"];
+            templateParams = [p1, p2, p3, p4, p5];
             break;
           default:
-            templateParams = [clientName];
+            templateParams = [p1];
             break;
         }
       }
@@ -824,7 +1222,6 @@ export function initLeadDetailView(id) {
         ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
         : 'https://backend.aisensy.com/campaign/t1/api/v2';
 
-      // Smartping specifically requests a + sign (e.g. +91XXXXXXXXXX)
       if (provider === 'smartping' && !phone.startsWith('+')) {
         phone = '+' + phone;
       }
@@ -839,34 +1236,37 @@ export function initLeadDetailView(id) {
       confirmWA.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sending...';
       confirmWA.disabled = true;
 
-        // --- Standard Logic for other campaigns ---
-        const payload = {
-          apiKey: apiKey,
-          campaignName: campaignName,
-          destination: phone,
-          userName: lead.name || "Client",
-          templateParams: templateParams
-        };
-        
-        if (campaignName.includes('initial_contact_intro')) {
-          // Use the first matched property's image if available
-          const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
-          const selectedPropTitle = templateParams[1] || '';
-          const matchedProp = allProps.find(p => p.title === selectedPropTitle);
-          const propImg = (matchedProp && matchedProp.images && matchedProp.images[0])
-            ? matchedProp.images[0]
-            : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
-          payload.media = { url: propImg, filename: "property.jpg" };
-          payload.mediaUrl = propImg;
-        }
+      const payload = {
+        apiKey: apiKey,
+        campaignName: campaignName,
+        destination: phone,
+        userName: lead.name || "Client",
+        templateParams: templateParams
+      };
+      
+      if (campaignName.includes('initial_contact_intro')) {
+        const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+        const selectedPropTitle = templateParams[1] || '';
+        const matchedProp = allProps.find(p => p.title === selectedPropTitle) || allProps[0];
+        const propImg = (matchedProp && matchedProp.images && matchedProp.images[0])
+          ? matchedProp.images[0]
+          : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+        payload.media = { url: propImg, filename: "property.jpg" };
+        payload.mediaUrl = propImg;
+      }
 
-        fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        }).then(async res => {
+      if (campaignName.includes('property_shortlist')) {
+        const clientName = payload.userName || lead.name || "Client";
+        payload.templateParams = [clientName];
+      }
+
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }).then(async res => {
         const data = await res.json();
         if (!res.ok) {
           throw new Error(`[${provider.toUpperCase()}] ${data.message || data.error || JSON.stringify(data)}`);
@@ -881,9 +1281,21 @@ export function initLeadDetailView(id) {
         
         if (idx !== -1) {
           if (!leads[idx].timeline) leads[idx].timeline = [];
+          const isShortlist = campaignName.includes('property_shortlist');
+          const checkedTitles = Array.from(document.querySelectorAll('.wa-prop-checkbox:checked')).map(cb => cb.dataset.title);
+          const shortlistNote = (isShortlist && checkedTitles.length > 0) ? ` [Shortlist: ${checkedTitles.join(', ')}]` : '';
+          
+          if (isShortlist && checkedTitles.length > 0) {
+            leads[idx].shortlistedProperties = Array.from(document.querySelectorAll('.wa-prop-checkbox:checked')).map(cb => ({
+              title: cb.dataset.title,
+              price: cb.dataset.price,
+              location: cb.dataset.loc
+            }));
+          }
+
           leads[idx].timeline.unshift({
             type: 'whatsapp',
-            message: `WhatsApp sent: ${isCustom ? 'Custom message' : campaignName}`,
+            message: `WhatsApp sent: ${isCustom ? 'Custom message' : campaignName}${shortlistNote}`,
             author: localStorage.getItem('thanjai_active_user') || 'System',
             date: new Date().toISOString()
           });
