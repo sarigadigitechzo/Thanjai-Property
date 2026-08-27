@@ -1155,9 +1155,12 @@ function bindModalPreviewListeners() {
         templateParams: [lead.name || "Client", prop.title, prop.location, prop.priceFormatted || prop.price]
       };
       
-      const dummyImg = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
-      payload.media = { url: dummyImg, filename: "property.jpg" };
-      payload.mediaUrl = dummyImg;
+      const propImg = (prop.images && prop.images.length > 0) 
+        ? prop.images[0] 
+        : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+        
+      payload.media = { url: propImg, filename: "property.jpg" };
+      payload.mediaUrl = propImg;
 
       const res = await fetch(apiUrl, {
         method: 'POST',

@@ -849,9 +849,15 @@ export function initLeadDetailView(id) {
         };
         
         if (campaignName.includes('initial_contact_intro')) {
-          const dummyImg = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
-          payload.media = { url: dummyImg, filename: "property.jpg" };
-          payload.mediaUrl = dummyImg;
+          // Use the first matched property's image if available
+          const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+          const selectedPropTitle = templateParams[1] || '';
+          const matchedProp = allProps.find(p => p.title === selectedPropTitle);
+          const propImg = (matchedProp && matchedProp.images && matchedProp.images[0])
+            ? matchedProp.images[0]
+            : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+          payload.media = { url: propImg, filename: "property.jpg" };
+          payload.mediaUrl = propImg;
         }
 
         fetch(apiUrl, {

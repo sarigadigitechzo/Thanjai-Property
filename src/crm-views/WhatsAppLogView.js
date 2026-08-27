@@ -151,31 +151,74 @@ export function initWhatsAppLogView() {
     renderChatHistory();
   }
 
-  function renderChatHistory() {
+  async function renderChatHistory() {
     if (!activeLeadId) return;
     const lead = leads.find(l => l.id === activeLeadId);
     const historyContainer = document.getElementById('wa-chat-history');
     
     const timeline = lead.timeline || [];
-    const waMsgs = timeline.filter(t => t.type === 'whatsapp').reverse(); // Oldest first
 
-    if (waMsgs.length === 0) {
+    // Fetch incoming messages from backend
+    let incomingMsgs = [];
+    try {
+      const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'https://thanjaiproperty.com/api.php'
+        : '/api.php';
+      const rawPhone = lead.whatsapp || lead.mobile || '';
+      const phone = rawPhone.replace(/\D/g, '');
+      if (phone) {
+        const res = await fetch(`${API_BASE}/whatsapp_incoming?phone=${phone}&t=${Date.now()}`);
+        if (res.ok) incomingMsgs = await res.json();
+      }
+    } catch(e) {}
+
+    // Merge outgoing (from timeline) + incoming from DB into one timeline
+    const outgoing = timeline
+      .filter(t => t.type === 'whatsapp' || t.type === 'whatsapp_incoming')
+      .map(t => ({
+        direction: t.type === 'whatsapp_incoming' ? 'in' : 'out',
+        date: new Date(t.date),
+        message: t.type === 'whatsapp_incoming' ? (t.note || t.message) : t.message
+      }));
+
+    const incoming = incomingMsgs.map(m => ({
+      direction: 'in',
+      date: new Date(m.createdAt),
+      message: m.message || '[media]'
+    }));
+
+    // Combine and sort by date
+    const allMsgs = [...outgoing, ...incoming].sort((a, b) => a.date - b.date);
+
+    if (allMsgs.length === 0) {
       historyContainer.innerHTML = '<div style="text-align: center; color: #667781; margin-top: 20px; font-size: 0.9rem;">Start of conversation. Type a message below to send via WhatsApp.</div>';
       return;
     }
 
     let html = '';
-    waMsgs.forEach(msg => {
-      const timeStr = new Date(msg.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      // Outgoing message bubble style
-      html += `
-        <div style="align-self: flex-end; background: #d9fdd3; padding: 8px 12px; border-radius: 8px; max-width: 70%; box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative;">
-          <div style="font-size: 0.95rem; color: #111b21; margin-bottom: 12px; word-wrap: break-word;">${msg.message}</div>
-          <div style="font-size: 0.7rem; color: #667781; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
-            ${timeStr} <i class="ri-check-double-line" style="color: #53bdeb; font-size: 1rem;"></i>
+    allMsgs.forEach(msg => {
+      const timeStr = msg.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      if (msg.direction === 'out') {
+        // Outgoing - green right bubble
+        html += `
+          <div style="align-self: flex-end; background: #d9fdd3; padding: 8px 12px; border-radius: 8px 0 8px 8px; max-width: 70%; box-shadow: 0 1px 1px rgba(0,0,0,0.1);">
+            <div style="font-size: 0.95rem; color: #111b21; margin-bottom: 8px; word-wrap: break-word;">${msg.message}</div>
+            <div style="font-size: 0.7rem; color: #667781; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+              ${timeStr} <i class="ri-check-double-line" style="color: #53bdeb; font-size: 1rem;"></i>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      } else {
+        // Incoming - white left bubble
+        html += `
+          <div style="align-self: flex-start; background: #ffffff; padding: 8px 12px; border-radius: 0 8px 8px 8px; max-width: 70%; box-shadow: 0 1px 1px rgba(0,0,0,0.12); border: 1px solid #e9edef;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #06c167; margin-bottom: 4px;">Customer</div>
+            <div style="font-size: 0.95rem; color: #111b21; margin-bottom: 8px; word-wrap: break-word;">${msg.message}</div>
+            <div style="font-size: 0.7rem; color: #667781; text-align: left;">${timeStr}</div>
+          </div>
+        `;
+      }
     });
     historyContainer.innerHTML = html;
     historyContainer.scrollTop = historyContainer.scrollHeight;
@@ -196,7 +239,7 @@ export function initWhatsAppLogView() {
   const btnSend = document.getElementById('wa-btn-send');
   const msgInput = document.getElementById('wa-msg-input');
 
-  async function sendWhatsAppMessage(campaignName, templateParams) {
+  async function sendWhatsAppMessage(campaignName, templateParams, mediaUrl = null) {
     if (!activeLeadId) return;
     const lead = leads.find(l => l.id === activeLeadId);
     let rawPhone = lead.whatsapp || lead.mobile;
@@ -237,7 +280,7 @@ export function initWhatsAppLogView() {
       };
       
       if (campaignName.includes('initial_contact_intro')) {
-        const dummyImg = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+        const dummyImg = mediaUrl || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
         payload.media = { url: dummyImg, filename: "property.jpg" };
         payload.mediaUrl = dummyImg;
       }
@@ -320,13 +363,14 @@ export function initWhatsAppLogView() {
 
     let html = '';
     filtered.forEach(p => {
+      const img = p.images && p.images[0] ? p.images[0] : '';
       html += `
         <div class="wa-prop-item" style="padding: 12px; border: 1px solid var(--os-gray-200); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <div style="font-weight: 600; color: var(--os-dark);">${p.title}</div>
             <div style="font-size: 0.8rem; color: var(--os-gray-500); margin-top: 4px;">${p.location} • <strong style="color: #ea580c;">${p.priceFormatted || p.price}</strong></div>
           </div>
-          <button class="os-btn-primary send-prop-btn" data-title="${p.title}" data-loc="${p.location}" data-price="${p.priceFormatted || p.price}" style="padding: 6px 12px; font-size: 0.85rem;"><i class="ri-send-plane-fill"></i> Send</button>
+          <button class="os-btn-primary send-prop-btn" data-title="${p.title}" data-loc="${p.location}" data-price="${p.priceFormatted || p.price}" data-img="${img}" style="padding: 6px 12px; font-size: 0.85rem;"><i class="ri-send-plane-fill"></i> Send</button>
         </div>
       `;
     });
@@ -337,11 +381,14 @@ export function initWhatsAppLogView() {
         const title = e.currentTarget.dataset.title;
         const loc = e.currentTarget.dataset.loc;
         const price = e.currentTarget.dataset.price;
+        const imgUrl = e.currentTarget.dataset.img;
         propModal.classList.remove('show');
         
         const lead = leads.find(l => l.id === activeLeadId);
-        // Use initial_contact_intro as it takes 4 params for a single property
-        sendWhatsAppMessage('initial_contact_intro', [lead.name || "Client", title, loc, price]);
+        const userName = lead ? (lead.name || "Client") : "Client";
+        
+        // initial_contact_intro accepts: Client, Title, Location, Price
+        sendWhatsAppMessage('initial_contact_intro', [userName, title, loc, price], imgUrl);
       });
     });
   }

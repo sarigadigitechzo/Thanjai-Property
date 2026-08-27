@@ -801,5 +801,153 @@ elseif ($resource === 'site_images') {
     }
 }
 
+// =====================================================================
+// WhatsApp Webhook (Meta / AiSensy / SmartPing Incoming Messages)
+// Webhook URL: https://thanjaiproperty.com/api.php/webhook
+// Verify Token: thanjai_webhook_2026
+// =====================================================================
+elseif ($resource === 'webhook') {
+    // Step 1: Webhook verification handshake (GET from Meta)
+    if ($method === 'GET') {
+        $VERIFY_TOKEN = 'thanjai_webhook_2026';
+        $hub_mode      = isset($_GET['hub_mode'])      ? $_GET['hub_mode']      : '';
+        $hub_challenge = isset($_GET['hub_challenge'])  ? $_GET['hub_challenge']  : '';
+        $hub_verify    = isset($_GET['hub_verify_token']) ? $_GET['hub_verify_token'] : '';
+
+        if ($hub_mode === 'subscribe' && $hub_verify === $VERIFY_TOKEN) {
+            http_response_code(200);
+            header('Content-Type: text/plain');
+            echo $hub_challenge;
+        } else {
+            http_response_code(403);
+            echo 'Forbidden';
+        }
+        exit();
+    }
+
+    // Step 2: Receive incoming WhatsApp messages (POST from Meta/AiSensy/SmartPing)
+    if ($method === 'POST') {
+        // Auto-create table if not exists
+        $conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_incoming` (
+            `id` bigint NOT NULL AUTO_INCREMENT,
+            `from_phone` varchar(50) DEFAULT NULL,
+            `from_name`  varchar(255) DEFAULT NULL,
+            `message`    longtext,
+            `media_url`  text,
+            `message_type` varchar(50) DEFAULT 'text',
+            `timestamp`  varchar(50) DEFAULT NULL,
+            `raw_payload` longtext,
+            `createdAt`  datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $raw = file_get_contents("php://input");
+        $data = json_decode($raw, true);
+
+        // Parse Meta Cloud API format
+        $from_phone = '';
+        $from_name  = '';
+        $message    = '';
+        $media_url  = '';
+        $msg_type   = 'text';
+        $timestamp  = '';
+
+        // Meta Cloud API format
+        if (isset($data['entry'][0]['changes'][0]['value']['messages'][0])) {
+            $msg = $data['entry'][0]['changes'][0]['value']['messages'][0];
+            $contact = $data['entry'][0]['changes'][0]['value']['contacts'][0] ?? [];
+            $from_phone = $msg['from'] ?? '';
+            $from_name  = $contact['profile']['name'] ?? $from_phone;
+            $timestamp  = $msg['timestamp'] ?? '';
+            $msg_type   = $msg['type'] ?? 'text';
+
+            if ($msg_type === 'text') {
+                $message = $msg['text']['body'] ?? '';
+            } elseif (in_array($msg_type, ['image', 'video', 'audio', 'document'])) {
+                $media = $msg[$msg_type] ?? [];
+                $media_url = $media['url'] ?? ($media['id'] ?? '');
+                $message = $media['caption'] ?? ("[$msg_type received]");
+            } elseif ($msg_type === 'interactive') {
+                $message = $msg['interactive']['button_reply']['title'] 
+                        ?? $msg['interactive']['list_reply']['title'] 
+                        ?? '[Interactive reply]';
+            } else {
+                $message = "[{$msg_type} received]";
+            }
+        }
+        // AiSensy / SmartPing format (flat JSON)
+        elseif (isset($data['from']) && isset($data['text'])) {
+            $from_phone = $data['from'] ?? '';
+            $from_name  = $data['name'] ?? $from_phone;
+            $message    = $data['text'] ?? '';
+            $timestamp  = $data['timestamp'] ?? '';
+            $msg_type   = $data['type'] ?? 'text';
+        }
+
+        if ($from_phone) {
+            $stmt = $conn->prepare("INSERT INTO whatsapp_incoming (from_phone, from_name, message, media_url, message_type, timestamp, raw_payload) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssssss", $from_phone, $from_name, $message, $media_url, $msg_type, $timestamp, $raw);
+            $stmt->execute();
+
+            // Also try to match to a lead and append to their timeline
+            $clean_phone = preg_replace('/\D/', '', $from_phone);
+            $last10 = substr($clean_phone, -10);
+            $leads_raw = $conn->query("SELECT * FROM leads");
+            while ($lead = $leads_raw->fetch_assoc()) {
+                $lead_phone = preg_replace('/\D/', '', $lead['phone'] ?? '');
+                if (substr($lead_phone, -10) === $last10) {
+                    $timeline = json_decode($lead['timeline'] ?? '[]', true) ?: [];
+                    array_unshift($timeline, [
+                        'type'    => 'whatsapp_incoming',
+                        'date'    => date('c'),
+                        'message' => "📩 Customer replied: \"$message\"",
+                        'note'    => $message
+                    ]);
+                    $new_timeline = json_encode($timeline);
+                    $upd = $conn->prepare("UPDATE leads SET timeline=? WHERE id=?");
+                    $upd->bind_param("ss", $new_timeline, $lead['id']);
+                    $upd->execute();
+                    break;
+                }
+            }
+        }
+
+        http_response_code(200);
+        echo json_encode(["status" => "received"]);
+        exit();
+    }
+}
+
+// Fetch all incoming WhatsApp messages (for CRM display)
+elseif ($resource === 'whatsapp_incoming') {
+    // Auto-create table if not exists
+    $conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_incoming` (
+        `id` bigint NOT NULL AUTO_INCREMENT,
+        `from_phone` varchar(50) DEFAULT NULL,
+        `from_name`  varchar(255) DEFAULT NULL,
+        `message`    longtext,
+        `media_url`  text,
+        `message_type` varchar(50) DEFAULT 'text',
+        `timestamp`  varchar(50) DEFAULT NULL,
+        `raw_payload` longtext,
+        `createdAt`  datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    if ($method === 'GET') {
+        $phone_filter = isset($_GET['phone']) ? $_GET['phone'] : null;
+        if ($phone_filter) {
+            $clean = preg_replace('/\D/', '', $phone_filter);
+            $last10 = substr($clean, -10);
+            $result = $conn->query("SELECT * FROM whatsapp_incoming WHERE from_phone LIKE '%{$last10}' ORDER BY createdAt ASC");
+        } else {
+            $result = $conn->query("SELECT * FROM whatsapp_incoming ORDER BY createdAt DESC LIMIT 200");
+        }
+        $rows = [];
+        while ($row = $result->fetch_assoc()) { $rows[] = $row; }
+        echo json_encode($rows);
+    }
+}
+
 $conn->close();
 ?>
