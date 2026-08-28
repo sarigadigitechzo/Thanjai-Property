@@ -451,7 +451,6 @@ ${(() => {
                   <div class="select-option">Initial contact intro (auto)</div>
                   <div class="select-option">Negotiation check-in (auto)</div>
                   <div class="select-option">Partner transfer notification</div>
-                  <div class="select-option">Property shortlist</div>
                   <div class="select-option">Registration testimonial & referral (auto)</div>
                   <div class="select-option">Site visit confirmation (auto)</div>
                   <div class="select-option">Site visit feedback request (auto)</div>
@@ -808,7 +807,6 @@ export function initLeadDetailView(id) {
       "Initial contact intro (auto)": "initial_contact_intro",
       "Negotiation check-in (auto)": "negotiation_check_in",
       "Partner transfer notification": "partner_transfer_notification",
-      "Property shortlist": "property_shortlist",
       "Registration testimonial & referral (auto)": "registration_testimonial_referral",
       "Site visit confirmation (auto)": "site_visit_confirmation",
       "Site visit feedback request (auto)": "site_visit_feedback",

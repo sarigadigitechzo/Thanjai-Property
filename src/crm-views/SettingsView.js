@@ -34,12 +34,6 @@ export function renderSettingsView() {
       isActive: true
     },
     {
-      name: 'Property shortlist',
-      tag: 'property_shortlist',
-      preview: 'Hi {{name}}, based on your requirements here are some properties I think you\'ll love:\\n...',
-      isActive: true
-    },
-    {
       name: 'Registration testimonial & referral (auto)',
       tag: 'registration_testimonial',
       preview: 'Congratulations {{name}} on your new home! 🎉 We\'d be grateful for a short testimonial, and if you know anyone else house-hunting, we\'d love an introduction. — {{agent}}',
