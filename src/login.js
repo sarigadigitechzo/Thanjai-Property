@@ -1,4 +1,7 @@
 import { initiateRegistration, verifyOTPAndActivate, loginUser, getPendingOTPUser, updateUserPassword, sendOtpEmail, sendCredentialsEmail, initUsersStore } from './utils/userAuthStore.js';
+import { installGlobalPopupShield } from './utils/toast.js';
+
+installGlobalPopupShield();
 
 export function renderLogin(initialMode = 'signin') {
   const pending = getPendingOTPUser();

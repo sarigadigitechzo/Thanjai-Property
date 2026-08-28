@@ -1,8 +1,11 @@
 import { getAllSiteImages, updateSiteImage, resetSiteImage, resetAllSiteImages } from '../utils/siteImagesStore.js';
+import { showConfirmModal } from '../utils/toast.js';
 
 export function renderWebsiteImagesView() {
   const imagesMap = getAllSiteImages();
   const imageList = Object.values(imagesMap);
+
+  const categories = Array.from(new Set(imageList.map(img => img.category))).filter(Boolean);
 
   return `
     <div class="view-enter website-images-view">
@@ -67,17 +70,13 @@ export function renderWebsiteImagesView() {
           <input type="text" id="img-search-input" placeholder="Search by section, banner name, category..." style="width: 100%; border: none; background: transparent; outline: none;" />
         </div>
 
-        <div style="width: 260px;">
+        <div style="width: 280px;">
           <select id="img-category-dropdown" style="width: 100%; height: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--os-border); background: var(--os-gray-100); color: var(--os-text); font-size: 0.85rem; font-weight: 600; cursor: pointer; outline: none; appearance: none;">
-            <option value="all">All Images (${imageList.length})</option>
-            <option value="LOCATION CORRIDORS (THANJAVUR)">Location Corridors (11 Locations)</option>
-            <option value="Home">Home</option>
-            <option value="SELL & PROMOTE YOUR LAND">Sell & Promote Your Land</option>
-            <option value="REGIONAL DESTINATIONS">Regional Destinations</option>
-            <option value="PROPERTY ASSET CLASSES">Property Asset Classes</option>
-            <option value="our story home image">Our Story Home Image</option>
-            <option value="OUR PHILOSOPHY">Our Philosophy</option>
-            <option value="Meet Our Leadership">Meet Our Leadership</option>
+            <option value="all">All Front-End Images (${imageList.length})</option>
+            ${categories.map(cat => {
+              const count = imageList.filter(img => img.category === cat).length;
+              return `<option value="${cat}">${cat} (${count})</option>`;
+            }).join('')}
           </select>
         </div>
       </div>
@@ -344,15 +343,23 @@ export function initWebsiteImagesListeners() {
 
   // 6. Reset All Images Button
   document.getElementById('reset-all-site-images-btn')?.addEventListener('click', () => {
-    if (confirm('Are you sure you want to reset ALL custom website images back to defaults?')) {
-      resetAllSiteImages();
-      showToast('All website images restored to factory defaults.', 'ri-refresh-line');
-      const contentArea = document.getElementById('os-content');
-      if (contentArea) {
-        contentArea.innerHTML = renderWebsiteImagesView();
-        initWebsiteImagesListeners();
+    showConfirmModal({
+      title: 'Reset All Website Images',
+      message: 'Are you sure you want to reset <strong>ALL custom website images</strong> back to factory defaults? Any custom uploaded banners will be replaced.',
+      confirmText: 'Reset Defaults',
+      cancelText: 'Keep Current',
+      confirmIcon: 'ri-refresh-line',
+      isDanger: true,
+      onConfirm: () => {
+        resetAllSiteImages();
+        showToast('All website images restored to factory defaults.', 'ri-refresh-line');
+        const contentArea = document.getElementById('os-content');
+        if (contentArea) {
+          contentArea.innerHTML = renderWebsiteImagesView();
+          initWebsiteImagesListeners();
+        }
       }
-    }
+    });
   });
 }
 

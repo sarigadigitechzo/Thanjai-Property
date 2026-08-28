@@ -1,4 +1,5 @@
 import { getAuditLogs, clearAuditLogs } from '../utils/siteImagesStore.js';
+import { showToast, showConfirmModal } from '../utils/toast.js';
 
 export function renderAuditLogView() {
   const logs = getAuditLogs();
@@ -158,11 +159,19 @@ export function initAuditLogListeners() {
   const clearBtn = document.getElementById('clear-audit-btn');
   if (clearBtn) {
     clearBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to delete all audit logs? This action cannot be undone.')) {
-        clearAuditLogs();
-        // Dispatch an event to re-render the view
-        window.dispatchEvent(new CustomEvent('hashchange'));
-      }
+      showConfirmModal({
+        title: 'Clear All Audit Logs',
+        message: 'Are you sure you want to delete <strong>all administrative audit logs</strong>? This action cannot be undone.',
+        confirmText: 'Clear All Logs',
+        cancelText: 'Cancel',
+        confirmIcon: 'ri-delete-bin-line',
+        isDanger: true,
+        onConfirm: () => {
+          clearAuditLogs();
+          showToast('Audit logs cleared', 'ri-checkbox-circle-fill');
+          window.dispatchEvent(new CustomEvent('hashchange'));
+        }
+      });
     });
   }
 }

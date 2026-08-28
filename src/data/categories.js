@@ -1,4 +1,5 @@
 import { getProperties } from '../utils/propertiesStore.js';
+import { getSiteImage } from '../utils/siteImagesStore.js';
 
 const rawCategories = [
   {
@@ -48,14 +49,6 @@ const rawCategories = [
     unitPlural: "Spaces",
     defaultImage: "/images/tn_commercial.jpg",
     description: "Showrooms, prime retail plots & corporate offices"
-  },
-  {
-    id: "industrial",
-    name: "Industrial Land",
-    unitSingular: "Unit",
-    unitPlural: "Units",
-    defaultImage: "/images/tn_industrial.jpg",
-    description: "SIPCOT adjacent industrial plots & logistics parks"
   }
 ];
 
@@ -74,6 +67,6 @@ export const CATEGORIES = rawCategories.map(cat => ({
     }
   },
   get image() {
-    return cat.defaultImage;
+    return getSiteImage('cat_' + cat.id) || cat.defaultImage;
   }
 }));

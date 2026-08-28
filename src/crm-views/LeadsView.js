@@ -304,6 +304,7 @@ ${(() => {
 }
 
 import { fetchFromAPI } from '../utils/api.js';
+import { showToast, showConfirmModal } from '../utils/toast.js';
 let cachedLeads = [];
 
 // Data Store Initializer
@@ -312,30 +313,36 @@ export async function initLeadsView() {
     const data = await fetchFromAPI('/leads');
     if (data && Array.isArray(data)) {
       cachedLeads = data.map(l => {
-        let mobile = l.phone;
-        let budgetMax = l.budget;
-        let type = l.propertyType;
+        let mobile = l.phone || l.mobile || '';
+        let budget = l.budget || l.budgetMax || '';
+        let type = l.requirement || l.propertyType || l.type || 'Residential Plot';
+        let loc = l.location || l.city || 'Thanjavur';
         
         return {
           id: l.id || 'L-' + Date.now(),
           name: l.name,
           mobile: mobile,
-          whatsapp: mobile,
-          email: l.email,
+          phone: mobile,
+          whatsapp: l.whatsapp || mobile,
+          email: l.email || '',
           country: 'India',
-          city: 'Thanjavur',
-          area: '',
+          city: loc.includes(',') ? loc.split(',')[1]?.trim() : 'Thanjavur',
+          area: loc.includes(',') ? loc.split(',')[0]?.trim() : loc,
+          location: loc,
           budgetMin: '',
-          budgetMax: budgetMax,
+          budgetMax: budget,
+          budget: budget,
           bedrooms: '',
           notes: l.notes ? (typeof l.notes === 'string' && l.notes.startsWith('[') ? JSON.parse(l.notes) : l.notes) : '',
           type: type,
-          source: l.source,
-          assignTo: l.assignedTo,
-          status: l.status,
+          propertyType: type,
+          requirement: type,
+          source: l.source || 'Website Form',
+          assignTo: l.assignedTo || l.assignTo || 'Unassigned',
+          status: l.status || 'New Lead',
           followup: l.followup || (l.timeline && typeof l.timeline === 'string' && !l.timeline.startsWith('[') ? l.timeline : '—'),
           createdAt: l.createdAt ? new Date(l.createdAt).getTime() : Date.now(),
-          timeline: l.timeline && typeof l.timeline === 'string' && l.timeline.startsWith('[') ? JSON.parse(l.timeline) : []
+          timeline: l.timeline ? (typeof l.timeline === 'string' && l.timeline.startsWith('[') ? JSON.parse(l.timeline) : (Array.isArray(l.timeline) ? l.timeline : [])) : []
         };
       });
       saveLeads(cachedLeads);
@@ -364,9 +371,18 @@ function saveLeads(leads) {
 
 function formatCurrency(val) {
   if (!val) return '—';
-  let num = parseInt(val.replace(/[^0-9]/g, ''));
-  if (isNaN(num)) return '—';
-  return '₹' + num.toLocaleString('en-IN');
+  if (typeof val === 'string' && (val.includes('Lakh') || val.includes('Crore') || val.includes('-') || val.includes('₹'))) {
+    return val.startsWith('₹') ? val : '₹ ' + val;
+  }
+  let num = parseFloat(String(val).replace(/[^0-9.]/g, ''));
+  if (isNaN(num) || num <= 0) return typeof val === 'string' && val.trim() ? val : '—';
+  if (num >= 10000000) {
+    return '₹ ' + (num / 10000000).toFixed(2).replace(/\.00$/, '') + ' Crore';
+  }
+  if (num >= 100000) {
+    return '₹ ' + (num / 100000).toFixed(2).replace(/\.00$/, '') + ' Lakhs';
+  }
+  return '₹ ' + num.toLocaleString('en-IN');
 }
 
 function renderTable() {
@@ -414,14 +430,16 @@ function renderTable() {
 
   tbody.innerHTML = leads.map(lead => {
     
-    let requirementHtml = `<div style="font-weight: 500; color: var(--os-gray-600);">${lead.type !== 'Any' ? lead.type : '—'}</div>`;
-    if (lead.area) {
-      requirementHtml += `<div style="font-size: 0.85rem; color: var(--os-gray-400);">${lead.area}</div>`;
+    let reqVal = lead.type || lead.propertyType || lead.requirement || '—';
+    if (reqVal === 'undefined' || reqVal === 'null') reqVal = '—';
+    let requirementHtml = `<div style="font-weight: 500; color: var(--os-gray-600);">${reqVal !== 'Any' ? reqVal : '—'}</div>`;
+    if (lead.area || lead.location) {
+      requirementHtml += `<div style="font-size: 0.85rem; color: var(--os-gray-400);">${lead.area || lead.location}</div>`;
     }
 
     let budgetStr = '—';
-    if (lead.budgetMax) {
-      budgetStr = formatCurrency(lead.budgetMax);
+    if (lead.budgetMax || lead.budget) {
+      budgetStr = formatCurrency(lead.budgetMax || lead.budget);
     } else if (lead.budgetMin) {
       budgetStr = `Min ${formatCurrency(lead.budgetMin)}`;
     }
@@ -448,7 +466,7 @@ function renderTable() {
       <tr data-id="${lead.id}">
         <td>
           <div class="action-view" style="font-weight: 600; color: var(--os-luxury-orange); cursor: pointer;">${lead.name}</div>
-          <div style="font-size: 0.85rem; color: var(--os-gray-400);">${lead.mobile}</div>
+          <div style="font-size: 0.85rem; color: var(--os-gray-400);">${lead.mobile || lead.phone || '—'}</div>
         </td>
         <td>
           ${requirementHtml}
@@ -559,7 +577,11 @@ function bindLeadEvents() {
       const mobile = document.getElementById('lead-mobile').value.trim();
       
       if (!name || !mobile) {
-        alert('Name and Mobile are required!');
+        showAlertModal({
+          title: 'Missing Required Fields',
+          message: 'Please enter both the <strong>Lead Name</strong> and <strong>Mobile Phone Number</strong> to proceed.',
+          type: 'warning'
+        });
         return;
       }
 
@@ -650,38 +672,97 @@ function bindLeadEvents() {
     });
   }
 
-  fileInput.addEventListener('change', (e) => {
+  fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = function(evt) {
+    reader.onload = async function(evt) {
       const text = evt.target.result;
-      const rows = text.split('\n');
+      const rows = text.split('\n').map(r => r.trim()).filter(Boolean);
       if (rows.length < 2) {
-        alert('CSV seems empty or invalid');
+        showAlertModal({
+          title: 'Empty or Invalid CSV',
+          message: 'The selected CSV file appears to be empty or missing property data rows.',
+          type: 'error'
+        });
         return;
       }
       
+      const headerCols = rows[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
+      const getColIdx = (names) => {
+        for (let name of names) {
+          const idx = headerCols.findIndex(h => h.includes(name));
+          if (idx !== -1) return idx;
+        }
+        return -1;
+      };
+
+      const nameIdx = getColIdx(['name', 'lead', 'client']);
+      const mobIdx = getColIdx(['mobile', 'phone', 'contact', 'whatsapp']);
+      const emailIdx = getColIdx(['email', 'mail']);
+      const typeIdx = getColIdx(['propertytype', 'type', 'requirement', 'property']);
+      const budgetIdx = getColIdx(['budget', 'budgetmax', 'amount', 'price']);
+      const locIdx = getColIdx(['location', 'area', 'city']);
+      const sourceIdx = getColIdx(['source', 'lead source']);
+      const statusIdx = getColIdx(['status']);
+      const notesIdx = getColIdx(['notes', 'note', 'desc', 'remarks']);
+
       const newLeads = [];
-      // Assuming headers: Name,Mobile,Email,PropertyType,BudgetMax,Source,Status
       for (let i = 1; i < rows.length; i++) {
-        // basic csv split handling quotes is complex, doing simple split
-        const rowText = rows[i].trim();
-        if(!rowText) continue;
-        const row = rowText.split(',');
-        if (row.length >= 2 && row[0].trim() !== '') {
-          newLeads.push({
-            id: Date.now() + i,
-            name: row[0].trim(),
-            mobile: row[1].trim(),
-            email: row[2] ? row[2].trim() : '',
-            type: row[3] ? row[3].trim() : 'Any',
-            budgetMax: row[4] ? row[4].trim() : '',
-            source: row[5] ? row[5].trim() : 'Import',
-            status: row[6] ? row[6].trim() : 'New',
+        const match = rows[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+        const cols = match 
+          ? match.map(c => c.replace(/^"|"$/g, '').trim())
+          : rows[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+
+        const val = (idx, fallback = '') => (idx !== -1 && cols[idx] !== undefined ? cols[idx] : fallback);
+
+        const name = val(nameIdx !== -1 ? nameIdx : 0);
+        if (name && name.toLowerCase() !== 'name') {
+          const mobile = val(mobIdx !== -1 ? mobIdx : 1, '9585777772');
+          const email = val(emailIdx !== -1 ? emailIdx : 2, '');
+          const propType = val(typeIdx !== -1 ? typeIdx : 3, 'Residential Plot');
+          const budget = val(budgetIdx !== -1 ? budgetIdx : 4, '₹ 25 - 50 Lakhs');
+          const location = val(locIdx !== -1 ? locIdx : 5, 'Thanjavur');
+          const source = val(sourceIdx !== -1 ? sourceIdx : 6, 'Website Form');
+          const status = val(statusIdx !== -1 ? statusIdx : 7, 'New Lead');
+          const notes = val(notesIdx !== -1 ? notesIdx : 8, 'Imported from CSV template.');
+
+          const leadObj = {
+            id: `L-${Date.now()}-${i}`,
+            name: name,
+            mobile: mobile,
+            phone: mobile,
+            whatsapp: mobile,
+            email: email,
+            country: 'India',
+            city: 'Thanjavur',
+            area: location,
+            location: location,
+            budgetMin: '',
+            budgetMax: budget,
+            budget: budget,
+            bedrooms: '',
+            notes: notes,
+            type: propType,
+            propertyType: propType,
+            requirement: propType,
+            source: source,
             assignTo: 'Unassigned',
-            followup: '—'
-          });
+            status: status,
+            followup: '—',
+            createdAt: Date.now(),
+            timeline: [{ action: 'Imported from CSV file', date: new Date().toLocaleDateString('en-IN'), by: 'System' }]
+          };
+
+          newLeads.push(leadObj);
+
+          // Sync to backend API if available
+          try {
+            fetchFromAPI('/leads', {
+              method: 'POST',
+              body: JSON.stringify(leadObj)
+            }).catch(e => console.warn(e));
+          } catch (err) {}
         }
       }
       
@@ -690,9 +771,13 @@ function bindLeadEvents() {
         const updatedLeads = [...newLeads, ...leads];
         saveLeads(updatedLeads);
         renderTable();
-        alert(newLeads.length + ' leads imported successfully!');
+        showToast(`${newLeads.length} leads imported successfully into CRM!`, 'ri-checkbox-circle-fill');
       } else {
-        alert('No valid leads found in CSV.');
+        showAlertModal({
+          title: 'No Valid Records',
+          message: 'No valid lead rows could be extracted from the uploaded CSV.',
+          type: 'warning'
+        });
       }
     };
     reader.readAsText(file);
@@ -701,12 +786,12 @@ function bindLeadEvents() {
 
   if (sampleBtn) {
     sampleBtn.addEventListener('click', () => {
-      const csvContent = "Name,Mobile,Email,PropertyType,BudgetMax,Source,Status\nJohn Doe,9876543210,john@example.com,Apartment,5000000,Import,New\nJane Smith,9123456789,jane@example.com,Villa,15000000,Import,New";
+      const csvContent = 'Name,Mobile,Email,PropertyType,Budget,Location,Source,Status,Notes\n"Arun Kumar","9842154321","arun.kumar@gmail.com","Luxury Villa","12500000","Medical College Road, Thanjavur","Website Form","New Lead","Looking for 3 or 4 BHK independent luxury villa near Medical College Road with car parking."\n"Priya Raman","9443219876","priya.raman@yahoo.com","Residential Plot","3500000","Trichy Road, Thanjavur","Phone Call","Contacted","Interested in DTCP approved East-facing corner plot near New Bus Stand bypass."';
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", "sample_leads.csv");
+      link.setAttribute("download", "Thanjai_CRM_Leads_Sample_Template.csv");
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
@@ -718,7 +803,11 @@ function bindLeadEvents() {
     exportBtn.addEventListener('click', () => {
       const leads = getLeads();
       if (leads.length === 0) {
-        alert('No leads to export!');
+        showAlertModal({
+          title: 'Export Notice',
+          message: 'There are currently no active leads available to export.',
+          type: 'info'
+        });
         return;
       }
       let csvContent = "Name,Mobile,Email,PropertyType,BudgetMax,Source,Status,AssignedTo\n";
@@ -788,24 +877,30 @@ function bindLeadEvents() {
          if(asnSel) asnSel.querySelector('.select-value').textContent = lead.assignTo || 'Unassigned';
 
       } else if (e.target.closest('.action-delete')) {
-        if (confirm('Are you sure you want to delete ' + lead.name + '?')) {
-          fetchFromAPI('/leads/' + id, { method: 'DELETE' })
-            .then(async () => {
-              // Refresh local cache from server
-              const data = await fetchFromAPI('/leads');
-              saveLeads(data);
-              renderTable();
-              const { showToast } = await import('../utils/toast.js');
-              showToast('Lead deleted successfully', 'success');
-            })
-            .catch(err => {
-              console.error(err);
-              // Fallback to local deletion
-              const newLeads = leads.filter(l => String(l.id) !== String(id));
-              saveLeads(newLeads);
-              renderTable();
-            });
-        }
+        showConfirmModal({
+          title: 'Delete Lead',
+          message: `Are you sure you want to permanently delete lead <strong>${lead.name}</strong> from the CRM Pipeline? This will remove all linked timeline and notes.`,
+          confirmText: 'Delete Lead',
+          cancelText: 'Keep Lead',
+          confirmIcon: 'ri-delete-bin-line',
+          isDanger: true,
+          onConfirm: () => {
+            fetchFromAPI('/leads/' + id, { method: 'DELETE' })
+              .then(async () => {
+                const data = await fetchFromAPI('/leads');
+                saveLeads(data);
+                renderTable();
+                showToast(`Lead "${lead.name}" deleted successfully`, 'ri-checkbox-circle-fill');
+              })
+              .catch(err => {
+                console.error(err);
+                const newLeads = leads.filter(l => String(l.id) !== String(id));
+                saveLeads(newLeads);
+                renderTable();
+                showToast(`Lead "${lead.name}" deleted`, 'ri-checkbox-circle-fill');
+              });
+          }
+        });
       }
     });
   }

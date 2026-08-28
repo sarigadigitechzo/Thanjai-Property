@@ -66,6 +66,7 @@ export function renderSiteVisitsView() {
 }
 
 import { fetchFromAPI } from '../utils/api.js';
+import { showToast, showAlertModal } from '../utils/toast.js';
 
 export async function initSiteVisitsView() {
   // --- Storage & Dynamic Rendering ---
@@ -279,7 +280,11 @@ export async function initSiteVisitsView() {
       const datetime = document.getElementById('sv-datetime').value;
 
       if (!clientName || !datetime) {
-        alert("Please fill in Client name and Date/Time.");
+        showAlertModal({
+          title: 'Missing Details',
+          message: 'Please enter both the <strong>Client Name</strong> and the <strong>Visit Date & Time</strong>.',
+          type: 'warning'
+        });
         return;
       }
 
@@ -306,7 +311,7 @@ export async function initSiteVisitsView() {
         body: JSON.stringify(newVisit)
       }).catch(e => {
         console.error("API Error", e);
-        alert("Failed to schedule visit: " + e.message);
+        showToast('Saved locally (network offline)', 'ri-information-line');
       });
 
       visits.push({
@@ -321,6 +326,8 @@ export async function initSiteVisitsView() {
         property: property || 'TBD',
         isNew: true
       });
+
+      showToast(`Site visit scheduled for ${clientName}!`, 'ri-checkbox-circle-fill');
 
       // clear inputs
       document.getElementById('sv-client-name').value = '';

@@ -58,6 +58,11 @@ export async function initUsersStore() {
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
       window.dispatchEvent(new CustomEvent('userAuthUpdated'));
       return usersCache;
+    } else if (data && Array.isArray(data) && data.length === 0) {
+      // Remote table is empty: Auto-seed initial default users into MySQL!
+      for (const u of DEFAULT_USERS) {
+        fetchFromAPI('/portal_users', { method: 'POST', body: JSON.stringify(u) }).catch(() => {});
+      }
     }
   } catch (error) {
     console.error('Error fetching portal users from API:', error);

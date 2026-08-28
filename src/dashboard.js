@@ -18,7 +18,9 @@ import { renderReportsView, initReportsView } from './crm-views/ReportsView.js';
 import { renderStatCounterView } from './crm-views/StatCounterView.js';
 import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.js';
 import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsersView.js';
-import { showToast } from './utils/toast.js';
+import { showToast, installGlobalPopupShield } from './utils/toast.js';
+
+installGlobalPopupShield();
 
 import { initPropertiesStore } from './utils/propertiesStore.js';
 import { initBlogStore } from './utils/blogStore.js';

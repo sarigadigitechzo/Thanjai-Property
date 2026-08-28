@@ -117,9 +117,9 @@ export function renderPropertiesView() {
             <span>Export CSV</span>
           </button>
 
-          <button class="os-btn-secondary" id="export-props-sql-btn" title="Export currently listed properties to SQL for phpMyAdmin" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 0.88rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #ffffff; color: #4a5568; font-weight: 600; cursor: pointer;">
-            <i class="ri-database-2-line" style="font-size: 1.1rem; color: #38a169;"></i>
-            <span>Export SQL</span>
+          <button class="os-btn-secondary" id="download-sample-csv-btn" title="Download official sample CSV template" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 0.88rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #ffffff; color: #4a5568; font-weight: 600; cursor: pointer;">
+            <i class="ri-file-text-line" style="font-size: 1.1rem; color: #38a169;"></i>
+            <span>Sample CSV</span>
           </button>
 
           <button class="os-btn-primary" id="open-add-property-form-btn" style="
@@ -255,18 +255,20 @@ function renderPropertyCard(prop) {
           width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
         " />
         
-        <!-- Ad Type Badge Top Left -->
-        <span style="
-          position: absolute; top: 12px; left: 12px; padding: 4px 10px; border-radius: 6px;
-          font-size: 0.72rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
-          background: ${prop.adType === 'paid' ? '#EBF8FF' : '#FFF5EB'};
-          color: ${prop.adType === 'paid' ? '#2B6CB0' : '#C05621'};
-          border: 1px solid ${prop.adType === 'paid' ? '#BEE3F8' : '#FBD38D'};
-          box-shadow: 0 2px 6px rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 4px;
-        ">
-          <i class="${prop.adType === 'paid' ? 'ri-vip-crown-fill' : 'ri-shield-user-fill'}"></i>
-          ${prop.adType === 'paid' ? 'PAID AD' : 'FREE AD'}
-        </span>
+        <!-- Ad Type Interactive Select Dropdown Top Left -->
+        <div style="position: absolute; top: 12px; left: 12px; z-index: 2;" title="Change Listing Plan">
+          <select class="quick-adtype-select" data-id="${prop.id}" style="
+            padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800;
+            letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; outline: none;
+            background: ${prop.adType === 'paid' ? '#EBF8FF' : '#FFF5EB'};
+            color: ${prop.adType === 'paid' ? '#2B6CB0' : '#C05621'};
+            border: 1px solid ${prop.adType === 'paid' ? '#BEE3F8' : '#FBD38D'};
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+          ">
+            <option value="free" ${prop.adType !== 'paid' ? 'selected' : ''}>🛡️ FREE AD</option>
+            <option value="paid" ${prop.adType === 'paid' ? 'selected' : ''}>👑 PAID AD</option>
+          </select>
+        </div>
 
         <!-- Status Badge Top Right -->
         <span style="
@@ -293,8 +295,8 @@ function renderPropertyCard(prop) {
 
         <!-- Owner Badge -->
         <div style="font-size: 0.8rem; font-weight: 700; color: #4A5568; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-          <i class="ri-user-star-line" style="color: #eb5e28;"></i>
-          <span>${prop.adType === 'paid' ? 'Direct Owner' : 'Listing Desk'}: ${prop.ownerName || 'Thanjai Property'} ${prop.ownerPhone ? `(${prop.ownerPhone})` : ''}</span>
+          <i class="${prop.adType === 'paid' ? 'ri-user-star-fill' : 'ri-shield-user-fill'}" style="color: ${prop.adType === 'paid' ? '#3182CE' : '#eb5e28'};"></i>
+          <span>${prop.adType === 'paid' ? 'Direct Owner' : 'Listing Desk'}: ${prop.adType === 'paid' ? (prop.ownerName || 'Verified Owner') : 'Thanjai Property'} ${prop.adType === 'paid' ? (prop.ownerPhone ? `(${prop.ownerPhone})` : '') : '(8489996852)'}</span>
         </div>
 
         <!-- Bold Price -->
@@ -807,17 +809,25 @@ function renderFullPagePropertyForm(prop) {
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px;">
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Owner / company</label>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Listing Plan (Ad Type)</label>
+                <select id="form-prop-ad-type" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; background: #fff;">
+                  <option value="free" ${isEdit && prop?.adType === 'paid' ? '' : 'selected'}>🛡️ Free Ad (Thanjai Property Desk +91 84899 96852)</option>
+                  <option value="paid" ${isEdit && prop?.adType === 'paid' ? 'selected' : ''}>👑 Paid Ad (Direct Owner Contact & Call Enabled)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Owner / Company Name</label>
                 <input type="text" id="form-prop-owner-company" value="${isEdit ? prop?.ownerName || '' : ''}" placeholder="e.g. Arun / Thanjai Property" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Contact name</label>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Contact / Listed By</label>
                 <input type="text" id="form-prop-contact-name" value="${isEdit ? prop?.listedBy || '' : ''}" placeholder="e.g. Aishwarya Raman" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Contact phone</label>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Owner Direct Phone</label>
                 <input type="tel" id="form-prop-contact-phone" value="${isEdit ? prop?.ownerPhone || '' : ''}" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
             </div>
@@ -1307,30 +1317,83 @@ export function initPropertiesViewListeners() {
         const text = evt.target.result;
         const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
         if (lines.length > 1) {
+          // Parse header line to detect column positions
+          const headerCols = lines[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
+          
+          const getColIdx = (names) => {
+            for (let name of names) {
+              const idx = headerCols.findIndex(h => h.includes(name));
+              if (idx !== -1) return idx;
+            }
+            return -1;
+          };
+
+          const titleIdx = getColIdx(['title', 'property name', 'name']);
+          const typeIdx = getColIdx(['type', 'property type']);
+          const catIdx = getColIdx(['category']);
+          const priceIdx = getColIdx(['price', 'amount', 'cost']);
+          const locIdx = getColIdx(['location', 'area', 'corridor']);
+          const distIdx = getColIdx(['district', 'city']);
+          const addrIdx = getColIdx(['address', 'street']);
+          const sizeIdx = getColIdx(['size', 'area size', 'sqft']);
+          const bedsIdx = getColIdx(['bedroom', 'beds', 'bhk']);
+          const bathsIdx = getColIdx(['bathroom', 'baths']);
+          const furnIdx = getColIdx(['furnish']);
+          const statusIdx = getColIdx(['status', 'availab']);
+          const ownerNameIdx = getColIdx(['owner name', 'owner', 'contact name']);
+          const ownerPhoneIdx = getColIdx(['owner phone', 'phone', 'mobile']);
+          const descIdx = getColIdx(['desc', 'about', 'details']);
+
           let importedCount = 0;
           for (let i = 1; i < lines.length; i++) {
-            const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
-            if (cols[0]) {
+            const match = lines[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+            const cols = match 
+              ? match.map(c => c.replace(/^"|"$/g, '').trim())
+              : lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+
+            const val = (idx, fallback = '') => (idx !== -1 && cols[idx] !== undefined ? cols[idx] : fallback);
+
+            const title = val(titleIdx !== -1 ? titleIdx : 0);
+            if (title && title.toLowerCase() !== 'title') {
+              const rawType = val(typeIdx !== -1 ? typeIdx : 1, 'Villa');
+              const rawCat = val(catIdx !== -1 ? catIdx : 2, 'villas').toLowerCase();
+              const rawPrice = parseFloat(val(priceIdx !== -1 ? priceIdx : 3, '5000000').replace(/[^0-9.]/g, '')) || 5000000;
+              const location = val(locIdx !== -1 ? locIdx : 4, 'Medical College Road, Thanjavur');
+              const district = val(distIdx !== -1 ? distIdx : 5, 'Thanjavur');
+              const address = val(addrIdx !== -1 ? addrIdx : 6, location);
+              const size = val(sizeIdx !== -1 ? sizeIdx : 7, '2,400 Sq.Ft');
+              const beds = parseInt(val(bedsIdx !== -1 ? bedsIdx : 8, '')) || null;
+              const baths = parseInt(val(bathsIdx !== -1 ? bathsIdx : 9, '')) || null;
+              const furnishing = val(furnIdx !== -1 ? furnIdx : 10, 'Unfurnished');
+              const status = val(statusIdx !== -1 ? statusIdx : 11, 'Available');
+              const ownerName = val(ownerNameIdx !== -1 ? ownerNameIdx : 12, 'Owner');
+              const ownerPhone = val(ownerPhoneIdx !== -1 ? ownerPhoneIdx : 13, '8489996852');
+              const description = val(descIdx !== -1 ? descIdx : 14, `Verified property in ${location}`);
+
               addProperty({
-                title: cols[0],
-                type: cols[1] || 'Villa',
-                category: cols[2] || 'Sale',
-                categoryRaw: cols[2] || 'Sale',
-                price: parseFloat(cols[3]) || 5000000,
-                location: cols[4] || 'Thanjavur',
-                district: cols[5] || cols[4] || 'Thanjavur',
-                size: cols[6] || '2,400 sqft',
-                bedrooms: parseInt(cols[7]) || null,
-                bathrooms: parseInt(cols[8]) || null,
-                ownerName: cols[9] || 'CSV Import Owner',
-                ownerPhone: cols[10] || '9585777772',
-                status: 'Available',
-                approvalStatus: 'Approved'
+                title: title,
+                type: rawType,
+                category: rawCat.includes('villa') ? 'villas' : rawCat.includes('house') ? 'houses' : rawCat.includes('apart') ? 'apartments' : rawCat.includes('plot') ? 'plots' : rawCat.includes('agri') || rawCat.includes('farm') ? 'agricultural' : rawCat.includes('comm') ? 'commercial' : 'villas',
+                categoryRaw: rawCat,
+                price: rawPrice,
+                location: location,
+                district: district,
+                address: address,
+                size: size,
+                bedrooms: beds,
+                bathrooms: baths,
+                furnishing: furnishing,
+                status: status,
+                availability: status,
+                approvalStatus: 'Approved',
+                ownerName: ownerName,
+                ownerPhone: ownerPhone,
+                description: description
               });
               importedCount++;
             }
           }
-          addAuditLog({ action: 'IMPORT_PROPERTIES_CSV', details: `Imported ${importedCount} properties from CSV` });
+          addAuditLog({ action: 'IMPORT_PROPERTIES_CSV', details: `Imported ${importedCount} properties from CSV file.` });
           showToast(`Successfully imported ${importedCount} property listings!`, 'ri-upload-cloud-line');
           refreshPropertiesView();
         }
@@ -1339,9 +1402,9 @@ export function initPropertiesViewListeners() {
     }
   });
 
-  // CSV Export ONLY Filtered / Listed Properties
+  // CSV Export & Sample CSV Template Download
   document.getElementById('export-props-csv-btn')?.addEventListener('click', exportFilteredPropertiesToCSV);
-  document.getElementById('export-props-sql-btn')?.addEventListener('click', exportFilteredPropertiesToSQL);
+  document.getElementById('download-sample-csv-btn')?.addEventListener('click', downloadSamplePropertiesCSV);
 
   // Edit Buttons
   document.querySelectorAll('.edit-prop-btn').forEach(btn => {
@@ -1413,6 +1476,23 @@ export function initPropertiesViewListeners() {
         } else {
           updateProperty(id, { status: newStatus, availability: newStatus });
           showToast(`Property ${id} status updated to ${newStatus}`, 'ri-checkbox-circle-fill');
+        }
+        refreshPropertiesView();
+      }
+    });
+  });
+
+  // Quick Ad Type Select Dropdown (Free Ad vs Paid Ad)
+  document.querySelectorAll('.quick-adtype-select').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const id = sel.dataset.id;
+      const newAdType = e.target.value;
+      if (id && newAdType) {
+        updateProperty(id, { adType: newAdType });
+        if (newAdType === 'paid') {
+          showToast(`Property ${id} updated to Paid Ad! Direct Owner details & call links enabled.`, 'ri-vip-crown-fill');
+        } else {
+          showToast(`Property ${id} updated to Free Ad (Thanjai Property Desk +91 84899 96852).`, 'ri-shield-user-fill');
         }
         refreshPropertiesView();
       }
@@ -1557,6 +1637,7 @@ function initPropertyFormListeners() {
     const furnishing = document.getElementById('form-prop-furnishing')?.value;
     const priceNum = document.getElementById('form-prop-price-num')?.value;
     const availability = document.getElementById('form-prop-availability')?.value;
+    const adType = document.getElementById('form-prop-ad-type')?.value || 'free';
     const ownerName = document.getElementById('form-prop-owner-company')?.value.trim();
     const listedBy = document.getElementById('form-prop-contact-name')?.value.trim();
     const ownerPhone = document.getElementById('form-prop-contact-phone')?.value.trim();
@@ -1609,9 +1690,10 @@ function initPropertyFormListeners() {
       availability: availability || 'Available',
       status: availability || 'Available',
       approvalStatus: 'Approved',
-      ownerName: ownerName || 'Thanjai Property Owner',
+      adType: adType,
+      ownerName: ownerName || (adType === 'paid' ? 'Verified Owner' : 'Thanjai Property'),
       listedBy: listedBy || 'Aishwarya Raman',
-      ownerPhone: ownerPhone || '9585777772',
+      ownerPhone: ownerPhone || (adType === 'paid' ? '8489996852' : '8489996852'),
       videoUrl: videoUrl || '',
       latitude: latitude || '',
       longitude: longitude || '',
@@ -1775,73 +1857,91 @@ function exportFilteredPropertiesToCSV() {
   showToast(`Exported ${filtered.length} filtered property records to CSV`, 'ri-file-download-line');
 }
 
-function exportFilteredPropertiesToSQL() {
-  const allProperties = getProperties();
-  const filtered = filterPropertiesList(allProperties);
+function downloadSamplePropertiesCSV() {
+  const headers = [
+    'Title',
+    'Type',
+    'Category',
+    'Price (INR)',
+    'Location',
+    'District',
+    'Address',
+    'Area Size',
+    'Bedrooms',
+    'Bathrooms',
+    'Furnishing',
+    'Status',
+    'Owner Name',
+    'Owner Phone',
+    'Description'
+  ];
 
-  if (filtered.length === 0) {
-    showToast('No properties available to export under current filters.', 'ri-error-warning-line');
-    return;
-  }
+  const sampleRows = [
+    [
+      '"4 BHK Luxury Courtyard Villa - Medical College Road"',
+      '"Villa"',
+      '"villas"',
+      '"13500000"',
+      '"Medical College Road, Thanjavur"',
+      '"Thanjavur"',
+      '"Plot 42, Green Avenue, Medical College Road"',
+      '"2,600 Sq.Ft"',
+      '"4"',
+      '"4"',
+      '"Fully Furnished"',
+      '"Available"',
+      '"R. Sundaram"',
+      '"9585777772"',
+      '"Brand new luxury courtyard villa with DTCP approval, modular kitchen, and private borewell."'
+    ],
+    [
+      '"DTCP Approved Corner Plot - Trichy Highway"',
+      '"Plot"',
+      '"plots"',
+      '"2800000"',
+      '"Trichy Road, Thanjavur"',
+      '"Thanjavur"',
+      '"Near New Bus Stand Bypass, Trichy Road"',
+      '"1,800 Sq.Ft"',
+      '""',
+      '""',
+      '""',
+      '"Available"',
+      '"K. Mohan"',
+      '"9842412345"',
+      '"Prime corner residential plot with 40ft blacktop road, clear Patta, and instant bank loan approval."'
+    ],
+    [
+      '"5 Acres Fertile Kaveri Delta Coconut Farmland"',
+      '"Other"',
+      '"agricultural"',
+      '"7500000"',
+      '"Pattukottai Bypass, Thanjavur"',
+      '"Thanjavur"',
+      '"Pattukkottai Main Road, Thanjavur District"',
+      '"5.0 Acres"',
+      '""',
+      '""',
+      '""',
+      '"Available"',
+      '"M. Radhakrishnan"',
+      '"9443198765"',
+      '"Fertile agricultural farmland with 350 yield coconut trees, Kaveri canal water connectivity, and EB service."'
+    ]
+  ];
 
-  const sqlStatements = [];
-  sqlStatements.push('-- Thanjai Property CRM - SQL Export');
-  sqlStatements.push(`-- Exported ${filtered.length} properties on ${new Date().toISOString()}`);
-  sqlStatements.push('SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";');
-  sqlStatements.push('START TRANSACTION;\n');
-
-  filtered.forEach(p => {
-    const id = p.id || '';
-    const title = (p.title || '').replace(/'/g, "''");
-    const type = p.type || '';
-    const category = p.category || '';
-    const categoryRaw = p.categoryRaw || p.category || '';
-    const categoryLabel = p.categoryLabel || '';
-    const purpose = p.purpose || '';
-    const price = p.price || 0;
-    const priceFormatted = p.priceFormatted || '';
-    const location = (p.location || '').replace(/'/g, "''");
-    const district = (p.district || '').replace(/'/g, "''");
-    const address = (p.address || '').replace(/'/g, "''");
-    const size = (p.size || '').replace(/'/g, "''");
-    const bedrooms = p.bedrooms || 'NULL';
-    const bathrooms = p.bathrooms || 'NULL';
-    const furnishing = p.furnishing || '';
-    const status = p.status || p.availability || 'Available';
-    const availability = p.availability || p.status || 'Available';
-    const latitude = p.latitude || '';
-    const longitude = p.longitude || '';
-    const videoUrl = p.videoUrl || '';
-    const ownerName = (p.ownerName || '').replace(/'/g, "''");
-    const ownerPhone = p.ownerPhone || '';
-    const listedBy = p.listedBy || '';
-    const images = JSON.stringify(p.images || []).replace(/'/g, "''");
-    const description = (p.description || '').replace(/'/g, "''");
-    const features = JSON.stringify(p.features || []).replace(/'/g, "''");
-    const createdAt = p.createdAt ? p.createdAt.slice(0, 19).replace('T', ' ') : new Date().toISOString().slice(0, 19).replace('T', ' ');
-
-    sqlStatements.push(`INSERT IGNORE INTO \`properties\` (\`id\`, \`title\`, \`type\`, \`category\`, \`categoryRaw\`, \`categoryLabel\`, \`purpose\`, \`price\`, \`priceFormatted\`, \`location\`, \`district\`, \`address\`, \`size\`, \`bedrooms\`, \`bathrooms\`, \`furnishing\`, \`status\`, \`availability\`, \`latitude\`, \`longitude\`, \`videoUrl\`, \`ownerName\`, \`ownerPhone\`, \`listedBy\`, \`images\`, \`description\`, \`features\`, \`createdAt\`) VALUES ('${id}', '${title}', '${type}', '${category}', '${categoryRaw}', '${categoryLabel}', '${purpose}', ${price}, '${priceFormatted}', '${location}', '${district}', '${address}', '${size}', ${bedrooms}, ${bathrooms}, '${furnishing}', '${status}', '${availability}', '${latitude}', '${longitude}', '${videoUrl}', '${ownerName}', '${ownerPhone}', '${listedBy}', '${images}', '${description}', '${features}', '${createdAt}');`);
-  });
-
-  sqlStatements.push('\nCOMMIT;');
-
-  const sqlString = sqlStatements.join('\n');
-  const blob = new Blob([sqlString], { type: 'text/sql;charset=utf-8;' });
+  const csvContent = [headers.join(','), ...sampleRows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `Thanjai_Properties_Export_${new Date().toISOString().slice(0, 10)}.sql`);
+  link.setAttribute('download', 'Thanjai_Properties_Sample_Template.csv');
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 
-  addAuditLog({
-    action: 'EXPORT_PROPERTIES_SQL',
-    details: `Exported ${filtered.length} property listings matching current filters to SQL file.`
-  });
-
-  showToast(`Exported ${filtered.length} filtered property records to SQL`, 'ri-file-download-line');
+  showToast('Downloaded sample CSV template successfully!', 'ri-file-download-line');
 }
 
 function refreshPropertiesView() {

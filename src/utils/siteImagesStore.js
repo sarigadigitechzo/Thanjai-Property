@@ -1,9 +1,10 @@
-// Default image catalog for website static assets
+// Default image catalog for website static assets (26 Active Front-End Assets)
 export const DEFAULT_SITE_IMAGES = {
+  // 1. Homepage Banners & CTAs
   hero_bg: {
     id: "hero_bg",
     title: "Hero Main Background Banner",
-    category: "Home",
+    category: "Homepage Banners & CTAs",
     recommendedWidth: 1920,
     recommendedHeight: 1080,
     aspectRatio: "16:9",
@@ -14,20 +15,20 @@ export const DEFAULT_SITE_IMAGES = {
   },
   showcase_bg: {
     id: "showcase_bg",
-    title: "Exclusive Architectural Showcase Banner",
-    category: "Home",
+    title: "Architectural Showcase Banner",
+    category: "Homepage Banners & CTAs",
     recommendedWidth: 1920,
     recommendedHeight: 900,
     aspectRatio: "16:9",
     format: "JPG / WebP",
     maxSize: "< 2 MB",
     defaultUrl: "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=2000&q=90",
-    description: "Featured luxury villa showcase banner background on the homepage."
+    description: "Featured luxury architectural showcase card background on the homepage."
   },
   post_cta_bg: {
     id: "post_cta_bg",
     title: "Post Property CTA Section Image",
-    category: "SELL & PROMOTE YOUR LAND",
+    category: "Homepage Banners & CTAs",
     recommendedWidth: 1200,
     recommendedHeight: 800,
     aspectRatio: "3:2",
@@ -38,20 +39,36 @@ export const DEFAULT_SITE_IMAGES = {
   },
   contact_bg: {
     id: "contact_bg",
-    title: "Contact Section Background Image",
-    category: "Home",
+    title: "Contact Advisory Banner Image",
+    category: "Homepage Banners & CTAs",
     recommendedWidth: 1920,
     recommendedHeight: 800,
     aspectRatio: "16:9",
     format: "JPG / WebP",
     maxSize: "< 2 MB",
     defaultUrl: "https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=2000&q=90",
-    description: "Background banner image for the Contact Advisory section."
+    description: "Background banner image for the Contact Advisory desk section on homepage."
   },
+
+  // 2. Brand Identity
+  brand_logo: {
+    id: "brand_logo",
+    title: "Website Brand Logo",
+    category: "Brand Identity",
+    recommendedWidth: 400,
+    recommendedHeight: 120,
+    aspectRatio: "10:3",
+    format: "PNG (Transparent)",
+    maxSize: "< 500 KB",
+    defaultUrl: "/thanjai-official-new.png",
+    description: "Official Thanjai Property brand logo used across the website navigation header and footer."
+  },
+
+  // 3. Our Story Page
   our_story_hero_bg: {
     id: "our_story_hero_bg",
     title: "Our Story Hero Background",
-    category: "our story home image",
+    category: "Our Story Page",
     recommendedWidth: 1920,
     recommendedHeight: 1080,
     aspectRatio: "16:9",
@@ -62,20 +79,20 @@ export const DEFAULT_SITE_IMAGES = {
   },
   our_philosophy_img: {
     id: "our_philosophy_img",
-    title: "Our Philosophy Image",
-    category: "OUR PHILOSOPHY",
+    title: "Our Philosophy Heritage Image",
+    category: "Our Story Page",
     recommendedWidth: 1200,
     recommendedHeight: 800,
     aspectRatio: "3:2",
     format: "JPG / WebP",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80",
-    description: "Image displayed in the Our Philosophy section on the Our Story page."
+    description: "Image displayed in the Our Philosophy & 17+ Years heritage section on the Our Story page."
   },
   leader_founder: {
     id: "leader_founder",
     title: "S. Vijayaraghavan (Managing Director Portrait)",
-    category: "Meet Our Leadership",
+    category: "Our Story Page",
     recommendedWidth: 600,
     recommendedHeight: 800,
     aspectRatio: "3:4",
@@ -87,7 +104,7 @@ export const DEFAULT_SITE_IMAGES = {
   leader_partner: {
     id: "leader_partner",
     title: "Radhakrishnan (Co-Partner Portrait)",
-    category: "Meet Our Leadership",
+    category: "Our Story Page",
     recommendedWidth: 600,
     recommendedHeight: 800,
     aspectRatio: "3:4",
@@ -96,310 +113,213 @@ export const DEFAULT_SITE_IMAGES = {
     defaultUrl: "/images/radhakrishnan.jpg",
     description: "Co-Partner portrait image displayed in Our Story executive leadership section."
   },
-  brand_logo: {
-    id: "brand_logo",
-    title: "Website Main Header & Footer Logo",
-    category: "Brand Assets",
-    recommendedWidth: 400,
-    recommendedHeight: 120,
-    aspectRatio: "10:3",
-    format: "PNG (Transparent)",
-    maxSize: "< 500 KB",
-    defaultUrl: "/thanjai-official-new.png",
-    description: "Official Thanjai Property brand logo used in top header & footer."
-  },
 
-  // Regional Destinations
-  loc_thanjavur: {
-    id: "loc_thanjavur",
-    title: "Thanjavur Location Card",
-    category: "REGIONAL DESTINATIONS",
-    recommendedWidth: 1000,
-    recommendedHeight: 750,
-    aspectRatio: "4:3",
-    format: "JPG / WebP",
-    maxSize: "< 1 MB",
-    defaultUrl: "/images/tn_loc_thanjavur.jpg",
-    description: "Visual tile for Thanjavur destination in Regional Destinations section."
-  },
-  loc_trichy: {
-    id: "loc_trichy",
-    title: "Trichy Location Card",
-    category: "REGIONAL DESTINATIONS",
-    recommendedWidth: 1000,
-    recommendedHeight: 750,
-    aspectRatio: "4:3",
-    format: "JPG / WebP",
-    maxSize: "< 1 MB",
-    defaultUrl: "/images/tn_loc_trichy.jpg",
-    description: "Visual tile for Trichy destination in Regional Destinations section."
-  },
-  loc_madurai: {
-    id: "loc_madurai",
-    title: "Madurai Location Card",
-    category: "REGIONAL DESTINATIONS",
-    recommendedWidth: 1000,
-    recommendedHeight: 750,
-    aspectRatio: "4:3",
-    format: "JPG / WebP",
-    maxSize: "< 1 MB",
-    defaultUrl: "/images/tn_loc_madurai.jpg",
-    description: "Visual tile for Madurai destination in Regional Destinations section."
-  },
-  loc_chennai: {
-    id: "loc_chennai",
-    title: "Chennai Location Card",
-    category: "REGIONAL DESTINATIONS",
-    recommendedWidth: 1000,
-    recommendedHeight: 750,
-    aspectRatio: "4:3",
-    format: "JPG / WebP",
-    maxSize: "< 1 MB",
-    defaultUrl: "/images/tn_loc_chennai.jpg",
-    description: "Visual tile for Chennai destination in Regional Destinations section."
-  },
-  loc_coimbatore: {
-    id: "loc_coimbatore",
-    title: "Coimbatore Location Card",
-    category: "REGIONAL DESTINATIONS",
-    recommendedWidth: 1000,
-    recommendedHeight: 750,
-    aspectRatio: "4:3",
-    format: "JPG / WebP",
-    maxSize: "< 1 MB",
-    defaultUrl: "/images/tn_loc_coimbatore.jpg",
-    description: "Visual tile for Coimbatore destination in Regional Destinations section."
-  },
-  loc_kumbakonam: {
-    id: "loc_kumbakonam",
-    title: "Kumbakonam Location Card",
-    category: "REGIONAL DESTINATIONS",
-    recommendedWidth: 1000,
-    recommendedHeight: 750,
-    aspectRatio: "4:3",
-    format: "JPG / WebP",
-    maxSize: "< 1 MB",
-    defaultUrl: "/images/tn_loc_kumbakonam.jpg",
-    description: "Visual tile for Kumbakonam destination in Regional Destinations section."
-  },
-
-  // Property Asset Categories
+  // 4. Property Asset Classes (Homepage Carousel)
   cat_villas: {
     id: "cat_villas",
     title: "Luxury Villas Category Tile",
-    category: "PROPERTY ASSET CLASSES",
+    category: "Property Categories",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
     defaultUrl: "/images/tn_villas.jpg",
-    description: "Marquee tile for Luxury Villas asset class."
+    description: "Category marquee image for Luxury Villas on the homepage carousel."
   },
   cat_houses: {
     id: "cat_houses",
     title: "Independent Houses Category Tile",
-    category: "PROPERTY ASSET CLASSES",
+    category: "Property Categories",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
     defaultUrl: "/images/tn_houses.jpg",
-    description: "Marquee tile for Independent Houses asset class."
+    description: "Category marquee image for Independent Houses on the homepage carousel."
   },
   cat_apartments: {
     id: "cat_apartments",
     title: "Modern Apartments Category Tile",
-    category: "PROPERTY ASSET CLASSES",
+    category: "Property Categories",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
     defaultUrl: "/images/tn_apartments.jpg",
-    description: "Marquee tile for Modern Apartments asset class."
+    description: "Category marquee image for Modern Apartments on the homepage carousel."
   },
   cat_plots: {
     id: "cat_plots",
     title: "Residential Plots Category Tile",
-    category: "PROPERTY ASSET CLASSES",
+    category: "Property Categories",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
     defaultUrl: "/images/tn_plots.jpg",
-    description: "Marquee tile for Residential Plots asset class."
+    description: "Category marquee image for Residential Plots on the homepage carousel."
   },
   cat_agricultural: {
     id: "cat_agricultural",
     title: "Agricultural Farmland Category Tile",
-    category: "PROPERTY ASSET CLASSES",
+    category: "Property Categories",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
     defaultUrl: "/images/tn_agricultural.jpg",
-    description: "Marquee tile for Agricultural Farmland asset class."
+    description: "Category marquee image for Agricultural Farmland on the homepage carousel."
   },
   cat_commercial: {
     id: "cat_commercial",
     title: "Commercial Spaces Category Tile",
-    category: "PROPERTY ASSET CLASSES",
+    category: "Property Categories",
     recommendedWidth: 800,
     recommendedHeight: 600,
     aspectRatio: "4:3",
     format: "JPG / WebP",
     maxSize: "< 800 KB",
     defaultUrl: "/images/tn_commercial.jpg",
-    description: "Marquee tile for Commercial Spaces asset class."
-  },
-  cat_industrial: {
-    id: "cat_industrial",
-    title: "Industrial Land Category Tile",
-    category: "PROPERTY ASSET CLASSES",
-    recommendedWidth: 800,
-    recommendedHeight: 600,
-    aspectRatio: "4:3",
-    format: "JPG / WebP",
-    maxSize: "< 800 KB",
-    description: "Marquee tile for Industrial Land asset class."
+    description: "Category marquee image for Commercial Spaces on the homepage carousel."
   },
 
-  // 11 Thanjavur Location Explorer Corridors
+  // 5. Location Corridors (Thanjavur Interactive Map Explorer)
   loc_corridor_medical_college_road: {
     id: "loc_corridor_medical_college_road",
     title: "1. Medical College Road Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Medical College Road in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Medical College Road in the Homepage Location Explorer."
   },
   loc_corridor_trichy_road: {
     id: "loc_corridor_trichy_road",
     title: "2. Trichy Road (NH 83) Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Trichy Road (NH 83) in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Trichy Road (NH 83) in the Homepage Location Explorer."
   },
   loc_corridor_pudukkottai_road: {
     id: "loc_corridor_pudukkottai_road",
     title: "3. Pudukkottai Road Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1541829070764-84a7d30dd3f3?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Pudukkottai Road (Tamil University corridor) in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Pudukkottai Road (Tamil University corridor) in the Location Explorer."
   },
   loc_corridor_madhakottai_road: {
     id: "loc_corridor_madhakottai_road",
     title: "4. Madhakottai Road Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Madhakottai Road in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Madhakottai Road in the Homepage Location Explorer."
   },
   loc_corridor_nanjikottai_road: {
     id: "loc_corridor_nanjikottai_road",
     title: "5. Nanjikottai Road Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Nanjikottai Road in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Nanjikottai Road in the Homepage Location Explorer."
   },
   loc_corridor_villar_road: {
     id: "loc_corridor_villar_road",
     title: "6. Villar Road Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Villar Road in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Villar Road in the Homepage Location Explorer."
   },
   loc_corridor_pattukottai_bypass: {
     id: "loc_corridor_pattukottai_bypass",
     title: "7. Pattukottai Bypass Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1541888946425-d0fbb186a5b7?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Pattukottai Bypass in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Pattukottai Bypass in the Homepage Location Explorer."
   },
   loc_corridor_mariyamman_kovil_road: {
     id: "loc_corridor_mariyamman_kovil_road",
     title: "8. Mariyamman Kovil Road Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1602621585695-a25e8d81f7e1?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Mariyamman Kovil Road (Punnainallur) in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Mariyamman Kovil Road in the Homepage Location Explorer."
   },
   loc_corridor_srinivasapuram: {
     id: "loc_corridor_srinivasapuram",
     title: "9. Srinivasapuram Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Srinivasapuram in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Srinivasapuram in the Homepage Location Explorer."
   },
   loc_corridor_reddipalayam_road: {
     id: "loc_corridor_reddipalayam_road",
     title: "10. Reddipalayam Road Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Reddipalayam Road in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Reddipalayam Road in the Homepage Location Explorer."
   },
   loc_corridor_kumbakonam_bypass: {
     id: "loc_corridor_kumbakonam_bypass",
     title: "11. Kumbakonam Bypass Location Image",
-    category: "LOCATION CORRIDORS (THANJAVUR)",
+    category: "Location Corridors (Thanjavur)",
     recommendedWidth: 1200,
     recommendedHeight: 750,
     aspectRatio: "16:10",
     format: "JPG / WebP / PNG",
     maxSize: "< 1.5 MB",
     defaultUrl: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=1200&q=80",
-    description: "Featured photo banner for Kumbakonam Bypass in the Homepage Interactive Location Explorer."
+    description: "Featured photo banner for Kumbakonam Bypass in the Homepage Location Explorer."
   }
 };
 

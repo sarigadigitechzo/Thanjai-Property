@@ -41,10 +41,40 @@ let isInitialized = true;
 export async function initPropertiesStore() {
   try {
     const data = await fetchFromAPI('/properties');
-    if (data && Array.isArray(data)) {
-      propertiesCache = data.map(p => normalizePropertyRecord(p)).filter(Boolean);
+    if (data && Array.isArray(data) && data.length > 0) {
+      const localProps = loadPropertiesFromStorage();
+      const localMap = new Map(localProps.map(p => [p.id, p]));
+      
+      const remoteNormalized = data.map(remoteP => {
+        const local = localMap.get(remoteP.id);
+        const resolvedAdType = (remoteP.adType || remoteP.ad_type || (local && local.adType) || 'free');
+        const resolvedOwnerName = (remoteP.ownerName || remoteP.owner_name || (local && local.ownerName) || (resolvedAdType === 'paid' ? 'Verified Owner' : 'Thanjai Property'));
+        const resolvedOwnerPhone = (remoteP.ownerPhone || remoteP.owner_phone || (local && local.ownerPhone) || (resolvedAdType === 'paid' ? '8489996852' : '8489996852'));
+        
+        const merged = local 
+          ? { ...local, ...remoteP, adType: resolvedAdType, ownerName: resolvedOwnerName, ownerPhone: resolvedOwnerPhone } 
+          : { ...remoteP, adType: resolvedAdType, ownerName: resolvedOwnerName, ownerPhone: resolvedOwnerPhone };
+        
+        return normalizePropertyRecord(merged);
+      }).filter(Boolean);
+
+      // Preserve any locally added properties not present on remote server
+      localProps.forEach(lp => {
+        if (!remoteNormalized.some(p => p.id === lp.id)) {
+          remoteNormalized.push(lp);
+          fetchFromAPI('/properties', { method: 'POST', body: JSON.stringify(lp) }).catch(() => {});
+        }
+      });
+
+      propertiesCache = remoteNormalized;
       savePropertiesToStorage(propertiesCache);
       window.dispatchEvent(new CustomEvent('propertiesUpdated'));
+    } else if (data && Array.isArray(data) && data.length === 0) {
+      // Remote table is empty: Auto-seed initial properties into MySQL!
+      const initialSeed = loadPropertiesFromStorage();
+      for (const p of initialSeed) {
+        fetchFromAPI('/properties', { method: 'POST', body: JSON.stringify(p) }).catch(() => {});
+      }
     }
   } catch (error) {
     // Graceful fallback: continue with local storage / seed data
@@ -185,6 +215,7 @@ export function addProperty(data) {
 
   const newProp = normalizePropertyRecord(rawProp);
   propertiesCache.unshift(newProp);
+  savePropertiesToStorage(propertiesCache);
   
   fetchFromAPI('/properties', {
     method: 'POST',
@@ -240,6 +271,7 @@ export function updateProperty(id, updatedFields) {
 
   const updatedProp = normalizePropertyRecord(merged);
   propertiesCache[index] = updatedProp;
+  savePropertiesToStorage(propertiesCache);
   
   fetchFromAPI(`/properties/${id}`, {
     method: 'PUT',
@@ -357,6 +389,9 @@ function normalizePropertyRecord(p) {
       const uniqueImgs = [...new Set(rawImgs)];
       return uniqueImgs.length > 0 ? uniqueImgs : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'];
     })(),
+    adType: String(p.adType || p.ad_type || p.adTier || p.listingPlan || 'free').toLowerCase().trim(),
+    ownerName: p.ownerName || p.owner_name || (String(p.adType || '').toLowerCase().trim() === 'paid' ? 'Verified Owner' : 'Thanjai Property'),
+    ownerPhone: p.ownerPhone || p.owner_phone || (String(p.adType || '').toLowerCase().trim() === 'paid' ? '8489996852' : '8489996852'),
     description: p.description || 'Luxury property in prime growth corridor.',
     features: Array.isArray(p.features) ? p.features : ['Clear Patta Title', 'Gated Community']
   };

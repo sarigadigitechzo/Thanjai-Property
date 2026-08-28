@@ -31,6 +31,9 @@ addCol($conn, 'leads', 'timeline', 'longtext DEFAULT NULL');
 addCol($conn, 'leads', 'followup', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'assignedTo', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'notes', 'longtext DEFAULT NULL');
+addCol($conn, 'leads', 'location', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'leads', 'budget', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'leads', 'purpose', 'varchar(255) DEFAULT NULL');
 
 $conn->query("ALTER TABLE leads MODIFY COLUMN timeline LONGTEXT");
 $conn->query("ALTER TABLE leads MODIFY COLUMN notes LONGTEXT");
@@ -55,8 +58,45 @@ addCol($conn, 'admin_staff', 'status', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'lastLogin', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'allowedModules', 'longtext DEFAULT NULL');
 
+// Fix properties schema
+addCol($conn, 'properties', 'adType', "varchar(50) DEFAULT 'free'");
+
+// Fix partners schema
+addCol($conn, 'partners', 'contactPerson', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'partners', 'whatsapp', 'varchar(50) DEFAULT NULL');
+addCol($conn, 'partners', 'city', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'partners', 'country', 'varchar(255) DEFAULT "India"');
+addCol($conn, 'partners', 'notes', 'longtext DEFAULT NULL');
+
+// Fix portal_users schema
+addCol($conn, 'portal_users', 'password', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'portal_users', 'temporaryPassword', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'portal_users', 'isTemporaryPassword', 'tinyint(1) DEFAULT 0');
+addCol($conn, 'portal_users', 'passwordUpdatedAt', 'varchar(100) DEFAULT NULL');
+addCol($conn, 'portal_users', 'role', 'varchar(100) DEFAULT "Individual Owner"');
+addCol($conn, 'portal_users', 'roleCode', 'varchar(100) DEFAULT "individualowner"');
+addCol($conn, 'portal_users', 'status', 'varchar(50) DEFAULT "Active"');
+
+// Fix property_approvals schema
+addCol($conn, 'property_approvals', 'propertyTitle', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'property_approvals', 'ownerName', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'property_approvals', 'ownerPhone', 'varchar(50) DEFAULT NULL');
+addCol($conn, 'property_approvals', 'ownerEmail', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'property_approvals', 'price', 'varchar(100) DEFAULT NULL');
+addCol($conn, 'property_approvals', 'location', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'property_approvals', 'propertyType', 'varchar(100) DEFAULT NULL');
+addCol($conn, 'property_approvals', 'status', 'varchar(50) DEFAULT "Pending Approval"');
+addCol($conn, 'property_approvals', 'details', 'longtext DEFAULT NULL');
+
+// Fix website_images schema
+addCol($conn, 'website_images', 'asset_key', 'varchar(255) PRIMARY KEY');
+addCol($conn, 'website_images', 'asset_url', 'longtext DEFAULT NULL');
+addCol($conn, 'website_images', 'default_url', 'longtext DEFAULT NULL');
+addCol($conn, 'website_images', 'title', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'website_images', 'category', 'varchar(100) DEFAULT NULL');
+
 // Fix all created_at to createdAt
-$tables = ['dashboard_stats', 'leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'pipeline_stages', 'reports'];
+$tables = ['dashboard_stats', 'leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'pipeline_stages', 'reports', 'portal_users', 'audit_logs'];
 foreach($tables as $t) {
     renCol($conn, $t, 'created_at', 'createdAt', 'datetime DEFAULT CURRENT_TIMESTAMP');
 }
@@ -65,11 +105,33 @@ foreach($tables as $t) {
 $request_uri = $_SERVER['REQUEST_URI'];
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Parse URL
+// Parse URL flexibly
 $path = parse_url($request_uri, PHP_URL_PATH);
 $path_parts = array_values(array_filter(explode('/', trim($path, '/'))));
-$resource = isset($path_parts[1]) ? $path_parts[1] : '';
-$id = isset($path_parts[2]) ? $path_parts[2] : null;
+
+$resource = '';
+$id = null;
+
+if (!empty($_GET['resource'])) {
+    $resource = $_GET['resource'];
+    $id = $_GET['id'] ?? null;
+} else {
+    $apiIndex = -1;
+    foreach ($path_parts as $idx => $part) {
+        if ($part === 'api.php' || $part === 'api') {
+            $apiIndex = $idx;
+            break;
+        }
+    }
+    
+    if ($apiIndex !== -1) {
+        $resource = $path_parts[$apiIndex + 1] ?? '';
+        $id = $path_parts[$apiIndex + 2] ?? null;
+    } else if (count($path_parts) > 0) {
+        $resource = $path_parts[0];
+        $id = $path_parts[1] ?? null;
+    }
+}
 
 if ($resource === 'properties') {
     if ($method === 'GET') {
@@ -80,10 +142,11 @@ if ($resource === 'properties') {
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("INSERT INTO properties (id, title, type, category, categoryRaw, categoryLabel, purpose, price, priceFormatted, location, district, address, size, bedrooms, bathrooms, furnishing, status, availability, latitude, longitude, videoUrl, ownerName, ownerPhone, listedBy, images, description, features) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO properties (id, title, type, category, categoryRaw, categoryLabel, purpose, price, priceFormatted, location, district, address, size, bedrooms, bathrooms, furnishing, status, availability, latitude, longitude, videoUrl, ownerName, ownerPhone, listedBy, adType, images, description, features) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $images = json_encode($data['images'] ?? []);
         $features = json_encode($data['features'] ?? []);
-        $stmt->bind_param("sssssssdsssssiissssssssssss", $data['id'], $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $images, $data['description'], $features);
+        $adType = $data['adType'] ?? 'free';
+        $stmt->bind_param("sssssssdsssssiisssssssssssss", $data['id'], $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $adType, $images, $data['description'], $features);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Property created successfully"]);
         } else {
@@ -93,10 +156,11 @@ if ($resource === 'properties') {
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("UPDATE properties SET title=?, type=?, category=?, categoryRaw=?, categoryLabel=?, purpose=?, price=?, priceFormatted=?, location=?, district=?, address=?, size=?, bedrooms=?, bathrooms=?, furnishing=?, status=?, availability=?, latitude=?, longitude=?, videoUrl=?, ownerName=?, ownerPhone=?, listedBy=?, images=?, description=?, features=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE properties SET title=?, type=?, category=?, categoryRaw=?, categoryLabel=?, purpose=?, price=?, priceFormatted=?, location=?, district=?, address=?, size=?, bedrooms=?, bathrooms=?, furnishing=?, status=?, availability=?, latitude=?, longitude=?, videoUrl=?, ownerName=?, ownerPhone=?, listedBy=?, adType=?, images=?, description=?, features=? WHERE id=?");
         $images = json_encode($data['images'] ?? []);
         $features = json_encode($data['features'] ?? []);
-        $stmt->bind_param("ssssssdsssssiisssssssssssss", $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $images, $data['description'], $features, $id);
+        $adType = $data['adType'] ?? 'free';
+        $stmt->bind_param("sssssssdsssssiissssssssssssss", $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $adType, $images, $data['description'], $features, $id);
         $stmt->execute();
         echo json_encode(["message" => "Property updated successfully"]);
     }
@@ -116,13 +180,20 @@ elseif ($resource === 'leads') {
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, email, source, status, budget, requirement, location, timeline, assignedTo, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, email, source, status, budget, requirement, location, timeline, assignedTo, notes, followup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         if (!$stmt) {
             http_response_code(500);
             echo json_encode(["error" => "Database prepare error: " . $conn->error]);
             exit();
         }
-        $stmt->bind_param("ssssssssssss", $data['id'], $data['name'], $data['phone'], $data['email'], $data['source'], $data['status'], $data['budget'], $data['requirement'], $data['location'], $data['timeline'], $data['assignedTo'], $data['notes']);
+        $phone = $data['phone'] ?? $data['mobile'] ?? '';
+        $timeline = is_string($data['timeline'] ?? null) ? $data['timeline'] : json_encode($data['timeline'] ?? []);
+        $notes = is_string($data['notes'] ?? null) ? $data['notes'] : json_encode($data['notes'] ?? []);
+        $followup = $data['followup'] ?? '—';
+        $location = $data['location'] ?? $data['area'] ?? $data['city'] ?? 'Thanjavur';
+        $requirement = $data['requirement'] ?? $data['propertyType'] ?? $data['type'] ?? 'Residential Plot';
+        $assignedTo = $data['assignedTo'] ?? $data['assignTo'] ?? 'Unassigned';
+        $stmt->bind_param("sssssssssssss", $data['id'], $data['name'], $phone, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Lead created successfully"]);
         } else {
@@ -133,7 +204,14 @@ elseif ($resource === 'leads') {
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
         $stmt = $conn->prepare("UPDATE leads SET name=?, phone=?, email=?, source=?, status=?, budget=?, requirement=?, location=?, timeline=?, assignedTo=?, notes=?, followup=? WHERE id=?");
-        $stmt->bind_param("sssssssssssss", $data['name'], $data['phone'], $data['email'], $data['source'], $data['status'], $data['budget'], $data['requirement'], $data['location'], $data['timeline'], $data['assignedTo'], $data['notes'], $data['followup'], $id);
+        $phone = $data['phone'] ?? $data['mobile'] ?? '';
+        $timeline = is_string($data['timeline'] ?? null) ? $data['timeline'] : json_encode($data['timeline'] ?? []);
+        $notes = is_string($data['notes'] ?? null) ? $data['notes'] : json_encode($data['notes'] ?? []);
+        $followup = $data['followup'] ?? '—';
+        $location = $data['location'] ?? $data['area'] ?? $data['city'] ?? 'Thanjavur';
+        $requirement = $data['requirement'] ?? $data['propertyType'] ?? $data['type'] ?? 'Residential Plot';
+        $assignedTo = $data['assignedTo'] ?? $data['assignTo'] ?? 'Unassigned';
+        $stmt->bind_param("sssssssssssss", $data['name'], $phone, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup, $id);
         $stmt->execute();
         echo json_encode(["message" => "Lead updated successfully"]);
     }
@@ -457,7 +535,7 @@ elseif ($resource === 'admin_users') {
 
 elseif ($resource === 'partners') {
     if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM partners");
+        $result = $conn->query("SELECT * FROM partners ORDER BY createdAt DESC");
         $rows = [];
         while($row = $result->fetch_assoc()) { $rows[] = $row; }
         echo json_encode($rows);
@@ -465,9 +543,19 @@ elseif ($resource === 'partners') {
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
         
+        $stmt = $conn->prepare("INSERT INTO partners (id, name, type, contactPerson, phone, whatsapp, email, city, country, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $name = $data['name'] ?? ($data['company'] ?? '');
+        $type = $data['type'] ?? ($data['contact'] ?? '');
+        $contactPerson = $data['contactPerson'] ?? ($data['contact'] ?? '');
+        $phone = $data['phone'] ?? '';
+        $whatsapp = $data['whatsapp'] ?? $phone;
+        $email = $data['email'] ?? '';
+        $city = $data['city'] ?? 'Thanjavur';
+        $country = $data['country'] ?? 'India';
+        $status = $data['status'] ?? 'Active';
+        $notes = $data['notes'] ?? '';
         
-        $stmt = $conn->prepare("INSERT INTO partners (id, name, type, phone, email, status) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssss", $data['id'], $data['name'], $data['type'], $data['phone'], $data['email'], $data['status']);
+        $stmt->bind_param("sssssssssss", $data['id'], $name, $type, $contactPerson, $phone, $whatsapp, $email, $city, $country, $status, $notes);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Created successfully"]);
         } else {
@@ -478,9 +566,19 @@ elseif ($resource === 'partners') {
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
         
-        
-        $stmt = $conn->prepare("UPDATE partners SET name=?, type=?, phone=?, email=?, status=? WHERE id=?");
-        $stmt->bind_param("ssssss", $data['name'], $data['type'], $data['phone'], $data['email'], $data['status'], $id);
+        $stmt = $conn->prepare("UPDATE partners SET name=?, type=?, contactPerson=?, phone=?, whatsapp=?, email=?, city=?, country=?, status=?, notes=? WHERE id=?");
+        $name = $data['name'] ?? ($data['company'] ?? '');
+        $type = $data['type'] ?? ($data['contact'] ?? '');
+        $contactPerson = $data['contactPerson'] ?? ($data['contact'] ?? '');
+        $phone = $data['phone'] ?? '';
+        $whatsapp = $data['whatsapp'] ?? $phone;
+        $email = $data['email'] ?? '';
+        $city = $data['city'] ?? 'Thanjavur';
+        $country = $data['country'] ?? 'India';
+        $status = $data['status'] ?? 'Active';
+        $notes = $data['notes'] ?? '';
+
+        $stmt->bind_param("sssssssssss", $name, $type, $contactPerson, $phone, $whatsapp, $email, $city, $country, $status, $notes, $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Updated successfully"]);
         } else {
@@ -690,21 +788,28 @@ elseif ($resource === 'whatsapp_logs') {
     }
 }
 
-elseif ($resource === 'portal_users') {
+elseif ($resource === 'portal_users' || $resource === 'users') {
     if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM portal_users");
+        $result = $conn->query("SELECT * FROM portal_users ORDER BY createdAt DESC");
         $rows = [];
         while($row = $result->fetch_assoc()) { $rows[] = $row; }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        
-        
-        $stmt = $conn->prepare("INSERT INTO portal_users (id, fullName, email, phone, role, roleCode, status, propertiesCount, visitorsCount, buyersCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssssssiii", $data['id'], $data['fullName'], $data['email'], $data['phone'], $data['role'], $data['roleCode'], $data['status'], $data['propertiesCount'], $data['visitorsCount'], $data['buyersCount']);
+        $stmt = $conn->prepare("INSERT INTO portal_users (id, fullName, email, phone, password, temporaryPassword, isTemporaryPassword, role, roleCode, status, propertiesCount, visitorsCount, buyersCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $pwd = $data['password'] ?? $data['temporaryPassword'] ?? '';
+        $tempPwd = $data['temporaryPassword'] ?? '';
+        $isTemp = !empty($data['isTemporaryPassword']) ? 1 : 0;
+        $role = $data['role'] ?? 'Individual Owner';
+        $roleCode = $data['roleCode'] ?? 'individualowner';
+        $status = $data['status'] ?? 'Active';
+        $propCount = intval($data['propertiesCount'] ?? 0);
+        $visCount = intval($data['visitorsCount'] ?? 0);
+        $buyCount = intval($data['buyersCount'] ?? 0);
+        $stmt->bind_param("ssssssisssiii", $data['id'], $data['fullName'], $data['email'], $data['phone'], $pwd, $tempPwd, $isTemp, $role, $roleCode, $status, $propCount, $visCount, $buyCount);
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Created successfully"]);
+            echo json_encode(["message" => "Portal user created successfully"]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);
@@ -712,12 +817,19 @@ elseif ($resource === 'portal_users') {
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        
-        
-        $stmt = $conn->prepare("UPDATE portal_users SET fullName=?, email=?, phone=?, role=?, roleCode=?, status=?, propertiesCount=?, visitorsCount=?, buyersCount=? WHERE id=?");
-        $stmt->bind_param("ssssssiiis", $data['fullName'], $data['email'], $data['phone'], $data['role'], $data['roleCode'], $data['status'], $data['propertiesCount'], $data['visitorsCount'], $data['buyersCount'], $id);
+        $stmt = $conn->prepare("UPDATE portal_users SET fullName=?, email=?, phone=?, password=?, temporaryPassword=?, isTemporaryPassword=?, role=?, roleCode=?, status=?, propertiesCount=?, visitorsCount=?, buyersCount=? WHERE id=?");
+        $pwd = $data['password'] ?? $data['temporaryPassword'] ?? '';
+        $tempPwd = $data['temporaryPassword'] ?? '';
+        $isTemp = !empty($data['isTemporaryPassword']) ? 1 : 0;
+        $role = $data['role'] ?? 'Individual Owner';
+        $roleCode = $data['roleCode'] ?? 'individualowner';
+        $status = $data['status'] ?? 'Active';
+        $propCount = intval($data['propertiesCount'] ?? 0);
+        $visCount = intval($data['visitorsCount'] ?? 0);
+        $buyCount = intval($data['buyersCount'] ?? 0);
+        $stmt->bind_param("sssssisssiiis", $data['fullName'], $data['email'], $data['phone'], $pwd, $tempPwd, $isTemp, $role, $roleCode, $status, $propCount, $visCount, $buyCount, $id);
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Updated successfully"]);
+            echo json_encode(["message" => "Portal user updated successfully"]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);
@@ -727,7 +839,7 @@ elseif ($resource === 'portal_users') {
         $stmt = $conn->prepare("DELETE FROM portal_users WHERE id=?");
         $stmt->bind_param("s", $id);
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Deleted successfully"]);
+            echo json_encode(["message" => "Portal user deleted successfully"]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);
@@ -852,7 +964,7 @@ elseif ($resource === 'webhook') {
         $msg_type   = 'text';
         $timestamp  = '';
 
-        // Meta Cloud API format
+        // 1. Meta Cloud API format
         if (isset($data['entry'][0]['changes'][0]['value']['messages'][0])) {
             $msg = $data['entry'][0]['changes'][0]['value']['messages'][0];
             $contact = $data['entry'][0]['changes'][0]['value']['contacts'][0] ?? [];
@@ -871,17 +983,39 @@ elseif ($resource === 'webhook') {
                 $message = $msg['interactive']['button_reply']['title'] 
                         ?? $msg['interactive']['list_reply']['title'] 
                         ?? '[Interactive reply]';
+            } elseif ($msg_type === 'button') {
+                $message = $msg['button']['text'] ?? '[Button reply]';
             } else {
                 $message = "[{$msg_type} received]";
             }
         }
-        // AiSensy / SmartPing format (flat JSON)
-        elseif (isset($data['from']) && isset($data['text'])) {
-            $from_phone = $data['from'] ?? '';
-            $from_name  = $data['name'] ?? $from_phone;
-            $message    = $data['text'] ?? '';
-            $timestamp  = $data['timestamp'] ?? '';
-            $msg_type   = $data['type'] ?? 'text';
+        // 2. Generic / SmartPing / AiSensy flat or nested JSON format
+        else {
+            $from_phone = $data['from'] ?? ($data['sender'] ?? ($data['phone'] ?? ($data['mobile'] ?? ($data['waId'] ?? ($data['destination'] ?? '')))));
+            $from_name  = $data['name'] ?? ($data['userName'] ?? ($data['from_name'] ?? ($data['contactName'] ?? $from_phone)));
+            
+            // Extract text message from various formats
+            if (isset($data['text']) && is_string($data['text'])) {
+                $message = $data['text'];
+            } elseif (isset($data['message']) && is_string($data['message'])) {
+                $message = $data['message'];
+            } elseif (isset($data['body']) && is_string($data['body'])) {
+                $message = $data['body'];
+            } elseif (isset($data['msg']) && is_string($data['msg'])) {
+                $message = $data['msg'];
+            } elseif (isset($data['content']) && is_string($data['content'])) {
+                $message = $data['content'];
+            } elseif (isset($data['button']['text'])) {
+                $message = $data['button']['text'];
+            } elseif (isset($data['text']['body'])) {
+                $message = $data['text']['body'];
+            } else {
+                $message = is_array($data['message'] ?? null) ? json_encode($data['message']) : ($data['text'] ?? '');
+            }
+            
+            $timestamp  = $data['timestamp'] ?? ($data['time'] ?? date('c'));
+            $msg_type   = $data['type'] ?? ($data['messageType'] ?? 'text');
+            $media_url  = $data['mediaUrl'] ?? ($data['url'] ?? ($data['media']['url'] ?? ''));
         }
 
         if ($from_phone) {

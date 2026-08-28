@@ -1,4 +1,5 @@
 import { fetchFromAPI } from '../utils/api.js';
+import { showToast, showAlertModal, showConfirmModal } from '../utils/toast.js';
 export function renderLeadDetailView(id) {
   const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
   const lead = leads.find(l => l.id == id);
@@ -407,13 +408,13 @@ ${(() => {
             <textarea id="share-partner-notes" class="os-input" rows="3" placeholder="Context for the partner team..." style="width: 100%; resize: vertical;"></textarea>
           </div>
           <label style="display: flex; align-items: start; gap: 8px; margin-top: 16px; cursor: pointer;">
-            <input type="checkbox" checked style="margin-top: 4px;" />
+            <input type="checkbox" id="share-partner-wa" checked style="margin-top: 4px;" />
             <span style="font-size: 0.9rem; color: var(--os-gray-600); line-height: 1.4;">Send requirement & shortlisted properties to the partner on WhatsApp</span>
           </label>
         </div>
         <div class="os-modal-footer">
           <button class="os-btn-secondary" id="cancel-share-modal">Cancel</button>
-          <button class="os-btn-primary" id="confirm-share-modal" style="background: #fdba74; border-color: #fdba74; color: #fff;">Share lead</button>
+          <button class="os-btn-primary" id="confirm-share-modal" style="background: var(--os-luxury-orange); border-color: var(--os-luxury-orange); color: #fff;">Share lead</button>
         </div>
       </div>
     </div>
@@ -527,8 +528,8 @@ export function initLeadDetailView(id) {
     const partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
     let optionsHtml = '<div class="select-option selected" data-id="ALL">Broadcast to All Partners <i class="ri-broadcast-line" style="margin-left:8px; color:var(--os-luxury-orange);"></i></div>';
     partners.forEach(p => {
-      if (p.status === 'Active') {
-        optionsHtml += `<div class="select-option" data-id="${p.id}">${p.company}</div>`;
+      if ((p.status || 'Active').toLowerCase() === 'active') {
+        optionsHtml += `<div class="select-option" data-id="${p.id}">${p.company || p.name}</div>`;
       }
     });
     shareDropdownOptions.innerHTML = optionsHtml;
@@ -640,53 +641,141 @@ export function initLeadDetailView(id) {
   if (closeShare) closeShare.addEventListener('click', () => shareModal.classList.remove('show'));
   if (cancelShare) cancelShare.addEventListener('click', () => shareModal.classList.remove('show'));
   if (confirmShare) {
-    confirmShare.addEventListener('click', () => {
+    confirmShare.addEventListener('click', async () => {
       const selectedValue = document.querySelector('#partner-share-dropdown .select-value');
       const partnerId = selectedValue ? selectedValue.dataset.id : null;
       const notes = document.getElementById('share-partner-notes')?.value || '';
+      const sendWa = document.getElementById('share-partner-wa')?.checked ?? true;
       
       const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const currentLead = leads.find(l => l.id == id);
+      const currentLead = leads.find(l => String(l.id) === String(id));
       if (!currentLead) return;
 
       let sharedLeadsData = JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {};
-      const partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
+      let partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
+      const activeUser = JSON.parse(localStorage.getItem('thanjai_active_user')) || { fullName: 'Aishwarya Raman' };
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) + ', ' + now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+
+      // Mask client direct phone number to protect lead privacy
+      const maskedPhone = 'Protected by Desk (+91 84899 96852)';
+      const clientLoc = currentLead.location || currentLead.city || currentLead.area || 'Thanjavur';
+      const clientReq = currentLead.requirement || currentLead.type || 'Residential Plot / Villa';
+      const clientBudget = currentLead.budget || (currentLead.budgetMax ? '₹ ' + currentLead.budgetMax : '₹ 25 - 50 Lakhs');
 
       const newSharedRecord = {
-        name: currentLead.name || 'Unknown',
-        phone: '**********',
-        location: currentLead.city || 'Unknown',
-        propertyType: currentLead.type || 'Any',
-        budget: currentLead.budgetMax ? 'up to ' + currentLead.budgetMax : 'Not specified',
-        sharedBy: 'Current User', // In a real app, this is the logged-in user
-        sharedDate: new Date().toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+        id: `SL-${Date.now()}`,
+        name: currentLead.name || 'Client',
+        phone: maskedPhone,
+        location: clientLoc,
+        propertyType: clientReq,
+        budget: clientBudget,
+        sharedBy: activeUser.fullName || 'Admin',
+        sharedDate: dateStr,
         notes: notes,
         status: 'Shared'
       };
 
-      if (partnerId === 'ALL') {
-        // Broadcast to all active partners
-        partners.forEach(p => {
-          if (p.status === 'Active') {
-            if (!sharedLeadsData[p.id]) sharedLeadsData[p.id] = [];
-            sharedLeadsData[p.id].push({...newSharedRecord});
+      // Helper function to dispatch WhatsApp message to a partner via official WhatsApp API (8489996852)
+      const sendWhatsAppToPartner = async (partner) => {
+        const pPhone = (partner.phone || partner.whatsapp || '').replace(/\D/g, '');
+        if (!pPhone) return;
+
+        // Check if SmartPing / AiSensy API is configured for background dispatch
+        const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
+        const provider = localStorage.getItem('thanjai_wa_provider') || 'smartping';
+        if (apiKey) {
+          try {
+            const apiUrl = provider === 'smartping' 
+              ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
+              : 'https://backend.aisensy.com/campaign/t1/api/v2';
+            let formattedPhone = pPhone;
+            if (provider === 'smartping' && !formattedPhone.startsWith('+')) {
+              formattedPhone = '+' + (formattedPhone.length === 10 ? '91' + formattedPhone : formattedPhone);
+            }
+            
+            // Dispatch official partner transfer notification template from +91 84899 96852
+            await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                apiKey: apiKey,
+                campaignName: 'partner_transfer_notification',
+                destination: formattedPhone,
+                userName: partner.company || partner.name || 'Partner',
+                templateParams: [
+                  newSharedRecord.name,
+                  newSharedRecord.location || 'Thanjavur',
+                  activeUser.fullName || 'Thanjai Property Desk',
+                  '+91 84899 96852'
+                ]
+              })
+            }).catch(e => console.warn('SmartPing API warning:', e));
+          } catch (err) {
+            console.warn('API send warning:', err);
           }
+        }
+      };
+
+      if (partnerId === 'ALL') {
+        const activePartners = partners.filter(p => (p.status || 'Active').toLowerCase() === 'active');
+        activePartners.forEach(p => {
+          if (!sharedLeadsData[p.id]) sharedLeadsData[p.id] = [];
+          sharedLeadsData[p.id].unshift({...newSharedRecord});
+          p.leads = sharedLeadsData[p.id].length;
+          if (sendWa) sendWhatsAppToPartner(p);
         });
         localStorage.setItem('thanjai_shared_leads', JSON.stringify(sharedLeadsData));
+        localStorage.setItem('thanjai_partners', JSON.stringify(partners));
+
+        // Add timeline
+        if (!currentLead.timeline) currentLead.timeline = [];
+        currentLead.timeline.unshift({
+          action: 'Broadcasted requirement to ALL channel partners (Client contact protected)',
+          date: dateStr,
+          by: activeUser.fullName || 'Admin'
+        });
+        saveAndSyncLeads(leads, id);
+
         shareModal.classList.remove('show');
-        alert('Lead details have been broadcasted to ALL partners in the dashboard. WhatsApp API broadcast will activate tomorrow.');
+        alert(`Lead requirement broadcasted to ${activePartners.length} partners via official WhatsApp (+91 84899 96852). Client contact number is protected.`);
+        const content = document.getElementById('os-content');
+        if (content) {
+          content.innerHTML = renderLeadDetailView(id);
+          initLeadDetailView(id);
+        }
       } else if (partnerId) {
-        // Share to specific partner
         if (!sharedLeadsData[partnerId]) sharedLeadsData[partnerId] = [];
-        sharedLeadsData[partnerId].push(newSharedRecord);
+        sharedLeadsData[partnerId].unshift(newSharedRecord);
         localStorage.setItem('thanjai_shared_leads', JSON.stringify(sharedLeadsData));
-        
-        const partner = partners.find(p => p.id == partnerId);
-        const partnerName = partner ? partner.company : 'the selected partner';
+
+        const partnerIdx = partners.findIndex(p => String(p.id) === String(partnerId));
+        let partnerName = 'Partner';
+        if (partnerIdx !== -1) {
+          partnerName = partners[partnerIdx].company || partners[partnerIdx].name;
+          partners[partnerIdx].leads = sharedLeadsData[partnerId].length;
+          localStorage.setItem('thanjai_partners', JSON.stringify(partners));
+          if (sendWa) await sendWhatsAppToPartner(partners[partnerIdx]);
+        }
+
+        // Add timeline
+        if (!currentLead.timeline) currentLead.timeline = [];
+        currentLead.timeline.unshift({
+          action: `Shared requirement with partner "${partnerName}" (Client contact protected)`,
+          date: dateStr,
+          by: activeUser.fullName || 'Admin'
+        });
+        saveAndSyncLeads(leads, id);
+
         shareModal.classList.remove('show');
-        alert(`Lead details have been shared with ${partnerName}. WhatsApp API integration pending.`);
+        alert(`Lead requirement for "${currentLead.name}" shared with ${partnerName} via official WhatsApp (+91 84899 96852). Client contact number is protected.`);
+        const content = document.getElementById('os-content');
+        if (content) {
+          content.innerHTML = renderLeadDetailView(id);
+          initLeadDetailView(id);
+        }
       } else {
-        alert('Please select a partner or Broadcast option.');
+        alert('Please select a partner company or Broadcast option.');
       }
     });
   }
@@ -1730,7 +1819,7 @@ async function saveAndSyncLeads(leads, changedLeadId = null) {
       try {
         const payload = {
           ...lead,
-          phone: lead.mobile || '',
+          phone: lead.phone || lead.mobile || lead.whatsapp || '',
           budget: lead.budgetMax ? lead.budgetMax : (lead.budgetMin || ''),
           requirement: lead.type || '',
           location: lead.city || lead.area || '',

@@ -1,5 +1,5 @@
 import { getAdminUsers, addAdminUser, updateAdminUser, toggleAdminUserStatus, deleteAdminUser } from '../utils/adminUsersStore.js';
-import { showToast } from '../utils/toast.js';
+import { showToast, showConfirmModal } from '../utils/toast.js';
 
 let activeSearchQuery = '';
 let activeRoleFilter = 'all';
@@ -470,11 +470,19 @@ export function initAdminUsersView() {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-id');
       const name = btn.getAttribute('data-name');
-      if (confirm(`Are you sure you want to delete admin staff "${name}" (${id})?`)) {
-        deleteAdminUser(id);
-        showToast(`Admin staff ${name} deleted successfully!`, 'warning');
-        refreshAdminUsersView();
-      }
+      showConfirmModal({
+        title: 'Delete Staff Member',
+        message: `Are you sure you want to delete admin staff <strong>"${name}"</strong> (${id})? They will lose access to the CRM workspace immediately.`,
+        confirmText: 'Delete Staff',
+        cancelText: 'Keep Staff',
+        confirmIcon: 'ri-delete-bin-line',
+        isDanger: true,
+        onConfirm: () => {
+          deleteAdminUser(id);
+          showToast(`Admin staff ${name} deleted successfully!`, 'ri-checkbox-circle-fill');
+          refreshAdminUsersView();
+        }
+      });
     });
   });
 }

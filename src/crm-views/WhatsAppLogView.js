@@ -2,19 +2,21 @@
 
 export function renderWhatsAppLogView() {
   return `
-    <div class="view-enter whatsapp-view" style="display: flex; height: calc(100vh - 80px); background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+    <div class="view-enter whatsapp-view" style="display: flex; height: calc(100vh - 110px); max-height: calc(100vh - 110px); min-height: 550px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; position: relative;">
       
       <!-- Left: Conversation List -->
-      <div class="wa-sidebar" style="width: 350px; border-right: 1px solid var(--os-border-thin); display: flex; flex-direction: column; background: #f8fafc;">
-        <div class="wa-header" style="padding: 20px; border-bottom: 1px solid var(--os-border-thin); display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="margin: 0; font-size: 1.2rem; color: var(--os-dark);">WhatsApp Log</h2>
-          <button id="wa-refresh-leads" class="os-btn-secondary" style="padding: 6px 12px;"><i class="ri-refresh-line"></i></button>
+      <div class="wa-sidebar" style="width: 340px; min-width: 340px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; background: #ffffff;">
+        <div class="wa-header" style="padding: 16px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+          <h2 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+            <i class="ri-whatsapp-fill" style="color: #25D366; font-size: 1.3rem;"></i> WhatsApp Log
+          </h2>
+          <button id="wa-refresh-leads" class="os-btn-secondary" title="Refresh conversations" style="padding: 6px 12px; font-size: 0.85rem;"><i class="ri-refresh-line"></i></button>
         </div>
         
-        <div class="os-filter-bar" style="margin: 0; box-shadow: none; border-radius: 0; border: none; border-bottom: var(--os-border-thin); padding: 12px 16px;">
+        <div class="os-filter-bar" style="margin: 0; box-shadow: none; border-radius: 0; border: none; border-bottom: 1px solid #e2e8f0; padding: 10px 16px; background: #ffffff;">
           <div class="search-box" style="width: 100%;">
             <i class="ri-search-line"></i>
-            <input type="text" id="wa-search-leads" placeholder="Search leads..." />
+            <input type="text" id="wa-search-leads" placeholder="Search leads by name or phone..." style="font-size: 0.85rem; width: 100%; border: none; outline: none;" />
           </div>
         </div>
 
@@ -24,51 +26,58 @@ export function renderWhatsAppLogView() {
       </div>
 
       <!-- Right: Chat Panel -->
-      <div class="wa-main" style="flex: 1; display: flex; flex-direction: column; background: #efeae2;">
+      <div class="wa-main" style="flex: 1; display: flex; flex-direction: column; background: #efeae2; overflow: hidden; height: 100%;">
         <!-- Empty State -->
         <div id="wa-empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--os-gray-500);">
           <i class="ri-whatsapp-line" style="font-size: 4rem; color: #25d366; margin-bottom: 16px;"></i>
-          <h2>WhatsApp Business Messaging</h2>
-          <p>Select a lead from the sidebar to view history or start a chat.</p>
+          <h2 style="margin: 0 0 8px 0; color: #1e293b;">WhatsApp Live Chat</h2>
+          <p style="margin: 0; font-size: 0.9rem;">Select a conversation from the sidebar to view messages or reply.</p>
         </div>
 
         <!-- Chat Container (Hidden by default) -->
-        <div id="wa-chat-container" style="display: none; flex-direction: column; height: 100%;">
-          <div class="wa-chat-header" style="padding: 16px 20px; background: #f0f2f5; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d1d7db;">
+        <div id="wa-chat-container" style="display: none; flex-direction: column; height: 100%; width: 100%; overflow: hidden;">
+          <!-- Top Bar Header (Sticky) -->
+          <div class="wa-chat-header" style="padding: 12px 20px; background: #f0f2f5; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d1d7db; min-height: 64px; flex-shrink: 0; z-index: 10;">
             <div class="wa-chat-title" style="display: flex; align-items: center; gap: 12px;">
-              <div id="wa-active-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: #25d366; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;"></div>
+              <div id="wa-active-avatar" style="width: 42px; height: 42px; min-width: 42px; border-radius: 50%; background: #25d366; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"></div>
               <div>
-                <h3 id="wa-active-name" style="margin: 0; font-size: 1.1rem; color: #111b21;"></h3>
-                <p id="wa-active-phone" style="margin: 2px 0 0 0; font-size: 0.85rem; color: #667781;"></p>
+                <h3 id="wa-active-name" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #111b21;"></h3>
+                <p id="wa-active-phone" style="margin: 2px 0 0 0; font-size: 0.82rem; color: #667781; font-weight: 500;"></p>
               </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; color: #059669; background: #ecfdf5; padding: 4px 12px; border-radius: 20px; border: 1px solid #a7f3d0;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span> Live Connected
+              </span>
             </div>
           </div>
 
-          <div id="wa-chat-history" class="wa-chat-history" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
+          <!-- Chat Stream History -->
+          <div id="wa-chat-history" class="wa-chat-history" style="flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 12px;">
             <!-- Messages injected here -->
           </div>
 
-          <!-- Input Area -->
-          <div class="wa-input-area" style="padding: 12px 20px; background: #f0f2f5; display: flex; gap: 12px; align-items: center;">
-            <button id="wa-btn-property" class="wa-attach" title="Send Property" style="background: none; border: none; font-size: 1.5rem; color: #54656f; cursor: pointer;"><i class="ri-building-line"></i></button>
-            <input type="text" id="wa-msg-input" placeholder="Type a custom message..." style="flex: 1; padding: 12px 16px; border: none; border-radius: 8px; outline: none; font-size: 0.95rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08);" />
-            <button id="wa-btn-send" class="wa-send" style="background: none; border: none; font-size: 1.5rem; color: #54656f; cursor: pointer;"><i class="ri-send-plane-fill"></i></button>
+          <!-- Input Area (Bottom) -->
+          <div class="wa-input-area" style="padding: 12px 20px; background: #f0f2f5; display: flex; gap: 12px; align-items: center; border-top: 1px solid #d1d7db; flex-shrink: 0;">
+            <button id="wa-btn-property" class="wa-attach" title="Send Property Card" style="background: none; border: none; font-size: 1.4rem; color: #54656f; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 50%;"><i class="ri-building-line"></i></button>
+            <input type="text" id="wa-msg-input" placeholder="Type a message to reply on WhatsApp..." style="flex: 1; padding: 12px 18px; border: 1px solid #e2e8f0; border-radius: 24px; outline: none; font-size: 0.95rem; background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);" />
+            <button id="wa-btn-send" class="wa-send" title="Send WhatsApp Message" style="background: #25d366; border: none; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: #ffffff; cursor: pointer; box-shadow: 0 2px 6px rgba(37,211,102,0.4); flex-shrink: 0;"><i class="ri-send-plane-fill"></i></button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Select Property Modal -->
-    <div id="wa-property-modal" class="os-modal">
-      <div class="os-modal-content" style="max-width: 500px;">
-        <div class="os-modal-header">
-          <h2>Send Property Link</h2>
-          <button class="os-modal-close" onclick="document.getElementById('wa-property-modal').classList.remove('show')"><i class="ri-close-line"></i></button>
+    <!-- Select Property Modal (Hidden Overlay) -->
+    <div id="wa-property-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 999999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+      <div style="max-width: 500px; width: 90%; background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); max-height: 85vh; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: #1e293b;"><i class="ri-building-line" style="color: #ea580c;"></i> Send Property Recommendation</h2>
+          <button id="wa-property-modal-close" style="background: none; border: none; font-size: 1.4rem; color: #64748b; cursor: pointer;"><i class="ri-close-line"></i></button>
         </div>
-        <div class="os-modal-body">
-          <input type="text" id="wa-prop-search" class="os-input" placeholder="Search property by title or location..." style="width: 100%; margin-bottom: 12px;" />
-          <div id="wa-prop-list" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
-          </div>
+        <div style="margin-bottom: 14px;">
+          <input type="text" id="wa-prop-search" placeholder="Search property by title or location..." style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; outline: none;" />
+        </div>
+        <div id="wa-prop-list" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
         </div>
       </div>
     </div>
@@ -86,11 +95,11 @@ export function initWhatsAppLogView() {
 
   function renderLeadsSidebar(filter = '') {
     const term = filter.toLowerCase();
-    const filtered = leads.filter(l => 
-      (l.name && l.name.toLowerCase().includes(term)) || 
-      (l.mobile && l.mobile.includes(term)) || 
-      (l.whatsapp && l.whatsapp.includes(term))
-    );
+    const filtered = leads.filter(l => {
+      const p = (l.phone || l.whatsapp || l.mobile || '').toLowerCase();
+      const n = (l.name || '').toLowerCase();
+      return n.includes(term) || p.includes(term);
+    });
 
     if (filtered.length === 0) {
       chatList.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--os-gray-500);">No leads found</div>';
@@ -99,24 +108,29 @@ export function initWhatsAppLogView() {
 
     let html = '';
     filtered.forEach(l => {
-      const phone = l.whatsapp || l.mobile || 'No Number';
+      const rawPhone = l.phone || l.whatsapp || l.mobile || 'No Number';
+      const phoneDisplay = rawPhone.startsWith('+') ? rawPhone : (rawPhone.replace(/\D/g, '').length === 10 ? `+91 ${rawPhone.replace(/\D/g, '')}` : rawPhone);
       const initials = (l.name || 'U').substring(0, 2).toUpperCase();
       const timeline = l.timeline || [];
-      const waMsgs = timeline.filter(t => t.type === 'whatsapp');
-      const lastMsg = waMsgs.length > 0 ? waMsgs[0].message : 'No messages yet';
-      const lastTime = waMsgs.length > 0 ? new Date(waMsgs[0].date).toLocaleDateString() : '';
+      const waMsgs = timeline.filter(t => t.type === 'whatsapp' || t.type === 'whatsapp_incoming');
+      const lastRaw = waMsgs.length > 0 ? (waMsgs[0].note || waMsgs[0].message) : 'No messages yet';
+      const lastMsg = lastRaw.replace('WhatsApp sent: ', '').replace('Customer replied: ', '');
+      const lastTime = waMsgs.length > 0 ? new Date(waMsgs[0].date).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '';
 
       html += `
-        <div class="wa-chat-item hover-lift" data-id="${l.id}" style="padding: 12px 16px; display: flex; gap: 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;">
-          <div style="width: 48px; height: 48px; min-width: 48px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #475569;">
+        <div class="wa-chat-item hover-lift" data-id="${l.id}" style="padding: 14px 16px; display: flex; gap: 12px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;">
+          <div style="width: 44px; height: 44px; min-width: 44px; border-radius: 50%; background: #25D366; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #ffffff; font-size: 0.95rem;">
             ${initials}
           </div>
           <div style="flex: 1; overflow: hidden;">
             <div style="display: flex; justify-content: space-between; align-items: baseline;">
-              <strong style="color: #1e293b; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${l.name || 'Unknown'}</strong>
-              <span style="font-size: 0.75rem; color: #64748b;">${lastTime}</span>
+              <strong style="color: #1e293b; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${l.name || 'Unknown'}</strong>
+              <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">${lastTime}</span>
             </div>
-            <div style="font-size: 0.85rem; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px;">
+            <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">
+              ${phoneDisplay}
+            </div>
+            <div style="font-size: 0.8rem; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; font-weight: 500;">
               ${lastMsg}
             </div>
           </div>
@@ -137,6 +151,10 @@ export function initWhatsAppLogView() {
   }
 
   function openChat(leadId) {
+    if (window.waChatPollTimer) {
+      clearInterval(window.waChatPollTimer);
+    }
+
     activeLeadId = leadId;
     const lead = leads.find(l => l.id === leadId);
     if (!lead) return;
@@ -144,17 +162,77 @@ export function initWhatsAppLogView() {
     emptyState.style.display = 'none';
     chatContainer.style.display = 'flex';
 
+    const rawPhone = lead.phone || lead.whatsapp || lead.mobile || lead.phoneNumber || '';
+    const phoneDisplay = rawPhone ? (rawPhone.startsWith('+') ? rawPhone : `+91 ${rawPhone.replace(/\D/g, '').slice(-10)}`) : 'No Phone Number';
+
     document.getElementById('wa-active-name').textContent = lead.name || 'Unknown User';
-    document.getElementById('wa-active-phone').textContent = lead.whatsapp || lead.mobile || 'No Phone Number';
+    document.getElementById('wa-active-phone').textContent = phoneDisplay;
     document.getElementById('wa-active-avatar').textContent = (lead.name || 'U').substring(0, 2).toUpperCase();
 
     renderChatHistory();
+
+    // Live auto-polling every 5 seconds for incoming WhatsApp messages
+    window.waChatPollTimer = setInterval(() => {
+      if (document.getElementById('wa-chat-history') && activeLeadId) {
+        renderChatHistory(true);
+      } else {
+        clearInterval(window.waChatPollTimer);
+      }
+    }, 5000);
   }
 
-  async function renderChatHistory() {
+  function formatBubbleContent(rawText) {
+    if (!rawText) return '';
+    if (rawText.startsWith('WhatsApp sent: ')) {
+      const content = rawText.replace('WhatsApp sent: ', '').trim();
+      if (content.startsWith('Custom message: ')) {
+        return content.replace('Custom message: ', '').replace(/^"|"$/g, '');
+      }
+      if (content.startsWith('site_visit_confirmation')) {
+        return '<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-calendar-check-fill" style="color:#25D366;"></i> Site Visit Confirmation</div><div style="font-size:0.85rem; color:#4a5568;">Your site visit appointment details and map directions have been sent.</div>';
+      }
+      if (content.startsWith('site_visit_reminder')) {
+        return '<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-time-fill" style="color:#e27c3e;"></i> Site Visit Reminder</div><div style="font-size:0.85rem; color:#4a5568;">Gentle reminder for your upcoming site visit today.</div>';
+      }
+      if (content.startsWith('site_visit_feedback')) {
+        return '<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-star-fill" style="color:#f59e0b;"></i> Site Visit Feedback</div><div style="font-size:0.85rem; color:#4a5568;">Thank you for visiting! How was your site visit experience?</div>';
+      }
+      if (content.startsWith('welcome_message')) {
+        return '<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-hand-heart-fill" style="color:#25D366;"></i> Welcome to Thanjai Property</div><div style="font-size:0.85rem; color:#4a5568;">Hello! Thank you for connecting with Thanjai Property advisory team.</div>';
+      }
+      if (content.startsWith('property_shortlist')) {
+        const extra = content.includes('[Shortlist:') ? content.split('[Shortlist:')[1].replace(']', '').trim() : '';
+        return `<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-building-4-fill" style="color:#3b82f6;"></i> Property Shortlist Recommendations</div><div style="font-size:0.85rem; color:#4a5568;">Handpicked verified properties based on your requirements.${extra ? `<div style="margin-top:4px; font-size:0.8rem; color:#6b7280;"><strong>Selected:</strong> ${extra}</div>` : ''}</div>`;
+      }
+      if (content.startsWith('initial_contact_intro')) {
+        return '<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-image-2-fill" style="color:#8b5cf6;"></i> Property Details & Photos</div><div style="font-size:0.85rem; color:#4a5568;">Verified property details and pricing overview sent.</div>';
+      }
+      if (content.startsWith('property_follow_up')) {
+        return '<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-customer-service-2-fill" style="color:#10b981;"></i> Property Follow-up</div><div style="font-size:0.85rem; color:#4a5568;">Following up on your preferred property options and next steps.</div>';
+      }
+      if (content.startsWith('negotiation_check_in')) {
+        return '<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-shake-hands-fill" style="color:#f97316;"></i> Price & Deal Discussion</div><div style="font-size:0.85rem; color:#4a5568;">Checking in regarding property price negotiations and closing terms.</div>';
+      }
+      if (content.startsWith('bank_loan_assistance')) {
+        return '<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-bank-fill" style="color:#0ea5e9;"></i> Bank Loan Assistance</div><div style="font-size:0.85rem; color:#4a5568;">Home loan documentation support from our banking partners.</div>';
+      }
+      if (content.startsWith('registration_testimonial_referral')) {
+        return '<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-medal-fill" style="color:#ec4899;"></i> Registration & Review</div><div style="font-size:0.85rem; color:#4a5568;">Congratulations on your property registration! Please share your review.</div>';
+      }
+      if (content.startsWith('general_property_update')) {
+        return '<div style="font-weight:700; color:#1a202c; margin-bottom:4px;"><i class="ri-notification-3-fill" style="color:#6366f1;"></i> Property Status Update</div><div style="font-size:0.85rem; color:#4a5568;">Important update regarding your property inquiry.</div>';
+      }
+      return content;
+    }
+    return rawText;
+  }
+
+  async function renderChatHistory(isSilentPoll = false) {
     if (!activeLeadId) return;
     const lead = leads.find(l => l.id === activeLeadId);
+    if (!lead) return;
     const historyContainer = document.getElementById('wa-chat-history');
+    if (!historyContainer) return;
     
     const timeline = lead.timeline || [];
 
@@ -164,7 +242,7 @@ export function initWhatsAppLogView() {
       const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
         ? 'https://thanjaiproperty.com/api.php'
         : '/api.php';
-      const rawPhone = lead.whatsapp || lead.mobile || '';
+      const rawPhone = lead.phone || lead.whatsapp || lead.mobile || lead.phoneNumber || '';
       const phone = rawPhone.replace(/\D/g, '');
       if (phone) {
         const res = await fetch(`${API_BASE}/whatsapp_incoming?phone=${phone}&t=${Date.now()}`);
@@ -195,6 +273,8 @@ export function initWhatsAppLogView() {
       return;
     }
 
+    const wasScrolledToBottom = historyContainer.scrollHeight - historyContainer.scrollTop <= historyContainer.clientHeight + 50;
+
     let html = '';
     allMsgs.forEach(msg => {
       const timeStr = msg.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -202,26 +282,35 @@ export function initWhatsAppLogView() {
       if (msg.direction === 'out') {
         // Outgoing - green right bubble
         html += `
-          <div style="align-self: flex-end; background: #d9fdd3; padding: 8px 12px; border-radius: 8px 0 8px 8px; max-width: 70%; box-shadow: 0 1px 1px rgba(0,0,0,0.1);">
-            <div style="font-size: 0.95rem; color: #111b21; margin-bottom: 8px; word-wrap: break-word;">${msg.message}</div>
-            <div style="font-size: 0.7rem; color: #667781; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
-              ${timeStr} <i class="ri-check-double-line" style="color: #53bdeb; font-size: 1rem;"></i>
+          <div style="align-self: flex-end; background: #d9fdd3; padding: 10px 14px; border-radius: 12px 12px 0 12px; max-width: 75%; min-width: 180px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #c7f2c0;">
+            <div style="font-size: 0.92rem; color: #111b21; margin-bottom: 6px; word-wrap: break-word; line-height: 1.4;">
+              ${formatBubbleContent(msg.message)}
+            </div>
+            <div style="font-size: 0.7rem; color: #667781; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 4px;">
+              <span>${timeStr}</span>
+              <i class="ri-check-double-line" style="color: #53bdeb; font-size: 1rem;"></i>
             </div>
           </div>
         `;
       } else {
         // Incoming - white left bubble
         html += `
-          <div style="align-self: flex-start; background: #ffffff; padding: 8px 12px; border-radius: 0 8px 8px 8px; max-width: 70%; box-shadow: 0 1px 1px rgba(0,0,0,0.12); border: 1px solid #e9edef;">
-            <div style="font-size: 0.75rem; font-weight: 700; color: #06c167; margin-bottom: 4px;">Customer</div>
-            <div style="font-size: 0.95rem; color: #111b21; margin-bottom: 8px; word-wrap: break-word;">${msg.message}</div>
-            <div style="font-size: 0.7rem; color: #667781; text-align: left;">${timeStr}</div>
+          <div style="align-self: flex-start; background: #ffffff; padding: 10px 14px; border-radius: 12px 12px 12px 0; max-width: 75%; min-width: 180px; box-shadow: 0 1px 3px rgba(0,0,0,0.12); border: 1px solid #e2e8f0;">
+            <div style="font-size: 0.75rem; font-weight: 800; color: #06c167; margin-bottom: 4px; display: flex; align-items: center; gap: 4px;">
+              <i class="ri-user-smile-fill"></i> Customer Reply
+            </div>
+            <div style="font-size: 0.95rem; color: #111b21; margin-bottom: 6px; word-wrap: break-word; font-weight: 500;">
+              ${msg.message.replace('Customer replied: ', '')}
+            </div>
+            <div style="font-size: 0.7rem; color: #667781; text-align: left; margin-top: 2px;">${timeStr}</div>
           </div>
         `;
       }
     });
     historyContainer.innerHTML = html;
-    historyContainer.scrollTop = historyContainer.scrollHeight;
+    if (!isSilentPoll || wasScrolledToBottom) {
+      historyContainer.scrollTop = historyContainer.scrollHeight;
+    }
   }
 
   searchInput?.addEventListener('input', (e) => renderLeadsSidebar(e.target.value));
@@ -231,9 +320,19 @@ export function initWhatsAppLogView() {
     leads.length = 0;
     leads.push(...updatedLeads);
     renderLeadsSidebar(searchInput?.value || '');
+    if (activeLeadId) renderChatHistory();
   });
 
   renderLeadsSidebar();
+
+  // Auto-open first lead on load
+  if (leads.length > 0) {
+    const firstItem = chatList.querySelector('.wa-chat-item');
+    if (firstItem) {
+      firstItem.style.background = '#e2e8f0';
+      openChat(leads[0].id);
+    }
+  }
 
   // --- Messaging Logic ---
   const btnSend = document.getElementById('wa-btn-send');
@@ -344,8 +443,16 @@ export function initWhatsAppLogView() {
       alert('Please select a lead first.');
       return;
     }
-    propModal.classList.add('show');
+    if (propModal) propModal.style.display = 'flex';
     renderPropertyModalList('');
+  });
+
+  document.getElementById('wa-property-modal-close')?.addEventListener('click', () => {
+    if (propModal) propModal.style.display = 'none';
+  });
+
+  propModal?.addEventListener('click', (e) => {
+    if (e.target === propModal) propModal.style.display = 'none';
   });
 
   function renderPropertyModalList(query) {
@@ -382,7 +489,7 @@ export function initWhatsAppLogView() {
         const loc = e.currentTarget.dataset.loc;
         const price = e.currentTarget.dataset.price;
         const imgUrl = e.currentTarget.dataset.img;
-        propModal.classList.remove('show');
+        if (propModal) propModal.style.display = 'none';
         
         const lead = leads.find(l => l.id === activeLeadId);
         const userName = lead ? (lead.name || "Client") : "Client";
