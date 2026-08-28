@@ -166,66 +166,25 @@ export function renderPartnersView() {
 export async function initPartnersView() {
   // 1. Data Initialization
   let partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
-  
-  // Seed default partners if completely empty
-  if (partners.length === 0) {
-    partners = [
-      {
-        id: '1',
-        name: 'Chennai Prime Realty',
-        company: 'Chennai Prime Realty',
-        type: 'Channel Partner',
-        contact: 'Senthil Nathan',
-        contactPerson: 'Senthil Nathan',
-        city: 'Chennai',
-        phone: '9840123456',
-        whatsapp: '9840123456',
-        email: 'senthil@chennaiprime.example',
-        country: 'India',
-        notes: 'Specializes in NRI investors and luxury villas.',
-        leads: 2,
-        status: 'Active'
-      },
-      {
-        id: '2',
-        name: 'Trichy Housing Network',
-        company: 'Trichy Housing Network',
-        type: 'Broker Network',
-        contact: 'Anand Kumar',
-        contactPerson: 'Anand Kumar',
-        city: 'Trichy',
-        phone: '9443123456',
-        whatsapp: '9443123456',
-        email: 'anand@trichyhousing.example',
-        country: 'India',
-        notes: 'Commercial plots and residential layouts in Trichy-Thanjavur corridor.',
-        leads: 1,
-        status: 'Active'
-      }
-    ];
-    localStorage.setItem('thanjai_partners', JSON.stringify(partners));
-  }
 
   try {
     const data = await fetchFromAPI('/partners');
-    if (data && Array.isArray(data) && data.length > 0) {
-      const localMap = new Map(partners.map(p => [p.id, p]));
+    if (data && Array.isArray(data)) {
       partners = data.map(p => {
-        const local = localMap.get(p.id);
         return {
           id: p.id,
-          name: p.name || p.company || (local && local.company) || 'Partner Company',
-          company: p.name || p.company || (local && local.company) || 'Partner Company',
-          contact: p.contactPerson || p.type || p.contact || (local && local.contact) || 'Contact Person',
-          contactPerson: p.contactPerson || p.type || p.contact || (local && local.contact) || 'Contact Person',
-          city: p.city || (local && local.city) || 'Thanjavur',
-          phone: p.phone || (local && local.phone) || '',
-          whatsapp: p.whatsapp || (local && local.whatsapp) || p.phone || '',
-          email: p.email || (local && local.email) || '',
-          country: p.country || (local && local.country) || 'India',
-          notes: p.notes || (local && local.notes) || '',
-          leads: p.leads || (local && local.leads) || 0,
-          status: p.status || (local && local.status) || 'Active'
+          name: p.name || p.company || 'Partner Company',
+          company: p.name || p.company || 'Partner Company',
+          contact: p.contactPerson || p.type || p.contact || 'Contact Person',
+          contactPerson: p.contactPerson || p.type || p.contact || 'Contact Person',
+          city: p.city || 'Thanjavur',
+          phone: p.phone || '',
+          whatsapp: p.whatsapp || p.phone || '',
+          email: p.email || '',
+          country: p.country || 'India',
+          notes: p.notes || '',
+          leads: p.leads || 0,
+          status: p.status || 'Active'
         };
       });
       localStorage.setItem('thanjai_partners', JSON.stringify(partners));
