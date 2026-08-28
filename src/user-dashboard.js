@@ -95,6 +95,12 @@ export function renderUserDashboard() {
     return;
   }
 
+  // Prevent admin and staff from accessing the client user dashboard
+  if (user.roleCode && (user.roleCode.includes('admin') || user.roleCode.includes('manager') || user.roleCode.includes('executive') || user.roleCode.includes('staff'))) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
   const userName = user.fullName || user.name || (user.email ? user.email.split('@')[0] : 'Property Owner');
 
   const allProps = getProperties();
