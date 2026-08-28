@@ -107,6 +107,11 @@ export function renderUserDashboard() {
   const userProps = allProps.filter(p => {
     if (p.userId && user.id && p.userId === user.id) return true;
     if (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()) return true;
+    
+    // Check actualOwner metadata first if available
+    if (p.actualOwnerPhone === user.phone && (p.actualOwnerName === userName)) return true;
+    
+    // Fallback to legacy check
     if (!p.userId && !p.userEmail) {
       return p.ownerPhone === user.phone && (p.listedBy === userName || p.ownerName === userName);
     }
