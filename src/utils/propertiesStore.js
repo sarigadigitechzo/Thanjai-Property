@@ -41,43 +41,27 @@ let isInitialized = true;
 export async function initPropertiesStore() {
   try {
     const data = await fetchFromAPI('/properties');
-    if (data && Array.isArray(data) && data.length > 0) {
-      const localProps = loadPropertiesFromStorage();
-      const localMap = new Map(localProps.map(p => [p.id, p]));
-      
+    if (data && Array.isArray(data)) {
       const remoteNormalized = data.map(remoteP => {
-        const local = localMap.get(remoteP.id);
-        const resolvedAdType = (remoteP.adType || remoteP.ad_type || (local && local.adType) || 'free');
-        const resolvedOwnerName = (remoteP.ownerName || remoteP.owner_name || (local && local.ownerName) || (resolvedAdType === 'paid' ? 'Verified Owner' : 'Thanjai Property'));
-        const resolvedOwnerPhone = (remoteP.ownerPhone || remoteP.owner_phone || (local && local.ownerPhone) || (resolvedAdType === 'paid' ? '8489996852' : '8489996852'));
+        const resolvedAdType = (remoteP.adType || remoteP.ad_type || 'free');
+        const resolvedOwnerName = (remoteP.ownerName || remoteP.owner_name || (resolvedAdType === 'paid' ? 'Verified Owner' : 'Thanjai Property'));
+        const resolvedOwnerPhone = (remoteP.ownerPhone || remoteP.owner_phone || (resolvedAdType === 'paid' ? '8489996852' : '8489996852'));
         
-        const merged = local 
-          ? { ...local, ...remoteP, adType: resolvedAdType, ownerName: resolvedOwnerName, ownerPhone: resolvedOwnerPhone } 
-          : { ...remoteP, adType: resolvedAdType, ownerName: resolvedOwnerName, ownerPhone: resolvedOwnerPhone };
-        
-        return normalizePropertyRecord(merged);
+        return normalizePropertyRecord({
+          ...remoteP,
+          adType: resolvedAdType,
+          ownerName: resolvedOwnerName,
+          ownerPhone: resolvedOwnerPhone
+        });
       }).filter(Boolean);
-
-      // Preserve any locally added properties not present on remote server
-      localProps.forEach(lp => {
-        if (!remoteNormalized.some(p => p.id === lp.id)) {
-          remoteNormalized.push(lp);
-          fetchFromAPI('/properties', { method: 'POST', body: JSON.stringify(lp) }).catch(() => {});
-        }
-      });
 
       propertiesCache = remoteNormalized;
       savePropertiesToStorage(propertiesCache);
       window.dispatchEvent(new CustomEvent('propertiesUpdated'));
-    } else if (data && Array.isArray(data) && data.length === 0) {
-      // Remote table is empty: Auto-seed initial properties into MySQL!
-      const initialSeed = loadPropertiesFromStorage();
-      for (const p of initialSeed) {
-        fetchFromAPI('/properties', { method: 'POST', body: JSON.stringify(p) }).catch(() => {});
-      }
     }
   } catch (error) {
     // Graceful fallback: continue with local storage / seed data
+    console.error("Failed to fetch properties from DB, falling back to local cache", error);
   }
   isInitialized = true;
   return propertiesCache;
