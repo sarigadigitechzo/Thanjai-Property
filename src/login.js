@@ -490,7 +490,7 @@ export async function initLogin() {
   // OTP Verification Form Submission -> Transitions to Credentials screen
   let verifiedCredentials = null;
 
-  document.getElementById('otp-form')?.addEventListener('submit', (e) => {
+  document.getElementById('otp-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const otpCode = otpBoxes.map(b => b?.value || '').join('');
     const errMsg = document.getElementById('otp-error-msg');
@@ -506,7 +506,7 @@ export async function initLogin() {
 
     if (btn) btn.textContent = 'Verifying Code...';
 
-    const result = verifyOTPAndActivate(otpCode);
+    const result = await verifyOTPAndActivate(otpCode);
     if (result.success) {
       if (errMsg) errMsg.style.display = 'none';
       if (btn) btn.textContent = 'Verified!';
