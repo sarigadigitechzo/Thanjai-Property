@@ -632,21 +632,31 @@ function bindLeadEvents() {
         createdAt: idField ? (leadToUpdate ? leadToUpdate.createdAt : Date.now()) : Date.now()
       };
 
-      try {
-        const url = idField ? '/leads/' + idField : '/leads';
-        await fetchFromAPI(url, { 
-          method: idField ? 'PUT' : 'POST', 
-          body: JSON.stringify(leadData) 
-        });
-        
-        // Refresh local cache
-        const data = await fetchFromAPI('/leads');
-        saveLeads(data);
-        renderTable();
-        closeModal();
-      } catch (e) {
-        console.error(e);
+      // Always save to localStorage first so UI updates immediately
+      const existingLeads = getLeads();
+      if (idField) {
+        const idx = existingLeads.findIndex(l => String(l.id) === String(idField));
+        if (idx !== -1) existingLeads[idx] = { ...existingLeads[idx], ...leadData };
+      } else {
+        existingLeads.unshift(leadData);
       }
+      saveLeads(existingLeads);
+      renderTable();
+      closeModal();
+      showToast(idField ? 'Lead updated successfully' : 'New lead added!', 'ri-checkbox-circle-fill');
+
+      // Then sync to DB in background
+      const url = idField ? '/leads/' + idField : '/leads';
+      fetchFromAPI(url, {
+        method: idField ? 'PUT' : 'POST',
+        body: JSON.stringify(leadData)
+      }).then(async () => {
+        // Refresh from DB to ensure consistency
+        const fresh = await fetchFromAPI('/leads');
+        if (fresh && Array.isArray(fresh)) saveLeads(fresh);
+      }).catch(err => {
+        console.warn('DB sync failed, saved locally only:', err);
+      });
     });
   }
 
@@ -885,20 +895,15 @@ function bindLeadEvents() {
           confirmIcon: 'ri-delete-bin-line',
           isDanger: true,
           onConfirm: () => {
+            // Always delete locally first so UI responds immediately
+            const newLeads = leads.filter(l => String(l.id) !== String(id));
+            saveLeads(newLeads);
+            renderTable();
+            showToast(`Lead "${lead.name}" deleted`, 'ri-checkbox-circle-fill');
+
+            // Then sync delete to DB in background
             fetchFromAPI('/leads/' + id, { method: 'DELETE' })
-              .then(async () => {
-                const data = await fetchFromAPI('/leads');
-                saveLeads(data);
-                renderTable();
-                showToast(`Lead "${lead.name}" deleted successfully`, 'ri-checkbox-circle-fill');
-              })
-              .catch(err => {
-                console.error(err);
-                const newLeads = leads.filter(l => String(l.id) !== String(id));
-                saveLeads(newLeads);
-                renderTable();
-                showToast(`Lead "${lead.name}" deleted`, 'ri-checkbox-circle-fill');
-              });
+              .catch(err => console.warn('DB delete sync failed:', err));
           }
         });
       }

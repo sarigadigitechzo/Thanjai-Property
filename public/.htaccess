@@ -1,5 +1,6 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  AcceptPathInfo On
 
   # Handle Clean URLs directly first
   RewriteRule ^admin-dashboard/?$ dashboard.html [L]
@@ -12,5 +13,7 @@
   # If it's a real file or directory, serve it directly
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
+  # CRITICAL: Don't rewrite api.php requests (including path info like /api.php/leads/L-123)
+  RewriteCond %{REQUEST_URI} !^/api\.php
   RewriteRule ^(.*)$ index.html [L]
 </IfModule>
