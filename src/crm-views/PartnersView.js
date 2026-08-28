@@ -163,35 +163,9 @@ export function renderPartnersView() {
   `;
 }
 
-export async function initPartnersView() {
+export function initPartnersView() {
   // 1. Data Initialization
   let partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
-
-  try {
-    const data = await fetchFromAPI('/partners');
-    if (data && Array.isArray(data)) {
-      partners = data.map(p => {
-        return {
-          id: p.id,
-          name: p.name || p.company || 'Partner Company',
-          company: p.name || p.company || 'Partner Company',
-          contact: p.contactPerson || p.type || p.contact || 'Contact Person',
-          contactPerson: p.contactPerson || p.type || p.contact || 'Contact Person',
-          city: p.city || 'Thanjavur',
-          phone: p.phone || '',
-          whatsapp: p.whatsapp || p.phone || '',
-          email: p.email || '',
-          country: p.country || 'India',
-          notes: p.notes || '',
-          leads: p.leads || 0,
-          status: p.status || 'Active'
-        };
-      });
-      localStorage.setItem('thanjai_partners', JSON.stringify(partners));
-    }
-  } catch (error) {
-    console.warn('API sync warning:', error);
-  }
 
   // 2. Shared Leads Data
   let allSharedLeads = {};
@@ -652,4 +626,33 @@ export async function initPartnersView() {
   // Initial Render
   renderSidebar();
   renderContent();
+
+  // Background API Sync
+  fetchFromAPI('/partners').then(data => {
+    if (data && Array.isArray(data)) {
+      partners = data.map(p => {
+        return {
+          id: p.id,
+          name: p.name || p.company || 'Partner Company',
+          company: p.name || p.company || 'Partner Company',
+          contact: p.contactPerson || p.type || p.contact || 'Contact Person',
+          contactPerson: p.contactPerson || p.type || p.contact || 'Contact Person',
+          city: p.city || 'Thanjavur',
+          phone: p.phone || '',
+          whatsapp: p.whatsapp || p.phone || '',
+          email: p.email || '',
+          country: p.country || 'India',
+          notes: p.notes || '',
+          leads: p.leads || 0,
+          status: p.status || 'Active'
+        };
+      });
+      localStorage.setItem('thanjai_partners', JSON.stringify(partners));
+      activePartnerId = partners.length > 0 ? partners[0].id : null;
+      renderSidebar();
+      renderContent();
+    }
+  }).catch(error => {
+    console.warn('API sync warning:', error);
+  });
 }
