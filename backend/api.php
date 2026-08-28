@@ -954,7 +954,13 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
     if ($method === 'GET') {
         $result = $conn->query("SELECT * FROM portal_users ORDER BY createdAt DESC");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        while($row = $result->fetch_assoc()) { 
+            // Ensure frontend receives fullName even if DB column is name
+            if (isset($row['name']) && !isset($row['fullName'])) {
+                $row['fullName'] = $row['name'];
+            }
+            $rows[] = $row; 
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
@@ -979,18 +985,34 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
         $visCount = intval($data['visitorsCount'] ?? 0);
         $buyCount = intval($data['buyersCount'] ?? 0);
 
-        $stmt = $conn->prepare("INSERT INTO portal_users (id, fullName, email, phone, password, temporaryPassword, isTemporaryPassword, role, roleCode, status, propertiesCount, visitorsCount, buyersCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE fullName=VALUES(fullName), phone=VALUES(phone), password=VALUES(password), role=VALUES(role), roleCode=VALUES(roleCode), status=VALUES(status), propertiesCount=VALUES(propertiesCount), visitorsCount=VALUES(visitorsCount), buyersCount=VALUES(buyersCount)");
+        // Use 'name' column for compatibility with live DB
+        $stmt = $conn->prepare("INSERT INTO portal_users (id, name, email, phone, password, temporaryPassword, isTemporaryPassword, role, roleCode, status, propertiesCount, visitorsCount, buyersCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone), password=VALUES(password), role=VALUES(role), roleCode=VALUES(roleCode), status=VALUES(status), propertiesCount=VALUES(propertiesCount), visitorsCount=VALUES(visitorsCount), buyersCount=VALUES(buyersCount)");
+        
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode(["error" => "Database prepare error: " . $conn->error]);
+            exit;
+        }
+
         $stmt->bind_param("ssssssisssiii", $uId, $uName, $uEmail, $uPhone, $pwd, $tempPwd, $isTemp, $role, $roleCode, $status, $propCount, $visCount, $buyCount);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Portal user created successfully", "id" => $uId]);
         } else {
             http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+            echo json_encode(["error" => "Database execute error: " . $stmt->error]);
         }
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("UPDATE portal_users SET fullName=?, email=?, phone=?, password=?, temporaryPassword=?, isTemporaryPassword=?, role=?, roleCode=?, status=?, propertiesCount=?, visitorsCount=?, buyersCount=? WHERE id=?");
+        // Use 'name' column for compatibility with live DB
+        $stmt = $conn->prepare("UPDATE portal_users SET name=?, email=?, phone=?, password=?, temporaryPassword=?, isTemporaryPassword=?, role=?, roleCode=?, status=?, propertiesCount=?, visitorsCount=?, buyersCount=? WHERE id=?");
+        
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode(["error" => "Database prepare error: " . $conn->error]);
+            exit;
+        }
+
         $pwd = $data['password'] ?? $data['temporaryPassword'] ?? '';
         $tempPwd = $data['temporaryPassword'] ?? '';
         $isTemp = !empty($data['isTemporaryPassword']) ? 1 : 0;
@@ -1000,7 +1022,9 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
         $propCount = intval($data['propertiesCount'] ?? 0);
         $visCount = intval($data['visitorsCount'] ?? 0);
         $buyCount = intval($data['buyersCount'] ?? 0);
-        $stmt->bind_param("sssssisssiiis", $data['fullName'], $data['email'], $data['phone'], $pwd, $tempPwd, $isTemp, $role, $roleCode, $status, $propCount, $visCount, $buyCount, $id);
+        $uName = $data['fullName'] ?? 'User';
+        
+        $stmt->bind_param("sssssisssiiis", $uName, $data['email'], $data['phone'], $pwd, $tempPwd, $isTemp, $role, $roleCode, $status, $propCount, $visCount, $buyCount, $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Portal user updated successfully"]);
         } else {
