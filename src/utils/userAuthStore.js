@@ -6,82 +6,46 @@ const ACTIVE_USER_KEY = 'thanjai_active_user';
 const PENDING_OTP_KEY = 'thanjai_pending_otp_user';
 
 // Initial default demo user accounts
-const DEFAULT_USERS = [
-  {
-    id: 'USR-1001',
-    fullName: 'Kani Digitechzo',
-    email: 'kanidigitechzo@gmail.com',
-    phone: '9585777772',
-    role: 'Individual Owner',
-    roleCode: 'individualowner',
-    status: 'Active',
-    propertiesCount: 3,
-    visitorsCount: 142,
-    buyersCount: 18,
-    createdAt: '2026-08-10T10:00:00Z'
-  },
-  {
-    id: 'USR-1002',
-    fullName: 'Senthil Kumar',
-    email: 'senthil.agent@thanjai.example',
-    phone: '9840123456',
-    role: 'Agent / Broker',
-    roleCode: 'agentbroker',
-    status: 'Active',
-    propertiesCount: 8,
-    visitorsCount: 420,
-    buyersCount: 35,
-    createdAt: '2026-08-12T14:30:00Z'
-  },
-  {
-    id: 'USR-2578',
-    fullName: 'Tamilselvan R.',
-    email: 'tamilselvan.builder@thanjai.example',
-    phone: '9585777772',
-    role: 'Builder / Developer',
-    roleCode: 'builderdeveloper',
-    status: 'Active',
-    propertiesCount: 2,
-    visitorsCount: 95,
-    buyersCount: 14,
-    createdAt: '2026-08-13T09:15:00Z'
-  }
-];
+const DEFAULT_USERS = [];
 
 let usersCache = null;
 
 export async function initUsersStore() {
   try {
     const data = await fetchFromAPI('/portal_users');
-    if (data && Array.isArray(data) && data.length > 0) {
-      usersCache = data;
+    if (data && Array.isArray(data)) {
+      // Filter out any fake/example accounts if present
+      const cleaned = data.filter(u => !u.email.endsWith('.example'));
+      usersCache = cleaned;
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
       window.dispatchEvent(new CustomEvent('userAuthUpdated'));
       return usersCache;
-    } else if (data && Array.isArray(data) && data.length === 0) {
-      // Remote table is empty: Auto-seed initial default users into MySQL!
-      for (const u of DEFAULT_USERS) {
-        fetchFromAPI('/portal_users', { method: 'POST', body: JSON.stringify(u) }).catch(() => {});
-      }
     }
   } catch (error) {
     console.error('Error fetching portal users from API:', error);
   }
   
-  // Fallback to local storage if API fails or is empty
+  // Fallback to local storage if API fails
   const localData = localStorage.getItem(USERS_STORAGE_KEY);
   if (localData) {
-    usersCache = JSON.parse(localData);
-  } else {
-    usersCache = [...DEFAULT_USERS];
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
+    try {
+      const parsed = JSON.parse(localData);
+      if (Array.isArray(parsed)) {
+        usersCache = parsed.filter(u => !u.email.endsWith('.example'));
+      }
+    } catch (e) {}
   }
+  
+  if (!usersCache) {
+    usersCache = [];
+  }
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
   return usersCache;
 }
 
 export function deleteRegisteredUser(userId) {
   try {
-    if (!usersCache) usersCache = [...DEFAULT_USERS];
+    if (!usersCache) usersCache = [];
     usersCache = usersCache.filter(u => u.id !== userId);
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(usersCache));
     
@@ -90,9 +54,9 @@ export function deleteRegisteredUser(userId) {
       .catch(e => console.error('API sync error', e));
 
     addAuditLog({
-      user: 'Super Admin',
-      action: 'DELETED_USER',
-      details: `Deleted portal user with ID: ${userId}`
+      action: `Deleted Portal User (${userId})`,
+      module: 'Portal Users',
+      details: `Removed portal user account with ID: ${userId}.`
     });
     
     window.dispatchEvent(new CustomEvent('userAuthUpdated'));
@@ -107,27 +71,46 @@ export function getRegisteredUsers() {
   if (!usersCache) {
     const data = localStorage.getItem(USERS_STORAGE_KEY);
     if (data) {
-      try { usersCache = JSON.parse(data); } catch(e){}
+      try { 
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) {
+          usersCache = parsed.filter(u => !u.email.endsWith('.example'));
+        }
+      } catch(e){}
     }
-    if (!usersCache || !Array.isArray(usersCache) || usersCache.length === 0) {
-      usersCache = [...DEFAULT_USERS];
-    }
+    if (!usersCache) usersCache = [];
   }
 
-  // Exclude admin staff accounts from client portal users list
-  const clientUsersOnly = usersCache
-    .filter(u => u.email !== 'admin@realrest.example' && u.roleCode !== 'superadmin')
-    .map(u => {
-      const email = (u.email || '').toLowerCase();
-      const role = (u.role || u.roleCode || '').toLowerCase();
-      if (email.includes('builder') || role.includes('builder')) {
-        return { ...u, role: 'Builder / Developer', roleCode: 'builderdeveloper' };
-      }
-      if (email.includes('agent') || email.includes('broker') || role.includes('agent') || role.includes('broker')) {
-        return { ...u, role: 'Agent / Broker', roleCode: 'agentbroker' };
-      }
-      return u;
+  // Deduplicate by email and remove fake accounts
+  const seenEmails = new Set();
+  const clientUsersOnly = [];
+
+  for (const u of usersCache) {
+    const emailKey = (u.email || '').toLowerCase().trim();
+    if (!emailKey || seenEmails.has(emailKey) || emailKey.endsWith('.example') || emailKey === 'admin@realrest.example') {
+      continue;
+    }
+    seenEmails.add(emailKey);
+
+    const role = (u.role || u.roleCode || '').toLowerCase();
+    let normalizedRole = u.role || 'Individual Owner';
+    let normalizedRoleCode = u.roleCode || 'individualowner';
+
+    if (emailKey.includes('builder') || role.includes('builder')) {
+      normalizedRole = 'Builder / Developer';
+      normalizedRoleCode = 'builderdeveloper';
+    } else if (emailKey.includes('agent') || emailKey.includes('broker') || role.includes('agent') || role.includes('broker')) {
+      normalizedRole = 'Agent / Broker';
+      normalizedRoleCode = 'agentbroker';
+    }
+
+    clientUsersOnly.push({
+      ...u,
+      role: normalizedRole,
+      roleCode: normalizedRoleCode
     });
+  }
+
   return clientUsersOnly;
 }
 
@@ -326,8 +309,9 @@ export function verifyOTPAndActivate(enteredOtp) {
 
   addAuditLog({
     user: activeRecord.fullName,
-    action: 'USER_REGISTERED_AND_VERIFIED',
-    details: `User ${activeRecord.email} (${activeRecord.role}) verified email OTP. Login credentials dispatched from vijayaraghavan@thanjaiproperty.com.`
+    action: `New Portal User (${activeRecord.fullName})`,
+    module: 'Portal Users',
+    details: `User ${activeRecord.email} (${activeRecord.role}) verified email OTP and activated account.`
   });
 
   return { 

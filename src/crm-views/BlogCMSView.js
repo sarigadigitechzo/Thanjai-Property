@@ -1,4 +1,5 @@
 import { getBlogPosts, addBlogPost, updateBlogPost, deleteBlogPost, resetBlogPostsToDefault } from '../utils/blogStore.js';
+import { showToast, showConfirmModal } from '../utils/toast.js';
 
 let cmsState = {
   isFormOpen: false,
@@ -110,7 +111,7 @@ export function renderBlogCMSView() {
           <thead>
             <tr style="background: #fdfbf7; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.78rem; text-transform: uppercase; color: #666; letter-spacing: 0.05em;">
               <th style="padding: 16px 20px;">Article Title</th>
-              <th style="padding: 16px 20px;">Author</th>
+              <th style="padding: 16px 20px;">Category</th>
               <th style="padding: 16px 20px;">Date & Read Time</th>
               <th style="padding: 16px 20px; text-align: right;">Actions</th>
             </tr>
@@ -135,10 +136,9 @@ export function renderBlogCMSView() {
                   </div>
                 </td>
                 <td style="padding: 16px 20px; white-space: nowrap;">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <img src="${post.authorAvatar || 'https://ui-avatars.com/api/?name=Author'}" alt="${post.author}" style="width: 24px; height: 24px; border-radius: 50%;" />
-                    <span style="font-size: 0.88rem; color: #333; font-weight: 500;">${post.author}</span>
-                  </div>
+                  <span class="badge badge-orange" style="font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: rgba(235,94,40,0.1); color: #eb5e28;">
+                    ${post.category || 'General'}
+                  </span>
                 </td>
                 <td style="padding: 16px 20px;">
                   <span style="font-size: 0.85rem; color: #444; display: block;">${post.date}</span>
@@ -528,21 +528,34 @@ export function initBlogCMSListeners() {
   document.querySelectorAll('.delete-post-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.id;
-      if (id && confirm('Are you sure you want to delete this blog article from the public website?')) {
-        deleteBlogPost(id);
-        showToast('Article deleted successfully.', 'ri-delete-bin-line');
-        refreshView();
-      }
+      if (!id) return;
+      showConfirmModal({
+        title: 'Delete Blog Article',
+        message: 'Are you sure you want to delete this blog article from the public website? This action cannot be undone.',
+        confirmText: 'Delete Article',
+        isDestructive: true,
+        onConfirm: () => {
+          deleteBlogPost(id);
+          showToast('Article deleted successfully.', 'ri-delete-bin-line');
+          refreshView();
+        }
+      });
     });
   });
 
   // Reset Articles Button
   document.getElementById('reset-blog-posts-btn')?.addEventListener('click', () => {
-    if (confirm('Restore default factory seed articles?')) {
-      resetBlogPostsToDefault();
-      showToast('Restored seed articles.', 'ri-refresh-line');
-      refreshView();
-    }
+    showConfirmModal({
+      title: 'Reset Blog Articles',
+      message: 'Restore all default factory seed blog articles? Your current custom articles will be reset.',
+      confirmText: 'Reset Articles',
+      isDestructive: true,
+      onConfirm: () => {
+        resetBlogPostsToDefault();
+        showToast('Restored default seed articles.', 'ri-refresh-line');
+        refreshView();
+      }
+    });
   });
 
   // Auto Slug Generator from Category / Keyword & Title
@@ -1261,34 +1274,4 @@ function refreshView() {
     contentArea.innerHTML = renderBlogCMSView();
     initBlogCMSListeners();
   }
-}
-
-function showToast(msg, icon = 'ri-notification-line') {
-  let toastContainer = document.getElementById('os-toast-container');
-  if (!toastContainer) {
-    toastContainer = document.createElement('div');
-    toastContainer.id = 'os-toast-container';
-    toastContainer.style.cssText = `
-      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
-      display: flex; flex-direction: column; gap: 10px; pointer-events: none;
-    `;
-    document.body.appendChild(toastContainer);
-  }
-
-  const toast = document.createElement('div');
-  toast.style.cssText = `
-    background: #1a1a1a; color: #ffffff; padding: 12px 20px; border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.25); font-size: 0.9rem; font-weight: 500;
-    display: flex; align-items: center; gap: 10px; pointer-events: auto;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  `;
-  toast.innerHTML = `<i class="${icon}" style="color: var(--color-orange, #eb5e28); font-size: 1.15rem;"></i> <span>${msg}</span>`;
-
-  toastContainer.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(10px)';
-    toast.style.transition = 'all 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
-  }, 3500);
 }

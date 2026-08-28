@@ -1,16 +1,27 @@
+﻿# Apache configuration for Thanjai Property CRM & Webhook API
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteBase /
+  AcceptPathInfo On
 
-  # Handle Clean URLs directly first
-  RewriteRule ^admin-dashboard/?$ dashboard.html [L]
-  RewriteRule ^user-login/?$ login.html [L]
-  RewriteRule ^user-register/?$ login.html [L]
-  RewriteRule ^login/?$ login.html [L]
-  RewriteRule ^register/?$ login.html [L]
-  RewriteRule ^user-dashboard/?$ user-dashboard.html [L]
+  # Enable Authorization Header
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-  # If it's a real file or directory, serve it directly
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^(.*)$ index.html [L]
+  # Handle API requests
+  RewriteRule ^api\.php(/.*)?$ api.php [QSA,L]
+  RewriteRule ^api/(.*)$ api.php?resource= [QSA,L]
+
+  # Direct access to physical files/directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Route dashboard and admin requests
+  RewriteRule ^dashboard\.html$ dashboard.html [L]
+  RewriteRule ^login\.html$ login.html [L]
+  RewriteRule ^user-dashboard\.html$ user-dashboard.html [L]
+
+  # Fallback to index.html for SPA
+  RewriteRule ^ index.html [L]
 </IfModule>

@@ -95,6 +95,36 @@ function renCol($conn, $t, $o, $n, $d) {
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
 
+@$conn->query("CREATE TABLE IF NOT EXISTS `audit_logs` (
+  `id` varchar(255) PRIMARY KEY,
+  `timestamp` varchar(100) DEFAULT NULL,
+  `user` varchar(255) DEFAULT NULL,
+  `action` varchar(255) DEFAULT NULL,
+  `module` varchar(100) DEFAULT 'General',
+  `details` text DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
+@$conn->query("CREATE TABLE IF NOT EXISTS `blog_posts` (
+  `id` varchar(255) PRIMARY KEY,
+  `title` varchar(255) DEFAULT NULL,
+  `category` varchar(100) DEFAULT 'General',
+  `date` varchar(50) DEFAULT NULL,
+  `readTime` varchar(50) DEFAULT '5 min read',
+  `author` varchar(100) DEFAULT 'Admin',
+  `authorAvatar` text DEFAULT NULL,
+  `image` text DEFAULT NULL,
+  `excerpt` text DEFAULT NULL,
+  `content` longtext DEFAULT NULL,
+  `slug` varchar(255) DEFAULT NULL,
+  `metaTitle` varchar(255) DEFAULT NULL,
+  `metaDescription` text DEFAULT NULL,
+  `authorRole` varchar(255) DEFAULT NULL,
+  `authorBio` text DEFAULT NULL,
+  `authorSocial` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
 // Safely patch columns
 addCol($conn, 'leads', 'source', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'requirement', 'varchar(255) DEFAULT NULL');
@@ -157,6 +187,14 @@ addCol($conn, 'website_images', 'asset_url', 'longtext DEFAULT NULL');
 addCol($conn, 'website_images', 'default_url', 'longtext DEFAULT NULL');
 addCol($conn, 'website_images', 'title', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'website_images', 'category', 'varchar(100) DEFAULT NULL');
+
+addCol($conn, 'whatsapp_logs', 'sender', 'varchar(255) DEFAULT "Super Admin"');
+addCol($conn, 'whatsapp_logs', 'recipientName', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'whatsapp_logs', 'phone', 'varchar(50) DEFAULT NULL');
+addCol($conn, 'whatsapp_logs', 'leadId', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'whatsapp_logs', 'message', 'longtext DEFAULT NULL');
+addCol($conn, 'whatsapp_logs', 'type', 'varchar(50) DEFAULT "outbound"');
+addCol($conn, 'whatsapp_logs', 'status', 'varchar(50) DEFAULT "Delivered"');
 
 $tables = ['dashboard_stats', 'leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'pipeline_stages', 'reports', 'portal_users', 'audit_logs'];
 foreach($tables as $t) {
@@ -285,21 +323,44 @@ elseif ($resource === 'leads') {
     }
 }
 
-elseif ($resource === 'blog') {
+elseif ($resource === 'blog' || $resource === 'blog_posts') {
     if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM blog_posts");
+        $result = $conn->query("SELECT * FROM blog_posts ORDER BY created_at DESC");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        if ($result) {
+            while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data) {
+            http_response_code(400);
+            echo json_encode(["error" => "Invalid JSON payload"]);
+            exit;
+        }
+
+        $bId = strval($data['id'] ?? ('blog-' . time()));
+        $bSlug = strval($data['slug'] ?? $bId);
+        $bTitle = strval($data['title'] ?? 'Untitled Article');
+        $bCat = strval($data['category'] ?? 'Legal & Patta');
+        $bDate = strval($data['date'] ?? date('d M Y'));
+        $bRead = strval($data['readTime'] ?? '5 min read');
+        $bAuthor = strval($data['author'] ?? 'Admin');
+        $bAvatar = strval($data['authorAvatar'] ?? '');
+        $bImage = strval($data['image'] ?? '');
+        $bExcerpt = strval($data['excerpt'] ?? '');
+        $bContent = strval($data['content'] ?? '');
+        $bMetaT = strval($data['metaTitle'] ?? $bTitle);
+        $bMetaD = strval($data['metaDescription'] ?? $bExcerpt);
+        $bRole = strval($data['authorRole'] ?? '');
+        $bBio = strval($data['authorBio'] ?? '');
+        $bSocial = strval($data['authorSocial'] ?? '');
         
-        
-        $stmt = $conn->prepare("INSERT INTO blog_posts (id, slug, title, category, date, readTime, author, authorAvatar, image, excerpt, content, metaTitle, metaDescription, authorRole, authorBio, authorSocial) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssssssssssssss", $data['id'], $data['slug'], $data['title'], $data['category'], $data['date'], $data['readTime'], $data['author'], $data['authorAvatar'], $data['image'], $data['excerpt'], $data['content'], $data['metaTitle'], $data['metaDescription'], $data['authorRole'], $data['authorBio'], $data['authorSocial']);
+        $stmt = $conn->prepare("INSERT INTO blog_posts (id, slug, title, category, date, readTime, author, authorAvatar, image, excerpt, content, metaTitle, metaDescription, authorRole, authorBio, authorSocial) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE title=VALUES(title), category=VALUES(category), date=VALUES(date), readTime=VALUES(readTime), image=VALUES(image), excerpt=VALUES(excerpt), content=VALUES(content), slug=VALUES(slug), metaTitle=VALUES(metaTitle), metaDescription=VALUES(metaDescription)");
+        $stmt->bind_param("ssssssssssssssss", $bId, $bSlug, $bTitle, $bCat, $bDate, $bRead, $bAuthor, $bAvatar, $bImage, $bExcerpt, $bContent, $bMetaT, $bMetaD, $bRole, $bBio, $bSocial);
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Created successfully"]);
+            echo json_encode(["message" => "Saved successfully", "id" => $bId]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);
@@ -307,10 +368,25 @@ elseif ($resource === 'blog') {
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        
+        $bSlug = strval($data['slug'] ?? $id);
+        $bTitle = strval($data['title'] ?? 'Untitled Article');
+        $bCat = strval($data['category'] ?? 'Legal & Patta');
+        $bDate = strval($data['date'] ?? date('d M Y'));
+        $bRead = strval($data['readTime'] ?? '5 min read');
+        $bAuthor = strval($data['author'] ?? 'Admin');
+        $bAvatar = strval($data['authorAvatar'] ?? '');
+        $bImage = strval($data['image'] ?? '');
+        $bExcerpt = strval($data['excerpt'] ?? '');
+        $bContent = strval($data['content'] ?? '');
+        $bMetaT = strval($data['metaTitle'] ?? $bTitle);
+        $bMetaD = strval($data['metaDescription'] ?? $bExcerpt);
+        $bRole = strval($data['authorRole'] ?? '');
+        $bBio = strval($data['authorBio'] ?? '');
+        $bSocial = strval($data['authorSocial'] ?? '');
+        $targetId = strval($id);
         
         $stmt = $conn->prepare("UPDATE blog_posts SET slug=?, title=?, category=?, date=?, readTime=?, author=?, authorAvatar=?, image=?, excerpt=?, content=?, metaTitle=?, metaDescription=?, authorRole=?, authorBio=?, authorSocial=? WHERE id=?");
-        $stmt->bind_param("ssssssssssssssss", $data['slug'], $data['title'], $data['category'], $data['date'], $data['readTime'], $data['author'], $data['authorAvatar'], $data['image'], $data['excerpt'], $data['content'], $data['metaTitle'], $data['metaDescription'], $data['authorRole'], $data['authorBio'], $data['authorSocial'], $id);
+        $stmt->bind_param("ssssssssssssssss", $bSlug, $bTitle, $bCat, $bDate, $bRead, $bAuthor, $bAvatar, $bImage, $bExcerpt, $bContent, $bMetaT, $bMetaD, $bRole, $bBio, $bSocial, $targetId);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Updated successfully"]);
         } else {
@@ -319,13 +395,18 @@ elseif ($resource === 'blog') {
         }
     }
     elseif ($method === 'DELETE' && $id) {
-        $stmt = $conn->prepare("DELETE FROM blog_posts WHERE id=?");
-        $stmt->bind_param("s", $id);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Deleted successfully"]);
+        if ($id === 'reset') {
+            $conn->query("TRUNCATE TABLE blog_posts");
+            echo json_encode(["message" => "Reset successfully"]);
         } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+            $stmt = $conn->prepare("DELETE FROM blog_posts WHERE id=?");
+            $stmt->bind_param("s", $id);
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Deleted successfully"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => "Database error: " . $stmt->error]);
+            }
         }
     }
 }
@@ -757,9 +838,11 @@ elseif ($resource === 'site_visits') {
 
 elseif ($resource === 'audit_logs') {
     if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM audit_logs");
+        $result = $conn->query("SELECT * FROM audit_logs ORDER BY createdAt DESC, id DESC LIMIT 200");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        if ($result) {
+            while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
@@ -807,36 +890,46 @@ elseif ($resource === 'audit_logs') {
 
 elseif ($resource === 'whatsapp_logs') {
     if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM whatsapp_logs");
+        $result = $conn->query("SELECT * FROM whatsapp_logs ORDER BY createdAt ASC");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        if ($result) {
+            while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
+        $id = $data['id'] ?? ('WA-' . round(microtime(true) * 1000));
+        $leadId = $data['leadId'] ?? null;
+        $phone = $data['phone'] ?? null;
+        $message = $data['message'] ?? '';
+        $sender = $data['sender'] ?? 'Super Admin';
+        $recipientName = $data['recipientName'] ?? null;
+        $type = $data['type'] ?? 'outbound';
+        $status = $data['status'] ?? 'Delivered';
         
-        
-        $stmt = $conn->prepare("INSERT INTO whatsapp_logs (id, sender, phone, message) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("ssss", $data['id'], $data['sender'], $data['phone'], $data['message']);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Created successfully"]);
+        $stmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, message, sender, recipientName, type, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt) {
+            $stmt->bind_param("ssssssss", $id, $leadId, $phone, $message, $sender, $recipientName, $type, $status);
+            $stmt->execute();
         } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+            // Fallback insert
+            $stmt2 = $conn->prepare("INSERT INTO whatsapp_logs (id, phone, message) VALUES (?, ?, ?)");
+            if ($stmt2) {
+                $stmt2->bind_param("sss", $id, $phone, $message);
+                $stmt2->execute();
+            }
         }
+        echo json_encode(["message" => "Created successfully", "id" => $id]);
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        
-        
         $stmt = $conn->prepare("UPDATE whatsapp_logs SET sender=?, phone=?, message=? WHERE id=?");
-        $stmt->bind_param("ssss", $data['sender'], $data['phone'], $data['message'], $id);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Updated successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        if ($stmt) {
+            $stmt->bind_param("ssss", $data['sender'], $data['phone'], $data['message'], $id);
+            $stmt->execute();
         }
+        echo json_encode(["message" => "Updated successfully"]);
     }
     elseif ($method === 'DELETE' && $id) {
         $stmt = $conn->prepare("DELETE FROM whatsapp_logs WHERE id=?");
@@ -859,19 +952,30 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("INSERT INTO portal_users (id, fullName, email, phone, password, temporaryPassword, isTemporaryPassword, role, roleCode, status, propertiesCount, visitorsCount, buyersCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $pwd = $data['password'] ?? $data['temporaryPassword'] ?? '';
-        $tempPwd = $data['temporaryPassword'] ?? '';
+        if (!$data) {
+            http_response_code(400);
+            echo json_encode(["error" => "Invalid JSON"]);
+            exit;
+        }
+
+        $uId = strval($data['id'] ?? ('USR-' . time()));
+        $uName = strval($data['fullName'] ?? 'User');
+        $uEmail = strval($data['email'] ?? '');
+        $uPhone = strval($data['phone'] ?? '');
+        $pwd = strval($data['password'] ?? $data['temporaryPassword'] ?? '');
+        $tempPwd = strval($data['temporaryPassword'] ?? '');
         $isTemp = !empty($data['isTemporaryPassword']) ? 1 : 0;
-        $role = $data['role'] ?? 'Individual Owner';
-        $roleCode = $data['roleCode'] ?? 'individualowner';
-        $status = $data['status'] ?? 'Active';
+        $role = strval($data['role'] ?? 'Individual Owner');
+        $roleCode = strval($data['roleCode'] ?? 'individualowner');
+        $status = strval($data['status'] ?? 'Active');
         $propCount = intval($data['propertiesCount'] ?? 0);
         $visCount = intval($data['visitorsCount'] ?? 0);
         $buyCount = intval($data['buyersCount'] ?? 0);
-        $stmt->bind_param("ssssssisssiii", $data['id'], $data['fullName'], $data['email'], $data['phone'], $pwd, $tempPwd, $isTemp, $role, $roleCode, $status, $propCount, $visCount, $buyCount);
+
+        $stmt = $conn->prepare("INSERT INTO portal_users (id, fullName, email, phone, password, temporaryPassword, isTemporaryPassword, role, roleCode, status, propertiesCount, visitorsCount, buyersCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE fullName=VALUES(fullName), phone=VALUES(phone), password=VALUES(password), role=VALUES(role), roleCode=VALUES(roleCode), status=VALUES(status), propertiesCount=VALUES(propertiesCount), visitorsCount=VALUES(visitorsCount), buyersCount=VALUES(buyersCount)");
+        $stmt->bind_param("ssssssisssiii", $uId, $uName, $uEmail, $uPhone, $pwd, $tempPwd, $isTemp, $role, $roleCode, $status, $propCount, $visCount, $buyCount);
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Portal user created successfully"]);
+            echo json_encode(["message" => "Portal user created successfully", "id" => $uId]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);

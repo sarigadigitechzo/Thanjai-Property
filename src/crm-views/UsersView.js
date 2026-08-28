@@ -1,6 +1,7 @@
 import { getRegisteredUsers, deleteRegisteredUser } from '../utils/userAuthStore.js';
 import { getProperties } from '../utils/propertiesStore.js';
 import { setPropertiesSearchFilter } from './PropertiesView.js';
+import { showConfirmModal, showToast } from '../utils/toast.js';
 
 export function renderUsersView() {
   const users = getRegisteredUsers();
@@ -243,9 +244,17 @@ export function initUsersView() {
     document.querySelectorAll('.del-user-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const userId = btn.dataset.userId;
-        if (confirm(`Are you sure you want to delete user ${userId}? This action cannot be undone.`)) {
-          deleteRegisteredUser(userId);
-        }
+        if (!userId) return;
+        showConfirmModal({
+          title: 'Delete Portal User',
+          message: `Are you sure you want to delete user ${userId}? This action cannot be undone.`,
+          confirmText: 'Delete User',
+          isDestructive: true,
+          onConfirm: () => {
+            deleteRegisteredUser(userId);
+            showToast('User deleted successfully', 'ri-delete-bin-line');
+          }
+        });
       });
     });
   }

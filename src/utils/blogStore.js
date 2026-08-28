@@ -87,7 +87,7 @@ export const INITIAL_BLOG_POSTS = [
 
 import { fetchFromAPI } from './api.js';
 
-let blogPostsCache = loadBlogPostsFromStorage();
+let blogPostsCache = null;
 let isInitialized = false;
 
 export async function initBlogStore() {
@@ -97,58 +97,41 @@ export async function initBlogStore() {
       blogPostsCache = data;
       saveBlogPostsToStorage(blogPostsCache);
       window.dispatchEvent(new CustomEvent('blogPostsUpdated'));
+      isInitialized = true;
+      return blogPostsCache;
     }
   } catch (error) {
-    // Graceful fallback to local cache
+    // Graceful fallback to local storage
+  }
+
+  if (blogPostsCache === null) {
+    blogPostsCache = loadBlogPostsFromStorage();
   }
   isInitialized = true;
   return blogPostsCache;
 }
 
 export function getBlogPosts() {
-  if (!blogPostsCache && !isInitialized) {
+  if (blogPostsCache === null) {
     blogPostsCache = loadBlogPostsFromStorage();
-    isInitialized = true;
   }
-  
-  if (!blogPostsCache) blogPostsCache = [];
-  
-  // HOTFIX: Remove old hardcoded dummy posts from localStorage
-  const dummyIds = ["dtcp-rera-buyer-guide", "kaveri-farmland-investment", "contemporary-villas-architecture", "central-tn-commercial-hubs", "nri-property-buying-guide", "dtcp-rera-guide-thanjavur"];
-  const originalLength = blogPostsCache.length;
-  blogPostsCache = blogPostsCache.filter(post => !dummyIds.includes(post.id));
-  
-  if (blogPostsCache.length !== originalLength) {
-    saveBlogPostsToStorage(blogPostsCache);
-  }
-
-  return blogPostsCache;
+  return blogPostsCache || [];
 }
 
 function loadBlogPostsFromStorage() {
-  const testIds = [
-    'blog-patta-chitta-legal-guide',
-    'blog-high-growth-corridors-thanjavur',
-    'blog-nri-real-estate-investment-guide',
-    'patta-chitta-legal-guide',
-    'high-growth-corridors-thanjavur',
-    'nri-real-estate-investment-guide'
-  ];
-
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (data !== null) {
-      let parsed = JSON.parse(data);
+      const parsed = JSON.parse(data);
       if (Array.isArray(parsed)) {
-        // Remove temporary test posts if present
-        parsed = parsed.filter(p => !testIds.includes(p.id) && !testIds.includes(p.slug));
-        return parsed; // Return even if empty
+        return parsed; // returns array even if empty (0 items)
       }
     }
   } catch (e) {
     console.error("Error reading blog posts from localStorage", e);
   }
 
+  // Only on very first fresh load
   saveBlogPostsToStorage(INITIAL_BLOG_POSTS);
   return INITIAL_BLOG_POSTS;
 }
@@ -287,12 +270,18 @@ export function deleteBlogPost(id) {
 
 export function resetBlogPostsToDefault() {
   saveBlogPostsToStorage(INITIAL_BLOG_POSTS);
+  
+  // Sync to database
+  fetchFromAPI('/blog/reset', { method: 'DELETE' }).catch(() => {});
+  for (const post of INITIAL_BLOG_POSTS) {
+    fetchFromAPI('/blog', { method: 'POST', body: JSON.stringify(post) }).catch(() => {});
+  }
+
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    
     action: 'Reset Blog CMS Catalog',
     module: 'Blog CMS',
-    details: 'Restored factory seed blog articles.'
+    details: 'Restored factory seed blog articles in database and dashboard.'
   });
   window.dispatchEvent(new CustomEvent('blogPostsUpdated', { detail: { action: 'reset' } }));
 }

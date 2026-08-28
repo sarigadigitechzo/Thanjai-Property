@@ -1,6 +1,7 @@
 import { getRegisteredUsers, getCurrentUser } from '../utils/userAuthStore.js';
 import { fetchFromAPI } from '../utils/api.js';
-import { showToast, showConfirmModal } from '../utils/toast.js';
+import { showToast, showConfirmModal, showAlertModal } from '../utils/toast.js';
+import { addAuditLog } from '../utils/siteImagesStore.js';
 
 export function renderPartnersView() {
   return `
@@ -468,6 +469,12 @@ export async function initPartnersView() {
             method: 'PUT',
             body: JSON.stringify(partners[idx])
           }).catch(err => console.warn(err));
+
+          addAuditLog({
+            action: `Updated Partner (${company})`,
+            module: 'Partners Network',
+            details: `Updated channel partner details for ${company} (${city}).`
+          });
         }
       } else {
         // Create new partner
@@ -496,12 +503,19 @@ export async function initPartnersView() {
           method: 'POST',
           body: JSON.stringify(newPartner)
         }).catch(err => console.warn(err));
+
+        addAuditLog({
+          action: `Added Partner (${company})`,
+          module: 'Partners Network',
+          details: `Registered new channel partner "${company}" (${contact} - ${phone}) in ${city}.`
+        });
       }
 
       localStorage.setItem('thanjai_partners', JSON.stringify(partners));
       closePartnerModalFn();
       renderSidebar();
       renderContent();
+      showToast(editId ? 'Partner updated successfully!' : 'New partner registered!', 'ri-checkbox-circle-fill');
     });
   }
 
@@ -608,14 +622,23 @@ export async function initPartnersView() {
 
       // Update partner lead count
       const partnerIdx = partners.findIndex(p => String(p.id) === String(activePartnerId));
+      let partnerName = 'Partner';
       if (partnerIdx !== -1) {
+        partnerName = partners[partnerIdx].name || partners[partnerIdx].company || 'Partner';
         partners[partnerIdx].leads = allSharedLeads[activePartnerId].length;
         localStorage.setItem('thanjai_partners', JSON.stringify(partners));
       }
 
+      addAuditLog({
+        action: `Shared Lead to Partner (${partnerName})`,
+        module: 'Partners Network',
+        details: `Shared lead ${name} (${phone}) for ${type} in ${location} with partner ${partnerName}.`
+      });
+
       closeShareLeadModalFn();
       renderSidebar();
       renderContent();
+      showToast(`Lead shared with ${partnerName}!`, 'ri-checkbox-circle-fill');
     });
   }
 

@@ -67,6 +67,7 @@ export function renderSiteVisitsView() {
 
 import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showAlertModal } from '../utils/toast.js';
+import { addAuditLog } from '../utils/siteImagesStore.js';
 
 export async function initSiteVisitsView() {
   // --- Storage & Dynamic Rendering ---
@@ -325,6 +326,12 @@ export async function initSiteVisitsView() {
         phone: 'New Visit',
         property: property || 'TBD',
         isNew: true
+      });
+
+      addAuditLog({
+        action: `Scheduled Site Visit (${clientName})`,
+        module: 'Site Visits',
+        details: `Scheduled property tour for ${clientName} at ${property || 'Property'} on ${day} ${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()} at ${hours}:${mins} ${ampm}.`
       });
 
       showToast(`Site visit scheduled for ${clientName}!`, 'ri-checkbox-circle-fill');

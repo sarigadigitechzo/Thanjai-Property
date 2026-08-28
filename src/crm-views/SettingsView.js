@@ -1,5 +1,6 @@
 import { getSiteImage, updateSiteImage, resetSiteImage } from '../utils/siteImagesStore.js';
 import { showToast } from '../utils/toast.js';
+import { fetchFromAPI } from '../utils/api.js';
 
 export function renderSettingsView() {
   const templates = [
@@ -197,40 +198,72 @@ export function renderSettingsView() {
         <div class="settings-content-card">
           <div class="settings-section-header">
             <div>
-              <h2 class="settings-section-title">WhatsApp provider</h2>
-              <p class="settings-section-desc">How outbound WhatsApp messages (property shares, stage automations) are actually sent.</p>
+              <h2 class="settings-section-title">WhatsApp Provider & Live Webhook</h2>
+              <p class="settings-section-desc">Manage your outbound WhatsApp API provider (SmartPing / AiSensy) and live 2-way inbound message webhook.</p>
             </div>
           </div>
           
-          <div class="settings-form-group" style="max-width: 400px;">
-            <label class="settings-label">Provider</label>
-            <select class="settings-input" id="settings-wa-provider">
-              <option value="smartping">SmartPing</option>
-              <option value="aisensy">AiSensy</option>
-            </select>
+          <div class="settings-grid-2">
+            <div class="settings-form-group">
+              <label class="settings-label">Active Provider</label>
+              <select class="settings-input" id="settings-wa-provider">
+                <option value="smartping">SmartPing (Recommended)</option>
+                <option value="aisensy">AiSensy</option>
+              </select>
+            </div>
+            <div class="settings-form-group">
+              <label class="settings-label">Registered WhatsApp Business Number</label>
+              <input type="text" class="settings-input" value="+91 84899 96852" readonly style="background: #f8fafc; font-weight: 600; color: #1e293b;" />
+            </div>
           </div>
 
           <div class="settings-grid-2">
             <div class="settings-form-group">
-              <label class="settings-label">API Key</label>
-              <input type="password" id="settings-wa-api-key" class="settings-input" placeholder="Paste API Key here" />
+              <label class="settings-label">API Key / Token</label>
+              <input type="password" id="settings-wa-api-key" class="settings-input" placeholder="Paste SmartPing / AiSensy API Key here" />
             </div>
             <div class="settings-form-group">
-              <label class="settings-label">Campaign Name (Live, not the template name)</label>
-              <input type="text" class="settings-input" value="realrest_notification_new_final" />
+              <label class="settings-label">Campaign Name (Live)</label>
+              <input type="text" id="settings-wa-campaign" class="settings-input" value="realrest_notification_new_final" />
             </div>
           </div>
 
-          <p class="settings-section-desc" style="margin: 16px 0;">
-            Delivery-status webhook — lets "Sent" update to Delivered/Read/Failed once the provider confirms it, instead of staying "Sent" forever. URL: <span class="settings-code-key">/api/whatsapp/webhook/status</span>. Meta Cloud API verifies itself via the App Secret above; other providers (SmartPing/AiSensy, MSG91) need this secret pasted into their dashboard's webhook config as an <span class="settings-code-key">X-Webhook-Secret</span> header.
-          </p>
+          <!-- Webhook Configuration Card -->
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 18px; margin: 18px 0;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+              <span style="font-weight: 700; color: #166534; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                <i class="ri-checkbox-circle-fill" style="color: #22c55e;"></i> Live Inbound Webhook Configuration
+              </span>
+              <span style="background: #dcfce7; color: #15803d; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 12px;">ENABLED</span>
+            </div>
+            <p style="font-size: 0.85rem; color: #374151; margin-bottom: 12px; line-height: 1.5;">
+              Use these exact details in your <strong>SmartPing</strong> or <strong>WhatsApp Business Manager</strong> webhook settings so customer replies appear instantly in your <strong>WhatsApp Log</strong>:
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div>
+                  <div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">INBOUND WEBHOOK CALLBACK URL</div>
+                  <div style="font-family: monospace; font-size: 0.88rem; color: #0f172a; font-weight: 600;">https://thanjaiproperty.com/api.php/webhook</div>
+                </div>
+                <button type="button" class="settings-btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" onclick="navigator.clipboard.writeText('https://thanjaiproperty.com/api.php/webhook'); window.showToast('Webhook URL copied to clipboard!', 'ri-file-copy-line');">
+                  <i class="ri-file-copy-line"></i> Copy URL
+                </button>
+              </div>
 
-          <div class="settings-form-group" style="max-width: 400px; margin-bottom: 16px;">
-            <label class="settings-label">Status Webhook Secret</label>
-            <input type="password" class="settings-input" placeholder="Webhook Secret" />
+              <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div>
+                  <div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">WEBHOOK VERIFY TOKEN</div>
+                  <div style="font-family: monospace; font-size: 0.88rem; color: #0f172a; font-weight: 600;">thanjai_webhook_2026</div>
+                </div>
+                <button type="button" class="settings-btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" onclick="navigator.clipboard.writeText('thanjai_webhook_2026'); window.showToast('Verify Token copied!', 'ri-file-copy-line');">
+                  <i class="ri-file-copy-line"></i> Copy Token
+                </button>
+              </div>
+            </div>
           </div>
 
-          <button id="settings-wa-save-btn" class="settings-btn-save-small">Save</button>
+          <button id="settings-wa-save-btn" class="settings-btn-primary" style="padding: 11px 24px;">Save WhatsApp Settings</button>
         </div>
 
         <!-- 2. AI Operating Agent -->
@@ -448,25 +481,40 @@ export function initSettingsView() {
 
   // WhatsApp API Key Save Logic
   const waApiKeyInput = document.getElementById('settings-wa-api-key');
+  const waCampaignInput = document.getElementById('settings-wa-campaign');
   const waSaveBtn = document.getElementById('settings-wa-save-btn');
   const waProviderSelect = document.getElementById('settings-wa-provider');
   
   if (waApiKeyInput) {
     waApiKeyInput.value = localStorage.getItem('thanjai_whatsapp_api_key') || '';
   }
+  if (waCampaignInput) {
+    waCampaignInput.value = localStorage.getItem('thanjai_wa_campaign') || 'realrest_notification_new_final';
+  }
   if (waProviderSelect) {
-    waProviderSelect.value = localStorage.getItem('thanjai_wa_provider') || 'aisensy';
+    waProviderSelect.value = localStorage.getItem('thanjai_wa_provider') || 'smartping';
   }
 
   if (waSaveBtn) {
     waSaveBtn.addEventListener('click', () => {
-      if (waApiKeyInput) {
-        localStorage.setItem('thanjai_whatsapp_api_key', waApiKeyInput.value.trim());
-      }
-      if (waProviderSelect) {
-        localStorage.setItem('thanjai_wa_provider', waProviderSelect.value);
-      }
-      showToast('WhatsApp Settings saved successfully!', 'success');
+      const apiKey = waApiKeyInput ? waApiKeyInput.value.trim() : '';
+      const campaign = waCampaignInput ? waCampaignInput.value.trim() : 'realrest_notification_new_final';
+      const provider = waProviderSelect ? waProviderSelect.value : 'smartping';
+
+      localStorage.setItem('thanjai_whatsapp_api_key', apiKey);
+      localStorage.setItem('thanjai_wa_campaign', campaign);
+      localStorage.setItem('thanjai_wa_provider', provider);
+
+      // MySQL Database sync
+      fetchFromAPI('/settings', {
+        method: 'POST',
+        body: JSON.stringify({
+          key: 'whatsapp_integration',
+          value: JSON.stringify({ provider, apiKey, campaign })
+        })
+      }).catch(e => console.error(e));
+
+      showToast('WhatsApp Settings saved & synchronized successfully!', 'success');
     });
   }
 }

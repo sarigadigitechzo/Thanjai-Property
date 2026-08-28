@@ -102,18 +102,7 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
                     ${featuredPost.excerpt}
                   </p>
 
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 20px; border-top: 1px solid #EDF2F7;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                      <img src="${featuredPost.authorAvatar}" alt="${featuredPost.author}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid #E2E8F0;" />
-                      <div>
-                        <div style="font-size: 0.9rem; font-weight: 800; color: #1A202C; display: flex; align-items: center; gap: 4px;">
-                          ${featuredPost.author}
-                          <i class="ri-verified-badge-fill" style="color: #eb5e28; font-size: 0.95rem;"></i>
-                        </div>
-                        <div style="font-size: 0.78rem; color: #718096;">Verified Legal Specialist</div>
-                      </div>
-                    </div>
-
+                  <div style="display: flex; align-items: center; justify-content: flex-end; margin-top: auto; padding-top: 20px; border-top: 1px solid #EDF2F7;">
                     <div style="font-size: 0.88rem; color: #eb5e28; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;">
                       Read Article <i class="ri-arrow-right-line"></i>
                     </div>
@@ -152,12 +141,7 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
                         ${post.excerpt}
                       </p>
 
-                      <div style="margin-top: auto; display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid #F1F5F9;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                          <img src="${post.authorAvatar}" alt="${post.author}" style="width: 28px; height: 28px; border-radius: 50%;" />
-                          <span style="font-size: 0.82rem; font-weight: 700; color: #4A5568;">${post.author}</span>
-                        </div>
-
+                      <div style="margin-top: auto; display: flex; align-items: center; justify-content: flex-end; padding-top: 16px; border-top: 1px solid #F1F5F9;">
                         <div style="font-weight: 800; font-size: 0.88rem; color: #eb5e28; display: inline-flex; align-items: center; gap: 4px;">
                           Read Article <i class="ri-arrow-right-line"></i>
                         </div>
@@ -404,22 +388,9 @@ function renderArticleDetailView(post, onNavigateToContact, allPosts) {
                 ${post.title}
               </h1>
 
-              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid #EDF2F7;">
-                <div style="display: flex; align-items: center; gap: 14px;">
-                  <img src="${post.authorAvatar}" alt="${post.author}" style="width: 46px; height: 46px; border-radius: 50%; border: 2px solid #eb5e28;" />
-                  <div>
-                    <div style="font-size: 0.96rem; font-weight: 800; color: #1A202C; display: flex; align-items: center; gap: 5px;">
-                      ${post.author}
-                      <i class="ri-verified-badge-fill" style="color: #eb5e28; font-size: 1.05rem;" title="Verified Legal & Property Contributor"></i>
-                    </div>
-                    <div style="font-size: 0.78rem; font-weight: 600; color: #718096;">
-                      ${authorRole}
-                    </div>
-                  </div>
-                </div>
-
-                <div style="font-size: 0.85rem; color: #718096; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                  <i class="ri-calendar-check-line" style="color: #eb5e28; font-size: 1rem;"></i>
+              <div style="display: flex; align-items: center; justify-content: flex-start; padding-bottom: 20px; border-bottom: 1px solid #EDF2F7;">
+                <div style="font-size: 0.88rem; color: #718096; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                  <i class="ri-calendar-check-line" style="color: #eb5e28; font-size: 1.05rem;"></i>
                   <span>Published on ${post.date}</span>
                 </div>
               </div>
@@ -496,34 +467,6 @@ function renderArticleDetailView(post, onNavigateToContact, allPosts) {
                 </style>
                 ${mobileTocHtml}
                 ${finalContent}
-              </div>
-
-              <!-- Enhanced Author Bio & Credentials Profile Card -->
-              <div style="margin-top: 48px; padding: 24px; background: #faf8f5; border: 1px solid #e2e8f0; border-radius: 16px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                <img src="${post.authorAvatar}" alt="${post.author}" style="width: 64px; height: 64px; border-radius: 50%; border: 2px solid #eb5e28; flex-shrink: 0;" />
-                <div style="flex: 1; min-width: 220px;">
-                  <div style="font-size: 0.75rem; font-weight: 800; color: #eb5e28; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px;">
-                    Written By • Verified Real Estate Specialist
-                  </div>
-                  <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                    <div style="font-size: 1.1rem; font-weight: 800; color: #1a202c; display: flex; align-items: center; gap: 6px;">
-                      ${post.author}
-                      <i class="ri-verified-badge-fill" style="color: #eb5e28; font-size: 1.1rem;"></i>
-                    </div>
-                    ${authorSocial ? `
-                      <a href="${authorSocial.startsWith('http') || authorSocial.startsWith('+') ? (authorSocial.startsWith('+') ? `https://wa.me/${authorSocial.replace(/[^0-9]/g, '')}` : authorSocial) : `https://${authorSocial}`}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 700; color: #25D366; background: rgba(37,211,102,0.1); padding: 4px 12px; border-radius: 20px; text-decoration: none; border: 1px solid rgba(37,211,102,0.25);">
-                        <i class="${authorSocial.includes('linkedin') ? 'ri-linkedin-box-fill' : (authorSocial.includes('wa.me') || authorSocial.startsWith('+') || /^[0-9\s\+]+$/.test(authorSocial) ? 'ri-whatsapp-line' : 'ri-links-line')}"></i>
-                        <span>${authorSocial.includes('linkedin') ? 'LinkedIn' : (authorSocial.includes('wa.me') || authorSocial.startsWith('+') || /^[0-9\s\+]+$/.test(authorSocial) ? 'Direct WhatsApp' : 'Contact Author')}</span>
-                      </a>
-                    ` : ''}
-                  </div>
-                  <div style="font-size: 0.85rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; margin-top: 2px;">
-                    ${authorRole}
-                  </div>
-                  <p style="font-size: 0.86rem; color: #718096; margin: 0; line-height: 1.55;">
-                    ${authorBio}
-                  </p>
-                </div>
               </div>
             </div>
 

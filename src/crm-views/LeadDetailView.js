@@ -1509,15 +1509,22 @@ export function initLeadDetailView(id) {
       const action = btn.dataset.action;
       
       if (action === 'delete') {
-        if (confirm('Are you sure you want to delete this note?')) {
-          leads[idx].notes.splice(noteIndex, 1);
-          saveAndSyncLeads(leads, id);
-          const content = document.getElementById('os-content');
-          if (content) {
-            content.innerHTML = renderLeadDetailView(id);
-            initLeadDetailView(id);
+        showConfirmModal({
+          title: 'Delete Note',
+          message: 'Are you sure you want to delete this timeline note?',
+          confirmText: 'Delete Note',
+          isDestructive: true,
+          onConfirm: () => {
+            leads[idx].notes.splice(noteIndex, 1);
+            saveAndSyncLeads(leads, id);
+            const content = document.getElementById('os-content');
+            if (content) {
+              content.innerHTML = renderLeadDetailView(id);
+              initLeadDetailView(id);
+            }
+            showToast('Note deleted successfully', 'ri-delete-bin-line');
           }
-        }
+        });
       } else if (action === 'edit') {
         const noteToEdit = leads[idx].notes[noteIndex];
         if (noteToEdit) {

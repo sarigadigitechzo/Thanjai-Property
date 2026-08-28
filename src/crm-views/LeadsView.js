@@ -304,7 +304,8 @@ ${(() => {
 }
 
 import { fetchFromAPI } from '../utils/api.js';
-import { showToast, showConfirmModal } from '../utils/toast.js';
+import { showToast, showConfirmModal, showAlertModal } from '../utils/toast.js';
+import { addAuditLog } from '../utils/siteImagesStore.js';
 let cachedLeads = [];
 
 // Data Store Initializer
@@ -639,11 +640,20 @@ function bindLeadEvents() {
           body: JSON.stringify(leadData) 
         });
         
+        addAuditLog({
+          action: idField ? `Updated Lead (${name})` : `Added New Lead (${name})`,
+          module: 'CRM Pipeline',
+          details: idField 
+            ? `Updated lead requirements for ${name} (${mobile}) to ${requirementStr} in ${locationStr}.` 
+            : `Created new lead ${name} (${mobile}) with requirement ${requirementStr} in ${locationStr}.`
+        });
+        
         // Refresh local cache
         const data = await fetchFromAPI('/leads');
         saveLeads(data);
         renderTable();
         closeModal();
+        showToast(idField ? `Lead "${name}" updated!` : `New lead "${name}" created!`, 'ri-checkbox-circle-fill');
       } catch (e) {
         console.error(e);
       }
@@ -771,6 +781,11 @@ function bindLeadEvents() {
         const updatedLeads = [...newLeads, ...leads];
         saveLeads(updatedLeads);
         renderTable();
+        addAuditLog({
+          action: `Bulk Imported Leads (${newLeads.length})`,
+          module: 'CRM Pipeline',
+          details: `Imported ${newLeads.length} new leads via CSV batch upload.`
+        });
         showToast(`${newLeads.length} leads imported successfully into CRM!`, 'ri-checkbox-circle-fill');
       } else {
         showAlertModal({
@@ -890,6 +905,11 @@ function bindLeadEvents() {
                 const data = await fetchFromAPI('/leads');
                 saveLeads(data);
                 renderTable();
+                addAuditLog({
+                  action: `Deleted Lead (${lead.name})`,
+                  module: 'CRM Pipeline',
+                  details: `Permanently removed lead record ${lead.name} (${lead.phone || lead.mobile || 'No Phone'}) from CRM pipeline.`
+                });
                 showToast(`Lead "${lead.name}" deleted successfully`, 'ri-checkbox-circle-fill');
               })
               .catch(err => {
@@ -897,6 +917,11 @@ function bindLeadEvents() {
                 const newLeads = leads.filter(l => String(l.id) !== String(id));
                 saveLeads(newLeads);
                 renderTable();
+                addAuditLog({
+                  action: `Deleted Lead (${lead.name})`,
+                  module: 'CRM Pipeline',
+                  details: `Removed lead record ${lead.name} from local CRM pipeline.`
+                });
                 showToast(`Lead "${lead.name}" deleted`, 'ri-checkbox-circle-fill');
               });
           }
