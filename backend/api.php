@@ -1,7 +1,11 @@
 <?php
+ini_set('display_errors', 0);
+error_reporting(0);
+mysqli_report(MYSQLI_REPORT_OFF);
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
 header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -9,22 +13,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-$conn = new mysqli("localhost", "thanjaiproperty_thanjaiproperty", "q-i_$^HnE{OnhY%E", "thanjaiproperty_crm");
+$conn = @new mysqli("localhost", "thanjaiproperty_thanjaiproperty", "q-i_$^HnE{OnhY%E", "thanjaiproperty_crm");
 if ($conn->connect_error) {
-    echo json_encode(["error" => "Database Connection failed"]);
+    http_response_code(500);
+    echo json_encode(["error" => "Database Connection failed: " . $conn->connect_error]);
     exit();
 }
+@$conn->set_charset("utf8mb4");
 
-// Auto-migration for schema mismatches
+// Auto-migration helper for schema mismatches
 function addCol($conn, $t, $c, $d) {
-    $r = $conn->query("SHOW COLUMNS FROM `$t` LIKE '$c'");
-    if ($r && $r->num_rows == 0) $conn->query("ALTER TABLE `$t` ADD COLUMN `$c` $d");
+    try {
+        $r = @$conn->query("SHOW COLUMNS FROM `$t` LIKE '$c'");
+        if ($r && $r->num_rows == 0) {
+            @$conn->query("ALTER TABLE `$t` ADD COLUMN `$c` $d");
+        }
+    } catch (\Throwable $e) {}
 }
+
 function renCol($conn, $t, $o, $n, $d) {
-    $r = $conn->query("SHOW COLUMNS FROM `$t` LIKE '$o'");
-    if ($r && $r->num_rows > 0) $conn->query("ALTER TABLE `$t` CHANGE `$o` `$n` $d");
+    try {
+        $r = @$conn->query("SHOW COLUMNS FROM `$t` LIKE '$o'");
+        if ($r && $r->num_rows > 0) {
+            @$conn->query("ALTER TABLE `$t` CHANGE `$o` `$n` $d");
+        }
+    } catch (\Throwable $e) {}
 }
-// Fix leads schema
+
+// Auto-create core tables if not existing
+@$conn->query("CREATE TABLE IF NOT EXISTS `portal_users` (
+  `id` varchar(255) PRIMARY KEY,
+  `fullName` varchar(255) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `temporaryPassword` varchar(255) DEFAULT NULL,
+  `isTemporaryPassword` tinyint(1) DEFAULT 0,
+  `passwordUpdatedAt` varchar(100) DEFAULT NULL,
+  `role` varchar(100) DEFAULT 'Individual Owner',
+  `roleCode` varchar(100) DEFAULT 'individualowner',
+  `status` varchar(50) DEFAULT 'Active',
+  `propertiesCount` int(11) DEFAULT 0,
+  `visitorsCount` int(11) DEFAULT 0,
+  `buyersCount` int(11) DEFAULT 0,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
+@$conn->query("CREATE TABLE IF NOT EXISTS `property_approvals` (
+  `id` varchar(255) PRIMARY KEY,
+  `propertyTitle` varchar(255) DEFAULT NULL,
+  `ownerName` varchar(255) DEFAULT NULL,
+  `ownerPhone` varchar(50) DEFAULT NULL,
+  `ownerEmail` varchar(255) DEFAULT NULL,
+  `price` varchar(100) DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `propertyType` varchar(100) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'Pending Approval',
+  `details` longtext DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
+@$conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_logs` (
+  `id` varchar(255) PRIMARY KEY,
+  `leadId` varchar(255) DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `message` longtext DEFAULT NULL,
+  `type` varchar(50) DEFAULT 'outbound',
+  `status` varchar(50) DEFAULT 'Delivered',
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
+@$conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_incoming` (
+  `id` int(11) AUTO_INCREMENT PRIMARY KEY,
+  `from_phone` varchar(50) DEFAULT NULL,
+  `from_name` varchar(100) DEFAULT NULL,
+  `message` text DEFAULT NULL,
+  `media_url` text DEFAULT NULL,
+  `message_type` varchar(50) DEFAULT 'text',
+  `timestamp` varchar(50) DEFAULT NULL,
+  `raw_payload` longtext DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
+// Safely patch columns
 addCol($conn, 'leads', 'source', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'requirement', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'timeline', 'longtext DEFAULT NULL');
@@ -35,10 +106,9 @@ addCol($conn, 'leads', 'location', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'budget', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'purpose', 'varchar(255) DEFAULT NULL');
 
-$conn->query("ALTER TABLE leads MODIFY COLUMN timeline LONGTEXT");
-$conn->query("ALTER TABLE leads MODIFY COLUMN notes LONGTEXT");
+@$conn->query("ALTER TABLE leads MODIFY COLUMN timeline LONGTEXT");
+@$conn->query("ALTER TABLE leads MODIFY COLUMN notes LONGTEXT");
 
-// Fix blog_posts schema
 addCol($conn, 'blog_posts', 'slug', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'blog_posts', 'metaTitle', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'blog_posts', 'metaDescription', 'text DEFAULT NULL');
@@ -46,8 +116,6 @@ addCol($conn, 'blog_posts', 'authorRole', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'blog_posts', 'authorBio', 'text DEFAULT NULL');
 addCol($conn, 'blog_posts', 'authorSocial', 'varchar(255) DEFAULT NULL');
 
-// Fix admin_staff schema
-addCol($conn, 'admin_staff', 'id', 'varchar(255) PRIMARY KEY');
 addCol($conn, 'admin_staff', 'fullName', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'email', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'phone', 'varchar(255) DEFAULT NULL');
@@ -58,17 +126,14 @@ addCol($conn, 'admin_staff', 'status', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'lastLogin', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'allowedModules', 'longtext DEFAULT NULL');
 
-// Fix properties schema
 addCol($conn, 'properties', 'adType', "varchar(50) DEFAULT 'free'");
 
-// Fix partners schema
 addCol($conn, 'partners', 'contactPerson', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'partners', 'whatsapp', 'varchar(50) DEFAULT NULL');
 addCol($conn, 'partners', 'city', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'partners', 'country', 'varchar(255) DEFAULT "India"');
 addCol($conn, 'partners', 'notes', 'longtext DEFAULT NULL');
 
-// Fix portal_users schema
 addCol($conn, 'portal_users', 'password', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'portal_users', 'temporaryPassword', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'portal_users', 'isTemporaryPassword', 'tinyint(1) DEFAULT 0');
@@ -77,7 +142,6 @@ addCol($conn, 'portal_users', 'role', 'varchar(100) DEFAULT "Individual Owner"')
 addCol($conn, 'portal_users', 'roleCode', 'varchar(100) DEFAULT "individualowner"');
 addCol($conn, 'portal_users', 'status', 'varchar(50) DEFAULT "Active"');
 
-// Fix property_approvals schema
 addCol($conn, 'property_approvals', 'propertyTitle', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'property_approvals', 'ownerName', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'property_approvals', 'ownerPhone', 'varchar(50) DEFAULT NULL');
@@ -88,14 +152,12 @@ addCol($conn, 'property_approvals', 'propertyType', 'varchar(100) DEFAULT NULL')
 addCol($conn, 'property_approvals', 'status', 'varchar(50) DEFAULT "Pending Approval"');
 addCol($conn, 'property_approvals', 'details', 'longtext DEFAULT NULL');
 
-// Fix website_images schema
-addCol($conn, 'website_images', 'asset_key', 'varchar(255) PRIMARY KEY');
+addCol($conn, 'website_images', 'asset_key', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'website_images', 'asset_url', 'longtext DEFAULT NULL');
 addCol($conn, 'website_images', 'default_url', 'longtext DEFAULT NULL');
 addCol($conn, 'website_images', 'title', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'website_images', 'category', 'varchar(100) DEFAULT NULL');
 
-// Fix all created_at to createdAt
 $tables = ['dashboard_stats', 'leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'pipeline_stages', 'reports', 'portal_users', 'audit_logs'];
 foreach($tables as $t) {
     renCol($conn, $t, 'created_at', 'createdAt', 'datetime DEFAULT CURRENT_TIMESTAMP');

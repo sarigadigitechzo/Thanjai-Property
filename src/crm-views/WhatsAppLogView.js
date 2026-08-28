@@ -84,8 +84,21 @@ export function renderWhatsAppLogView() {
   `;
 }
 
-export function initWhatsAppLogView() {
-  const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+import { fetchFromAPI } from '../utils/api.js';
+
+export async function initWhatsAppLogView() {
+  let leads = [];
+  try {
+    const apiLeads = await fetchFromAPI('/leads');
+    if (apiLeads && Array.isArray(apiLeads) && apiLeads.length > 0) {
+      leads = apiLeads;
+      localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+    } else {
+      leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+    }
+  } catch (e) {
+    leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+  }
   const chatList = document.getElementById('wa-chat-list');
   const searchInput = document.getElementById('wa-search-leads');
   const emptyState = document.getElementById('wa-empty-state');
@@ -314,11 +327,15 @@ export function initWhatsAppLogView() {
   }
 
   searchInput?.addEventListener('input', (e) => renderLeadsSidebar(e.target.value));
-  document.getElementById('wa-refresh-leads')?.addEventListener('click', () => {
-    // Reload leads array from storage
-    const updatedLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-    leads.length = 0;
-    leads.push(...updatedLeads);
+  document.getElementById('wa-refresh-leads')?.addEventListener('click', async () => {
+    try {
+      const apiLeads = await fetchFromAPI('/leads');
+      if (apiLeads && Array.isArray(apiLeads) && apiLeads.length > 0) {
+        leads.length = 0;
+        leads.push(...apiLeads);
+        localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+      }
+    } catch (e) {}
     renderLeadsSidebar(searchInput?.value || '');
     if (activeLeadId) renderChatHistory();
   });
@@ -399,15 +416,36 @@ export function initWhatsAppLogView() {
         ? `WhatsApp sent: Custom message: "${templateParams[0]}"` 
         : `WhatsApp sent: Property - ${templateParams[0]}`;
 
-      lead.timeline.unshift({
+      const newTimelineItem = {
         type: 'whatsapp',
         message: sentMsg,
         author: localStorage.getItem('thanjai_active_user') ? JSON.parse(localStorage.getItem('thanjai_active_user')).fullName : 'System',
         date: new Date().toISOString()
-      });
+      };
+
+      lead.timeline.unshift(newTimelineItem);
       
       localStorage.setItem('thanjai_leads', JSON.stringify(leads));
       window.dispatchEvent(new CustomEvent('leadsUpdated'));
+
+      // Direct Live MySQL Database Persistence
+      fetchFromAPI(`/leads/${lead.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(lead)
+      }).catch(e => console.error("Database sync notice:", e));
+
+      fetchFromAPI('/whatsapp_logs', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: `WA-${Date.now()}`,
+          leadId: lead.id,
+          phone: phone,
+          message: sentMsg,
+          type: 'outbound',
+          status: 'Delivered'
+        })
+      }).catch(e => console.error("WA log notice:", e));
+
       msgInput.value = '';
       renderChatHistory();
       renderLeadsSidebar(searchInput.value);
