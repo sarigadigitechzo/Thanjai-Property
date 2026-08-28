@@ -692,7 +692,7 @@ export function renderUserDashboard() {
       const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room', 'bhk', 'residence', 'cottage', 'bungalow', 'rowhouse', 'manor', 'studio'];
       const isRes = resKeywords.some(k => val.includes(k));
 
-      const finalAdType = activeAdType || propToEdit?.adType || currentSelectedAdType || 'free';
+      const finalAdType = currentSelectedAdType || propToEdit?.adType || 'free';
       let finalOwnerName = userName;
       let finalOwnerPhone = user.phone;
       let finalListedBy = userName;
