@@ -307,52 +307,57 @@ import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showConfirmModal } from '../utils/toast.js';
 let cachedLeads = [];
 
+// Reusable mapping function: converts raw DB row → rich lead object
+function mapLeadFromAPI(l) {
+  let mobile = l.phone || l.mobile || '';
+  let budget = l.budget || l.budgetMax || '';
+  let type = l.requirement || l.propertyType || l.type || 'Residential Plot';
+  let loc = l.location || l.city || 'Thanjavur';
+  const locParts = loc.split(',').map(s => s.trim());
+
+  return {
+    id: l.id,
+    name: l.name,
+    mobile: mobile,
+    phone: mobile,
+    whatsapp: l.whatsapp || mobile,
+    email: l.email || '',
+    country: l.country || (locParts.length >= 3 ? locParts[locParts.length - 1] : 'India'),
+    city: locParts.length >= 2 ? locParts[locParts.length - 2] : (l.city || 'Thanjavur'),
+    area: locParts[0] || loc,
+    location: loc,
+    budgetMin: l.budgetMin || '',
+    budgetMax: budget,
+    budget: budget,
+    bedrooms: l.bedrooms || '',
+    notes: l.notes ? (typeof l.notes === 'string' && l.notes.startsWith('[') ? JSON.parse(l.notes) : l.notes) : '',
+    type: type,
+    propertyType: type,
+    requirement: type,
+    source: l.source || 'MANUAL',
+    assignTo: l.assignedTo || l.assignTo || 'Unassigned',
+    assignedTo: l.assignedTo || l.assignTo || 'Unassigned',
+    status: l.status || 'New Lead',
+    followup: l.followup || '—',
+    createdAt: l.createdAt ? new Date(l.createdAt).getTime() : Date.now(),
+    timeline: l.timeline
+      ? (typeof l.timeline === 'string' && l.timeline.startsWith('[') ? JSON.parse(l.timeline) : (Array.isArray(l.timeline) ? l.timeline : []))
+      : []
+  };
+}
+
 // Data Store Initializer
 export async function initLeadsView() {
   try {
     const data = await fetchFromAPI('/leads');
     if (data && Array.isArray(data)) {
-      cachedLeads = data.map(l => {
-        let mobile = l.phone || l.mobile || '';
-        let budget = l.budget || l.budgetMax || '';
-        let type = l.requirement || l.propertyType || l.type || 'Residential Plot';
-        let loc = l.location || l.city || 'Thanjavur';
-        
-        return {
-          id: l.id || 'L-' + Date.now(),
-          name: l.name,
-          mobile: mobile,
-          phone: mobile,
-          whatsapp: l.whatsapp || mobile,
-          email: l.email || '',
-          country: 'India',
-          city: loc.includes(',') ? loc.split(',')[1]?.trim() : 'Thanjavur',
-          area: loc.includes(',') ? loc.split(',')[0]?.trim() : loc,
-          location: loc,
-          budgetMin: '',
-          budgetMax: budget,
-          budget: budget,
-          bedrooms: '',
-          notes: l.notes ? (typeof l.notes === 'string' && l.notes.startsWith('[') ? JSON.parse(l.notes) : l.notes) : '',
-          type: type,
-          propertyType: type,
-          requirement: type,
-          source: l.source || 'Website Form',
-          assignTo: l.assignedTo || l.assignTo || 'Unassigned',
-          status: l.status || 'New Lead',
-          followup: l.followup || (l.timeline && typeof l.timeline === 'string' && !l.timeline.startsWith('[') ? l.timeline : '—'),
-          createdAt: l.createdAt ? new Date(l.createdAt).getTime() : Date.now(),
-          timeline: l.timeline ? (typeof l.timeline === 'string' && l.timeline.startsWith('[') ? JSON.parse(l.timeline) : (Array.isArray(l.timeline) ? l.timeline : [])) : []
-        };
-      });
+      cachedLeads = data.map(mapLeadFromAPI);
       saveLeads(cachedLeads);
     }
   } catch (err) {
     console.error('API Error:', err);
     cachedLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
   }
-  
-
   
   // Call init logic that binds events
   bindLeadEvents();
@@ -604,6 +609,13 @@ function bindLeadEvents() {
       const bMax = document.getElementById('lead-budget-max').value;
       const budgetStr = bMin && bMax ? `${bMin} - ${bMax}` : (bMax || bMin || '');
 
+      const timeline_author = (() => {
+        try {
+          const u = JSON.parse(localStorage.getItem('thanjai_active_user') || '{}');
+          return u.fullName || u.name || 'System';
+        } catch(e) { return 'System'; }
+      })();
+
       const leadData = {
         id: idField ? idField : 'L-' + Math.floor(1000 + Math.random() * 9000),
         name: name,
@@ -614,7 +626,7 @@ function bindLeadEvents() {
         budget: budgetStr,
         requirement: requirementStr,
         location: locationStr,
-        timeline: idField ? (leadToUpdate ? (typeof leadToUpdate.timeline === 'string' ? leadToUpdate.timeline : JSON.stringify(leadToUpdate.timeline || [])) : '[]') : JSON.stringify([{ type: 'pipeline', message: 'Lead created', author: localStorage.getItem('thanjai_active_user') || 'System', date: new Date().toISOString() }]),
+        timeline: idField ? (leadToUpdate ? (typeof leadToUpdate.timeline === 'string' ? leadToUpdate.timeline : JSON.stringify(leadToUpdate.timeline || [])) : '[]') : JSON.stringify([{ type: 'pipeline', message: 'Lead created', author: timeline_author, date: new Date().toISOString() }]),
         followup: document.getElementById('lead-followup').value || '—',
         assignedTo: assignTo,
         notes: idField ? (leadToUpdate ? (typeof leadToUpdate.notes === 'string' ? leadToUpdate.notes : JSON.stringify(leadToUpdate.notes || [])) : '[]') : document.getElementById('lead-notes').value,
@@ -651,9 +663,9 @@ function bindLeadEvents() {
         method: idField ? 'PUT' : 'POST',
         body: JSON.stringify(leadData)
       }).then(async () => {
-        // Refresh from DB to ensure consistency
+        // Refresh from DB with proper mapping
         const fresh = await fetchFromAPI('/leads');
-        if (fresh && Array.isArray(fresh)) saveLeads(fresh);
+        if (fresh && Array.isArray(fresh)) saveLeads(fresh.map(mapLeadFromAPI));
       }).catch(err => {
         console.warn('DB sync failed, saved locally only:', err);
       });
