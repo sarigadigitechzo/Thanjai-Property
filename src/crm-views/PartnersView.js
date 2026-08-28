@@ -165,7 +165,17 @@ export function renderPartnersView() {
 
 export function initPartnersView() {
   // 1. Data Initialization
-  let partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
+  let partners = [];
+  try {
+    const stored = localStorage.getItem('thanjai_partners');
+    if (stored && stored !== 'undefined') {
+      partners = JSON.parse(stored);
+    }
+    if (!Array.isArray(partners)) partners = [];
+  } catch (e) {
+    console.warn("Failed to parse partners data:", e);
+    partners = [];
+  }
 
   // 2. Shared Leads Data
   let allSharedLeads = {};
