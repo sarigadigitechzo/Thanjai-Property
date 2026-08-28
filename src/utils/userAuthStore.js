@@ -235,7 +235,7 @@ export function getPendingOTPUser() {
   }
 }
 
-export function verifyOTPAndActivate(enteredOtp) {
+export async function verifyOTPAndActivate(enteredOtp) {
   const pending = getPendingOTPUser();
   if (!pending) return { success: false, message: 'No pending registration found.' };
 
@@ -261,11 +261,21 @@ export function verifyOTPAndActivate(enteredOtp) {
   delete activeRecord.otpCode;
 
   if (existingIdx >= 0) {
-    usersCache[existingIdx] = activeRecord;
-    fetchFromAPI(`/portal_users/${activeRecord.id}`, { method: 'PUT', body: JSON.stringify(activeRecord) }).catch(e => console.error(e));
+    try {
+      await fetchFromAPI(`/portal_users/${activeRecord.id}`, { method: 'PUT', body: JSON.stringify(activeRecord) });
+      usersCache[existingIdx] = activeRecord;
+    } catch (e) {
+      console.error(e);
+      return { success: false, message: 'Database error: Could not update user. Please try again.' };
+    }
   } else {
-    usersCache.unshift(activeRecord);
-    fetchFromAPI(`/portal_users`, { method: 'POST', body: JSON.stringify(activeRecord) }).catch(e => console.error(e));
+    try {
+      await fetchFromAPI(`/portal_users`, { method: 'POST', body: JSON.stringify(activeRecord) });
+      usersCache.unshift(activeRecord);
+    } catch (e) {
+      console.error(e);
+      return { success: false, message: 'Database error: Could not save user to server. Please try again later.' };
+    }
     
     // Inject into CRM Pipeline
     try {

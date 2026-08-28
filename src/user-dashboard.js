@@ -95,12 +95,23 @@ export function renderUserDashboard() {
     return;
   }
 
+  // Prevent admin and staff from accessing the client user dashboard
+  if (user.roleCode && (user.roleCode.includes('admin') || user.roleCode.includes('manager') || user.roleCode.includes('executive') || user.roleCode.includes('staff'))) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
   const userName = user.fullName || user.name || (user.email ? user.email.split('@')[0] : 'Property Owner');
 
   const allProps = getProperties();
   const userProps = allProps.filter(p => {
     if (p.userId && user.id && p.userId === user.id) return true;
     if (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()) return true;
+    
+    // Check actualOwner metadata first if available
+    if (p.actualOwnerPhone === user.phone && (p.actualOwnerName === userName)) return true;
+    
+    // Fallback to legacy check
     if (!p.userId && !p.userEmail) {
       return p.ownerPhone === user.phone && (p.listedBy === userName || p.ownerName === userName);
     }
@@ -645,6 +656,14 @@ export function renderUserDashboard() {
 
     // FORM SUBMISSION HANDLER
     const form = document.getElementById('client-post-prop-form');
+    const submitBtn = document.getElementById('user-submit-prop-btn');
+    
+    submitBtn?.addEventListener('click', () => {
+      if (form && !form.checkValidity()) {
+        showToast('Please fill out all required fields marked with * (Scroll up to see)', 'ri-error-warning-line');
+      }
+    });
+
     form?.addEventListener('submit', (e) => {
       e.preventDefault();
       const title = document.getElementById('user-prop-title').value;
@@ -678,7 +697,7 @@ export function renderUserDashboard() {
       const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room', 'bhk', 'residence', 'cottage', 'bungalow', 'rowhouse', 'manor', 'studio'];
       const isRes = resKeywords.some(k => val.includes(k));
 
-      const finalAdType = activeAdType || propToEdit?.adType || currentSelectedAdType || 'free';
+      const finalAdType = currentSelectedAdType || propToEdit?.adType || 'free';
       let finalOwnerName = userName;
       let finalOwnerPhone = user.phone;
       let finalListedBy = userName;
@@ -1492,7 +1511,7 @@ function renderPostPropertyFormHtml(propToEdit = null, adType = 'free') {
 
         <!-- SUBMIT ACTION BUTTON -->
         <div style="border-top: 1px solid #E2E8F0; padding-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
-          <button type="submit" style="background: #eb5e28; color: #fff; border: none; padding: 12px 32px; border-radius: 10px; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 4px 14px rgba(235,94,40,0.35);">
+          <button type="submit" id="user-submit-prop-btn" style="background: #eb5e28; color: #fff; border: none; padding: 12px 32px; border-radius: 10px; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 4px 14px rgba(235,94,40,0.35);">
             <i class="ri-send-plane-fill"></i> ${isEdit ? 'Save & Update Property' : 'Submit & Publish Listing'}
           </button>
         </div>

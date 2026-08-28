@@ -43,12 +43,16 @@ export function renderLogin(initialMode = 'signin') {
             </a>
             <h1 class="auth-heading">Sign in to your account</h1>
 
-            <form class="auth-form" id="signin-form" onsubmit="return false;">
+            <form class="auth-form" id="signin-form" onsubmit="return false;" autocomplete="off">
+              <!-- Dummy inputs to prevent aggressive browser autofill -->
+              <input type="email" style="display:none" name="fake_email" />
+              <input type="password" style="display:none" name="fake_password" />
+
               <div class="auth-field">
                 <label class="auth-label" for="signin-email">EMAIL ADDRESS</label>
                 <div class="input-icon-wrap">
                   <i class="ri-mail-line field-icon"></i>
-                  <input type="email" id="signin-email" name="email" placeholder="you@example.com" required class="auth-input" />
+                  <input type="email" id="signin-email" name="email" placeholder="you@example.com" required class="auth-input" autocomplete="off" />
                 </div>
               </div>
 
@@ -59,7 +63,7 @@ export function renderLogin(initialMode = 'signin') {
                 </div>
                 <div class="input-icon-wrap">
                   <i class="ri-lock-2-line field-icon"></i>
-                  <input type="password" id="signin-password" name="password" placeholder="Enter your password" required class="auth-input" />
+                  <input type="password" id="signin-password" name="password" placeholder="Enter your password" required class="auth-input" autocomplete="new-password" />
                   <i class="ri-eye-line toggle-pw-icon" id="toggle-signin-pw" title="Toggle password visibility"></i>
                 </div>
               </div>
@@ -486,7 +490,7 @@ export async function initLogin() {
   // OTP Verification Form Submission -> Transitions to Credentials screen
   let verifiedCredentials = null;
 
-  document.getElementById('otp-form')?.addEventListener('submit', (e) => {
+  document.getElementById('otp-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const otpCode = otpBoxes.map(b => b?.value || '').join('');
     const errMsg = document.getElementById('otp-error-msg');
@@ -502,7 +506,7 @@ export async function initLogin() {
 
     if (btn) btn.textContent = 'Verifying Code...';
 
-    const result = verifyOTPAndActivate(otpCode);
+    const result = await verifyOTPAndActivate(otpCode);
     if (result.success) {
       if (errMsg) errMsg.style.display = 'none';
       if (btn) btn.textContent = 'Verified!';

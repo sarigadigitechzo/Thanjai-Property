@@ -197,6 +197,10 @@ addCol($conn, 'admin_staff', 'lastLogin', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'allowedModules', 'longtext DEFAULT NULL');
 
 addCol($conn, 'properties', 'adType', "varchar(50) DEFAULT 'free'");
+addCol($conn, 'properties', 'userId', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'properties', 'userEmail', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'properties', 'actualOwnerName', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'properties', 'actualOwnerPhone', 'varchar(255) DEFAULT NULL');
 
 addCol($conn, 'partners', 'contactPerson', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'partners', 'whatsapp', 'varchar(50) DEFAULT NULL');
@@ -211,6 +215,10 @@ addCol($conn, 'portal_users', 'passwordUpdatedAt', 'varchar(100) DEFAULT NULL');
 addCol($conn, 'portal_users', 'role', 'varchar(100) DEFAULT "Individual Owner"');
 addCol($conn, 'portal_users', 'roleCode', 'varchar(100) DEFAULT "individualowner"');
 addCol($conn, 'portal_users', 'status', 'varchar(50) DEFAULT "Active"');
+renCol($conn, 'portal_users', 'name', 'fullName', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'portal_users', 'propertiesCount', 'int(11) DEFAULT 0');
+addCol($conn, 'portal_users', 'visitorsCount', 'int(11) DEFAULT 0');
+addCol($conn, 'portal_users', 'buyersCount', 'int(11) DEFAULT 0');
 
 addCol($conn, 'property_approvals', 'propertyTitle', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'property_approvals', 'ownerName', 'varchar(255) DEFAULT NULL');
@@ -282,11 +290,15 @@ if ($resource === 'properties') {
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("INSERT INTO properties (id, title, type, category, categoryRaw, categoryLabel, purpose, price, priceFormatted, location, district, address, size, bedrooms, bathrooms, furnishing, status, availability, latitude, longitude, videoUrl, ownerName, ownerPhone, listedBy, adType, images, description, features) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO properties (id, title, type, category, categoryRaw, categoryLabel, purpose, price, priceFormatted, location, district, address, size, bedrooms, bathrooms, furnishing, status, availability, latitude, longitude, videoUrl, ownerName, ownerPhone, listedBy, adType, userId, userEmail, actualOwnerName, actualOwnerPhone, images, description, features) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $images = json_encode($data['images'] ?? []);
         $features = json_encode($data['features'] ?? []);
         $adType = $data['adType'] ?? 'free';
-        $stmt->bind_param("sssssssdsssssiisssssssssssss", $data['id'], $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $adType, $images, $data['description'], $features);
+        $userId = $data['userId'] ?? null;
+        $userEmail = $data['userEmail'] ?? null;
+        $actualOwnerName = $data['actualOwnerName'] ?? null;
+        $actualOwnerPhone = $data['actualOwnerPhone'] ?? null;
+        $stmt->bind_param("sssssssdsssssiisssssssssssssssss", $data['id'], $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, $data['description'], $features);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Property created successfully"]);
         } else {
@@ -296,11 +308,15 @@ if ($resource === 'properties') {
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("UPDATE properties SET title=?, type=?, category=?, categoryRaw=?, categoryLabel=?, purpose=?, price=?, priceFormatted=?, location=?, district=?, address=?, size=?, bedrooms=?, bathrooms=?, furnishing=?, status=?, availability=?, latitude=?, longitude=?, videoUrl=?, ownerName=?, ownerPhone=?, listedBy=?, adType=?, images=?, description=?, features=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE properties SET title=?, type=?, category=?, categoryRaw=?, categoryLabel=?, purpose=?, price=?, priceFormatted=?, location=?, district=?, address=?, size=?, bedrooms=?, bathrooms=?, furnishing=?, status=?, availability=?, latitude=?, longitude=?, videoUrl=?, ownerName=?, ownerPhone=?, listedBy=?, adType=?, userId=?, userEmail=?, actualOwnerName=?, actualOwnerPhone=?, images=?, description=?, features=? WHERE id=?");
         $images = json_encode($data['images'] ?? []);
         $features = json_encode($data['features'] ?? []);
         $adType = $data['adType'] ?? 'free';
-        $stmt->bind_param("sssssssdsssssiissssssssssssss", $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $adType, $images, $data['description'], $features, $id);
+        $userId = $data['userId'] ?? null;
+        $userEmail = $data['userEmail'] ?? null;
+        $actualOwnerName = $data['actualOwnerName'] ?? null;
+        $actualOwnerPhone = $data['actualOwnerPhone'] ?? null;
+        $stmt->bind_param("sssssssdsssssiissssssssssssssssss", $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, $data['description'], $features, $id);
         $stmt->execute();
         echo json_encode(["message" => "Property updated successfully"]);
     }
@@ -1125,7 +1141,13 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
     if ($method === 'GET') {
         $result = $conn->query("SELECT * FROM portal_users ORDER BY createdAt DESC");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        while($row = $result->fetch_assoc()) { 
+            // Ensure frontend receives fullName even if DB column is name
+            if (isset($row['name']) && !isset($row['fullName'])) {
+                $row['fullName'] = $row['name'];
+            }
+            $rows[] = $row; 
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
@@ -1151,17 +1173,31 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
         $buyCount = intval($data['buyersCount'] ?? 0);
 
         $stmt = $conn->prepare("INSERT INTO portal_users (id, fullName, email, phone, password, temporaryPassword, isTemporaryPassword, role, roleCode, status, propertiesCount, visitorsCount, buyersCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE fullName=VALUES(fullName), phone=VALUES(phone), password=VALUES(password), role=VALUES(role), roleCode=VALUES(roleCode), status=VALUES(status), propertiesCount=VALUES(propertiesCount), visitorsCount=VALUES(visitorsCount), buyersCount=VALUES(buyersCount)");
+        
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode(["error" => "Database prepare error: " . $conn->error]);
+            exit;
+        }
+
         $stmt->bind_param("ssssssisssiii", $uId, $uName, $uEmail, $uPhone, $pwd, $tempPwd, $isTemp, $role, $roleCode, $status, $propCount, $visCount, $buyCount);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Portal user created successfully", "id" => $uId]);
         } else {
             http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+            echo json_encode(["error" => "Database execute error: " . $stmt->error]);
         }
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
         $stmt = $conn->prepare("UPDATE portal_users SET fullName=?, email=?, phone=?, password=?, temporaryPassword=?, isTemporaryPassword=?, role=?, roleCode=?, status=?, propertiesCount=?, visitorsCount=?, buyersCount=? WHERE id=?");
+        
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode(["error" => "Database prepare error: " . $conn->error]);
+            exit;
+        }
+
         $pwd = $data['password'] ?? $data['temporaryPassword'] ?? '';
         $tempPwd = $data['temporaryPassword'] ?? '';
         $isTemp = !empty($data['isTemporaryPassword']) ? 1 : 0;
@@ -1171,7 +1207,9 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
         $propCount = intval($data['propertiesCount'] ?? 0);
         $visCount = intval($data['visitorsCount'] ?? 0);
         $buyCount = intval($data['buyersCount'] ?? 0);
-        $stmt->bind_param("sssssisssiiis", $data['fullName'], $data['email'], $data['phone'], $pwd, $tempPwd, $isTemp, $role, $roleCode, $status, $propCount, $visCount, $buyCount, $id);
+        $uName = $data['fullName'] ?? 'User';
+        
+        $stmt->bind_param("sssssisssiiis", $uName, $data['email'], $data['phone'], $pwd, $tempPwd, $isTemp, $role, $roleCode, $status, $propCount, $visCount, $buyCount, $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Portal user updated successfully"]);
         } else {
