@@ -386,88 +386,92 @@ export function initPartnersView() {
   };
 
   // --- Add / Edit Partner Modal Logic ---
-  const addPartnerModal = document.getElementById('add-partner-modal');
-  const btnAddPartner = document.getElementById('btn-add-partner');
-  const closePartnerModal = document.getElementById('close-partner-modal');
-  const cancelPartnerModal = document.getElementById('cancel-partner-modal');
-  const savePartnerBtn = document.getElementById('save-partner-modal');
-  const partnerModalTitle = document.getElementById('partner-modal-title');
-
   const openAddPartnerModal = () => {
-    document.getElementById('ap-edit-id').value = '';
-    document.getElementById('ap-company').value = '';
-    document.getElementById('ap-contact').value = '';
-    document.getElementById('ap-phone').value = '';
-    document.getElementById('ap-whatsapp').value = '';
-    document.getElementById('ap-email').value = '';
-    document.getElementById('ap-city').value = 'Thanjavur';
-    document.getElementById('ap-country').value = 'India';
-    document.getElementById('ap-status').value = 'Active';
-    document.getElementById('ap-notes').value = '';
-    if (partnerModalTitle) partnerModalTitle.textContent = 'Add partner company';
-    if (savePartnerBtn) savePartnerBtn.textContent = 'Save Partner';
-    if (addPartnerModal) addPartnerModal.style.display = 'flex';
+    const editIdInput = document.getElementById('ap-edit-id');
+    const companyInput = document.getElementById('ap-company');
+    const contactInput = document.getElementById('ap-contact');
+    const phoneInput = document.getElementById('ap-phone');
+    const whatsappInput = document.getElementById('ap-whatsapp');
+    const emailInput = document.getElementById('ap-email');
+    const cityInput = document.getElementById('ap-city');
+    const countryInput = document.getElementById('ap-country');
+    const statusInput = document.getElementById('ap-status');
+    const notesInput = document.getElementById('ap-notes');
+    const title = document.getElementById('partner-modal-title');
+    const saveBtn = document.getElementById('save-partner-modal');
+    const modal = document.getElementById('add-partner-modal');
+
+    if (editIdInput) editIdInput.value = '';
+    if (companyInput) companyInput.value = '';
+    if (contactInput) contactInput.value = '';
+    if (phoneInput) phoneInput.value = '';
+    if (whatsappInput) whatsappInput.value = '';
+    if (emailInput) emailInput.value = '';
+    if (cityInput) cityInput.value = 'Thanjavur';
+    if (countryInput) countryInput.value = 'India';
+    if (statusInput) statusInput.value = 'Active';
+    if (notesInput) notesInput.value = '';
+    if (title) title.textContent = 'Add partner company';
+    if (saveBtn) saveBtn.textContent = 'Save Partner';
+    if (modal) modal.style.display = 'flex';
   };
 
   const openEditPartnerModal = (partnerId) => {
     const p = partners.find(item => String(item.id) === String(partnerId));
     if (!p) return;
 
-    document.getElementById('ap-edit-id').value = p.id;
-    document.getElementById('ap-company').value = p.company || p.name || '';
-    document.getElementById('ap-contact').value = p.contact || p.contactPerson || '';
-    document.getElementById('ap-phone').value = p.phone || '';
-    document.getElementById('ap-whatsapp').value = p.whatsapp || p.phone || '';
-    document.getElementById('ap-email').value = p.email || '';
-    document.getElementById('ap-city').value = p.city || 'Thanjavur';
-    document.getElementById('ap-country').value = p.country || 'India';
-    document.getElementById('ap-status').value = p.status || 'Active';
-    document.getElementById('ap-notes').value = p.notes || '';
+    const editIdInput = document.getElementById('ap-edit-id');
+    const companyInput = document.getElementById('ap-company');
+    const contactInput = document.getElementById('ap-contact');
+    const phoneInput = document.getElementById('ap-phone');
+    const whatsappInput = document.getElementById('ap-whatsapp');
+    const emailInput = document.getElementById('ap-email');
+    const cityInput = document.getElementById('ap-city');
+    const countryInput = document.getElementById('ap-country');
+    const statusInput = document.getElementById('ap-status');
+    const notesInput = document.getElementById('ap-notes');
+    const title = document.getElementById('partner-modal-title');
+    const saveBtn = document.getElementById('save-partner-modal');
+    const modal = document.getElementById('add-partner-modal');
+
+    if (editIdInput) editIdInput.value = p.id;
+    if (companyInput) companyInput.value = p.company || p.name || '';
+    if (contactInput) contactInput.value = p.contact || p.contactPerson || '';
+    if (phoneInput) phoneInput.value = p.phone || '';
+    if (whatsappInput) whatsappInput.value = p.whatsapp || p.phone || '';
+    if (emailInput) emailInput.value = p.email || '';
+    if (cityInput) cityInput.value = p.city || 'Thanjavur';
+    if (countryInput) countryInput.value = p.country || 'India';
+    if (statusInput) statusInput.value = p.status || 'Active';
+    if (notesInput) notesInput.value = p.notes || '';
     
-    if (partnerModalTitle) partnerModalTitle.textContent = 'Edit partner company';
-    if (savePartnerBtn) savePartnerBtn.textContent = 'Update Partner';
-    if (addPartnerModal) addPartnerModal.style.display = 'flex';
+    if (title) title.textContent = 'Edit partner company';
+    if (saveBtn) saveBtn.textContent = 'Update Partner';
+    if (modal) modal.style.display = 'flex';
   };
 
   const closePartnerModalFn = () => {
-    if (addPartnerModal) addPartnerModal.style.display = 'none';
+    const modal = document.getElementById('add-partner-modal');
+    if (modal) modal.style.display = 'none';
   };
 
-  // Use event delegation for the Add Partner button to guarantee it works even if DOM is modified
-  if (!window.partnerListenersAttached) {
-    document.body.addEventListener('click', (e) => {
-      if (e.target.closest('#btn-add-partner')) {
-        try {
-          document.getElementById('ap-edit-id').value = '';
-          document.getElementById('ap-company').value = '';
-          document.getElementById('ap-contact').value = '';
-          document.getElementById('ap-phone').value = '';
-          document.getElementById('ap-whatsapp').value = '';
-          document.getElementById('ap-email').value = '';
-          document.getElementById('ap-city').value = 'Thanjavur';
-          document.getElementById('ap-country').value = 'India';
-          document.getElementById('ap-status').value = 'Active';
-          document.getElementById('ap-notes').value = '';
-          
-          const title = document.getElementById('partner-modal-title');
-          const saveBtn = document.getElementById('save-partner-modal');
-          const modal = document.getElementById('add-partner-modal');
-          
-          if (title) title.textContent = 'Add partner company';
-          if (saveBtn) saveBtn.textContent = 'Save Partner';
-          if (modal) modal.style.display = 'flex';
-          else alert("Error: Modal element not found in DOM");
-        } catch (err) {
-          console.error("Error opening add partner modal:", err);
-          alert("Error opening modal: " + err.message);
-        }
-      }
-    });
-    window.partnerListenersAttached = true;
+  const btnAddPartner = document.getElementById('btn-add-partner');
+  if (btnAddPartner) {
+    btnAddPartner.addEventListener('click', openAddPartnerModal);
   }
 
+  const closePartnerModal = document.getElementById('close-partner-modal');
   if (closePartnerModal) closePartnerModal.addEventListener('click', closePartnerModalFn);
+
+  const cancelPartnerModal = document.getElementById('cancel-partner-modal');
   if (cancelPartnerModal) cancelPartnerModal.addEventListener('click', closePartnerModalFn);
+
+  const addPartnerModal = document.getElementById('add-partner-modal');
+  if (addPartnerModal) {
+    addPartnerModal.addEventListener('click', (e) => {
+      if (e.target === addPartnerModal) closePartnerModalFn();
+    });
+  }
 
   if (savePartnerBtn) {
     savePartnerBtn.addEventListener('click', async () => {
@@ -611,6 +615,11 @@ export function initPartnersView() {
   if (btnShareLead) btnShareLead.addEventListener('click', openShareLeadModal);
   if (closeShareLeadModal) closeShareLeadModal.addEventListener('click', closeShareLeadModalFn);
   if (cancelShareLeadModal) cancelShareLeadModal.addEventListener('click', closeShareLeadModalFn);
+  if (shareLeadModal) {
+    shareLeadModal.addEventListener('click', (e) => {
+      if (e.target === shareLeadModal) closeShareLeadModalFn();
+    });
+  }
 
   // Auto-fill when existing lead is selected from dropdown
   slLeadSelect?.addEventListener('change', (e) => {
