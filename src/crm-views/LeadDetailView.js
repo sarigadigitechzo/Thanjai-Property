@@ -641,8 +641,27 @@ export function initLeadDetailView(id) {
   if (cancelShare) cancelShare.addEventListener('click', () => shareModal.classList.remove('show'));
   if (confirmShare) {
     confirmShare.addEventListener('click', async () => {
+      let partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
       const selectedValue = document.querySelector('#partner-share-dropdown .select-value');
-      const partnerId = selectedValue ? selectedValue.dataset.id : null;
+      let partnerId = selectedValue ? selectedValue.dataset.id : null;
+      const selectedText = (selectedValue ? (selectedValue.innerText || selectedValue.textContent) : '').trim();
+
+      if (!partnerId || partnerId === 'ALL') {
+        if (selectedText.toLowerCase().includes('broadcast')) {
+          partnerId = 'ALL';
+        } else {
+          const match = partners.find(p => (p.company || p.name || '').trim().toLowerCase() === selectedText.toLowerCase());
+          if (match) {
+            partnerId = match.id;
+          }
+        }
+      }
+
+      if (!partnerId && partners.length > 0) {
+        const match = partners.find(p => selectedText.toLowerCase().includes((p.company || p.name || '').toLowerCase()));
+        partnerId = match ? match.id : partners[0].id;
+      }
+
       const notes = document.getElementById('share-partner-notes')?.value || '';
       const sendWa = document.getElementById('share-partner-wa')?.checked ?? true;
       
@@ -651,7 +670,6 @@ export function initLeadDetailView(id) {
       if (!currentLead) return;
 
       let sharedLeadsData = JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {};
-      let partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
       const activeUser = JSON.parse(localStorage.getItem('thanjai_active_user')) || { fullName: 'Aishwarya Raman' };
       const now = new Date();
       const dateStr = now.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) + ', ' + now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
@@ -677,42 +695,151 @@ export function initLeadDetailView(id) {
 
       // Helper function to dispatch WhatsApp message to a partner via official WhatsApp API (8489996852)
       const sendWhatsAppToPartner = async (partner) => {
-        const pPhone = (partner.phone || partner.whatsapp || '').replace(/\D/g, '');
+        let pPhone = (partner.phone || partner.whatsapp || '').replace(/\D/g, '');
         if (!pPhone) return;
+        if (pPhone.length === 10) pPhone = '+91' + pPhone;
+        else if (pPhone.length === 12 && pPhone.startsWith('91')) pPhone = '+' + pPhone;
+        else if (!pPhone.startsWith('+')) pPhone = '+' + pPhone;
 
-        // Check if SmartPing / AiSensy API is configured for background dispatch
+        const partnerName = partner.company || partner.name || partner.contact || 'Partner';
+        const clientName = currentLead.name || 'Client';
+        const preferredLoc = clientLoc || 'Thanjavur';
+        const reqType = clientReq || 'Residential Plot / Villa';
+        const budget = clientBudget || 'Contact for Budget';
+        const handoverNotes = notes || 'Requirement from CRM';
+
+        const templateMessage = `Hello ${partnerName},\n\nA new qualified buyer requirement has been assigned to you from Thanjai Property:\n\n👤 Client Name: ${clientName}\n📍 Preferred Location: ${preferredLoc}\n🏡 Requirement: ${reqType}\n💰 Budget Range: ${budget}\n\n📝 Notes: ${handoverNotes}\n\nFor client coordination, please connect through our official desk: +91 84899 96852.\n\nWarm regards,\nThanjai Property Partner Network`;
+
+        // Save to whatsapp_logs table in database
+        fetchFromAPI('/whatsapp_logs', {
+          method: 'POST',
+          body: JSON.stringify({
+            id: `WA-${Date.now()}`,
+            leadId: currentLead.id,
+            phone: pPhone,
+            sender: 'Super Admin',
+            recipientName: partnerName,
+            message: templateMessage,
+            type: 'outbound'
+          })
+        }).catch(() => {});
+
+        addAuditLog({
+          action: `Assigned Lead to Partner (${partnerName})`,
+          module: 'WhatsApp Log',
+          details: `Sent partner_lead_assignment template to ${partnerName} (${pPhone}) for client ${clientName}.`
+        });
+
         const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
-        const provider = localStorage.getItem('thanjai_wa_provider') || 'smartping';
-        if (apiKey) {
-          try {
-            const apiUrl = provider === 'smartping' 
-              ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
-              : 'https://backend.aisensy.com/campaign/t1/api/v2';
-            let formattedPhone = pPhone;
-            if (provider === 'smartping' && !formattedPhone.startsWith('+')) {
-              formattedPhone = '+' + (formattedPhone.length === 10 ? '91' + formattedPhone : formattedPhone);
-            }
-            
-            // Dispatch official partner transfer notification template from +91 84899 96852
-            await fetch(apiUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                apiKey: apiKey,
-                campaignName: 'partner_transfer_notification',
-                destination: formattedPhone,
-                userName: partner.company || partner.name || 'Partner',
-                templateParams: [
-                  newSharedRecord.name,
-                  newSharedRecord.location || 'Thanjavur',
-                  activeUser.fullName || 'Thanjai Property Desk',
-                  '+91 84899 96852'
-                ]
-              })
-            }).catch(e => console.warn('SmartPing API warning:', e));
-          } catch (err) {
-            console.warn('API send warning:', err);
+        if (!apiKey) {
+          showToast('Please configure your SmartPing API Key in Settings > Integrations.', 'ri-alert-line');
+          return;
+        }
+
+        const payload = {
+          apiKey: apiKey,
+          campaignName: 'partner_lead_assignment',
+          destination: pPhone,
+          userName: partnerName,
+          templateParams: [
+            partnerName,
+            clientName,
+            preferredLoc,
+            reqType,
+            budget,
+            handoverNotes
+          ]
+        };
+
+        try {
+          const res = await fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const resData = await res.json();
+          if (res.ok && resData.status !== 'error') {
+            showToast(`WhatsApp sent to partner ${partnerName}!`, 'ri-checkbox-circle-fill');
+          } else {
+            console.warn("SmartPing partner dispatch error:", resData);
+            showToast(`SmartPing: ${resData.message || resData.error || 'Check campaign name/status in SmartPing'}`, 'ri-alert-line');
           }
+        } catch (err) {
+          console.warn("Direct SmartPing dispatch warning, calling server relay:", err);
+          fetchFromAPI('/send_whatsapp', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          }).catch(() => {});
+        }
+      };
+
+      // Helper function to dispatch partner transfer notification to the client
+      const sendWhatsAppToClient = async (partner) => {
+        let cPhone = (currentLead.whatsapp || currentLead.mobile || currentLead.phone || '').replace(/\D/g, '');
+        if (!cPhone) return;
+        if (cPhone.length === 10) cPhone = '+91' + cPhone;
+        else if (cPhone.length === 12 && cPhone.startsWith('91')) cPhone = '+' + cPhone;
+        else if (!cPhone.startsWith('+')) cPhone = '+' + cPhone;
+
+        const partnerName = partner ? (partner.company || partner.name || partner.contact || 'our specialist partner') : 'our specialist partner';
+        const clientName = currentLead.name || 'Client';
+        const preferredLoc = clientLoc || 'Thanjavur';
+
+        const clientTemplateMessage = `Hello ${clientName},\n\nYour property requirement in ${preferredLoc} has been assigned to our senior partner specialist ${partnerName}.\n\nOur team and specialist will assist you with exclusive listings, verified Patta documents, and on-site visits.\n\nFor any direct assistance, contact our official desk at +91 84899 96852.\n\nBest regards,\nThanjai Property`;
+
+        // Save to whatsapp_logs table in database
+        fetchFromAPI('/whatsapp_logs', {
+          method: 'POST',
+          body: JSON.stringify({
+            id: `WA-${Date.now()}-client`,
+            leadId: currentLead.id,
+            phone: cPhone,
+            sender: 'Super Admin',
+            recipientName: clientName,
+            message: clientTemplateMessage,
+            type: 'outbound'
+          })
+        }).catch(() => {});
+
+        addAuditLog({
+          action: `Notified Client on Partner Transfer (${clientName})`,
+          module: 'WhatsApp Log',
+          details: `Sent partner_transfer_notification to client ${clientName} (${cPhone}) assigned to ${partnerName}.`
+        });
+
+        const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
+        if (!apiKey) return;
+
+        const payload = {
+          apiKey: apiKey,
+          campaignName: 'partner_transfer_notification',
+          destination: cPhone,
+          userName: clientName,
+          templateParams: [
+            clientName,
+            preferredLoc,
+            partnerName,
+            '+91 84899 96852'
+          ]
+        };
+
+        try {
+          const res = await fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const resData = await res.json();
+          if (res.ok && resData.status !== 'error') {
+            showToast(`WhatsApp notification sent to client ${clientName}!`, 'ri-checkbox-circle-fill');
+          } else {
+            console.warn("SmartPing client dispatch error:", resData);
+          }
+        } catch (err) {
+          fetchFromAPI('/send_whatsapp', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          }).catch(() => {});
         }
       };
 
@@ -724,6 +851,8 @@ export function initLeadDetailView(id) {
           p.leads = sharedLeadsData[p.id].length;
           if (sendWa) sendWhatsAppToPartner(p);
         });
+        if (sendWa) sendWhatsAppToClient(null);
+
         localStorage.setItem('thanjai_shared_leads', JSON.stringify(sharedLeadsData));
         localStorage.setItem('thanjai_partners', JSON.stringify(partners));
 
@@ -737,7 +866,7 @@ export function initLeadDetailView(id) {
         saveAndSyncLeads(leads, id);
 
         shareModal.classList.remove('show');
-        alert(`Lead requirement broadcasted to ${activePartners.length} partners via official WhatsApp (+91 84899 96852). Client contact number is protected.`);
+        showToast(`Lead requirement broadcasted to ${activePartners.length} partners via official WhatsApp (+91 84899 96852).`, 'ri-checkbox-circle-fill');
         const content = document.getElementById('os-content');
         if (content) {
           content.innerHTML = renderLeadDetailView(id);
@@ -754,7 +883,10 @@ export function initLeadDetailView(id) {
           partnerName = partners[partnerIdx].company || partners[partnerIdx].name;
           partners[partnerIdx].leads = sharedLeadsData[partnerId].length;
           localStorage.setItem('thanjai_partners', JSON.stringify(partners));
-          if (sendWa) await sendWhatsAppToPartner(partners[partnerIdx]);
+          if (sendWa) {
+            await sendWhatsAppToPartner(partners[partnerIdx]);
+            await sendWhatsAppToClient(partners[partnerIdx]);
+          }
         }
 
         // Add timeline
@@ -767,14 +899,14 @@ export function initLeadDetailView(id) {
         saveAndSyncLeads(leads, id);
 
         shareModal.classList.remove('show');
-        alert(`Lead requirement for "${currentLead.name}" shared with ${partnerName} via official WhatsApp (+91 84899 96852). Client contact number is protected.`);
+        showToast(`Lead requirement for "${currentLead.name}" shared with ${partnerName} via official WhatsApp!`, 'ri-checkbox-circle-fill');
         const content = document.getElementById('os-content');
         if (content) {
           content.innerHTML = renderLeadDetailView(id);
           initLeadDetailView(id);
         }
       } else {
-        alert('Please select a partner company or Broadcast option.');
+        showToast('Please select a partner company or Broadcast option.', 'ri-alert-line');
       }
     });
   }
@@ -806,6 +938,7 @@ export function initLeadDetailView(id) {
       "Follow-up message": "property_follow_up",
       "Initial contact intro (auto)": "initial_contact_intro",
       "Negotiation check-in (auto)": "negotiation_check_in",
+      "Partner lead assignment": "partner_lead_assignment",
       "Partner transfer notification": "partner_transfer_notification",
       "Registration testimonial & referral (auto)": "registration_testimonial_referral",
       "Site visit confirmation (auto)": "site_visit_confirmation",
@@ -1071,6 +1204,41 @@ export function initLeadDetailView(id) {
         `;
         break;
 
+      case "partner_lead_assignment":
+        fieldsHtml = `
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Partner Name</label>
+              <input type="text" id="wa-p1" class="os-input" value="Partner" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Client Name</label>
+              <input type="text" id="wa-p2" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Preferred Location</label>
+              <input type="text" id="wa-p3" class="os-input" value="${currentLead.city || currentLead.location || 'Thanjavur'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Requirement</label>
+              <input type="text" id="wa-p4" class="os-input" value="${currentLead.requirement || currentLead.type || 'Plot'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{5}} Budget Range</label>
+              <input type="text" id="wa-p5" class="os-input" value="${currentLead.budget || '₹ 25 - 50 Lakhs'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{6}} Notes</label>
+              <input type="text" id="wa-p6" class="os-input" value="${currentLead.notes || 'Immediate buyer requirement.'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+        `;
+        break;
+
       case "partner_transfer_notification":
         fieldsHtml = `
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -1291,6 +1459,9 @@ export function initLeadDetailView(id) {
             break;
           case "site_visit_confirmation":
             templateParams = [p1, p2, p3, p4, p5];
+            break;
+          case "partner_lead_assignment":
+            templateParams = [p1, p2, p3, p4, p5, p6];
             break;
           default:
             templateParams = [p1];
@@ -1731,6 +1902,9 @@ export function initLeadDetailView(id) {
       option.addEventListener('click', (e) => {
         e.stopPropagation();
         valueEl.innerHTML = option.innerHTML; // preserve icons if any
+        if (option.dataset.id) {
+          valueEl.dataset.id = option.dataset.id;
+        }
         options.forEach(opt => {
           opt.classList.remove('selected');
           opt.style.background = '';

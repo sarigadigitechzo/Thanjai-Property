@@ -125,6 +125,45 @@ function renCol($conn, $t, $o, $n, $d) {
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 )");
 
+@$conn->query("CREATE TABLE IF NOT EXISTS `partners` (
+  `id` varchar(255) PRIMARY KEY,
+  `name` varchar(255) DEFAULT NULL,
+  `company` varchar(255) DEFAULT NULL,
+  `type` varchar(255) DEFAULT NULL,
+  `contactPerson` varchar(255) DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `whatsapp` varchar(50) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `city` varchar(255) DEFAULT 'Thanjavur',
+  `country` varchar(255) DEFAULT 'India',
+  `status` varchar(50) DEFAULT 'Active',
+  `notes` longtext DEFAULT NULL,
+  `leads` int DEFAULT 0,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
+@$conn->query("CREATE TABLE IF NOT EXISTS `shared_leads` (
+  `id` varchar(255) PRIMARY KEY,
+  `partnerId` varchar(255) DEFAULT NULL,
+  `leadId` varchar(255) DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `propertyType` varchar(255) DEFAULT NULL,
+  `budget` varchar(100) DEFAULT NULL,
+  `sharedBy` varchar(255) DEFAULT NULL,
+  `sharedDate` varchar(100) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'Shared',
+  `notes` longtext DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
+@$conn->query("CREATE TABLE IF NOT EXISTS `settings` (
+  `setting_key` varchar(255) PRIMARY KEY,
+  `setting_value` longtext DEFAULT NULL,
+  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)");
+
 // Safely patch columns
 addCol($conn, 'leads', 'source', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'requirement', 'varchar(255) DEFAULT NULL');
@@ -683,14 +722,22 @@ elseif ($resource === 'partners') {
     if ($method === 'GET') {
         $result = $conn->query("SELECT * FROM partners ORDER BY createdAt DESC");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        if ($result) {
+            while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data || empty($data['id'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Partner ID is required"]);
+            exit;
+        }
         
-        $stmt = $conn->prepare("INSERT INTO partners (id, name, type, contactPerson, phone, whatsapp, email, city, country, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO partners (id, name, company, type, contactPerson, phone, whatsapp, email, city, country, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name=VALUES(name), company=VALUES(company), type=VALUES(type), contactPerson=VALUES(contactPerson), phone=VALUES(phone), whatsapp=VALUES(whatsapp), email=VALUES(email), city=VALUES(city), country=VALUES(country), status=VALUES(status), notes=VALUES(notes)");
         $name = $data['name'] ?? ($data['company'] ?? '');
+        $company = $data['company'] ?? ($data['name'] ?? '');
         $type = $data['type'] ?? ($data['contact'] ?? '');
         $contactPerson = $data['contactPerson'] ?? ($data['contact'] ?? '');
         $phone = $data['phone'] ?? '';
@@ -701,9 +748,9 @@ elseif ($resource === 'partners') {
         $status = $data['status'] ?? 'Active';
         $notes = $data['notes'] ?? '';
         
-        $stmt->bind_param("sssssssssss", $data['id'], $name, $type, $contactPerson, $phone, $whatsapp, $email, $city, $country, $status, $notes);
+        $stmt->bind_param("ssssssssssss", $data['id'], $name, $company, $type, $contactPerson, $phone, $whatsapp, $email, $city, $country, $status, $notes);
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Created successfully"]);
+            echo json_encode(["message" => "Saved successfully"]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);
@@ -712,8 +759,9 @@ elseif ($resource === 'partners') {
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
         
-        $stmt = $conn->prepare("UPDATE partners SET name=?, type=?, contactPerson=?, phone=?, whatsapp=?, email=?, city=?, country=?, status=?, notes=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE partners SET name=?, company=?, type=?, contactPerson=?, phone=?, whatsapp=?, email=?, city=?, country=?, status=?, notes=? WHERE id=?");
         $name = $data['name'] ?? ($data['company'] ?? '');
+        $company = $data['company'] ?? ($data['name'] ?? '');
         $type = $data['type'] ?? ($data['contact'] ?? '');
         $contactPerson = $data['contactPerson'] ?? ($data['contact'] ?? '');
         $phone = $data['phone'] ?? '';
@@ -724,7 +772,7 @@ elseif ($resource === 'partners') {
         $status = $data['status'] ?? 'Active';
         $notes = $data['notes'] ?? '';
 
-        $stmt->bind_param("sssssssssss", $name, $type, $contactPerson, $phone, $whatsapp, $email, $city, $country, $status, $notes, $id);
+        $stmt->bind_param("ssssssssssss", $name, $company, $type, $contactPerson, $phone, $whatsapp, $email, $city, $country, $status, $notes, $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Updated successfully"]);
         } else {
@@ -746,17 +794,35 @@ elseif ($resource === 'partners') {
 
 elseif ($resource === 'shared_leads') {
     if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM shared_leads");
+        $result = $conn->query("SELECT * FROM shared_leads ORDER BY createdAt DESC");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        if ($result) {
+            while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data || empty($data['id'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Shared Lead ID is required"]);
+            exit;
+        }
         
-        
-        $stmt = $conn->prepare("INSERT INTO shared_leads (id, leadId, partnerId, status) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("ssss", $data['id'], $data['leadId'], $data['partnerId'], $data['status']);
+        $stmt = $conn->prepare("INSERT INTO shared_leads (id, partnerId, leadId, name, phone, location, propertyType, budget, sharedBy, sharedDate, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone), location=VALUES(location), propertyType=VALUES(propertyType), budget=VALUES(budget), sharedBy=VALUES(sharedBy), sharedDate=VALUES(sharedDate), status=VALUES(status), notes=VALUES(notes)");
+        $partnerId = $data['partnerId'] ?? '';
+        $leadId = $data['leadId'] ?? '';
+        $name = $data['name'] ?? '';
+        $phone = $data['phone'] ?? '';
+        $location = $data['location'] ?? '';
+        $propertyType = $data['propertyType'] ?? '';
+        $budget = $data['budget'] ?? '';
+        $sharedBy = $data['sharedBy'] ?? '';
+        $sharedDate = $data['sharedDate'] ?? '';
+        $status = $data['status'] ?? 'Shared';
+        $notes = $data['notes'] ?? '';
+
+        $stmt->bind_param("ssssssssssss", $data['id'], $partnerId, $leadId, $name, $phone, $location, $propertyType, $budget, $sharedBy, $sharedDate, $status, $notes);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Created successfully"]);
         } else {
@@ -767,9 +833,20 @@ elseif ($resource === 'shared_leads') {
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
         
-        
-        $stmt = $conn->prepare("UPDATE shared_leads SET leadId=?, partnerId=?, status=? WHERE id=?");
-        $stmt->bind_param("ssss", $data['leadId'], $data['partnerId'], $data['status'], $id);
+        $stmt = $conn->prepare("UPDATE shared_leads SET partnerId=?, leadId=?, name=?, phone=?, location=?, propertyType=?, budget=?, sharedBy=?, sharedDate=?, status=?, notes=? WHERE id=?");
+        $partnerId = $data['partnerId'] ?? '';
+        $leadId = $data['leadId'] ?? '';
+        $name = $data['name'] ?? '';
+        $phone = $data['phone'] ?? '';
+        $location = $data['location'] ?? '';
+        $propertyType = $data['propertyType'] ?? '';
+        $budget = $data['budget'] ?? '';
+        $sharedBy = $data['sharedBy'] ?? '';
+        $sharedDate = $data['sharedDate'] ?? '';
+        $status = $data['status'] ?? 'Shared';
+        $notes = $data['notes'] ?? '';
+
+        $stmt->bind_param("ssssssssssss", $partnerId, $leadId, $name, $phone, $location, $propertyType, $budget, $sharedBy, $sharedDate, $status, $notes, $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Updated successfully"]);
         } else {
@@ -785,6 +862,104 @@ elseif ($resource === 'shared_leads') {
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);
+        }
+    }
+}
+
+elseif ($resource === 'send_whatsapp') {
+    if ($method === 'POST') {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $destination = $data['destination'] ?? ($data['phone'] ?? '');
+        $campaignName = $data['campaignName'] ?? 'partner_lead_assignment';
+        $userName = $data['userName'] ?? 'Customer';
+        $templateParams = $data['templateParams'] ?? [];
+        $apiKey = $data['apiKey'] ?? '';
+
+        if (empty($apiKey)) {
+            $setRes = $conn->query("SELECT setting_value FROM settings WHERE setting_key='whatsapp_integration'");
+            if ($setRes && $setRow = $setRes->fetch_assoc()) {
+                $waSet = json_decode($setRow['setting_value'], true);
+                if (!empty($waSet['apiKey'])) {
+                    $apiKey = $waSet['apiKey'];
+                }
+            }
+        }
+
+        // Clean & format phone to +91XXXXXXXXXX
+        $digits = preg_replace('/\D/', '', $destination);
+        if (strlen($digits) === 10) {
+            $formattedPhone = '+91' . $digits;
+        } elseif (strlen($digits) === 12 && substr($digits, 0, 2) === '91') {
+            $formattedPhone = '+' . $digits;
+        } elseif (strlen($digits) > 0 && !str_starts_with($destination, '+')) {
+            $formattedPhone = '+' . $digits;
+        } else {
+            $formattedPhone = $destination;
+        }
+
+        // Ensure all template params are string values
+        $stringParams = array_values(array_map(function($p) { return (string)$p; }, $templateParams));
+
+        $apiUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
+        $payload = json_encode([
+            'apiKey' => $apiKey,
+            'campaignName' => $campaignName,
+            'destination' => $formattedPhone,
+            'userName' => (string)$userName,
+            'templateParams' => $stringParams
+        ]);
+
+        $ch = curl_init($apiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        echo json_encode([
+            'success' => $httpCode >= 200 && $httpCode < 300,
+            'httpCode' => $httpCode,
+            'campaignName' => $campaignName,
+            'destination' => $formattedPhone,
+            'templateParams' => $stringParams,
+            'response' => json_decode($response, true) ?: $response,
+            'curlError' => $curlErr
+        ]);
+        exit;
+    }
+}
+
+elseif ($resource === 'settings') {
+    if ($method === 'GET') {
+        $result = $conn->query("SELECT * FROM settings");
+        $rows = [];
+        if ($result) {
+            while($row = $result->fetch_assoc()) { 
+                $rows[$row['setting_key']] = $row['setting_value']; 
+            }
+        }
+        echo json_encode($rows);
+    }
+    elseif ($method === 'POST') {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $key = $data['key'] ?? ($data['setting_key'] ?? '');
+        $val = $data['value'] ?? ($data['setting_value'] ?? '');
+        if ($key) {
+            $stmt = $conn->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)");
+            $stmt->bind_param("ss", $key, $val);
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Settings saved successfully"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => $stmt->error]);
+            }
+        } else {
+            http_response_code(400);
+            echo json_encode(["error" => "Key is required"]);
         }
     }
 }

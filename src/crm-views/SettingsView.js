@@ -5,79 +5,135 @@ import { fetchFromAPI } from '../utils/api.js';
 export function renderSettingsView() {
   const templates = [
     {
-      name: 'Bank loan assistance (auto)',
-      tag: 'bank_loan_assist',
-      preview: 'Hi {{name}}, we\'re now at the loan/financing stage. {{agent}} can help coordinate with the bank and paperwork — let us know if you need any assistance!',
-      isActive: true
-    },
-    {
-      name: 'Follow-up message',
-      tag: 'follow_up',
-      preview: 'Hi {{name}}, just following up on the properties I shared earlier. Did any of them catch your eye? Happy to arrange a viewing. — {{agent}}',
-      isActive: true
-    },
-    {
+      id: 'initial_contact_intro',
       name: 'Initial contact intro (auto)',
       tag: 'initial_contact_intro',
-      preview: 'Hi {{name}}! 👋 I\'m {{agent}} from Thanjai Property, following up on your enquiry. I\'d love to understand your requirements better — what are you looking for?',
+      category: 'Stage: New Lead (Auto)',
+      params: ['{{1}} Client Name', '{{2}} Property Type / Requirement', '{{3}} Location'],
+      content: `Hello {{1}},\n\nThank you for your interest in Thanjai Property!\n\nWe have received your requirement for {{2}} in {{3}}. Our property advisor will assist you with verified Patta documents, prime locations, and direct builder coordination.\n\nOfficial Desk: +91 84899 96852\nWebsite: thanjaiproperty.com\n\nWarm regards,\nThanjai Property Desk`,
       isActive: true
     },
     {
+      id: 'stage_requirement_analysis',
+      name: 'Requirement analysis (auto)',
+      tag: 'stage_requirement_analysis',
+      category: 'Stage: Requirement Analysis (Auto)',
+      params: ['{{1}} Client Name', '{{2}} Location', '{{3}} Requirement / Type', '{{4}} Budget Range'],
+      content: `Hello {{1}},\n\nWe are currently analyzing your property requirement in {{2}} for {{3}} with a budget of {{4}}.\n\nOur team is shortlisting legal-verified properties matching your exact criteria and will share tailored options shortly.\n\nFor immediate assistance, contact us at +91 84899 96852.\n\nBest regards,\nThanjai Property`,
+      isActive: true
+    },
+    {
+      id: 'stage_lead_qualified',
+      name: 'Lead qualified confirmation (auto)',
+      tag: 'stage_lead_qualified',
+      category: 'Stage: Qualified (Auto)',
+      params: ['{{1}} Client Name', '{{2}} Requirement', '{{3}} Location', '{{4}} Budget Range'],
+      content: `Hello {{1}},\n\nYour profile and property requirement for {{2}} in {{3}} have been qualified by our senior property desk.\n\nWe have shortlisted exclusive options matching your budget range of {{4}} with 100% legal clearance.\n\nShall we schedule an advisory call or property presentation today?\n\nDesk: +91 84899 96852\nThanjai Property`,
+      isActive: true
+    },
+    {
+      id: 'stage_site_visit_scheduled',
+      name: 'Site visit scheduled (auto)',
+      tag: 'stage_site_visit_scheduled',
+      category: 'Stage: Site Visit (Auto)',
+      params: ['{{1}} Client Name', '{{2}} Property Title', '{{3}} Location', '{{4}} Date', '{{5}} Time', '{{6}} Assigned Specialist'],
+      content: `Hello {{1}},\n\nYour site visit for {{2}} located at {{3}} has been scheduled on {{4}} at {{5}}.\n\nOur property specialist {{6}} will meet you at the site to assist with plot boundaries, layout review, and Patta verification.\n\nLocation coordinator: +91 84899 96852.\n\nWarm regards,\nThanjai Property`,
+      isActive: true
+    },
+    {
+      id: 'stage_negotiation_stage',
       name: 'Negotiation check-in (auto)',
-      tag: 'negotiation_update',
-      preview: 'Hi {{name}}, let\'s finalize the best terms for your new property. {{agent}} is ready to discuss pricing and next steps whenever you are!',
+      tag: 'stage_negotiation_stage',
+      category: 'Stage: Negotiation (Auto)',
+      params: ['{{1}} Client Name', '{{2}} Property Title', '{{3}} Location / Terms'],
+      content: `Hello {{1}},\n\nWe have initiated the price negotiation and legal terms discussion for {{2}} with the property owner.\n\nOur team is working to secure the best finalized deal for you at {{3}}. We will update you with the approved terms shortly.\n\nAdvisory Desk: +91 84899 96852.\n\nBest regards,\nThanjai Property`,
       isActive: true
     },
     {
-      name: 'Partner transfer notification',
-      tag: 'partner_transfer',
-      preview: 'Hi {{name}}, to serve you better we\'ve connected you with our specialist partner team. They will contact you shortly with tailored options. — {{agent}}',
+      id: 'stage_booking_in_progress',
+      name: 'Booking in progress (auto)',
+      tag: 'stage_booking_in_progress',
+      category: 'Stage: Booking In Progress (Auto)',
+      params: ['{{1}} Client Name', '{{2}} Property Title', '{{3}} Location', '{{4}} Token Advance Amount'],
+      content: `Hello {{1}},\n\nGreat news! The booking process for {{2}} in {{3}} is now in progress.\n\nToken Advance / Booking Amount: {{4}}\nOur legal team is preparing the draft sale agreement and verifying the parent deed documents.\n\nFor paperwork support: +91 84899 96852.\n\nWarm regards,\nThanjai Property`,
       isActive: true
     },
     {
-      name: 'Registration testimonial & referral (auto)',
-      tag: 'registration_testimonial',
-      preview: 'Congratulations {{name}} on your new home! 🎉 We\'d be grateful for a short testimonial, and if you know anyone else house-hunting, we\'d love an introduction. — {{agent}}',
+      id: 'bank_loan_assist',
+      name: 'Bank loan assistance (auto)',
+      tag: 'bank_loan_assist',
+      category: 'Stage: Loan / Financing (Auto)',
+      params: ['{{1}} Client Name', '{{2}} Property / Location'],
+      content: `Hello {{1}},\n\nWe are assisting you with your bank loan / home loan process for {{2}}.\n\nOur banking partners (SBI, HDFC, ICICI, Indian Bank) provide competitive interest rates and fast approvals for registered plots and villas.\n\nPlease keep your KYC and income documents ready. Loan desk: +91 84899 96852.\n\nBest regards,\nThanjai Property Finance Desk`,
       isActive: true
     },
     {
-      name: 'Site visit confirmation (auto)',
-      tag: 'site_visit_before',
-      preview: 'Hi {{name}}! 👋 Confirming your site visit scheduled for {{time}}. {{agent}} will meet you there — see you soon!',
+      id: 'stage_deal_won_registration',
+      name: 'Registration testimonial & deal won (auto)',
+      tag: 'stage_deal_won_registration',
+      category: 'Stage: Deal Won & Registration (Auto)',
+      params: ['{{1}} Client Name', '{{2}} Property Title', '{{3}} Location / Registry Office'],
+      content: `Congratulations {{1}}! 🎉\n\nYour property registration for {{2}} at {{3}} has been successfully completed!\n\nThank you for choosing Thanjai Property. We are proud to have assisted you in securing your valuable real estate asset.\n\nOfficial Desk: +91 84899 96852\nThanjai Property`,
       isActive: true
     },
     {
-      name: 'Site visit feedback request (auto)',
-      tag: 'site_visit_feedback',
-      preview: 'Hi {{name}}, thanks for visiting the property today! We\'d love your feedback — what did you think, and are you considering it further? — {{agent}}',
+      id: 'follow_up_nurture',
+      name: 'Follow-up nurture message',
+      tag: 'follow_up_nurture',
+      category: 'General Follow-up / Nurturing',
+      params: ['{{1}} Client Name', '{{2}} Location'],
+      content: `Hello {{1}},\n\nFollowing up on your property requirement in {{2}}. We have new DTCP/RERA-approved projects and independent plots available this week.\n\nWould you like us to share updated layout options and pricing?\n\nDirect WhatsApp: +91 84899 96852.\n\nWarm regards,\nThanjai Property`,
       isActive: true
     },
     {
-      name: 'Site visit reminder',
-      tag: 'site_visit_reminder',
-      preview: 'Hi {{name}}, a gentle reminder about your upcoming site visit. Please let me know if you need to reschedule. — {{agent}}',
+      id: 'partner_transfer_notification',
+      name: 'Partner transfer notification (client)',
+      tag: 'partner_transfer_notification',
+      category: 'Lead Transfer (Client Message)',
+      params: ['{{1}} Client Name', '{{2}} Preferred Location', '{{3}} Partner Specialist Name', '{{4}} Official Desk Number'],
+      content: `Hello {{1}},\n\nYour property requirement in {{2}} has been assigned to our senior partner specialist {{3}}.\n\nOur team and specialist will assist you with exclusive listings, verified Patta documents, and on-site visits.\n\nFor any direct assistance, contact our official desk at {{4}}.\n\nBest regards,\nThanjai Property`,
       isActive: true
     },
     {
-      name: 'Welcome message',
-      tag: 'welcome',
-      preview: 'Hi {{name}}! 👋 Thank you for your interest. I\'m {{agent}} from Thanjai Property. I\'ll help you find the right property for your requirements. When is a good time to talk?',
+      id: 'partner_lead_assignment',
+      name: 'Partner lead assignment (network)',
+      tag: 'partner_lead_assignment',
+      category: 'Partner Network (Partner Message)',
+      params: ['{{1}} Partner Name', '{{2}} Client Name', '{{3}} Location', '{{4}} Requirement', '{{5}} Budget', '{{6}} Notes'],
+      content: `Hello {{1}},\n\nA new qualified buyer requirement has been assigned to you from Thanjai Property:\n\n👤 Client Name: {{2}}\n📍 Preferred Location: {{3}}\n🏡 Requirement: {{4}}\n💰 Budget Range: {{5}}\n\n📝 Notes: {{6}}\n\nFor client coordination, please connect through our official desk: +91 84899 96852.\n\nWarm regards,\nThanjai Property Partner Network`,
+      isActive: true
+    },
+    {
+      id: 'stage_closed_lost_archive',
+      name: 'Requirement closed / archive message',
+      tag: 'stage_closed_lost_archive',
+      category: 'Stage: Closed Lost (Auto)',
+      params: ['{{1}} Client Name', '{{2}} Location / Requirement'],
+      content: `Hello {{1}},\n\nWe have updated your property enquiry status for {{2}}. Whenever you are ready to resume your property search or explore new investments in Tamil Nadu, our desk is always here to assist you.\n\nFeel free to reach out anytime at +91 84899 96852.\n\nBest regards,\nThanjai Property`,
       isActive: true
     }
   ];
 
+  // Save templates list in global window scope for modal viewer
+  window.__thanjaiSettingsTemplates = templates;
+
   const templatesHTML = templates.map(t => `
-    <div class="template-card">
+    <div class="template-card" style="padding: 18px 0; border-bottom: 1px solid var(--os-gray-100);">
       <div class="template-info">
-        <div class="template-header">
-          <span class="template-name">${t.name}</span>
-          <span class="template-tag-key">${t.tag}</span>
-          ${t.isActive ? '<span class="template-tag-active">ACTIVE</span>' : ''}
+        <div class="template-header" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px;">
+          <span class="template-name" style="font-weight: 700; font-size: 0.95rem; color: #0f172a;">${t.name}</span>
+          <span class="template-tag-key" style="background: #f1f5f9; padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 0.75rem; color: #475569; font-weight: 600;">${t.tag}</span>
+          <span style="background: #eff6ff; color: #2563eb; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 12px; border: 1px solid #bfdbfe;">${t.category}</span>
+          ${t.isActive ? '<span class="template-tag-active" style="background: #dcfce7; color: #166534; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; border: 1px solid #bbf7d0;">ACTIVE</span>' : ''}
         </div>
-        <p class="template-preview">${t.preview}</p>
+        <p class="template-preview" style="font-size: 0.85rem; color: #64748b; line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+          ${t.content.replace(/\n/g, ' ')}
+        </p>
       </div>
-      <div class="template-action">
-        <button class="settings-btn-edit">Edit</button>
+      <div class="template-action" style="margin-left: 16px;">
+        <button class="settings-btn-view btn-view-full-template" data-id="${t.id}" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;">
+          <i class="ri-eye-line" style="color: var(--os-luxury-orange, #eb5e28);"></i> View Full Template
+        </button>
       </div>
     </div>
   `).join('');
@@ -110,18 +166,16 @@ export function renderSettingsView() {
         
         <div class="settings-section-header">
           <div>
-            <h2 class="settings-section-title">WhatsApp templates</h2>
+            <h2 class="settings-section-title">Official WhatsApp Templates</h2>
             <p class="settings-section-desc">
-              Client templates use <span class="settings-code-key">{{name}}</span>, <span class="settings-code-key">{{agent}}</span>, <span class="settings-code-key">{{properties}}</span>, <span class="settings-code-key">{{time}}</span>. Keys <span class="settings-code-key">initial_contact_intro</span>, <span class="settings-code-key">follow_up</span>, <span class="settings-code-key">site_visit_before</span>, <span class="settings-code-key">site_visit_feedback</span>, <span class="settings-code-key">negotiation_update</span>, <span class="settings-code-key">bank_loan_assist</span>, and <span class="settings-code-key">registration_testimonial</span> fire automatically on lead stage changes. Vendor templates use <span class="settings-code-key">{{vendor_name}}</span>, <span class="settings-code-key">{{location}}</span>, <span class="settings-code-key">{{property_type}}</span>, <span class="settings-code-key">{{budget}}</span>, <span class="settings-code-key">{{size}}</span>, <span class="settings-code-key">{{date}}</span>, <span class="settings-code-key">{{time}}</span>. Keys <span class="settings-code-key">vendor_property_request</span>, <span class="settings-code-key">vendor_more_details</span>, <span class="settings-code-key">vendor_shortlisted</span>, <span class="settings-code-key">vendor_site_visit</span>, <span class="settings-code-key">vendor_negotiation</span>, and <span class="settings-code-key">vendor_thank_you</span> fire automatically on vendor stage changes; <span class="settings-code-key">vendor_availability</span> is manual-only. Partner templates use <span class="settings-code-key">{{partner_name}}</span>, <span class="settings-code-key">{{lead_name}}</span>, <span class="settings-code-key">{{location}}</span>, <span class="settings-code-key">{{property_type}}</span>, <span class="settings-code-key">{{budget}}</span>, <span class="settings-code-key">{{notes}}</span>, <span class="settings-code-key">{{properties}}</span>, <span class="settings-code-key">{{brand}}</span>, <span class="settings-code-key">{{agent}}</span>. Only the key <span class="settings-code-key">partner_referral</span> is used — it fires when a lead is shared to a partner company with "Send WhatsApp" checked; without one, a built-in default message is sent instead.
+              All official WhatsApp campaign templates approved on SmartPing (+91 84899 96852). Click <strong>View Full Template</strong> to inspect parameter structures, dynamic values, and live preview layout.
             </p>
-          </div>
-          <div class="settings-actions">
-            <button class="settings-btn-outline"><i class="ri-download-2-line"></i> Export CSV</button>
-            <button class="settings-btn-primary">+ New template</button>
           </div>
         </div>
 
-        <div class="template-group-title">CLIENT TEMPLATES</div>
+        <div class="template-group-title" style="font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; color: #64748b; margin-top: 16px;">
+          APPROVED SMARTPING CAMPAIGN TEMPLATES (${templates.length})
+        </div>
         
         <div class="template-list">
           ${templatesHTML}
@@ -138,6 +192,62 @@ export function renderSettingsView() {
         </div>
       </div>
       </div> <!-- End Templates Tab -->
+
+      <!-- Full Template View Modal (Fixed Centered Modal) -->
+      <div id="view-template-modal" class="os-modal-overlay" style="position: fixed !important; inset: 0 !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(15, 23, 42, 0.65) !important; backdrop-filter: blur(5px) !important; z-index: 999999 !important; display: none; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;">
+        <div class="os-modal-card" style="max-width: 600px; width: 100%; max-height: 88vh; background: #ffffff; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); overflow: hidden; display: flex; flex-direction: column; margin: auto; border: 1px solid #e2e8f0;">
+          
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+            <div>
+              <h3 id="modal-tpl-title" style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #0f172a;">Template Details</h3>
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                <span id="modal-tpl-tag" style="background: #e2e8f0; font-family: monospace; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 6px; color: #334155;">tag</span>
+                <span id="modal-tpl-category" style="background: #eff6ff; color: #2563eb; font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 12px; border: 1px solid #bfdbfe;">Category</span>
+              </div>
+            </div>
+            <button id="close-template-modal-btn" style="background: none; border: none; font-size: 1.4rem; color: #64748b; cursor: pointer; padding: 4px; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+
+          <div style="padding: 22px 24px; overflow-y: auto; max-height: calc(88vh - 140px);">
+            
+            <div style="margin-bottom: 16px;">
+              <label style="font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">
+                Dynamic Parameter Structure
+              </label>
+              <div id="modal-tpl-params" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <!-- Parameter badges injected here -->
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">
+                Full Message Content (SmartPing Format)
+              </label>
+              <div style="background: #eef8f2; border: 1px solid #c7eed8; border-radius: 12px; padding: 18px; position: relative;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: #059669; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                  <i class="ri-whatsapp-fill" style="font-size: 1rem;"></i> OFFICIAL WHATSAPP PREVIEW (+91 84899 96852)
+                </div>
+                <div id="modal-tpl-content" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.6; color: #1e293b; font-family: inherit;">
+                  <!-- Template body injected here -->
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc;">
+            <button id="copy-tpl-content-btn" class="settings-btn-outline" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 0.85rem;">
+              <i class="ri-file-copy-line"></i> Copy Template Text
+            </button>
+            <button id="close-template-modal-footer-btn" class="settings-btn-primary" style="padding: 8px 20px; font-size: 0.85rem;">
+              Close
+            </button>
+          </div>
+
+        </div>
+      </div>
 
       <!-- Tab Content: Branding -->
       <div id="tab-branding" class="tab-content">
@@ -511,4 +621,85 @@ export function initSettingsView() {
       showToast('WhatsApp Settings saved & synchronized successfully!', 'success');
     });
   }
+
+  // Full Template View Modal Logic
+  const viewModal = document.getElementById('view-template-modal');
+  if (viewModal) {
+    // Remove any previously attached modal from body to prevent duplicates
+    document.querySelectorAll('body > #view-template-modal').forEach(m => {
+      if (m !== viewModal) m.remove();
+    });
+    // Append to document.body to ensure it renders at full screen above sidebar and header
+    if (viewModal.parentNode !== document.body) {
+      document.body.appendChild(viewModal);
+    }
+  }
+
+  const closeBtn = document.getElementById('close-template-modal-btn');
+  const closeFooterBtn = document.getElementById('close-template-modal-footer-btn');
+  const copyContentBtn = document.getElementById('copy-tpl-content-btn');
+
+  let currentViewingContent = '';
+
+  document.querySelectorAll('.btn-view-full-template').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tplId = btn.dataset.id;
+      const allTemplates = window.__thanjaiSettingsTemplates || [];
+      const tpl = allTemplates.find(t => t.id === tplId);
+      if (!tpl || !viewModal) return;
+
+      currentViewingContent = tpl.content;
+
+      const titleEl = document.getElementById('modal-tpl-title');
+      const tagEl = document.getElementById('modal-tpl-tag');
+      const categoryEl = document.getElementById('modal-tpl-category');
+      
+      if (titleEl) titleEl.textContent = tpl.name;
+      if (tagEl) tagEl.textContent = tpl.tag;
+      if (categoryEl) categoryEl.textContent = tpl.category;
+
+      const paramsContainer = document.getElementById('modal-tpl-params');
+      if (paramsContainer) {
+        paramsContainer.innerHTML = (tpl.params || []).map(p => `
+          <span style="background: #e0f2fe; color: #0369a1; font-size: 0.76rem; font-weight: 600; padding: 4px 10px; border-radius: 8px; border: 1px solid #bae6fd; font-family: monospace;">
+            ${p}
+          </span>
+        `).join('');
+      }
+
+      const contentEl = document.getElementById('modal-tpl-content');
+      if (contentEl) {
+        // Highlight placeholders {{1}}, {{2}} with orange badge styling
+        const highlighted = tpl.content.replace(/(\{\{\d+\}\})/g, '<strong style="color: var(--os-luxury-orange, #eb5e28); background: #fed7aa; padding: 1px 6px; border-radius: 4px;">$1</strong>');
+        contentEl.innerHTML = highlighted;
+      }
+
+      viewModal.style.display = 'flex';
+      viewModal.classList.add('show');
+    });
+  });
+
+  const closeModalFn = () => {
+    if (viewModal) {
+      viewModal.style.display = 'none';
+      viewModal.classList.remove('show');
+    }
+  };
+
+  closeBtn?.addEventListener('click', closeModalFn);
+  closeFooterBtn?.addEventListener('click', closeModalFn);
+
+  viewModal?.addEventListener('click', (e) => {
+    if (e.target === viewModal) closeModalFn();
+  });
+
+  copyContentBtn?.addEventListener('click', () => {
+    if (currentViewingContent) {
+      navigator.clipboard.writeText(currentViewingContent).then(() => {
+        showToast('Template text copied to clipboard!', 'ri-file-copy-line');
+      }).catch(() => {
+        showToast('Template text copied!', 'ri-checkbox-circle-fill');
+      });
+    }
+  });
 }

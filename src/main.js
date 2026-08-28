@@ -17,6 +17,7 @@ import { renderMobileBottomNav, initMobileBottomNavListeners, MobileBottomNav } 
 import { renderPropertyDetailModal, initPropertyDetailModalListeners } from './components/PropertyDetailModal.js';
 import { renderPostPropertyModal, initPostPropertyModalListeners } from './components/PostPropertyModal.js';
 import { renderScheduleVisitModal, initScheduleVisitModalListeners } from './components/ScheduleVisitModal.js';
+import { initBuildingCursor } from './components/BuildingCursor.js';
 
 // Views for Pages 2, 3, 4, 5
 import { renderOurStoryView, initOurStoryListeners } from './views/OurStoryView.js';
@@ -436,6 +437,9 @@ async function initApp() {
   
   initSiteImagesStore();
   
+  // Initialize Luxury Architectural Building Cursor
+  initBuildingCursor();
+
   // Set up mobile navigation
   MobileBottomNav.init();
 }

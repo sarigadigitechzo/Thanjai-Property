@@ -49,7 +49,7 @@ export function renderPartnersView() {
     </div>
 
     <!-- Add/Edit Partner Modal -->
-    <div class="os-modal-overlay" id="add-partner-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="os-modal-overlay" id="add-partner-modal">
       <div class="os-modal-card" style="max-width: 650px; width: 90%; background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
         <div class="os-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <h2 id="partner-modal-title" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b;">Add partner company</h2>
@@ -113,7 +113,7 @@ export function renderPartnersView() {
     </div>
 
     <!-- Share Lead Modal -->
-    <div class="os-modal-overlay" id="share-lead-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="os-modal-overlay" id="share-lead-modal">
       <div class="os-modal-card" style="max-width: 550px; width: 90%; background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
         <div class="os-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
           <h2 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: #1e293b;"><i class="ri-user-shared-line" style="color: #e27c3e;"></i> Share Lead to Partner</h2>
@@ -413,7 +413,7 @@ export function initPartnersView() {
     if (notesInput) notesInput.value = '';
     if (title) title.textContent = 'Add partner company';
     if (saveBtn) saveBtn.textContent = 'Save Partner';
-    if (modal) modal.style.display = 'flex';
+    if (modal) modal.classList.add('show');
   };
 
   const openEditPartnerModal = (partnerId) => {
@@ -447,12 +447,12 @@ export function initPartnersView() {
     
     if (title) title.textContent = 'Edit partner company';
     if (saveBtn) saveBtn.textContent = 'Update Partner';
-    if (modal) modal.style.display = 'flex';
+    if (modal) modal.classList.add('show');
   };
 
   const closePartnerModalFn = () => {
     const modal = document.getElementById('add-partner-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) modal.classList.remove('show');
   };
 
   const btnAddPartner = document.getElementById('btn-add-partner');
@@ -473,6 +473,7 @@ export function initPartnersView() {
     });
   }
 
+  const savePartnerBtn = document.getElementById('save-partner-modal');
   if (savePartnerBtn) {
     savePartnerBtn.addEventListener('click', async () => {
       const editId = document.getElementById('ap-edit-id')?.value.trim();
@@ -605,11 +606,11 @@ export function initPartnersView() {
     document.getElementById('sl-budget').value = '₹ 25 - 50 Lakhs';
     document.getElementById('sl-notes').value = '';
 
-    if (shareLeadModal) shareLeadModal.style.display = 'flex';
+    if (shareLeadModal) shareLeadModal.classList.add('show');
   };
 
   const closeShareLeadModalFn = () => {
-    if (shareLeadModal) shareLeadModal.style.display = 'none';
+    if (shareLeadModal) shareLeadModal.classList.remove('show');
   };
 
   if (btnShareLead) btnShareLead.addEventListener('click', openShareLeadModal);
@@ -679,9 +680,112 @@ export function initPartnersView() {
       const partnerIdx = partners.findIndex(p => String(p.id) === String(activePartnerId));
       let partnerName = 'Partner';
       if (partnerIdx !== -1) {
-        partnerName = partners[partnerIdx].name || partners[partnerIdx].company || 'Partner';
+        const targetPartner = partners[partnerIdx];
+        partnerName = targetPartner.name || targetPartner.company || 'Partner';
         partners[partnerIdx].leads = allSharedLeads[activePartnerId].length;
         localStorage.setItem('thanjai_partners', JSON.stringify(partners));
+
+        // 1. Dispatch official partner_lead_assignment template to partner
+        let pPhone = (targetPartner.whatsapp || targetPartner.phone || '').replace(/\D/g, '');
+        if (pPhone) {
+          if (pPhone.length === 10) pPhone = '+91' + pPhone;
+          else if (pPhone.length === 12 && pPhone.startsWith('91')) pPhone = '+' + pPhone;
+          else if (!pPhone.startsWith('+')) pPhone = '+' + pPhone;
+
+          const handoverNotes = notes || 'Requirement from CRM';
+          const templateMessage = `Hello ${partnerName},\n\nA new qualified buyer requirement has been assigned to you from Thanjai Property:\n\n👤 Client Name: ${name}\n📍 Preferred Location: ${location}\n🏡 Requirement: ${type}\n💰 Budget Range: ${budget}\n\n📝 Notes: ${handoverNotes}\n\nFor client coordination, please connect through our official desk: +91 84899 96852.\n\nWarm regards,\nThanjai Property Partner Network`;
+
+          // Save to whatsapp_logs table in database
+          fetchFromAPI('/whatsapp_logs', {
+            method: 'POST',
+            body: JSON.stringify({
+              id: `WA-${Date.now()}`,
+              phone: pPhone,
+              sender: 'Super Admin',
+              recipientName: partnerName,
+              message: templateMessage,
+              type: 'outbound'
+            })
+          }).catch(() => {});
+
+          const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
+          if (apiKey) {
+            const payload = {
+              apiKey: apiKey,
+              campaignName: 'partner_lead_assignment',
+              destination: pPhone,
+              userName: partnerName,
+              templateParams: [
+                partnerName,
+                name,
+                location,
+                type,
+                budget,
+                handoverNotes
+              ]
+            };
+
+            fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).then(r => r.json()).then(resData => {
+              if (resData.status !== 'error') {
+                showToast(`WhatsApp sent to partner ${partnerName}!`, 'ri-checkbox-circle-fill');
+              } else {
+                showToast(`SmartPing: ${resData.message || resData.error || 'Dispatch error'}`, 'ri-alert-line');
+              }
+            }).catch(() => {
+              fetchFromAPI('/send_whatsapp', { method: 'POST', body: JSON.stringify(payload) }).catch(() => {});
+            });
+          }
+        }
+
+        // 2. Dispatch partner_transfer_notification template to client
+        let cPhone = (phone || '').replace(/\D/g, '');
+        if (cPhone) {
+          if (cPhone.length === 10) cPhone = '+91' + cPhone;
+          else if (cPhone.length === 12 && cPhone.startsWith('91')) cPhone = '+' + cPhone;
+          else if (!cPhone.startsWith('+')) cPhone = '+' + cPhone;
+
+          const clientTemplateMessage = `Hello ${name},\n\nYour property requirement in ${location} has been assigned to our senior partner specialist ${partnerName}.\n\nOur team and specialist will assist you with exclusive listings, verified Patta documents, and on-site visits.\n\nFor any direct assistance, contact our official desk at +91 84899 96852.\n\nBest regards,\nThanjai Property`;
+
+          fetchFromAPI('/whatsapp_logs', {
+            method: 'POST',
+            body: JSON.stringify({
+              id: `WA-${Date.now()}-client`,
+              phone: cPhone,
+              sender: 'Super Admin',
+              recipientName: name,
+              message: clientTemplateMessage,
+              type: 'outbound'
+            })
+          }).catch(() => {});
+
+          const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
+          if (apiKey) {
+            const payload = {
+              apiKey: apiKey,
+              campaignName: 'partner_transfer_notification',
+              destination: cPhone,
+              userName: name,
+              templateParams: [
+                name,
+                location,
+                partnerName,
+                '+91 84899 96852'
+              ]
+            };
+
+            fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).catch(() => {
+              fetchFromAPI('/send_whatsapp', { method: 'POST', body: JSON.stringify(payload) }).catch(() => {});
+            });
+          }
+        }
       }
 
       addAuditLog({
@@ -693,7 +797,7 @@ export function initPartnersView() {
       closeShareLeadModalFn();
       renderSidebar();
       renderContent();
-      showToast(`Lead shared with ${partnerName}!`, 'ri-checkbox-circle-fill');
+      showToast(`Lead shared with ${partnerName} & WhatsApp notification sent!`, 'ri-checkbox-circle-fill');
     });
   }
 
@@ -703,7 +807,7 @@ export function initPartnersView() {
 
   // Background API Sync
   fetchFromAPI('/partners').then(data => {
-    if (data && Array.isArray(data)) {
+    if (data && Array.isArray(data) && data.length > 0) {
       partners = data.map(p => {
         return {
           id: p.id,
@@ -725,6 +829,14 @@ export function initPartnersView() {
       activePartnerId = partners.length > 0 ? partners[0].id : null;
       renderSidebar();
       renderContent();
+    } else if (partners.length > 0) {
+      // Sync local partners to database
+      partners.forEach(p => {
+        fetchFromAPI('/partners', {
+          method: 'POST',
+          body: JSON.stringify(p)
+        }).catch(() => {});
+      });
     }
   }).catch(error => {
     console.warn('API sync warning:', error);
