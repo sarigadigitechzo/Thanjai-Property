@@ -432,7 +432,39 @@ export function initPartnersView() {
     if (addPartnerModal) addPartnerModal.style.display = 'none';
   };
 
-  if (btnAddPartner) btnAddPartner.addEventListener('click', openAddPartnerModal);
+  // Use event delegation for the Add Partner button to guarantee it works even if DOM is modified
+  if (!window.partnerListenersAttached) {
+    document.body.addEventListener('click', (e) => {
+      if (e.target.closest('#btn-add-partner')) {
+        try {
+          document.getElementById('ap-edit-id').value = '';
+          document.getElementById('ap-company').value = '';
+          document.getElementById('ap-contact').value = '';
+          document.getElementById('ap-phone').value = '';
+          document.getElementById('ap-whatsapp').value = '';
+          document.getElementById('ap-email').value = '';
+          document.getElementById('ap-city').value = 'Thanjavur';
+          document.getElementById('ap-country').value = 'India';
+          document.getElementById('ap-status').value = 'Active';
+          document.getElementById('ap-notes').value = '';
+          
+          const title = document.getElementById('partner-modal-title');
+          const saveBtn = document.getElementById('save-partner-modal');
+          const modal = document.getElementById('add-partner-modal');
+          
+          if (title) title.textContent = 'Add partner company';
+          if (saveBtn) saveBtn.textContent = 'Save Partner';
+          if (modal) modal.style.display = 'flex';
+          else alert("Error: Modal element not found in DOM");
+        } catch (err) {
+          console.error("Error opening add partner modal:", err);
+          alert("Error opening modal: " + err.message);
+        }
+      }
+    });
+    window.partnerListenersAttached = true;
+  }
+
   if (closePartnerModal) closePartnerModal.addEventListener('click', closePartnerModalFn);
   if (cancelPartnerModal) cancelPartnerModal.addEventListener('click', closePartnerModalFn);
 
