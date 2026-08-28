@@ -87,7 +87,8 @@ export const INITIAL_BLOG_POSTS = [
 
 import { fetchFromAPI } from './api.js';
 
-let blogPostsCache = loadBlogPostsFromStorage();
+let blogPostsCache = null;
+blogPostsCache = loadBlogPostsFromStorage();
 let isInitialized = false;
 
 export async function initBlogStore() {
