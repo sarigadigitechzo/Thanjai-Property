@@ -323,7 +323,7 @@ function mapLeadFromAPI(l) {
     whatsapp: l.whatsapp || mobile,
     email: l.email || '',
     country: l.country || (locParts.length >= 3 ? locParts[locParts.length - 1] : 'India'),
-    city: locParts.length >= 2 ? locParts[locParts.length - 2] : (l.city || 'Thanjavur'),
+    city: locParts.length >= 2 ? locParts[locParts.length - 2] : (locParts[0] || l.city || 'Thanjavur'),
     area: locParts[0] || loc,
     location: loc,
     budgetMin: l.budgetMin || '',
