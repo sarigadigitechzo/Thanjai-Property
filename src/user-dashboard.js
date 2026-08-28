@@ -651,6 +651,14 @@ export function renderUserDashboard() {
 
     // FORM SUBMISSION HANDLER
     const form = document.getElementById('client-post-prop-form');
+    const submitBtn = document.getElementById('user-submit-prop-btn');
+    
+    submitBtn?.addEventListener('click', () => {
+      if (form && !form.checkValidity()) {
+        showToast('Please fill out all required fields marked with * (Scroll up to see)', 'ri-error-warning-line');
+      }
+    });
+
     form?.addEventListener('submit', (e) => {
       e.preventDefault();
       const title = document.getElementById('user-prop-title').value;
@@ -1498,7 +1506,7 @@ function renderPostPropertyFormHtml(propToEdit = null, adType = 'free') {
 
         <!-- SUBMIT ACTION BUTTON -->
         <div style="border-top: 1px solid #E2E8F0; padding-top: 24px; display: flex; justify-content: flex-end; gap: 12px;">
-          <button type="submit" style="background: #eb5e28; color: #fff; border: none; padding: 12px 32px; border-radius: 10px; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 4px 14px rgba(235,94,40,0.35);">
+          <button type="submit" id="user-submit-prop-btn" style="background: #eb5e28; color: #fff; border: none; padding: 12px 32px; border-radius: 10px; font-weight: 800; font-size: 0.95rem; cursor: pointer; box-shadow: 0 4px 14px rgba(235,94,40,0.35);">
             <i class="ri-send-plane-fill"></i> ${isEdit ? 'Save & Update Property' : 'Submit & Publish Listing'}
           </button>
         </div>
