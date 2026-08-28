@@ -172,6 +172,7 @@ addCol($conn, 'portal_users', 'passwordUpdatedAt', 'varchar(100) DEFAULT NULL');
 addCol($conn, 'portal_users', 'role', 'varchar(100) DEFAULT "Individual Owner"');
 addCol($conn, 'portal_users', 'roleCode', 'varchar(100) DEFAULT "individualowner"');
 addCol($conn, 'portal_users', 'status', 'varchar(50) DEFAULT "Active"');
+renCol($conn, 'portal_users', 'name', 'fullName', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'portal_users', 'propertiesCount', 'int(11) DEFAULT 0');
 addCol($conn, 'portal_users', 'visitorsCount', 'int(11) DEFAULT 0');
 addCol($conn, 'portal_users', 'buyersCount', 'int(11) DEFAULT 0');
