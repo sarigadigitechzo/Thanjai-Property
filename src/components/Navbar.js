@@ -37,17 +37,27 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
 
           <!-- Action Buttons (Matching Screenshot 1) -->
           <div class="nav-actions" style="display: flex; align-items: center; gap: 10px;">
-            ${currentUser ? `
-              <a href="/user-dashboard" class="nav-login-btn" id="nav-account-btn" title="View My Account Workspace">
-                <i class="ri-user-3-line"></i>
-                <span>My Account</span>
-              </a>
-            ` : `
-              <a href="/user-login" class="nav-login-btn" id="nav-login-btn" title="Sign In to your Account">
-                <i class="ri-user-3-line"></i>
-                <span>Login</span>
-              </a>
-            `}
+            ${(() => {
+              if (currentUser) {
+                const isAdmin = currentUser.roleCode && (currentUser.roleCode.includes('admin') || currentUser.roleCode.includes('manager') || currentUser.roleCode.includes('executive') || currentUser.roleCode.includes('staff'));
+                const url = isAdmin ? '/admin-dashboard' : '/user-dashboard';
+                const label = isAdmin ? 'Admin Dashboard' : 'My Account';
+                const icon = isAdmin ? 'ri-dashboard-3-line' : 'ri-user-3-line';
+                return `
+                  <a href="${url}" class="nav-login-btn" id="nav-account-btn" title="View Workspace">
+                    <i class="${icon}"></i>
+                    <span>${label}</span>
+                  </a>
+                `;
+              } else {
+                return `
+                  <a href="/user-login" class="nav-login-btn" id="nav-login-btn" title="Sign In to your Account">
+                    <i class="ri-user-3-line"></i>
+                    <span>Login</span>
+                  </a>
+                `;
+              }
+            })()}
 
             <a href="${currentUser ? '/user-dashboard' : '/user-register'}" class="nav-post-property-btn" id="nav-post-property-btn" title="Add New Property for Sale or Rent">
               <i class="ri-home-4-line"></i>
@@ -90,17 +100,27 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
 
         <!-- Mobile Drawer Action Buttons -->
         <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 28px; margin-bottom: 20px;">
-          ${currentUser ? `
-            <a href="/user-dashboard" class="mobile-drawer-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
-              <i class="ri-user-3-line"></i>
-              <span>My Account</span>
-            </a>
-          ` : `
-            <a href="/user-login" class="mobile-drawer-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
-              <i class="ri-user-3-line"></i>
-              <span>Login</span>
-            </a>
-          `}
+          ${(() => {
+            if (currentUser) {
+              const isAdmin = currentUser.roleCode && (currentUser.roleCode.includes('admin') || currentUser.roleCode.includes('manager') || currentUser.roleCode.includes('executive') || currentUser.roleCode.includes('staff'));
+              const url = isAdmin ? '/admin-dashboard' : '/user-dashboard';
+              const label = isAdmin ? 'Admin Dashboard' : 'My Account';
+              const icon = isAdmin ? 'ri-dashboard-3-line' : 'ri-user-3-line';
+              return `
+                <a href="${url}" class="mobile-drawer-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
+                  <i class="${icon}"></i>
+                  <span>${label}</span>
+                </a>
+              `;
+            } else {
+              return `
+                <a href="/user-login" class="mobile-drawer-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
+                  <i class="ri-user-3-line"></i>
+                  <span>Login</span>
+                </a>
+              `;
+            }
+          })()}
 
           <a href="${currentUser ? '/user-dashboard' : '/user-register'}" class="mobile-drawer-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 30px; background: #E52E3D; color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 14px rgba(229,46,61,0.4);">
             <i class="ri-home-4-line"></i>
