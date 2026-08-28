@@ -236,6 +236,7 @@ export async function initSiteVisitsView() {
             <div class="v-actions">
               <button class="v-btn whatsapp"><i class="ri-whatsapp-line"></i> Message</button>
               <button class="v-btn map"><i class="ri-map-pin-line"></i> Directions</button>
+              <button class="v-btn delete-btn" data-id="${v.id}" style="color: var(--os-error); border-color: #fee2e2; background: #fef2f2;"><i class="ri-delete-bin-line"></i> Delete</button>
             </div>
           </div>
         `;
@@ -250,6 +251,24 @@ export async function initSiteVisitsView() {
     });
     agendaContainer.querySelectorAll('.v-btn.map').forEach(btn => {
       btn.addEventListener('click', () => window.open('https://maps.google.com', '_blank'));
+    });
+    agendaContainer.querySelectorAll('.v-btn.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        if (confirm('Are you sure you want to delete this site visit?')) {
+          try {
+            await fetchFromAPI('/site_visits/' + id, { method: 'DELETE' });
+            // Refresh visits list
+            visits = visits.filter(v => v.id != id);
+            // Re-render calendar dots and current day agenda
+            updateCalendarDots();
+            renderAgenda(day);
+          } catch (err) {
+            console.error('Failed to delete visit', err);
+            alert('Failed to delete visit');
+          }
+        }
+      });
     });
   };
 

@@ -138,6 +138,7 @@ addCol($conn, 'leads', 'purpose', 'varchar(255) DEFAULT NULL');
 
 @$conn->query("ALTER TABLE leads MODIFY COLUMN timeline LONGTEXT");
 @$conn->query("ALTER TABLE leads MODIFY COLUMN notes LONGTEXT");
+addCol($conn, 'leads', 'whatsapp', 'varchar(50) DEFAULT NULL');
 
 addCol($conn, 'blog_posts', 'slug', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'blog_posts', 'metaTitle', 'varchar(255) DEFAULT NULL');
@@ -280,20 +281,21 @@ elseif ($resource === 'leads') {
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, email, source, status, budget, requirement, location, timeline, assignedTo, notes, followup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, whatsapp, email, source, status, budget, requirement, location, timeline, assignedTo, notes, followup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         if (!$stmt) {
             http_response_code(500);
             echo json_encode(["error" => "Database prepare error: " . $conn->error]);
             exit();
         }
         $phone = $data['phone'] ?? $data['mobile'] ?? '';
+        $whatsapp = $data['whatsapp'] ?? $phone;
         $timeline = is_string($data['timeline'] ?? null) ? $data['timeline'] : json_encode($data['timeline'] ?? []);
         $notes = is_string($data['notes'] ?? null) ? $data['notes'] : json_encode($data['notes'] ?? []);
         $followup = $data['followup'] ?? '—';
         $location = $data['location'] ?? $data['area'] ?? $data['city'] ?? 'Thanjavur';
         $requirement = $data['requirement'] ?? $data['propertyType'] ?? $data['type'] ?? 'Residential Plot';
         $assignedTo = $data['assignedTo'] ?? $data['assignTo'] ?? 'Unassigned';
-        $stmt->bind_param("sssssssssssss", $data['id'], $data['name'], $phone, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup);
+        $stmt->bind_param("ssssssssssssss", $data['id'], $data['name'], $phone, $whatsapp, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Lead created successfully"]);
         } else {
@@ -303,15 +305,16 @@ elseif ($resource === 'leads') {
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("UPDATE leads SET name=?, phone=?, email=?, source=?, status=?, budget=?, requirement=?, location=?, timeline=?, assignedTo=?, notes=?, followup=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE leads SET name=?, phone=?, whatsapp=?, email=?, source=?, status=?, budget=?, requirement=?, location=?, timeline=?, assignedTo=?, notes=?, followup=? WHERE id=?");
         $phone = $data['phone'] ?? $data['mobile'] ?? '';
+        $whatsapp = $data['whatsapp'] ?? $phone;
         $timeline = is_string($data['timeline'] ?? null) ? $data['timeline'] : json_encode($data['timeline'] ?? []);
         $notes = is_string($data['notes'] ?? null) ? $data['notes'] : json_encode($data['notes'] ?? []);
         $followup = $data['followup'] ?? '—';
         $location = $data['location'] ?? $data['area'] ?? $data['city'] ?? 'Thanjavur';
         $requirement = $data['requirement'] ?? $data['propertyType'] ?? $data['type'] ?? 'Residential Plot';
         $assignedTo = $data['assignedTo'] ?? $data['assignTo'] ?? 'Unassigned';
-        $stmt->bind_param("sssssssssssss", $data['name'], $phone, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup, $id);
+        $stmt->bind_param("ssssssssssssss", $data['name'], $phone, $whatsapp, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup, $id);
         $stmt->execute();
         echo json_encode(["message" => "Lead updated successfully"]);
     }

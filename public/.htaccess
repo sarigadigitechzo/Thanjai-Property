@@ -1,4 +1,4 @@
-﻿# Apache configuration for Thanjai Property CRM & Webhook API
+# Apache configuration for Thanjai Property CRM & Webhook API
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -8,9 +8,9 @@
   RewriteCond %{HTTP:Authorization} .
   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
-  # Handle API requests
+  # Handle API requests (including path info like /api.php/leads/L-123)
   RewriteRule ^api\.php(/.*)?$ api.php [QSA,L]
-  RewriteRule ^api/(.*)$ api.php?resource= [QSA,L]
+  RewriteRule ^api/(.*)$ api.php?resource=$1 [QSA,L]
 
   # Direct access to physical files/directories
   RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -23,5 +23,6 @@
   RewriteRule ^user-dashboard\.html$ user-dashboard.html [L]
 
   # Fallback to index.html for SPA
+  RewriteCond %{REQUEST_URI} !^/api\.php
   RewriteRule ^ index.html [L]
 </IfModule>

@@ -164,120 +164,69 @@ export function renderPartnersView() {
   `;
 }
 
-export async function initPartnersView() {
+export function initPartnersView() {
   // 1. Data Initialization
-  let partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
-  
-  // Seed default partners if completely empty
-  if (partners.length === 0) {
-    partners = [
-      {
-        id: '1',
-        name: 'Chennai Prime Realty',
-        company: 'Chennai Prime Realty',
-        type: 'Channel Partner',
-        contact: 'Senthil Nathan',
-        contactPerson: 'Senthil Nathan',
-        city: 'Chennai',
-        phone: '9840123456',
-        whatsapp: '9840123456',
-        email: 'senthil@chennaiprime.example',
-        country: 'India',
-        notes: 'Specializes in NRI investors and luxury villas.',
-        leads: 2,
-        status: 'Active'
-      },
-      {
-        id: '2',
-        name: 'Trichy Housing Network',
-        company: 'Trichy Housing Network',
-        type: 'Broker Network',
-        contact: 'Anand Kumar',
-        contactPerson: 'Anand Kumar',
-        city: 'Trichy',
-        phone: '9443123456',
-        whatsapp: '9443123456',
-        email: 'anand@trichyhousing.example',
-        country: 'India',
-        notes: 'Commercial plots and residential layouts in Trichy-Thanjavur corridor.',
-        leads: 1,
-        status: 'Active'
-      }
-    ];
-    localStorage.setItem('thanjai_partners', JSON.stringify(partners));
-  }
-
+  let partners = [];
   try {
-    const data = await fetchFromAPI('/partners');
-    if (data && Array.isArray(data) && data.length > 0) {
-      const localMap = new Map(partners.map(p => [p.id, p]));
-      partners = data.map(p => {
-        const local = localMap.get(p.id);
-        return {
-          id: p.id,
-          name: p.name || p.company || (local && local.company) || 'Partner Company',
-          company: p.name || p.company || (local && local.company) || 'Partner Company',
-          contact: p.contactPerson || p.type || p.contact || (local && local.contact) || 'Contact Person',
-          contactPerson: p.contactPerson || p.type || p.contact || (local && local.contact) || 'Contact Person',
-          city: p.city || (local && local.city) || 'Thanjavur',
-          phone: p.phone || (local && local.phone) || '',
-          whatsapp: p.whatsapp || (local && local.whatsapp) || p.phone || '',
-          email: p.email || (local && local.email) || '',
-          country: p.country || (local && local.country) || 'India',
-          notes: p.notes || (local && local.notes) || '',
-          leads: p.leads || (local && local.leads) || 0,
-          status: p.status || (local && local.status) || 'Active'
-        };
-      });
-      localStorage.setItem('thanjai_partners', JSON.stringify(partners));
+    const stored = localStorage.getItem('thanjai_partners');
+    if (stored && stored !== 'undefined') {
+      partners = JSON.parse(stored);
     }
-  } catch (error) {
-    console.warn('API sync warning:', error);
+    if (!Array.isArray(partners)) partners = [];
+  } catch (e) {
+    console.warn("Failed to parse partners data:", e);
+    partners = [];
   }
 
   // 2. Shared Leads Data
-  let allSharedLeads = JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {
-    '1': [
-      {
-        id: 'SL-101',
-        name: 'Karthikeyan V G',
-        phone: '9841298765',
-        location: 'Madurai',
-        propertyType: 'Plot',
-        budget: '₹ 1.10 Crore',
-        sharedBy: 'Arun Prakash',
-        sharedDate: '11 Aug 2026, 11:13',
-        status: 'Shared',
-        notes: 'Looking for DTCP approved commercial plot near bypass.'
-      },
-      {
-        id: 'SL-102',
-        name: 'Rajesh Annamalai',
-        phone: '9789012345',
-        location: 'Coimbatore',
-        propertyType: 'Townhouse',
-        budget: '₹ 1.40 Crore',
-        sharedBy: 'Kavitha Murugan',
-        sharedDate: '2 Jul 2026, 21:58',
-        status: 'In Progress',
-        notes: 'Prefers Saravanampatti but open to Vadavalli villas.'
-      }
-    ],
-    '2': [
-      {
-        id: 'SL-103',
-        name: 'Muthukumar S',
-        phone: '9443219876',
-        location: 'Trichy Road',
-        propertyType: 'Villa',
-        budget: '₹ 85 Lakhs',
-        sharedBy: 'Aishwarya Raman',
-        sharedDate: '20 Aug 2026, 15:30',
-        status: 'Shared',
-        notes: 'Wants ready-to-occupy independent house with clear Patta.'
-      }
-    ]
-  };
+  let allSharedLeads = {};
+  try {
+    allSharedLeads = JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {
+      '1': [
+        {
+          id: 'SL-101',
+          name: 'Karthikeyan V G',
+          phone: '9841298765',
+          location: 'Madurai',
+          propertyType: 'Plot',
+          budget: '₹ 1.10 Crore',
+          sharedBy: 'Arun Prakash',
+          sharedDate: '11 Aug 2026, 11:13',
+          status: 'Shared',
+          notes: 'Looking for DTCP approved commercial plot near bypass.'
+        },
+        {
+          id: 'SL-102',
+          name: 'Rajesh Annamalai',
+          phone: '9789012345',
+          location: 'Coimbatore',
+          propertyType: 'Townhouse',
+          budget: '₹ 1.40 Crore',
+          sharedBy: 'Kavitha Murugan',
+          sharedDate: '2 Jul 2026, 21:58',
+          status: 'In Progress',
+          notes: 'Prefers Saravanampatti but open to Vadavalli villas.'
+        }
+      ],
+      '2': [
+        {
+          id: 'SL-103',
+          name: 'Muthukumar S',
+          phone: '9443219876',
+          location: 'Trichy Road',
+          propertyType: 'Villa',
+          budget: '₹ 85 Lakhs',
+          sharedBy: 'Aishwarya Raman',
+          sharedDate: '20 Aug 2026, 15:30',
+          status: 'Shared',
+          notes: 'Wants ready-to-occupy independent house with clear Patta.'
+        }
+      ]
+    };
+  } catch (e) {
+    console.warn("Failed to parse shared leads", e);
+    allSharedLeads = {};
+  }
 
   // Ensure active partner is valid
   let activePartnerId = partners.length > 0 ? partners[0].id : null;
@@ -371,6 +320,71 @@ export async function initPartnersView() {
     });
   };
 
+  const renderContent = () => {
+    if (!contentTitle || !leadsContainer) return;
+    
+    if (!activePartnerId || partners.length === 0) {
+      contentTitle.textContent = 'Select a partner';
+      if (partnerInfoCard) partnerInfoCard.style.display = 'none';
+      leadsContainer.innerHTML = '<div style="color: var(--os-gray-500); text-align: center; margin-top: 40px;">Select a partner from the sidebar to view shared leads and details.</div>';
+      if (btnShareLead) btnShareLead.style.display = 'none';
+      return;
+    }
+
+    const partner = partners.find(p => String(p.id) === String(activePartnerId));
+    if (!partner) return;
+
+    contentTitle.textContent = partner.company || partner.name || 'Partner Details';
+    if (btnShareLead) btnShareLead.style.display = 'block';
+
+    if (partnerInfoCard) {
+      partnerInfoCard.style.display = 'block';
+      partnerInfoCard.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div><strong>Contact:</strong> ${partner.contact || partner.contactPerson || '—'}</div>
+          <div><strong>Phone:</strong> ${partner.phone || '—'}</div>
+          <div><strong>WhatsApp:</strong> ${partner.whatsapp || partner.phone || '—'}</div>
+          <div><strong>Email:</strong> ${partner.email || '—'}</div>
+          <div><strong>Location:</strong> ${partner.city || '—'}, ${partner.country || 'India'}</div>
+          <div style="grid-column: span 2;"><strong>Notes:</strong> ${partner.notes || '—'}</div>
+        </div>
+      `;
+    }
+
+    const leads = allSharedLeads[activePartnerId] || [];
+    if (leads.length === 0) {
+      leadsContainer.innerHTML = '<div style="color: var(--os-gray-500); text-align: center; margin-top: 40px;">No leads shared with this partner yet.</div>';
+      return;
+    }
+
+    let html = '<div style="display: grid; gap: 16px;">';
+    leads.forEach(lead => {
+      const statusBadge = (lead.status || 'Shared').toLowerCase() === 'shared' ? 'background: #e0e7ff; color: #4338ca;' : 'background: #dcfce7; color: #15803d;';
+      html += `
+        <div style="padding: 16px; border: 1px solid var(--os-border-thin); border-radius: 8px; background: #fff;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="font-weight: 700; font-size: 1.05rem;">${lead.name}</div>
+            <div style="padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; ${statusBadge}">${(lead.status || 'Shared').toUpperCase()}</div>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--os-gray-600); margin-bottom: 12px;">
+            <i class="ri-phone-line"></i> ${lead.phone} &nbsp;|&nbsp; 
+            <i class="ri-map-pin-line"></i> ${lead.location} &nbsp;|&nbsp; 
+            <i class="ri-home-4-line"></i> ${lead.propertyType}
+          </div>
+          <div style="font-size: 0.85rem; color: var(--os-gray-600); margin-bottom: 12px;">
+            <strong>Budget:</strong> ${lead.budget || '—'} <br/>
+            <strong>Shared by:</strong> ${lead.sharedBy} on ${lead.sharedDate}
+          </div>
+          <div style="font-size: 0.85rem; padding: 10px; background: #f8fafc; border-radius: 6px;">
+            <strong>Handover Notes:</strong> ${lead.notes || 'No notes provided.'}
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+    leadsContainer.innerHTML = html;
+  };
+
   // --- Add / Edit Partner Modal Logic ---
   const addPartnerModal = document.getElementById('add-partner-modal');
   const btnAddPartner = document.getElementById('btn-add-partner');
@@ -419,7 +433,39 @@ export async function initPartnersView() {
     if (addPartnerModal) addPartnerModal.style.display = 'none';
   };
 
-  if (btnAddPartner) btnAddPartner.addEventListener('click', openAddPartnerModal);
+  // Use event delegation for the Add Partner button to guarantee it works even if DOM is modified
+  if (!window.partnerListenersAttached) {
+    document.body.addEventListener('click', (e) => {
+      if (e.target.closest('#btn-add-partner')) {
+        try {
+          document.getElementById('ap-edit-id').value = '';
+          document.getElementById('ap-company').value = '';
+          document.getElementById('ap-contact').value = '';
+          document.getElementById('ap-phone').value = '';
+          document.getElementById('ap-whatsapp').value = '';
+          document.getElementById('ap-email').value = '';
+          document.getElementById('ap-city').value = 'Thanjavur';
+          document.getElementById('ap-country').value = 'India';
+          document.getElementById('ap-status').value = 'Active';
+          document.getElementById('ap-notes').value = '';
+          
+          const title = document.getElementById('partner-modal-title');
+          const saveBtn = document.getElementById('save-partner-modal');
+          const modal = document.getElementById('add-partner-modal');
+          
+          if (title) title.textContent = 'Add partner company';
+          if (saveBtn) saveBtn.textContent = 'Save Partner';
+          if (modal) modal.style.display = 'flex';
+          else alert("Error: Modal element not found in DOM");
+        } catch (err) {
+          console.error("Error opening add partner modal:", err);
+          alert("Error opening modal: " + err.message);
+        }
+      }
+    });
+    window.partnerListenersAttached = true;
+  }
+
   if (closePartnerModal) closePartnerModal.addEventListener('click', closePartnerModalFn);
   if (cancelPartnerModal) cancelPartnerModal.addEventListener('click', closePartnerModalFn);
 
@@ -645,4 +691,33 @@ export async function initPartnersView() {
   // Initial Render
   renderSidebar();
   renderContent();
+
+  // Background API Sync
+  fetchFromAPI('/partners').then(data => {
+    if (data && Array.isArray(data)) {
+      partners = data.map(p => {
+        return {
+          id: p.id,
+          name: p.name || p.company || 'Partner Company',
+          company: p.name || p.company || 'Partner Company',
+          contact: p.contactPerson || p.type || p.contact || 'Contact Person',
+          contactPerson: p.contactPerson || p.type || p.contact || 'Contact Person',
+          city: p.city || 'Thanjavur',
+          phone: p.phone || '',
+          whatsapp: p.whatsapp || p.phone || '',
+          email: p.email || '',
+          country: p.country || 'India',
+          notes: p.notes || '',
+          leads: p.leads || 0,
+          status: p.status || 'Active'
+        };
+      });
+      localStorage.setItem('thanjai_partners', JSON.stringify(partners));
+      activePartnerId = partners.length > 0 ? partners[0].id : null;
+      renderSidebar();
+      renderContent();
+    }
+  }).catch(error => {
+    console.warn('API sync warning:', error);
+  });
 }
