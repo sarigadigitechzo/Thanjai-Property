@@ -985,8 +985,7 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
         $visCount = intval($data['visitorsCount'] ?? 0);
         $buyCount = intval($data['buyersCount'] ?? 0);
 
-        // Use 'name' column for compatibility with live DB
-        $stmt = $conn->prepare("INSERT INTO portal_users (id, name, email, phone, password, temporaryPassword, isTemporaryPassword, role, roleCode, status, propertiesCount, visitorsCount, buyersCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone), password=VALUES(password), role=VALUES(role), roleCode=VALUES(roleCode), status=VALUES(status), propertiesCount=VALUES(propertiesCount), visitorsCount=VALUES(visitorsCount), buyersCount=VALUES(buyersCount)");
+        $stmt = $conn->prepare("INSERT INTO portal_users (id, fullName, email, phone, password, temporaryPassword, isTemporaryPassword, role, roleCode, status, propertiesCount, visitorsCount, buyersCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE fullName=VALUES(fullName), phone=VALUES(phone), password=VALUES(password), role=VALUES(role), roleCode=VALUES(roleCode), status=VALUES(status), propertiesCount=VALUES(propertiesCount), visitorsCount=VALUES(visitorsCount), buyersCount=VALUES(buyersCount)");
         
         if (!$stmt) {
             http_response_code(500);
@@ -1004,8 +1003,7 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        // Use 'name' column for compatibility with live DB
-        $stmt = $conn->prepare("UPDATE portal_users SET name=?, email=?, phone=?, password=?, temporaryPassword=?, isTemporaryPassword=?, role=?, roleCode=?, status=?, propertiesCount=?, visitorsCount=?, buyersCount=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE portal_users SET fullName=?, email=?, phone=?, password=?, temporaryPassword=?, isTemporaryPassword=?, role=?, roleCode=?, status=?, propertiesCount=?, visitorsCount=?, buyersCount=? WHERE id=?");
         
         if (!$stmt) {
             http_response_code(500);
