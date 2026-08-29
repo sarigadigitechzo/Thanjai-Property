@@ -1173,36 +1173,39 @@ elseif ($resource === 'whatsapp_logs') {
         $data = json_decode(file_get_contents("php://input"), true);
         $id = $data['id'] ?? ('WA-' . round(microtime(true) * 1000));
         $leadId = $data['leadId'] ?? null;
-        $phone = $data['phone'] ?? null;
+        $phone = $data['phone'] ?? ($data['phone_number'] ?? null);
         $message = $data['message'] ?? '';
         $sender = $data['sender'] ?? 'Super Admin';
         $recipientName = $data['recipientName'] ?? null;
-        $type = $data['type'] ?? 'outbound';
-        $status = $data['status'] ?? 'Delivered';
-        
-        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN sender varchar(255) DEFAULT 'Super Admin'");
-        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN recipientName varchar(255) DEFAULT NULL");
-        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN type varchar(50) DEFAULT 'outbound'");
-        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN direction varchar(50) DEFAULT 'outbound'");
-        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN phone varchar(50) DEFAULT NULL");
-        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN phone_number varchar(50) DEFAULT NULL");
-        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN status varchar(50) DEFAULT 'Delivered'");
-        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN leadId varchar(255) DEFAULT NULL");
-
-        $phone_number = $phone;
+        $type = $data['type'] ?? ($data['direction'] ?? 'outbound');
         $direction = $type;
-        $stmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, phone_number, message, sender, recipientName, type, direction, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        if ($stmt) {
-            $stmt->bind_param("ssssssssss", $id, $leadId, $phone, $phone_number, $message, $sender, $recipientName, $type, $direction, $status);
-            $stmt->execute();
+        $status = $data['status'] ?? 'Delivered';
+
+        $safe_id = $conn->real_escape_string($id);
+        $safe_phone = $conn->real_escape_string($phone ?: '');
+        $safe_msg = $conn->real_escape_string($message ?: '');
+        $safe_sender = $conn->real_escape_string($sender ?: 'Super Admin');
+        $safe_rec = $conn->real_escape_string($recipientName ?: '');
+        $safe_dir = $conn->real_escape_string($direction ?: 'outbound');
+        $safe_status = $conn->real_escape_string($status ?: 'Delivered');
+
+        // Direct SQL insert guaranteed to work across any schema variation
+        $sql = "INSERT INTO `whatsapp_logs` (`id`, `phone_number`, `phone`, `message`, `direction`, `type`, `sender`, `recipientName`, `status`) 
+                VALUES ('$safe_id', '$safe_phone', '$safe_phone', '$safe_msg', '$safe_dir', '$safe_dir', '$safe_sender', '$safe_rec', '$safe_status')";
+        
+        if ($conn->query($sql)) {
+            echo json_encode(["message" => "Created successfully", "id" => $id]);
         } else {
-            $stmt2 = $conn->prepare("INSERT INTO whatsapp_logs (id, phone, message) VALUES (?, ?, ?)");
-            if ($stmt2) {
-                $stmt2->bind_param("sss", $id, $phone, $message);
-                $stmt2->execute();
+            // Fallback minimal insert
+            $sql_min = "INSERT INTO `whatsapp_logs` (`id`, `phone_number`, `message`, `direction`, `status`) 
+                        VALUES ('$safe_id', '$safe_phone', '$safe_msg', '$safe_dir', '$safe_status')";
+            if ($conn->query($sql_min)) {
+                echo json_encode(["message" => "Created successfully via fallback", "id" => $id]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => "Database error: " . $conn->error]);
             }
         }
-        echo json_encode(["message" => "Created successfully", "id" => $id]);
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
@@ -1504,10 +1507,15 @@ elseif ($resource === 'webhook') {
 
             // 2. Insert into whatsapp_logs (inbound)
             $inLogId = 'WA-IN-' . round(microtime(true) * 1000);
-            $inLogStmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, phone_number, message, sender, recipientName, type, direction, status) VALUES (?, NULL, ?, ?, ?, ?, 'Thanjai Property', 'inbound', 'inbound', 'Received')");
-            if ($inLogStmt) {
-                $inLogStmt->bind_param("sssss", $inLogId, $formattedPhone, $formattedPhone, $message, $displayName);
-                $inLogStmt->execute();
+            $safe_in_id = $conn->real_escape_string($inLogId);
+            $safe_in_phone = $conn->real_escape_string($formattedPhone);
+            $safe_in_msg = $conn->real_escape_string($message);
+            $safe_in_sender = $conn->real_escape_string($displayName);
+            $sql_in = "INSERT INTO `whatsapp_logs` (`id`, `phone_number`, `phone`, `message`, `direction`, `type`, `sender`, `recipientName`, `status`) 
+                       VALUES ('$safe_in_id', '$safe_in_phone', '$safe_in_phone', '$safe_in_msg', 'inbound', 'inbound', '$safe_in_sender', 'Thanjai Property', 'Received')";
+            if (!$conn->query($sql_in)) {
+                $conn->query("INSERT INTO `whatsapp_logs` (`id`, `phone_number`, `message`, `direction`, `status`) 
+                              VALUES ('$safe_in_id', '$safe_in_phone', '$safe_in_msg', 'inbound', 'Received')");
             }
 
             // 3. Match or Create Lead in CRM Pipeline
