@@ -316,7 +316,7 @@ if ($resource === 'properties') {
         $userEmail = $data['userEmail'] ?? null;
         $actualOwnerName = $data['actualOwnerName'] ?? null;
         $actualOwnerPhone = $data['actualOwnerPhone'] ?? null;
-        $stmt->bind_param("sssssssdsssssiissssssssssssssssss", $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, $data['description'], $features, $id);
+        $stmt->bind_param("ssssssdsssssiissssssssssssssssss", $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, $data['description'], $features, $id);
         $stmt->execute();
         echo json_encode(["message" => "Property updated successfully"]);
     }
