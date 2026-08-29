@@ -87,8 +87,8 @@ function renCol($conn, $t, $o, $n, $d) {
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
 
-@$conn->query("ALTER TABLE `whatsapp_logs` ADD COLUMN `phone_number` varchar(50) DEFAULT NULL");
-@$conn->query("ALTER TABLE `whatsapp_logs` ADD COLUMN `direction` varchar(50) DEFAULT 'outbound'");
+@$conn->query("ALTER TABLE `whatsapp_logs` ADD COLUMN IF NOT EXISTS `phone_number` varchar(50) DEFAULT NULL");
+@$conn->query("ALTER TABLE `whatsapp_logs` ADD COLUMN IF NOT EXISTS `direction` varchar(50) DEFAULT 'outbound'");
 
 @$conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_incoming` (
   `id` int(11) AUTO_INCREMENT PRIMARY KEY,
@@ -102,10 +102,12 @@ function renCol($conn, $t, $o, $n, $d) {
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
 
-// Automatically populate whatsapp_logs table with all incoming messages so phpMyAdmin shows them!
-@$conn->query("INSERT IGNORE INTO `whatsapp_logs` (`id`, `phone_number`, `phone`, `message`, `direction`, `type`, `sender`, `recipientName`, `status`, `createdAt`)
-SELECT CONCAT('WA-IN-', id), from_phone, from_phone, message, 'inbound', 'inbound', IFNULL(NULLIF(from_name, ''), 'Customer'), 'Thanjai Property', 'Received', createdAt
-FROM `whatsapp_incoming`");
+// NOTE: whatsapp_logs stores only OUTBOUND messages (sent from CRM/SmartPing).
+// whatsapp_incoming stores only INBOUND messages (received from customers via webhook).
+// The frontend fetches BOTH separately and merges them in WhatsAppLogView.js.
+// CLEANUP SQL (run once in phpMyAdmin to remove duplicates from previous sync):
+// DELETE FROM whatsapp_logs WHERE direction = 'inbound';
+
 
 @$conn->query("CREATE TABLE IF NOT EXISTS `audit_logs` (
   `id` varchar(255) PRIMARY KEY,
@@ -1173,44 +1175,24 @@ elseif ($resource === 'audit_logs') {
 elseif ($resource === 'whatsapp_logs') {
     if ($method === 'GET') {
         $rows = [];
-        
-        // 1. Get outbound/logged messages from whatsapp_logs
+
+        // Return ONLY the actual whatsapp_logs table records (outbound/CRM-sent messages).
+        // The frontend WhatsAppLogView.js fetches whatsapp_incoming SEPARATELY via GET /whatsapp_incoming
+        // and merges both client-side. Do NOT merge here to prevent duplicates and direction confusion.
         $result = $conn->query("SELECT * FROM `whatsapp_logs` ORDER BY createdAt ASC");
         if ($result) {
             while($row = $result->fetch_assoc()) {
+                // Ensure both phone fields are populated
                 $row['phone'] = $row['phone'] ?? ($row['phone_number'] ?? '');
+                $row['phone_number'] = $row['phone_number'] ?? ($row['phone'] ?? '');
                 $row['type'] = $row['type'] ?? ($row['direction'] ?? 'outbound');
+                $row['direction'] = $row['direction'] ?? ($row['type'] ?? 'outbound');
                 $rows[] = $row;
             }
         }
 
-        // 2. Automatically merge all inbound messages from whatsapp_incoming into whatsapp_logs!
-        $inc_res = $conn->query("SELECT * FROM `whatsapp_incoming` ORDER BY createdAt ASC");
-        if ($inc_res) {
-            while($inc = $inc_res->fetch_assoc()) {
-                $rows[] = [
-                    'id' => 'IN-' . $inc['id'],
-                    'leadId' => null,
-                    'phone' => $inc['from_phone'],
-                    'phone_number' => $inc['from_phone'],
-                    'message' => $inc['message'],
-                    'sender' => $inc['from_name'] ?: 'Customer',
-                    'recipientName' => 'Thanjai Property',
-                    'type' => 'inbound',
-                    'direction' => 'inbound',
-                    'status' => 'Received',
-                    'createdAt' => $inc['createdAt'] ?? ($inc['timestamp'] ?? date('Y-m-d H:i:s'))
-                ];
-            }
-        }
-
-        // Sort all combined messages chronologically
-        usort($rows, function($a, $b) {
-            return strtotime($a['createdAt'] ?? '0') - strtotime($b['createdAt'] ?? '0');
-        });
-
         echo json_encode($rows);
-    } 
+    }
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
         $id = $data['id'] ?? ('WA-' . round(microtime(true) * 1000));

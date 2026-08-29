@@ -257,16 +257,22 @@ export async function initWhatsAppLogView() {
       }
     });
 
-    // 2. Process real outbound messages from database (whatsapp_logs table)
+    // 2. Process real outbound messages from database (whatsapp_logs table — outbound only)
     outboundList.forEach(out => {
-      const p10 = cleanPhoneDigits(out.phone);
+      // Skip any inbound-direction records that may still exist from old syncs
+      const dir = out.direction || out.type || 'outbound';
+      if (dir === 'inbound') return;
+
+      // Use phone_number OR phone — whichever is populated
+      const rawPhone = out.phone_number || out.phone || '';
+      const p10 = cleanPhoneDigits(rawPhone);
       if (!p10) return;
 
       if (!newMap.has(p10)) {
         newMap.set(p10, {
           id: `OUT-${out.id || p10}`,
           name: out.recipientName || `Client (+91 ${p10})`,
-          phone: formatPhoneDisplay(out.phone),
+          phone: formatPhoneDisplay(rawPhone),
           phone10: p10,
           messages: [],
           lastTime: '',
@@ -276,18 +282,19 @@ export async function initWhatsAppLogView() {
       }
 
       const conv = newMap.get(p10);
-      const isOutbound = (out.type !== 'inbound');
       const msgText = expandTemplateKeyToFullText(out.message || '', conv.name);
       const msgDate = new Date(out.createdAt || Date.now());
 
-      if (!conv.messages.some(m => m.direction === (isOutbound ? 'out' : 'in') && m.message === msgText && Math.abs(m.date - msgDate) < 5000)) {
+      // Deduplicate: skip if same message within 10 seconds
+      if (!conv.messages.some(m => m.direction === 'out' && m.message === msgText && Math.abs(m.date - msgDate) < 10000)) {
         conv.messages.push({
-          direction: isOutbound ? 'out' : 'in',
+          direction: 'out',
           message: msgText,
           date: msgDate
         });
       }
     });
+
 
     // 3. Fallback to local session cache only for messages not yet in database
     const localCache = JSON.parse(localStorage.getItem('thanjai_wa_chat_cache')) || {};
