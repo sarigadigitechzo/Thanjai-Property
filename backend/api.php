@@ -1007,11 +1007,11 @@ elseif ($resource === 'send_whatsapp') {
 
         // Auto-log to whatsapp_logs table
         $logId = 'WA-' . round(microtime(true) * 1000);
-        $logStmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, message, sender, recipientName, type, status) VALUES (?, ?, ?, ?, ?, ?, 'outbound', 'Delivered')");
+        $logStmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, phone_number, message, sender, recipientName, type, direction, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'outbound', 'outbound', 'Delivered')");
         if ($logStmt) {
             $senderName = 'Super Admin';
             $leadIdParam = $data['leadId'] ?? null;
-            $logStmt->bind_param("ssssss", $logId, $leadIdParam, $smartPingPhone, $renderedMsg, $senderName, $userName);
+            $logStmt->bind_param("sssssss", $logId, $leadIdParam, $smartPingPhone, $smartPingPhone, $renderedMsg, $senderName, $userName);
             $logStmt->execute();
         }
 
@@ -1169,6 +1169,7 @@ elseif ($resource === 'whatsapp_logs') {
         }
         echo json_encode($rows);
     } 
+    elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
         $id = $data['id'] ?? ('WA-' . round(microtime(true) * 1000));
         $leadId = $data['leadId'] ?? null;
@@ -1182,12 +1183,17 @@ elseif ($resource === 'whatsapp_logs') {
         @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN sender varchar(255) DEFAULT 'Super Admin'");
         @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN recipientName varchar(255) DEFAULT NULL");
         @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN type varchar(50) DEFAULT 'outbound'");
+        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN direction varchar(50) DEFAULT 'outbound'");
+        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN phone varchar(50) DEFAULT NULL");
+        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN phone_number varchar(50) DEFAULT NULL");
         @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN status varchar(50) DEFAULT 'Delivered'");
         @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN leadId varchar(255) DEFAULT NULL");
 
-        $stmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, message, sender, recipientName, type, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $phone_number = $phone;
+        $direction = $type;
+        $stmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, phone_number, message, sender, recipientName, type, direction, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         if ($stmt) {
-            $stmt->bind_param("ssssssss", $id, $leadId, $phone, $message, $sender, $recipientName, $type, $status);
+            $stmt->bind_param("ssssssssss", $id, $leadId, $phone, $phone_number, $message, $sender, $recipientName, $type, $direction, $status);
             $stmt->execute();
         } else {
             $stmt2 = $conn->prepare("INSERT INTO whatsapp_logs (id, phone, message) VALUES (?, ?, ?)");
@@ -1498,9 +1504,9 @@ elseif ($resource === 'webhook') {
 
             // 2. Insert into whatsapp_logs (inbound)
             $inLogId = 'WA-IN-' . round(microtime(true) * 1000);
-            $inLogStmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, message, sender, recipientName, type, status) VALUES (?, NULL, ?, ?, ?, 'Thanjai Property', 'inbound', 'Received')");
+            $inLogStmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, phone_number, message, sender, recipientName, type, direction, status) VALUES (?, NULL, ?, ?, ?, ?, 'Thanjai Property', 'inbound', 'inbound', 'Received')");
             if ($inLogStmt) {
-                $inLogStmt->bind_param("ssss", $inLogId, $formattedPhone, $message, $displayName);
+                $inLogStmt->bind_param("sssss", $inLogId, $formattedPhone, $formattedPhone, $message, $displayName);
                 $inLogStmt->execute();
             }
 
