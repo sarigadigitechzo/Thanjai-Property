@@ -15,20 +15,81 @@ export async function initAdminUsersStore() {
   } catch (error) {}
 }
 
+export const DEFAULT_ADMIN_USERS = [
+  {
+    id: 'ADM-001',
+    fullName: 'Vijayaraghavan',
+    email: 'admin@thanjaiproperty.com',
+    phone: '+91 84899 96852',
+    password: 'Admin@1234',
+    role: 'Super Admin',
+    roleCode: 'superadmin',
+    status: 'Active',
+    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff'],
+    lastLogin: 'Active Now',
+    createdAt: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    id: 'ADM-002',
+    fullName: 'Vijayaraghavan',
+    email: 'vijayaraghavan@thanjaiproperty.com',
+    phone: '+91 84899 96852',
+    password: 'Admin@1234',
+    role: 'Super Admin',
+    roleCode: 'superadmin',
+    status: 'Active',
+    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff'],
+    lastLogin: 'Active Now',
+    createdAt: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    id: 'ADM-003',
+    fullName: 'Aishwarya R.',
+    email: 'admin@realrest.example',
+    phone: '+91 98401 23456',
+    password: 'Admin@1234',
+    role: 'Super Admin',
+    roleCode: 'superadmin',
+    status: 'Active',
+    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff'],
+    lastLogin: 'Active Now',
+    createdAt: '2026-01-01T00:00:00.000Z'
+  },
+  {
+    id: 'ADM-004',
+    fullName: 'Sales Manager',
+    email: 'manager@realrest.example',
+    phone: '+91 98401 11111',
+    password: 'Admin@1234',
+    role: 'Sales Manager',
+    roleCode: 'salesmanager',
+    status: 'Active',
+    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'pipeline', 'reports'],
+    lastLogin: 'Active Now',
+    createdAt: '2026-01-01T00:00:00.000Z'
+  }
+];
+
 export function getAdminUsers() {
-  if (adminUsersCache) return adminUsersCache;
+  if (adminUsersCache && adminUsersCache.length > 0) return adminUsersCache;
   try {
     const data = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
     if (!data) {
-      localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify([]));
-      adminUsersCache = [];
+      localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(DEFAULT_ADMIN_USERS));
+      adminUsersCache = [...DEFAULT_ADMIN_USERS];
       return adminUsersCache;
     }
-    adminUsersCache = JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      adminUsersCache = parsed;
+    } else {
+      adminUsersCache = [...DEFAULT_ADMIN_USERS];
+      localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(DEFAULT_ADMIN_USERS));
+    }
     return adminUsersCache;
   } catch (err) {
     console.error('Error reading admin users:', err);
-    adminUsersCache = [];
+    adminUsersCache = [...DEFAULT_ADMIN_USERS];
     return adminUsersCache;
   }
 }
