@@ -100,6 +100,50 @@ function parseTimeline(timeline) {
   return [];
 }
 
+function expandTemplateKeyToFullText(msg, clientName = 'Client') {
+  if (!msg) return '';
+  const clean = String(msg).trim();
+  
+  if (clean === 'bank_loan_assist' || clean === 'bank_loan_assistance') {
+    return `Hello ${clientName}, Thanjai Property offers complete bank loan facilitation with leading nationalized and private banks (SBI, HDFC, ICICI, Indian Bank) at competitive interest rates with instant Patta verification support. Desk: +91 84899 96852.`;
+  }
+  if (clean === 'property_follow_up' || clean === 'follow_up_nurture') {
+    return `Hello ${clientName}, We are following up regarding your property requirement in Thanjavur. Our advisors have new verified listings that match your criteria. Let us know when you'd like to review.`;
+  }
+  if (clean === 'initial_contact_intro') {
+    return `Hello ${clientName}, Thank you for your interest in Thanjai Property! We have received your requirement. Our property advisors will assist you shortly with verified documents, prime locations, and direct builder coordination. Official Desk: +91 84899 96852.`;
+  }
+  if (clean === 'stage_requirement_analysis') {
+    return `Hello ${clientName}, We are currently analyzing your property requirement. Our team is shortlisting legal-verified properties matching your exact criteria. Advisory Desk: +91 84899 96852.`;
+  }
+  if (clean === 'stage_lead_qualified') {
+    return `Hello ${clientName}, Your property requirement has been successfully qualified and matched with verified inventory. Our specialist will coordinate the legal Patta documents.`;
+  }
+  if (clean === 'stage_site_visit_scheduled') {
+    return `Hello ${clientName}, Your site visit has been scheduled. Our field manager will assist you with plot boundaries, layout review, and Patta verification. Location coordinator: +91 84899 96852.`;
+  }
+  if (clean === 'stage_negotiation_stage') {
+    return `Hello ${clientName}, We have initiated price negotiation and legal terms discussion with the property owner on your behalf. We will update you with the approved terms shortly.`;
+  }
+  if (clean === 'stage_booking_in_progress') {
+    return `Hello ${clientName}, Your property booking token documentation is now in progress with legal stamp verification. Our registration desk will guide you on the next milestone.`;
+  }
+  if (clean === 'stage_deal_won_registration') {
+    return `Congratulations ${clientName}! Your property registration has been completed successfully at the Sub-Registrar Office. Thank you for choosing Thanjai Property!`;
+  }
+  if (clean === 'partner_transfer_notification') {
+    return `Hello ${clientName}, Your property requirement has been assigned to our verified Area Specialist Partner for dedicated on-ground coordination.`;
+  }
+  if (clean === 'partner_lead_assignment') {
+    return `New Lead Assigned: Please coordinate with client ${clientName} for property inspection and advisory.`;
+  }
+  if (clean === 'stage_closed_lost_archive') {
+    return `Hello ${clientName}, Thank you for connecting with Thanjai Property. Your requirement file has been archived. We are always here whenever you plan your next real estate journey.`;
+  }
+
+  return clean;
+}
+
 export async function initWhatsAppLogView() {
   const chatList = document.getElementById('wa-chat-list');
   const searchInput = document.getElementById('wa-search-leads');
@@ -156,9 +200,10 @@ export async function initWhatsAppLogView() {
 
       timeline.forEach(t => {
         if (t.type === 'whatsapp' || t.type === 'whatsapp_incoming') {
+          const rawM = t.type === 'whatsapp_incoming' ? (t.note || t.message) : (t.note || t.message);
           leadMsgs.push({
             direction: t.type === 'whatsapp_incoming' ? 'in' : 'out',
-            message: t.type === 'whatsapp_incoming' ? (t.note || t.message) : t.message,
+            message: expandTemplateKeyToFullText(rawM, l.name || 'Client'),
             date: new Date(t.date || Date.now())
           });
         }
@@ -194,7 +239,7 @@ export async function initWhatsAppLogView() {
       }
 
       const conv = newMap.get(p10);
-      const msgText = inc.message || '[Media received]';
+      const msgText = expandTemplateKeyToFullText(inc.message || '[Media received]', conv.name);
       const msgDate = new Date(inc.createdAt || inc.timestamp || Date.now());
 
       if (!conv.messages.some(m => m.direction === 'in' && m.message === msgText && Math.abs(m.date - msgDate) < 5000)) {
@@ -224,12 +269,13 @@ export async function initWhatsAppLogView() {
       }
 
       const conv = newMap.get(p10);
-      const msgText = out.message || '';
+      const isOutbound = (out.type !== 'inbound');
+      const msgText = expandTemplateKeyToFullText(out.message || '', conv.name);
       const msgDate = new Date(out.createdAt || Date.now());
 
-      if (!conv.messages.some(m => m.direction === 'out' && m.message === msgText && Math.abs(m.date - msgDate) < 5000)) {
+      if (!conv.messages.some(m => m.direction === (isOutbound ? 'out' : 'in') && m.message === msgText && Math.abs(m.date - msgDate) < 5000)) {
         conv.messages.push({
-          direction: 'out',
+          direction: isOutbound ? 'out' : 'in',
           message: msgText,
           date: msgDate
         });
@@ -254,10 +300,11 @@ export async function initWhatsAppLogView() {
       const cacheMsgs = localCache[p10] || [];
       cacheMsgs.forEach(cm => {
         const cDate = new Date(cm.date || Date.now());
-        if (!conv.messages.some(m => m.direction === cm.direction && m.message === cm.message && Math.abs(m.date - cDate) < 5000)) {
+        const expandedCached = expandTemplateKeyToFullText(cm.message, conv.name);
+        if (!conv.messages.some(m => m.direction === cm.direction && m.message === expandedCached && Math.abs(m.date - cDate) < 5000)) {
           conv.messages.push({
             direction: cm.direction,
-            message: cm.message,
+            message: expandedCached,
             date: cDate
           });
         }
@@ -413,38 +460,41 @@ export async function initWhatsAppLogView() {
     const text = msgInput.value.trim();
     if (!text) return;
 
-    const provider = localStorage.getItem('thanjai_wa_provider') || 'smartping';
-    const apiKey = localStorage.getItem('thanjai_whatsapp_api_key') || '';
-    const campaign = localStorage.getItem('thanjai_wa_campaign') || 'realrest_notification_new_final';
-
-    let destination = conv.phone10;
-    if (provider === 'smartping') {
-      destination = '+91' + destination;
-    } else {
-      destination = '91' + destination;
-    }
-
-    const apiUrl = provider === 'smartping'
-      ? 'https://backend.api-wa.co/campaign/smartping/api/v2'
-      : 'https://backend.aisensy.com/campaign/t1/api/v2';
-
     const originalIcon = btnSend.innerHTML;
     btnSend.innerHTML = '<i class="ri-loader-4-line ri-spin"></i>';
     btnSend.disabled = true;
 
     try {
-      if (apiKey) {
-        await fetch(apiUrl, {
+      const formattedPhone = '+91' + conv.phone10;
+
+      // 1. Dispatch via server-side PHP relay /send_whatsapp
+      try {
+        await fetchFromAPI('/send_whatsapp', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            apiKey: apiKey,
-            campaignName: campaign,
-            destination: destination,
+            campaignName: 'follow_up_nurture',
+            destination: formattedPhone,
             userName: conv.name,
-            templateParams: [text]
+            messageText: text,
+            templateParams: [conv.name, 'Thanjavur', 'Property Details', text]
           })
-        }).catch(e => console.error("Dispatch notice:", e));
+        });
+      } catch (relayErr) {
+        // Fallback to direct SmartPing API if relay is unavailable
+        const apiKey = localStorage.getItem('thanjai_whatsapp_api_key') || '';
+        if (apiKey) {
+          await fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              apiKey: apiKey,
+              campaignName: 'follow_up_nurture',
+              destination: formattedPhone,
+              userName: conv.name,
+              templateParams: [conv.name, 'Thanjavur', 'Property Details', text]
+            })
+          }).catch(e => console.error("Direct dispatch error:", e));
+        }
       }
 
       const newMsg = {
@@ -466,7 +516,7 @@ export async function initWhatsAppLogView() {
         method: 'POST',
         body: JSON.stringify({
           id: `WA-${Date.now()}`,
-          phone: conv.phone,
+          phone: formattedPhone,
           sender: 'Super Admin',
           recipientName: conv.name,
           message: text,
@@ -485,7 +535,7 @@ export async function initWhatsAppLogView() {
       renderChatHistory(activePhone10, false);
       showToast('Message sent on WhatsApp!', 'ri-checkbox-circle-fill');
     } catch(err) {
-      showToast('Message saved', 'ri-information-line');
+      showToast('Message logged to conversation', 'ri-information-line');
     } finally {
       btnSend.innerHTML = originalIcon;
       btnSend.disabled = false;

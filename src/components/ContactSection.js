@@ -1,4 +1,5 @@
 import { getSiteImage } from '../utils/siteImagesStore.js';
+import { fetchFromAPI } from '../utils/api.js';
 
 export function renderContactSection() {
   const contactBg = getSiteImage('contact_bg');
@@ -512,10 +513,13 @@ export function initContactSectionListeners() {
   const submitBtn = document.getElementById('cf-submit-btn');
   const successMsg = document.getElementById('cf-success');
 
-  form?.addEventListener('submit', e => {
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('cf-name')?.value.trim();
     const phone = document.getElementById('cf-phone')?.value.trim();
+    const email = document.getElementById('cf-email')?.value.trim() || '';
+    const reqLocation = document.getElementById('cf-location')?.value.trim() || 'Thanjavur';
+    const message = document.getElementById('cf-message')?.value.trim() || '';
 
     if (!name || !phone) {
       document.getElementById('cf-name')?.focus();
@@ -527,73 +531,122 @@ export function initContactSectionListeners() {
       submitBtn.querySelector('.cf-submit-text').textContent = 'Sending Property Brief...';
     }
 
-    setTimeout(() => {
-      // Create Lead Object for CRM
-      const newLead = {
-        id: 'L-' + Math.floor(1000 + Math.random() * 9000),
-        name: name,
-        mobile: phone,
-        email: document.getElementById('cf-email')?.value.trim() || '',
-        type: hiddenInput ? hiddenInput.value : '',
-        budget: budgetInput ? budgetInput.value : '',
-        source: 'Website Form',
-        date: new Date().toISOString().split('T')[0],
-        status: 'new',
-        owner: 'Unassigned',
-        timestamp: Date.now()
-      };
+    const cleanDigits = phone.replace(/\D/g, '');
+    const formattedPhone = cleanDigits.length === 10 ? `+91${cleanDigits}` : `+${cleanDigits}`;
+    const leadId = 'L-' + Math.floor(1000 + Math.random() * 9000);
+    const reqType = hiddenInput ? hiddenInput.value : 'General Enquiry';
+    const reqBudget = budgetInput ? budgetInput.value : 'Any Budget';
 
-      // Save to localStorage
-      try {
-        let existingLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-        existingLeads.push(newLead);
-        localStorage.setItem('thanjai_leads', JSON.stringify(existingLeads));
-        // Notify CRM if open in another tab
-        window.dispatchEvent(new Event('storage')); 
-      } catch (e) {
-        console.error('Error saving lead:', e);
-      }
+    // Create Lead Object for CRM
+    const newLead = {
+      id: leadId,
+      name: name,
+      phone: formattedPhone,
+      mobile: formattedPhone,
+      email: email,
+      type: reqType,
+      location: reqLocation,
+      budget: reqBudget,
+      source: 'Website Contact Form',
+      date: new Date().toISOString().split('T')[0],
+      stage: 'New Lead',
+      assignedTo: 'Unassigned',
+      priority: 'High',
+      timeline: [
+        {
+          type: 'whatsapp_incoming',
+          date: new Date().toISOString(),
+          message: `📩 Web Brief: ${reqType} in ${reqLocation} (${reqBudget}). Note: ${message || 'No additional note'}`,
+          note: message
+        },
+        {
+          type: 'whatsapp',
+          date: new Date().toISOString(),
+          message: `🤖 Auto-sent WhatsApp Welcome Intro to ${name} (${formattedPhone})`,
+          note: 'Campaign: initial_contact_intro'
+        }
+      ]
+    };
 
-      // Send to email via PHP backend
-      try {
-        fetch('/send_lead.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: newLead.name,
-            phone: newLead.mobile,
-            email: newLead.email,
-            type: newLead.type,
-            location: document.getElementById('cf-location')?.value.trim() || '',
-            budget: newLead.budget
-          })
-        }).catch(e => console.error("Email send error", e));
-      } catch (e) {}
+    // Save to localStorage
+    try {
+      let existingLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      existingLeads.unshift(newLead);
+      localStorage.setItem('thanjai_leads', JSON.stringify(existingLeads));
+      window.dispatchEvent(new Event('storage')); 
+    } catch (e) {
+      console.error('Error saving lead to storage:', e);
+    }
 
-      form.reset();
-      pills.forEach(p => {
-        p.style.background = '#fff';
-        p.style.color = '#333';
-        p.style.borderColor = '#d1d5db';
+    // Save to MySQL backend
+    try {
+      await fetchFromAPI('/leads', {
+        method: 'POST',
+        body: JSON.stringify(newLead)
       });
-      if (budgetInput) budgetInput.value = '';
-      if (selectText) {
-        selectText.textContent = 'Select requirement';
-        selectText.style.color = '#666';
-        selectText.style.fontWeight = 'normal';
-      }
+    } catch (e) {}
 
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.querySelector('.cf-submit-text').textContent = 'Send Property Brief';
-      }
+    // Log to WhatsApp Logs
+    try {
+      await fetchFromAPI('/whatsapp_incoming', {
+        method: 'POST',
+        body: JSON.stringify({
+          from_phone: formattedPhone,
+          from_name: name,
+          message: `[Website Contact Brief] ${reqType} in ${reqLocation} (${reqBudget}) - ${message}`,
+          message_type: 'text'
+        })
+      });
 
-      if (successMsg) {
-        successMsg.style.display = 'flex';
-        setTimeout(() => {
-          successMsg.style.display = 'none';
-        }, 6000);
-      }
-    }, 1000);
+      await fetchFromAPI('/whatsapp_logs', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: `WA-${Date.now()}`,
+          leadId: leadId,
+          phone: formattedPhone,
+          sender: 'Super Admin',
+          recipientName: name,
+          message: `Hello ${name}, Thank you for your interest in Thanjai Property! We have received your requirement for ${reqType} in ${reqLocation}. Our property advisors will assist you shortly. Official Desk: +91 84899 96852.`,
+          type: 'outbound'
+        })
+      });
+    } catch (e) {}
+
+    // Dispatch SmartPing Welcome Template
+    try {
+      await fetchFromAPI('/send_whatsapp', {
+        method: 'POST',
+        body: JSON.stringify({
+          campaignName: 'initial_contact_intro',
+          destination: formattedPhone,
+          userName: name,
+          leadId: leadId,
+          templateParams: [name, reqLocation, reqType, 'our Executive Desk at +91 84899 96852']
+        })
+      });
+    } catch (e) {}
+
+    form.reset();
+    pills.forEach(p => {
+      p.style.background = '#fff';
+      p.style.color = '#333';
+      p.style.borderColor = '#d1d5db';
+    });
+    if (budgetInput) budgetInput.value = '';
+    if (selectText) {
+      selectText.textContent = 'Select requirement';
+      selectText.style.color = '#666';
+      selectText.style.fontWeight = 'normal';
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.querySelector('.cf-submit-text').textContent = 'Send Property Brief';
+    }
+
+    if (successMsg) {
+      successMsg.style.display = 'flex';
+      setTimeout(() => { successMsg.style.display = 'none'; }, 6000);
+    }
   });
 }

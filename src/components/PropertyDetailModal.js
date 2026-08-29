@@ -1,5 +1,6 @@
 import { isFavorite, toggleFavorite } from '../utils/favorites.js';
 import { showToast } from '../utils/toast.js';
+import { fetchFromAPI } from '../utils/api.js';
 
 export function renderPropertyDetailModal(property) {
   if (!property) return '';
@@ -185,11 +186,11 @@ export function renderPropertyDetailModal(property) {
               })()}
 
               <!-- Instant Direct Enquiry Form -->
-              <form id="modal-enquiry-form" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 12px; padding-top: 20px; border-top: 1px dashed var(--color-border);">
+              <form id="modal-enquiry-form" style="display: flex; flex-direction: column; gap: 12px; padding-top: 20px; border-top: 1px dashed var(--color-border);">
                 <span style="font-size: 0.8125rem; font-weight: 800; color: var(--color-brown);">SEND QUICK INQUIRY</span>
-                <input type="text" placeholder="Your Full Name" required class="search-input" style="background: var(--color-white); padding: 10px 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);" />
-                <input type="tel" placeholder="Phone Number (+91)" required class="search-input" style="background: var(--color-white); padding: 10px 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);" />
-                <button type="submit" class="btn btn-brown" style="padding: 10px; font-size: 0.875rem;">Submit Enquiry</button>
+                <input type="text" id="modal-enquiry-name" placeholder="Your Full Name" required class="search-input" style="background: var(--color-white); padding: 10px 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);" />
+                <input type="tel" id="modal-enquiry-phone" placeholder="Phone Number (+91)" required maxlength="15" class="search-input" style="background: var(--color-white); padding: 10px 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm);" />
+                <button type="submit" id="modal-enquiry-submit-btn" class="btn btn-brown" style="padding: 10px; font-size: 0.875rem;">Submit Enquiry</button>
               </form>
             </div>
           </div>
@@ -242,10 +243,116 @@ export function initPropertyDetailModalListeners(property, onClose) {
     window.dispatchEvent(new CustomEvent('openScheduleModal', { detail: { propertyId: property.id, propertyTitle: property.title } }));
   });
 
-  // Quick enquiry submit
-  document.getElementById('modal-enquiry-form')?.addEventListener('submit', (e) => {
+  // Quick enquiry submit with CRM & WhatsApp logging
+  document.getElementById('modal-enquiry-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    showToast('Enquiry received! Our advisor will call you within 15 minutes.', 'ri-checkbox-circle-fill');
+    const nameInput = document.getElementById('modal-enquiry-name');
+    const phoneInput = document.getElementById('modal-enquiry-phone');
+    const submitBtn = document.getElementById('modal-enquiry-submit-btn');
+
+    const name = nameInput?.value.trim();
+    const phone = phoneInput?.value.trim();
+
+    if (!name || !phone) return;
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Submitting...';
+    }
+
+    const cleanDigits = phone.replace(/\D/g, '');
+    const formattedPhone = cleanDigits.length === 10 ? `+91${cleanDigits}` : (phone.startsWith('+') ? phone : `+${cleanDigits}`);
+    const leadId = `L-${Date.now()}`;
+    const inquiryMsg = `Customer inquiry for property "${property.title}" (ID: ${property.id}) - Price: ${property.priceFormatted || '₹' + property.price}, Location: ${property.location || 'Thanjavur'}`;
+
+    const newLead = {
+      id: leadId,
+      name: name,
+      phone: formattedPhone,
+      mobile: formattedPhone,
+      email: '',
+      type: property.categoryLabel || property.type || 'Residential',
+      location: property.location || property.district || 'Thanjavur',
+      budget: property.priceFormatted || String(property.price),
+      stage: 'New Lead',
+      source: 'Website Property Inquiry',
+      date: new Date().toISOString().split('T')[0],
+      assignedTo: 'Unassigned',
+      priority: 'High',
+      propertyId: property.id,
+      timeline: [
+        {
+          type: 'whatsapp_incoming',
+          date: new Date().toISOString(),
+          message: `📩 ${inquiryMsg}`,
+          note: inquiryMsg
+        },
+        {
+          type: 'whatsapp',
+          date: new Date().toISOString(),
+          message: `🤖 Auto-sent WhatsApp Welcome Intro to ${name} (${formattedPhone})`,
+          note: 'Campaign: initial_contact_intro'
+        }
+      ]
+    };
+
+    // 1. Save to localStorage
+    try {
+      const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      localLeads.unshift(newLead);
+      localStorage.setItem('thanjai_leads', JSON.stringify(localLeads));
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {}
+
+    // 2. Save Lead to MySQL backend
+    try {
+      await fetchFromAPI('/leads', {
+        method: 'POST',
+        body: JSON.stringify(newLead)
+      });
+    } catch (err) {}
+
+    // 3. Log into WhatsApp Logs & Incoming tables
+    try {
+      await fetchFromAPI('/whatsapp_incoming', {
+        method: 'POST',
+        body: JSON.stringify({
+          from_phone: formattedPhone,
+          from_name: name,
+          message: `[Property Inquiry] ${property.title} (ID: ${property.id})`,
+          message_type: 'text'
+        })
+      });
+
+      await fetchFromAPI('/whatsapp_logs', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: `WA-${Date.now()}`,
+          leadId: leadId,
+          phone: formattedPhone,
+          sender: 'Super Admin',
+          recipientName: name,
+          message: `Hello ${name}, Thank you for your interest in Thanjai Property! We have received your inquiry for "${property.title}". Our property advisors will assist you shortly. Official Desk: +91 84899 96852.`,
+          type: 'outbound'
+        })
+      });
+    } catch (err) {}
+
+    // 4. Dispatch Official SmartPing Welcome Template
+    try {
+      await fetchFromAPI('/send_whatsapp', {
+        method: 'POST',
+        body: JSON.stringify({
+          campaignName: 'initial_contact_intro',
+          destination: formattedPhone,
+          userName: name,
+          leadId: leadId,
+          templateParams: [name, property.location || 'Thanjavur', property.title, 'our Executive Desk at +91 84899 96852']
+        })
+      });
+    } catch (err) {}
+
+    showToast(`Enquiry received! We've sent a WhatsApp confirmation to ${formattedPhone}.`, 'ri-checkbox-circle-fill');
     overlay?.classList.remove('active');
     setTimeout(onClose, 300);
   });

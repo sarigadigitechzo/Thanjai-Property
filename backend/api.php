@@ -281,6 +281,14 @@ if (!empty($_GET['resource'])) {
     }
 }
 
+if (empty($resource) && $method === 'POST') {
+    $rawCheck = file_get_contents("php://input");
+    $dataCheck = json_decode($rawCheck, true);
+    if (isset($dataCheck['entry']) || isset($dataCheck['messages']) || isset($dataCheck['from']) || isset($dataCheck['sender']) || isset($dataCheck['waId']) || isset($dataCheck['destination'])) {
+        $resource = 'webhook';
+    }
+}
+
 if ($resource === 'properties') {
     if ($method === 'GET') {
         $result = $conn->query("SELECT * FROM properties ORDER BY createdAt DESC");
@@ -936,6 +944,36 @@ elseif ($resource === 'send_whatsapp') {
         $curlErr = curl_error($ch);
         curl_close($ch);
 
+        // Render full readable text for the log
+        $renderedMsg = $data['messageText'] ?? '';
+        if (empty($renderedMsg)) {
+            if ($campaignName === 'partner_lead_assignment') {
+                $renderedMsg = "Partner Lead Assigned: " . implode(" | ", $stringParams);
+            } elseif ($campaignName === 'partner_transfer_notification') {
+                $renderedMsg = "Partner Transfer Notification sent to customer for property requirements.";
+            } elseif ($campaignName === 'initial_contact_intro') {
+                $p1 = $stringParams[0] ?? $userName;
+                $renderedMsg = "Hello $p1, Thank you for your interest in Thanjai Property! We have received your requirement. Our property advisors will assist you shortly with verified documents, prime locations, and direct builder coordination. Official Desk: +91 84899 96852.";
+            } elseif ($campaignName === 'stage_site_visit_scheduled') {
+                $p1 = $stringParams[0] ?? $userName;
+                $p2 = $stringParams[1] ?? 'Property';
+                $p3 = $stringParams[2] ?? date('d M Y');
+                $renderedMsg = "Hello $p1, Your site visit for $p2 has been scheduled for $p3. Our field manager will assist you with plot boundaries, layout review, and Patta verification.";
+            } else {
+                $renderedMsg = count($stringParams) > 0 ? ("[$campaignName] " . implode(" | ", $stringParams)) : "[$campaignName]";
+            }
+        }
+
+        // Auto-log to whatsapp_logs table
+        $logId = 'WA-' . round(microtime(true) * 1000);
+        $logStmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, message, sender, recipientName, type, status) VALUES (?, ?, ?, ?, ?, ?, 'outbound', 'Delivered')");
+        if ($logStmt) {
+            $senderName = 'Super Admin';
+            $leadIdParam = $data['leadId'] ?? null;
+            $logStmt->bind_param("ssssss", $logId, $leadIdParam, $formattedPhone, $renderedMsg, $senderName, $userName);
+            $logStmt->execute();
+        }
+
         echo json_encode([
             'success' => $httpCode >= 200 && $httpCode < 300,
             'httpCode' => $httpCode,
@@ -1401,29 +1439,145 @@ elseif ($resource === 'webhook') {
         }
 
         if ($from_phone) {
-            $stmt = $conn->prepare("INSERT INTO whatsapp_incoming (from_phone, from_name, message, media_url, message_type, timestamp, raw_payload) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssss", $from_phone, $from_name, $message, $media_url, $msg_type, $timestamp, $raw);
-            $stmt->execute();
-
-            // Also try to match to a lead and append to their timeline
+            // Clean & format phone
             $clean_phone = preg_replace('/\D/', '', $from_phone);
             $last10 = substr($clean_phone, -10);
-            $leads_raw = $conn->query("SELECT * FROM leads");
-            while ($lead = $leads_raw->fetch_assoc()) {
-                $lead_phone = preg_replace('/\D/', '', $lead['phone'] ?? '');
-                if (substr($lead_phone, -10) === $last10) {
-                    $timeline = json_decode($lead['timeline'] ?? '[]', true) ?: [];
-                    array_unshift($timeline, [
+            $formattedPhone = (strlen($clean_phone) === 10) ? '+91' . $clean_phone : (str_starts_with($from_phone, '+') ? $from_phone : '+' . $clean_phone);
+            $displayName = !empty($from_name) ? $from_name : "Customer ($last10)";
+
+            // 1. Insert into whatsapp_incoming
+            $stmt = $conn->prepare("INSERT INTO whatsapp_incoming (from_phone, from_name, message, media_url, message_type, timestamp, raw_payload) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            if ($stmt) {
+                $stmt->bind_param("sssssss", $formattedPhone, $displayName, $message, $media_url, $msg_type, $timestamp, $raw);
+                $stmt->execute();
+            }
+
+            // 2. Insert into whatsapp_logs (inbound)
+            $inLogId = 'WA-IN-' . round(microtime(true) * 1000);
+            $inLogStmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, message, sender, recipientName, type, status) VALUES (?, NULL, ?, ?, ?, 'Thanjai Property', 'inbound', 'Received')");
+            if ($inLogStmt) {
+                $inLogStmt->bind_param("ssss", $inLogId, $formattedPhone, $message, $displayName);
+                $inLogStmt->execute();
+            }
+
+            // 3. Match or Create Lead in CRM Pipeline
+            $matchedLeadId = null;
+            $isNewLead = true;
+            $leads_raw = $conn->query("SELECT id, phone, timeline FROM leads");
+            if ($leads_raw) {
+                while ($lead = $leads_raw->fetch_assoc()) {
+                    $lead_phone = preg_replace('/\D/', '', $lead['phone'] ?? '');
+                    if (substr($lead_phone, -10) === $last10) {
+                        $matchedLeadId = $lead['id'];
+                        $isNewLead = false;
+                        $timeline = json_decode($lead['timeline'] ?? '[]', true) ?: [];
+                        array_unshift($timeline, [
+                            'type'    => 'whatsapp_incoming',
+                            'date'    => date('c'),
+                            'message' => "📩 Customer replied: \"$message\"",
+                            'note'    => $message
+                        ]);
+                        $new_timeline = json_encode($timeline);
+                        $upd = $conn->prepare("UPDATE leads SET timeline=? WHERE id=?");
+                        if ($upd) {
+                            $upd->bind_param("ss", $new_timeline, $lead['id']);
+                            $upd->execute();
+                        }
+                        break;
+                    }
+                }
+            }
+
+            // If contact is not yet in leads, auto-create a new lead in CRM Pipeline
+            if ($isNewLead && strlen($last10) >= 10) {
+                $newLeadId = 'L-' . rand(1000, 9999);
+                $matchedLeadId = $newLeadId;
+                $initialTimeline = json_encode([
+                    [
                         'type'    => 'whatsapp_incoming',
                         'date'    => date('c'),
-                        'message' => "📩 Customer replied: \"$message\"",
+                        'message' => "📩 Inbound WhatsApp Lead: \"$message\"",
                         'note'    => $message
-                    ]);
-                    $new_timeline = json_encode($timeline);
-                    $upd = $conn->prepare("UPDATE leads SET timeline=? WHERE id=?");
-                    $upd->bind_param("ss", $new_timeline, $lead['id']);
-                    $upd->execute();
-                    break;
+                    ]
+                ]);
+                $leadSource = 'WhatsApp Inbound';
+                $leadStage = 'New Lead';
+                $leadBudget = 'To be discussed';
+                $leadReq = 'Inbound WhatsApp Inquiry';
+                $assignedStaff = 'Unassigned';
+                $todayDate = date('Y-m-d');
+
+                $insLead = $conn->prepare("INSERT INTO leads (id, name, phone, email, type, location, budget, stage, timeline, source, date, assignedTo, priority) VALUES (?, ?, ?, '', ?, 'Thanjavur', ?, ?, ?, ?, ?, ?, 'Medium')");
+                if ($insLead) {
+                    $insLead->bind_param("ssssssssss", $newLeadId, $displayName, $formattedPhone, $leadReq, $leadBudget, $leadStage, $initialTimeline, $leadSource, $todayDate, $assignedStaff);
+                    $insLead->execute();
+                }
+            }
+
+            // 4. Auto-Reply Welcome Message on Greetings or First Contact
+            $lowerMsg = strtolower(trim($message));
+            $isGreeting = preg_match('/^(hi|hello|hey|vanakkam|வணக்கம்|good\s*(morning|afternoon|evening)|namaste|start|info|details|property|enquiry|hai|hlo)/i', $lowerMsg) || $isNewLead;
+
+            if ($isGreeting) {
+                // Fetch API Key from Settings
+                $apiKey = '';
+                $setRes = $conn->query("SELECT setting_value FROM settings WHERE setting_key='whatsapp_integration'");
+                if ($setRes && $setRow = $setRes->fetch_assoc()) {
+                    $waSet = json_decode($setRow['setting_value'], true);
+                    $apiKey = $waSet['apiKey'] ?? '';
+                }
+
+                $replyText = "Hello $displayName, Thank you for your interest in Thanjai Property! We have received your requirement. Our property advisors will assist you shortly with verified documents, prime locations, and direct builder coordination. Official Desk: +91 84899 96852.";
+                
+                // Dispatch SmartPing Campaign: initial_contact_intro
+                $campaignName = 'initial_contact_intro';
+                $templateParams = [$displayName, 'Thanjavur & Tamil Nadu', 'Property Requirements', 'our Executive Desk at +91 84899 96852'];
+                $stringParams = array_values(array_map(function($p) { return (string)$p; }, $templateParams));
+
+                $apiUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
+                $payload = json_encode([
+                    'apiKey' => $apiKey,
+                    'campaignName' => $campaignName,
+                    'destination' => $formattedPhone,
+                    'userName' => $displayName,
+                    'templateParams' => $stringParams
+                ]);
+
+                $ch = curl_init($apiUrl);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                curl_exec($ch);
+                curl_close($ch);
+
+                // Log outbound auto-welcome message in whatsapp_logs
+                $outLogId = 'WA-AUTO-' . round(microtime(true) * 1000);
+                $outStmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, message, sender, recipientName, type, status) VALUES (?, ?, ?, ?, 'Super Admin', ?, 'outbound', 'Delivered')");
+                if ($outStmt) {
+                    $outStmt->bind_param("sssss", $outLogId, $matchedLeadId, $formattedPhone, $replyText, $displayName);
+                    $outStmt->execute();
+                }
+
+                // Append welcome message to lead timeline
+                if ($matchedLeadId) {
+                    $ldRes = $conn->query("SELECT timeline FROM leads WHERE id='$matchedLeadId'");
+                    if ($ldRes && $ldRow = $ldRes->fetch_assoc()) {
+                        $tl = json_decode($ldRow['timeline'] ?? '[]', true) ?: [];
+                        array_unshift($tl, [
+                            'type'    => 'whatsapp',
+                            'date'    => date('c'),
+                            'message' => "🤖 Auto-replied welcome message: initial_contact_intro",
+                            'note'    => $replyText
+                        ]);
+                        $newTl = json_encode($tl);
+                        $updLead = $conn->prepare("UPDATE leads SET timeline=? WHERE id=?");
+                        if ($updLead) {
+                            $updLead->bind_param("ss", $newTl, $matchedLeadId);
+                            $updLead->execute();
+                        }
+                    }
                 }
             }
         }
