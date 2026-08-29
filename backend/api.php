@@ -1162,11 +1162,43 @@ elseif ($resource === 'audit_logs') {
 
 elseif ($resource === 'whatsapp_logs') {
     if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM whatsapp_logs ORDER BY createdAt ASC");
         $rows = [];
+        
+        // 1. Get outbound/logged messages from whatsapp_logs
+        $result = $conn->query("SELECT * FROM `whatsapp_logs` ORDER BY createdAt ASC");
         if ($result) {
-            while($row = $result->fetch_assoc()) { $rows[] = $row; }
+            while($row = $result->fetch_assoc()) {
+                $row['phone'] = $row['phone'] ?? ($row['phone_number'] ?? '');
+                $row['type'] = $row['type'] ?? ($row['direction'] ?? 'outbound');
+                $rows[] = $row;
+            }
         }
+
+        // 2. Automatically merge all inbound messages from whatsapp_incoming into whatsapp_logs!
+        $inc_res = $conn->query("SELECT * FROM `whatsapp_incoming` ORDER BY createdAt ASC");
+        if ($inc_res) {
+            while($inc = $inc_res->fetch_assoc()) {
+                $rows[] = [
+                    'id' => 'IN-' . $inc['id'],
+                    'leadId' => null,
+                    'phone' => $inc['from_phone'],
+                    'phone_number' => $inc['from_phone'],
+                    'message' => $inc['message'],
+                    'sender' => $inc['from_name'] ?: 'Customer',
+                    'recipientName' => 'Thanjai Property',
+                    'type' => 'inbound',
+                    'direction' => 'inbound',
+                    'status' => 'Received',
+                    'createdAt' => $inc['createdAt'] ?? ($inc['timestamp'] ?? date('Y-m-d H:i:s'))
+                ];
+            }
+        }
+
+        // Sort all combined messages chronologically
+        usort($rows, function($a, $b) {
+            return strtotime($a['createdAt'] ?? '0') - strtotime($b['createdAt'] ?? '0');
+        });
+
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
