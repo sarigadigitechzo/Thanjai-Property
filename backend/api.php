@@ -78,6 +78,8 @@ function renCol($conn, $t, $o, $n, $d) {
   `leadId` varchar(255) DEFAULT NULL,
   `phone` varchar(50) DEFAULT NULL,
   `message` longtext DEFAULT NULL,
+  `sender` varchar(255) DEFAULT 'Super Admin',
+  `recipientName` varchar(255) DEFAULT NULL,
   `type` varchar(50) DEFAULT 'outbound',
   `status` varchar(50) DEFAULT 'Delivered',
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
@@ -894,10 +896,11 @@ elseif ($resource === 'send_whatsapp') {
     if ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
         $destination = $data['destination'] ?? ($data['phone'] ?? '');
-        $campaignName = $data['campaignName'] ?? 'partner_lead_assignment';
+        $campaignName = $data['campaignName'] ?? 'initial_contact_intro';
         $userName = $data['userName'] ?? 'Customer';
         $templateParams = $data['templateParams'] ?? [];
         $apiKey = $data['apiKey'] ?? '';
+        $customMedia = $data['media'] ?? null;
 
         if (empty($apiKey)) {
             $setRes = $conn->query("SELECT setting_value FROM settings WHERE setting_key='whatsapp_integration'");
@@ -909,40 +912,75 @@ elseif ($resource === 'send_whatsapp') {
             }
         }
 
-        // Clean & format phone to +91XXXXXXXXXX
+        // Clean & format phone digits
         $digits = preg_replace('/\D/', '', $destination);
-        if (strlen($digits) === 10) {
-            $formattedPhone = '+91' . $digits;
-        } elseif (strlen($digits) === 12 && substr($digits, 0, 2) === '91') {
-            $formattedPhone = '+' . $digits;
-        } elseif (strlen($digits) > 0 && !str_starts_with($destination, '+')) {
-            $formattedPhone = '+' . $digits;
-        } else {
-            $formattedPhone = $destination;
-        }
+        $last10 = substr($digits, -10);
+        $aiSensyPhone = '91' . $last10;
+        $smartPingPhone = '+91' . $last10;
 
         // Ensure all template params are string values
         $stringParams = array_values(array_map(function($p) { return (string)$p; }, $templateParams));
 
-        $apiUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
-        $payload = json_encode([
+        // Default media header to satisfy media template requirement
+        $mediaPayload = $customMedia ?: [
+            'url' => 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+            'filename' => 'thanjai-property.jpg'
+        ];
+
+        // 1. Try AiSensy endpoint first
+        $aiSensyUrl = 'https://backend.aisensy.com/campaign/t1/api/v2';
+        $payload1 = json_encode([
             'apiKey' => $apiKey,
             'campaignName' => $campaignName,
-            'destination' => $formattedPhone,
+            'destination' => $aiSensyPhone,
             'userName' => (string)$userName,
-            'templateParams' => $stringParams
+            'templateParams' => $stringParams,
+            'media' => $mediaPayload
         ]);
 
-        $ch = curl_init($apiUrl);
+        $ch = curl_init($aiSensyUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload1);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlErr = curl_error($ch);
         curl_close($ch);
+
+        $resJson = json_decode($response, true);
+        $isSuccess = ($resJson['success'] ?? '') === 'true' || ($httpCode >= 200 && $httpCode < 300 && empty($resJson['message']));
+
+        // 2. Fallback to SmartPing endpoint if AiSensy failed
+        if (!$isSuccess) {
+            $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
+            $payload2 = json_encode([
+                'apiKey' => $apiKey,
+                'campaignName' => $campaignName,
+                'destination' => $smartPingPhone,
+                'userName' => (string)$userName,
+                'templateParams' => $stringParams,
+                'media' => $mediaPayload
+            ]);
+
+            $ch2 = curl_init($smartPingUrl);
+            curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch2, CURLOPT_POST, true);
+            curl_setopt($ch2, CURLOPT_POSTFIELDS, $payload2);
+            curl_setopt($ch2, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch2, CURLOPT_TIMEOUT, 12);
+            $res2 = curl_exec($ch2);
+            $httpCode2 = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
+            curl_close($ch2);
+            
+            $resJson2 = json_decode($res2, true);
+            if (($resJson2['status'] ?? '') === 'success' || ($httpCode2 >= 200 && $httpCode2 < 300)) {
+                $response = $res2;
+                $resJson = $resJson2;
+                $isSuccess = true;
+            }
+        }
 
         // Render full readable text for the log
         $renderedMsg = $data['messageText'] ?? '';
@@ -954,11 +992,14 @@ elseif ($resource === 'send_whatsapp') {
             } elseif ($campaignName === 'initial_contact_intro') {
                 $p1 = $stringParams[0] ?? $userName;
                 $renderedMsg = "Hello $p1, Thank you for your interest in Thanjai Property! We have received your requirement. Our property advisors will assist you shortly with verified documents, prime locations, and direct builder coordination. Official Desk: +91 84899 96852.";
-            } elseif ($campaignName === 'stage_site_visit_scheduled') {
+            } elseif ($campaignName === 'property_follow_up') {
+                $p1 = $stringParams[0] ?? $userName;
+                $p3 = $stringParams[2] ?? 'We are following up on your property requirement.';
+                $renderedMsg = "Hello $p1, We are following up regarding your property requirement in Thanjavur: $p3";
+            } elseif ($campaignName === 'site_visit_confirmation' || $campaignName === 'stage_site_visit_scheduled') {
                 $p1 = $stringParams[0] ?? $userName;
                 $p2 = $stringParams[1] ?? 'Property';
-                $p3 = $stringParams[2] ?? date('d M Y');
-                $renderedMsg = "Hello $p1, Your site visit for $p2 has been scheduled for $p3. Our field manager will assist you with plot boundaries, layout review, and Patta verification.";
+                $renderedMsg = "Hello $p1, Your site visit for $p2 has been scheduled. Our field manager will assist you with plot boundaries, layout review, and Patta verification.";
             } else {
                 $renderedMsg = count($stringParams) > 0 ? ("[$campaignName] " . implode(" | ", $stringParams)) : "[$campaignName]";
             }
@@ -970,17 +1011,16 @@ elseif ($resource === 'send_whatsapp') {
         if ($logStmt) {
             $senderName = 'Super Admin';
             $leadIdParam = $data['leadId'] ?? null;
-            $logStmt->bind_param("ssssss", $logId, $leadIdParam, $formattedPhone, $renderedMsg, $senderName, $userName);
+            $logStmt->bind_param("ssssss", $logId, $leadIdParam, $smartPingPhone, $renderedMsg, $senderName, $userName);
             $logStmt->execute();
         }
 
         echo json_encode([
-            'success' => $httpCode >= 200 && $httpCode < 300,
-            'httpCode' => $httpCode,
+            'success' => $isSuccess,
             'campaignName' => $campaignName,
-            'destination' => $formattedPhone,
+            'destination' => $smartPingPhone,
             'templateParams' => $stringParams,
-            'response' => json_decode($response, true) ?: $response,
+            'response' => $resJson ?: $response,
             'curlError' => $curlErr
         ]);
         exit;
@@ -1129,7 +1169,6 @@ elseif ($resource === 'whatsapp_logs') {
         }
         echo json_encode($rows);
     } 
-    elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
         $id = $data['id'] ?? ('WA-' . round(microtime(true) * 1000));
         $leadId = $data['leadId'] ?? null;
@@ -1140,12 +1179,17 @@ elseif ($resource === 'whatsapp_logs') {
         $type = $data['type'] ?? 'outbound';
         $status = $data['status'] ?? 'Delivered';
         
+        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN sender varchar(255) DEFAULT 'Super Admin'");
+        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN recipientName varchar(255) DEFAULT NULL");
+        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN type varchar(50) DEFAULT 'outbound'");
+        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN status varchar(50) DEFAULT 'Delivered'");
+        @$conn->query("ALTER TABLE whatsapp_logs ADD COLUMN leadId varchar(255) DEFAULT NULL");
+
         $stmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, message, sender, recipientName, type, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         if ($stmt) {
             $stmt->bind_param("ssssssss", $id, $leadId, $phone, $message, $sender, $recipientName, $type, $status);
             $stmt->execute();
         } else {
-            // Fallback insert
             $stmt2 = $conn->prepare("INSERT INTO whatsapp_logs (id, phone, message) VALUES (?, ?, ?)");
             if ($stmt2) {
                 $stmt2->bind_param("sss", $id, $phone, $message);
@@ -1527,18 +1571,18 @@ elseif ($resource === 'webhook') {
                     $apiKey = $waSet['apiKey'] ?? '';
                 }
 
-                $replyText = "Hello $displayName, Thank you for your interest in Thanjai Property! We have received your requirement. Our property advisors will assist you shortly with verified documents, prime locations, and direct builder coordination. Official Desk: +91 84899 96852.";
+                $replyText = "Hello $displayName, Welcome to Thanjai Property! What type of property or location are you looking for in Thanjavur? Let us know your requirement and our property advisory desk will assist you.";
                 
-                // Dispatch SmartPing Campaign: initial_contact_intro
-                $campaignName = 'initial_contact_intro';
-                $templateParams = [$displayName, 'Thanjavur & Tamil Nadu', 'Property Requirements', 'our Executive Desk at +91 84899 96852'];
-                $stringParams = array_values(array_map(function($p) { return (string)$p; }, $templateParams));
+                $campaignName = 'welcome_message';
+                $stringParams = [(string)$displayName];
 
-                $apiUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
+                // Dispatch via SmartPing / AiSensy
+                $aiSensyPhone = '91' . $last10;
+                $apiUrl = 'https://backend.aisensy.com/campaign/t1/api/v2';
                 $payload = json_encode([
                     'apiKey' => $apiKey,
                     'campaignName' => $campaignName,
-                    'destination' => $formattedPhone,
+                    'destination' => $aiSensyPhone,
                     'userName' => $displayName,
                     'templateParams' => $stringParams
                 ]);
@@ -1549,8 +1593,29 @@ elseif ($resource === 'webhook') {
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
                 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
                 curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                curl_exec($ch);
+                $resAi = curl_exec($ch);
                 curl_close($ch);
+
+                // Fallback to SmartPing if needed
+                $resAiJson = json_decode($resAi, true);
+                if (($resAiJson['success'] ?? '') !== 'true') {
+                    $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
+                    $payloadSp = json_encode([
+                        'apiKey' => $apiKey,
+                        'campaignName' => $campaignName,
+                        'destination' => $formattedPhone,
+                        'userName' => $displayName,
+                        'templateParams' => $stringParams
+                    ]);
+                    $ch2 = curl_init($smartPingUrl);
+                    curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch2, CURLOPT_POST, true);
+                    curl_setopt($ch2, CURLOPT_POSTFIELDS, $payloadSp);
+                    curl_setopt($ch2, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                    curl_setopt($ch2, CURLOPT_TIMEOUT, 10);
+                    curl_exec($ch2);
+                    curl_close($ch2);
+                }
 
                 // Log outbound auto-welcome message in whatsapp_logs
                 $outLogId = 'WA-AUTO-' . round(microtime(true) * 1000);

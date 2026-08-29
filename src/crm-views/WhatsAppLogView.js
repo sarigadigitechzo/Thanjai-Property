@@ -43,6 +43,7 @@ export function renderWhatsAppLogView() {
               <div>
                 <h3 id="wa-active-name" style="margin: 0; font-size: 1.05rem; font-weight: 700; color: #111b21;"></h3>
                 <p id="wa-active-phone" style="margin: 2px 0 0 0; font-size: 0.82rem; color: #667781; font-weight: 500;"></p>
+                <div id="wa-active-property-badge" style="display: none; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 700; color: #9a3412; background: #ffedd5; padding: 2px 10px; border-radius: 12px; margin-top: 4px; border: 1px solid #fed7aa; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -71,6 +72,7 @@ export function renderWhatsAppLogView() {
 import { fetchFromAPI } from '../utils/api.js';
 import { showToast } from '../utils/toast.js';
 import { addAuditLog } from '../utils/siteImagesStore.js';
+import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 
 function cleanPhoneDigits(phone) {
   if (!phone) return '';
@@ -109,6 +111,9 @@ function expandTemplateKeyToFullText(msg, clientName = 'Client') {
   }
   if (clean === 'property_follow_up' || clean === 'follow_up_nurture') {
     return `Hello ${clientName}, We are following up regarding your property requirement in Thanjavur. Our advisors have new verified listings that match your criteria. Let us know when you'd like to review.`;
+  }
+  if (clean === 'welcome_message') {
+    return `Hello ${clientName}, Welcome to Thanjai Property! What type of property or location are you looking for in Thanjavur? Let us know your requirement and our property advisory desk will assist you.`;
   }
   if (clean === 'initial_contact_intro') {
     return `Hello ${clientName}, Thank you for your interest in Thanjai Property! We have received your requirement. Our property advisors will assist you shortly with verified documents, prime locations, and direct builder coordination. Official Desk: +91 84899 96852.`;
@@ -221,6 +226,7 @@ export async function initWhatsAppLogView() {
       });
     });
 
+    // 1. Process real inbound messages from database (whatsapp_incoming table)
     incomingList.forEach(inc => {
       const p10 = cleanPhoneDigits(inc.from_phone);
       if (!p10) return;
@@ -251,6 +257,7 @@ export async function initWhatsAppLogView() {
       }
     });
 
+    // 2. Process real outbound messages from database (whatsapp_logs table)
     outboundList.forEach(out => {
       const p10 = cleanPhoneDigits(out.phone);
       if (!p10) return;
@@ -282,28 +289,18 @@ export async function initWhatsAppLogView() {
       }
     });
 
+    // 3. Fallback to local session cache only for messages not yet in database
     const localCache = JSON.parse(localStorage.getItem('thanjai_wa_chat_cache')) || {};
     Object.keys(localCache).forEach(p10 => {
-      if (!newMap.has(p10)) {
-        newMap.set(p10, {
-          id: `LOCAL-${p10}`,
-          name: `Contact (+91 ${p10})`,
-          phone: `+91 ${p10}`,
-          phone10: p10,
-          messages: [],
-          lastTime: '',
-          lastDate: new Date(0),
-          lastMessage: ''
-        });
-      }
+      if (!newMap.has(p10)) return;
       const conv = newMap.get(p10);
       const cacheMsgs = localCache[p10] || [];
       cacheMsgs.forEach(cm => {
         const cDate = new Date(cm.date || Date.now());
         const expandedCached = expandTemplateKeyToFullText(cm.message, conv.name);
-        if (!conv.messages.some(m => m.direction === cm.direction && m.message === expandedCached && Math.abs(m.date - cDate) < 5000)) {
+        if (!conv.messages.some(m => m.message === expandedCached && Math.abs(m.date - cDate) < 10000)) {
           conv.messages.push({
-            direction: cm.direction,
+            direction: cm.direction || 'out',
             message: expandedCached,
             date: cDate
           });
@@ -391,6 +388,17 @@ export async function initWhatsAppLogView() {
     document.getElementById('wa-active-phone').textContent = conv.phone;
     document.getElementById('wa-active-avatar').textContent = (conv.name || 'W').substring(0, 2).toUpperCase();
 
+    // Check if the user inquired about a specific property
+    const badgeEl = document.getElementById('wa-active-property-badge');
+    const inqMsg = (conv.messages || []).find(m => m.message && m.message.includes('[Property Inquiry]'));
+    if (inqMsg && badgeEl) {
+      const cleanInq = inqMsg.message.replace('[Property Inquiry]', '').trim();
+      badgeEl.style.display = 'inline-flex';
+      badgeEl.innerHTML = `<i class="ri-home-4-line" style="color: #eb5e28;"></i> <span title="${cleanInq}">${cleanInq}</span>`;
+    } else if (badgeEl) {
+      badgeEl.style.display = 'none';
+    }
+
     renderSidebar(searchInput?.value || '');
     renderChatHistory(phone10, false);
   }
@@ -467,35 +475,18 @@ export async function initWhatsAppLogView() {
     try {
       const formattedPhone = '+91' + conv.phone10;
 
-      // 1. Dispatch via server-side PHP relay /send_whatsapp
-      try {
-        await fetchFromAPI('/send_whatsapp', {
-          method: 'POST',
-          body: JSON.stringify({
-            campaignName: 'follow_up_nurture',
-            destination: formattedPhone,
-            userName: conv.name,
-            messageText: text,
-            templateParams: [conv.name, 'Thanjavur', 'Property Details', text]
-          })
-        });
-      } catch (relayErr) {
-        // Fallback to direct SmartPing API if relay is unavailable
-        const apiKey = localStorage.getItem('thanjai_whatsapp_api_key') || '';
-        if (apiKey) {
-          await fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              apiKey: apiKey,
-              campaignName: 'follow_up_nurture',
-              destination: formattedPhone,
-              userName: conv.name,
-              templateParams: [conv.name, 'Thanjavur', 'Property Details', text]
-            })
-          }).catch(e => console.error("Direct dispatch error:", e));
+      // 1. Dispatch via sendWhatsAppMessage (direct client dispatch with server relay)
+      await sendWhatsAppMessage({
+        campaignName: 'property_follow_up',
+        destination: formattedPhone,
+        userName: conv.name,
+        messageText: text,
+        templateParams: [conv.name, 'Thanjavur', text],
+        media: {
+          url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+          filename: 'property.jpg'
         }
-      }
+      });
 
       const newMsg = {
         direction: 'out',

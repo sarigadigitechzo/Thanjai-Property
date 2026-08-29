@@ -1,6 +1,7 @@
 import { isFavorite, toggleFavorite } from '../utils/favorites.js';
 import { showToast } from '../utils/toast.js';
 import { fetchFromAPI } from '../utils/api.js';
+import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 
 export function renderPropertyDetailModal(property) {
   if (!property) return '';
@@ -319,7 +320,7 @@ export function initPropertyDetailModalListeners(property, onClose) {
         body: JSON.stringify({
           from_phone: formattedPhone,
           from_name: name,
-          message: `[Property Inquiry] ${property.title} (ID: ${property.id})`,
+          message: `[Property Inquiry] ${property.title} (ID: ${property.id}) | Location: ${property.location || property.district || 'Thanjavur'} | Price: ${property.priceFormatted || '₹' + property.price}`,
           message_type: 'text'
         })
       });
@@ -338,17 +339,22 @@ export function initPropertyDetailModalListeners(property, onClose) {
       });
     } catch (err) {}
 
-    // 4. Dispatch Official SmartPing Welcome Template
+    // 4. Dispatch Official AiSensy Welcome Template with Property Image Header
     try {
-      await fetchFromAPI('/send_whatsapp', {
-        method: 'POST',
-        body: JSON.stringify({
-          campaignName: 'initial_contact_intro',
-          destination: formattedPhone,
-          userName: name,
-          leadId: leadId,
-          templateParams: [name, property.location || 'Thanjavur', property.title, 'our Executive Desk at +91 84899 96852']
-        })
+      const propImgUrl = (property.images && property.images.length > 0 && property.images[0].startsWith('http'))
+        ? property.images[0]
+        : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+
+      await sendWhatsAppMessage({
+        campaignName: 'initial_contact_intro',
+        destination: formattedPhone,
+        userName: name,
+        leadId: leadId,
+        templateParams: [name, property.location || property.district || 'Thanjavur', property.title, '+91 84899 96852'],
+        media: {
+          url: propImgUrl,
+          filename: 'property.jpg'
+        }
       });
     } catch (err) {}
 

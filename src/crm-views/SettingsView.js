@@ -1,6 +1,7 @@
 import { getSiteImage, updateSiteImage, resetSiteImage } from '../utils/siteImagesStore.js';
 import { showToast } from '../utils/toast.js';
 import { fetchFromAPI } from '../utils/api.js';
+import { DEFAULT_WHATSAPP_API_KEY } from '../utils/whatsapp.js';
 
 export function renderSettingsView() {
   const templates = [
@@ -583,26 +584,47 @@ export function initSettingsView() {
     }
   });
 
-  // WhatsApp API Key Save Logic
+  // WhatsApp API Key & SmartPing Provider Save Logic
   const waApiKeyInput = document.getElementById('settings-wa-api-key');
   const waCampaignInput = document.getElementById('settings-wa-campaign');
   const waSaveBtn = document.getElementById('settings-wa-save-btn');
   const waProviderSelect = document.getElementById('settings-wa-provider');
   
-  if (waApiKeyInput) {
-    waApiKeyInput.value = localStorage.getItem('thanjai_whatsapp_api_key') || '';
-  }
-  if (waCampaignInput) {
-    waCampaignInput.value = localStorage.getItem('thanjai_wa_campaign') || 'realrest_notification_new_final';
-  }
-  if (waProviderSelect) {
-    waProviderSelect.value = localStorage.getItem('thanjai_wa_provider') || 'smartping';
-  }
+  // 1. Pre-fill from localStorage or master fallback
+  const initialApiKey = localStorage.getItem('thanjai_whatsapp_api_key') || DEFAULT_WHATSAPP_API_KEY;
+  if (waApiKeyInput) waApiKeyInput.value = initialApiKey;
+  if (waCampaignInput) waCampaignInput.value = localStorage.getItem('thanjai_wa_campaign') || 'initial_contact_intro';
+  if (waProviderSelect) waProviderSelect.value = localStorage.getItem('thanjai_wa_provider') || 'smartping';
+
+  // 2. Fetch from live MySQL backend to ensure 100% sync
+  fetchFromAPI('/settings').then(settings => {
+    if (settings && settings.whatsapp_integration) {
+      try {
+        const wa = typeof settings.whatsapp_integration === 'string' ? JSON.parse(settings.whatsapp_integration) : settings.whatsapp_integration;
+        if (wa.apiKey && wa.apiKey.trim().length > 10) {
+          if (waApiKeyInput) waApiKeyInput.value = wa.apiKey.trim();
+          localStorage.setItem('thanjai_whatsapp_api_key', wa.apiKey.trim());
+        }
+        if (wa.provider && waProviderSelect) {
+          waProviderSelect.value = wa.provider;
+          localStorage.setItem('thanjai_wa_provider', wa.provider);
+        }
+        if (wa.campaign && waCampaignInput) {
+          waCampaignInput.value = wa.campaign;
+          localStorage.setItem('thanjai_wa_campaign', wa.campaign);
+        }
+      } catch(e) {}
+    }
+  }).catch(() => {});
 
   if (waSaveBtn) {
-    waSaveBtn.addEventListener('click', () => {
-      const apiKey = waApiKeyInput ? waApiKeyInput.value.trim() : '';
-      const campaign = waCampaignInput ? waCampaignInput.value.trim() : 'realrest_notification_new_final';
+    waSaveBtn.addEventListener('click', async () => {
+      let apiKey = waApiKeyInput ? waApiKeyInput.value.trim() : '';
+      if (!apiKey || apiKey.length < 10) {
+        apiKey = DEFAULT_WHATSAPP_API_KEY;
+        if (waApiKeyInput) waApiKeyInput.value = apiKey;
+      }
+      const campaign = waCampaignInput ? waCampaignInput.value.trim() : 'initial_contact_intro';
       const provider = waProviderSelect ? waProviderSelect.value : 'smartping';
 
       localStorage.setItem('thanjai_whatsapp_api_key', apiKey);
@@ -610,15 +632,19 @@ export function initSettingsView() {
       localStorage.setItem('thanjai_wa_provider', provider);
 
       // MySQL Database sync
-      fetchFromAPI('/settings', {
-        method: 'POST',
-        body: JSON.stringify({
-          key: 'whatsapp_integration',
-          value: JSON.stringify({ provider, apiKey, campaign })
-        })
-      }).catch(e => console.error(e));
+      try {
+        await fetchFromAPI('/settings', {
+          method: 'POST',
+          body: JSON.stringify({
+            key: 'whatsapp_integration',
+            value: JSON.stringify({ provider, apiKey, campaign })
+          })
+        });
+      } catch (e) {
+        console.error('Settings save error:', e);
+      }
 
-      showToast('WhatsApp Settings saved & synchronized successfully!', 'success');
+      showToast('SmartPing & WhatsApp API settings saved permanently!', 'success');
     });
   }
 

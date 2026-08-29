@@ -1,9 +1,9 @@
 // api.js - Centralized fetch wrapper for PHP backend
 
 // Automatically use the live server database when running locally for testing.
-const API_BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+const API_BASE_URL = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
   ? 'https://thanjaiproperty.com/api.php'
-  : '/api.php';
+  : (typeof window !== 'undefined' ? '/api.php' : 'https://thanjaiproperty.com/api.php');
 
 export async function fetchFromAPI(endpoint, options = {}) {
   try {
