@@ -18,10 +18,8 @@ export async function sendWhatsAppMessage({ campaignName, destination, userName,
   const digits = String(destination || '').replace(/\D/g, '');
   const last10 = digits.slice(-10);
   const smartPingPhone = '+91' + last10;
-  const flatPhone = '91' + last10;
 
   const apiKey = getActiveWhatsAppApiKey();
-  const provider = getActiveWhatsAppProvider();
 
   const defaultMedia = media || {
     url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
@@ -31,8 +29,31 @@ export async function sendWhatsAppMessage({ campaignName, destination, userName,
   const stringParams = (templateParams || []).map(p => String(p));
   let isDispatched = false;
 
-  // 1. Dispatch to SmartPing endpoint if provider is smartping
-  if (provider === 'smartping') {
+  // PRIMARY: Route through backend PHP relay — avoids browser CORS blocking completely.
+  // PHP server-side cURL sends the request to SmartPing with the master API key.
+  try {
+    const relayRes = await fetchFromAPI('/send_whatsapp', {
+      method: 'POST',
+      body: JSON.stringify({
+        campaignName,
+        destination: smartPingPhone,
+        userName: userName || 'Customer',
+        leadId,
+        messageText,
+        templateParams: stringParams,
+        media: defaultMedia,
+        apiKey
+      })
+    });
+    if (relayRes && (relayRes.success === true || relayRes.success === 'true')) {
+      isDispatched = true;
+    }
+  } catch (err) {
+    console.warn('Backend relay notice:', err);
+  }
+
+  // FALLBACK: Direct browser dispatch only if backend relay fails (CORS may block this)
+  if (!isDispatched) {
     try {
       const smartPingRes = await fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
         method: 'POST',
@@ -49,53 +70,12 @@ export async function sendWhatsAppMessage({ campaignName, destination, userName,
       const resData = await smartPingRes.json();
       if (resData.status === 'success' || resData.success === 'true' || resData.submitted_message_id) {
         isDispatched = true;
-        console.log('✅ WhatsApp message delivered via SmartPing:', resData);
       }
     } catch (err) {
-      console.warn('SmartPing dispatch error, attempting fallback:', err);
+      // Browser CORS may block direct dispatch — backend relay is the reliable path
     }
   }
-
-  // 2. Secondary fallback to AiSensy gateway if SmartPing didn't succeed
-  if (!isDispatched) {
-    try {
-      const aiSensyRes = await fetch('https://backend.aisensy.com/campaign/t1/api/v2', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          apiKey: apiKey,
-          campaignName: campaignName,
-          destination: flatPhone,
-          userName: userName || 'Customer',
-          templateParams: stringParams,
-          media: defaultMedia
-        })
-      });
-      const resData2 = await aiSensyRes.json();
-      if (resData2.success === 'true' || resData2.submitted_message_id) {
-        isDispatched = true;
-        console.log('✅ WhatsApp message delivered via AiSensy gateway:', resData2);
-      }
-    } catch (err) {
-      console.warn('AiSensy gateway dispatch notice:', err);
-    }
-  }
-
-  // 3. Log to MySQL database and sync via backend relay
-  try {
-    await fetchFromAPI('/send_whatsapp', {
-      method: 'POST',
-      body: JSON.stringify({
-        campaignName,
-        destination: smartPingPhone,
-        userName,
-        leadId,
-        messageText,
-        templateParams: stringParams,
-        media: defaultMedia
-      })
-    });
-  } catch (err) {}
 
   return isDispatched;
 }
+

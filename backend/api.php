@@ -914,6 +914,10 @@ elseif ($resource === 'send_whatsapp') {
         $apiKey = $data['apiKey'] ?? '';
         $customMedia = $data['media'] ?? null;
 
+        // Permanent master SmartPing/AiSensy API key — always available as fallback
+        $MASTER_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ5MCIsIm5hbWUiOiJUaGFuamFpIFByb3BlcnR5IiwiYXBwTmFtZSI6IkFpU2Vuc3kiLCJjbGllbnRJZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ4OSIsImFjdGl2ZVBsYW4iOiJQUk9fTU9OVEhMWSIsImlhdCI6MTc4NzcyNDczOX0.8SQSQDJdxrAivj8FAkWvjSk_qx4yE0dENDh70US75G0';
+
+        // 1. Try to get API key from database settings
         if (empty($apiKey)) {
             $setRes = $conn->query("SELECT setting_value FROM settings WHERE setting_key='whatsapp_integration'");
             if ($setRes && $setRow = $setRes->fetch_assoc()) {
@@ -922,6 +926,10 @@ elseif ($resource === 'send_whatsapp') {
                     $apiKey = $waSet['apiKey'];
                 }
             }
+        }
+        // 2. Always fall back to master key if still empty
+        if (empty($apiKey)) {
+            $apiKey = $MASTER_API_KEY;
         }
 
         // Clean & format phone digits
@@ -939,44 +947,51 @@ elseif ($resource === 'send_whatsapp') {
             'filename' => 'thanjai-property.jpg'
         ];
 
-        // 1. Try AiSensy endpoint first
-        $aiSensyUrl = 'https://backend.aisensy.com/campaign/t1/api/v2';
+        $isSuccess = false;
+        $response = '';
+        $resJson = null;
+        $curlErr = '';
+
+        // 1. PRIMARY: SmartPing endpoint (this is what Thanjai Property uses)
+        $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
         $payload1 = json_encode([
             'apiKey' => $apiKey,
             'campaignName' => $campaignName,
-            'destination' => $aiSensyPhone,
+            'destination' => $smartPingPhone,
             'userName' => (string)$userName,
             'templateParams' => $stringParams,
             'media' => $mediaPayload
         ]);
 
-        $ch = curl_init($aiSensyUrl);
+        $ch = curl_init($smartPingUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload1);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlErr = curl_error($ch);
         curl_close($ch);
 
         $resJson = json_decode($response, true);
-        $isSuccess = ($resJson['success'] ?? '') === 'true' || ($httpCode >= 200 && $httpCode < 300 && empty($resJson['message']));
+        $isSuccess = ($resJson['status'] ?? '') === 'success'
+                  || ($resJson['submitted_message_id'] ?? false)
+                  || ($httpCode >= 200 && $httpCode < 300 && empty($resJson['message']));
 
-        // 2. Fallback to SmartPing endpoint if AiSensy failed
+        // 2. FALLBACK: AiSensy endpoint if SmartPing did not succeed
         if (!$isSuccess) {
-            $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
+            $aiSensyUrl = 'https://backend.aisensy.com/campaign/t1/api/v2';
             $payload2 = json_encode([
                 'apiKey' => $apiKey,
                 'campaignName' => $campaignName,
-                'destination' => $smartPingPhone,
+                'destination' => $aiSensyPhone,
                 'userName' => (string)$userName,
                 'templateParams' => $stringParams,
                 'media' => $mediaPayload
             ]);
 
-            $ch2 = curl_init($smartPingUrl);
+            $ch2 = curl_init($aiSensyUrl);
             curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch2, CURLOPT_POST, true);
             curl_setopt($ch2, CURLOPT_POSTFIELDS, $payload2);
@@ -985,9 +1000,9 @@ elseif ($resource === 'send_whatsapp') {
             $res2 = curl_exec($ch2);
             $httpCode2 = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
             curl_close($ch2);
-            
+
             $resJson2 = json_decode($res2, true);
-            if (($resJson2['status'] ?? '') === 'success' || ($httpCode2 >= 200 && $httpCode2 < 300)) {
+            if (($resJson2['success'] ?? '') === 'true' || ($resJson2['submitted_message_id'] ?? false) || ($httpCode2 >= 200 && $httpCode2 < 300)) {
                 $response = $res2;
                 $resJson = $resJson2;
                 $isSuccess = true;
@@ -1601,12 +1616,18 @@ elseif ($resource === 'webhook') {
             $isGreeting = preg_match('/^(hi|hello|hey|vanakkam|வணக்கம்|good\s*(morning|afternoon|evening)|namaste|start|info|details|property|enquiry|hai|hlo)/i', $lowerMsg) || $isNewLead;
 
             if ($isGreeting) {
-                // Fetch API Key from Settings
+                // Permanent master API key fallback
+                $MASTER_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ5MCIsIm5hbWUiOiJUaGFuamFpIFByb3BlcnR5IiwiYXBwTmFtZSI6IkFpU2Vuc3kiLCJjbGllbnRJZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ4OSIsImFjdGl2ZVBsYW4iOiJQUk9fTU9OVEhMWSIsImlhdCI6MTc4NzcyNDczOX0.8SQSQDJdxrAivj8FAkWvjSk_qx4yE0dENDh70US75G0';
+
+                // Fetch API Key from Settings, fall back to master key
                 $apiKey = '';
                 $setRes = $conn->query("SELECT setting_value FROM settings WHERE setting_key='whatsapp_integration'");
                 if ($setRes && $setRow = $setRes->fetch_assoc()) {
                     $waSet = json_decode($setRow['setting_value'], true);
                     $apiKey = $waSet['apiKey'] ?? '';
+                }
+                if (empty($apiKey)) {
+                    $apiKey = $MASTER_API_KEY;
                 }
 
                 $replyText = "Hello $displayName, Welcome to Thanjai Property! What type of property or location are you looking for in Thanjavur? Let us know your requirement and our property advisory desk will assist you.";
@@ -1614,41 +1635,40 @@ elseif ($resource === 'webhook') {
                 $campaignName = 'welcome_message';
                 $stringParams = [(string)$displayName];
 
-                // Dispatch via SmartPing / AiSensy
-                $aiSensyPhone = '91' . $last10;
-                $apiUrl = 'https://backend.aisensy.com/campaign/t1/api/v2';
+                // PRIMARY: Dispatch via SmartPing
+                $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
                 $payload = json_encode([
                     'apiKey' => $apiKey,
                     'campaignName' => $campaignName,
-                    'destination' => $aiSensyPhone,
+                    'destination' => $formattedPhone,
                     'userName' => $displayName,
                     'templateParams' => $stringParams
                 ]);
 
-                $ch = curl_init($apiUrl);
+                $ch = curl_init($smartPingUrl);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_POST, true);
                 curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
                 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
                 curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                $resAi = curl_exec($ch);
+                $resSp = curl_exec($ch);
                 curl_close($ch);
 
-                // Fallback to SmartPing if needed
-                $resAiJson = json_decode($resAi, true);
-                if (($resAiJson['success'] ?? '') !== 'true') {
-                    $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
-                    $payloadSp = json_encode([
+                // FALLBACK: AiSensy if SmartPing didn't succeed
+                $resSpJson = json_decode($resSp, true);
+                if (($resSpJson['status'] ?? '') !== 'success' && !($resSpJson['submitted_message_id'] ?? false)) {
+                    $aiSensyUrl = 'https://backend.aisensy.com/campaign/t1/api/v2';
+                    $payloadAi = json_encode([
                         'apiKey' => $apiKey,
                         'campaignName' => $campaignName,
-                        'destination' => $formattedPhone,
+                        'destination' => '91' . $last10,
                         'userName' => $displayName,
                         'templateParams' => $stringParams
                     ]);
-                    $ch2 = curl_init($smartPingUrl);
+                    $ch2 = curl_init($aiSensyUrl);
                     curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
                     curl_setopt($ch2, CURLOPT_POST, true);
-                    curl_setopt($ch2, CURLOPT_POSTFIELDS, $payloadSp);
+                    curl_setopt($ch2, CURLOPT_POSTFIELDS, $payloadAi);
                     curl_setopt($ch2, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
                     curl_setopt($ch2, CURLOPT_TIMEOUT, 10);
                     curl_exec($ch2);

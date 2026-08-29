@@ -161,6 +161,7 @@ export async function initWhatsAppLogView() {
   let conversationsMap = new Map();
 
   async function loadAllMessagesAndConversations() {
+    // Load leads for contact names and phone numbers
     let leads = [];
     try {
       const apiLeads = await fetchFromAPI('/leads');
@@ -170,23 +171,14 @@ export async function initWhatsAppLogView() {
       leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
     }
 
-    const baseline = [
-      { name: 'Kaniga', phone: '+91 8122289508', mobile: '8122289508' },
-      { name: 'sariga Digitechzo', phone: '+91 7810028504', mobile: '7810028504' }
-    ];
-    baseline.forEach(b => {
-      const b10 = cleanPhoneDigits(b.mobile);
-      if (!leads.some(l => cleanPhoneDigits(l.phone || l.mobile || l.whatsapp) === b10)) {
-        leads.push(b);
-      }
-    });
-
+    // Load inbound messages from database (whatsapp_incoming table)
     let incomingList = [];
     try {
       const inc = await fetchFromAPI('/whatsapp_incoming');
       if (inc && Array.isArray(inc)) incomingList = inc;
     } catch(e) {}
 
+    // Load outbound messages from database (whatsapp_logs table)
     let outboundList = [];
     try {
       const outb = await fetchFromAPI('/whatsapp_logs');
@@ -195,38 +187,25 @@ export async function initWhatsAppLogView() {
 
     const newMap = new Map();
 
+    // Build conversation stubs from leads (for contact name + phone only — NO fake messages)
     leads.forEach(l => {
       const rawPhone = l.phone || l.mobile || l.whatsapp || '';
       const p10 = cleanPhoneDigits(rawPhone);
       if (!p10) return;
-
-      const timeline = parseTimeline(l.timeline);
-      const leadMsgs = [];
-
-      timeline.forEach(t => {
-        if (t.type === 'whatsapp' || t.type === 'whatsapp_incoming') {
-          const rawM = t.type === 'whatsapp_incoming' ? (t.note || t.message) : (t.note || t.message);
-          leadMsgs.push({
-            direction: t.type === 'whatsapp_incoming' ? 'in' : 'out',
-            message: expandTemplateKeyToFullText(rawM, l.name || 'Client'),
-            date: new Date(t.date || Date.now())
-          });
-        }
-      });
 
       newMap.set(p10, {
         id: l.id || `C-${p10}`,
         name: l.name || `Client (${p10})`,
         phone: formatPhoneDisplay(rawPhone),
         phone10: p10,
-        messages: leadMsgs,
+        messages: [],       // Messages loaded exclusively from database below
         lastTime: '',
         lastDate: new Date(0),
         lastMessage: 'No messages yet'
       });
     });
 
-    // 1. Process real inbound messages from database (whatsapp_incoming table)
+    // 1. Process real INBOUND messages from database (whatsapp_incoming table — customer → Thanjai)
     incomingList.forEach(inc => {
       const p10 = cleanPhoneDigits(inc.from_phone);
       if (!p10) return;
@@ -245,25 +224,24 @@ export async function initWhatsAppLogView() {
       }
 
       const conv = newMap.get(p10);
-      const msgText = expandTemplateKeyToFullText(inc.message || '[Media received]', conv.name);
+      // Update contact name if we have a better name from inbound record
+      if (inc.from_name && conv.name.startsWith('Client (')) {
+        conv.name = inc.from_name;
+      }
+      const msgText = inc.message || '[Media received]';
       const msgDate = new Date(inc.createdAt || inc.timestamp || Date.now());
 
       if (!conv.messages.some(m => m.direction === 'in' && m.message === msgText && Math.abs(m.date - msgDate) < 5000)) {
-        conv.messages.push({
-          direction: 'in',
-          message: msgText,
-          date: msgDate
-        });
+        conv.messages.push({ direction: 'in', message: msgText, date: msgDate });
       }
     });
 
-    // 2. Process real outbound messages from database (whatsapp_logs table — outbound only)
+    // 2. Process real OUTBOUND messages from database (whatsapp_logs table — Thanjai → customer)
     outboundList.forEach(out => {
-      // Skip any inbound-direction records that may still exist from old syncs
+      // Skip any leftover inbound-direction records from old syncs
       const dir = out.direction || out.type || 'outbound';
       if (dir === 'inbound') return;
 
-      // Use phone_number OR phone — whichever is populated
       const rawPhone = out.phone_number || out.phone || '';
       const p10 = cleanPhoneDigits(rawPhone);
       if (!p10) return;
@@ -285,42 +263,18 @@ export async function initWhatsAppLogView() {
       const msgText = expandTemplateKeyToFullText(out.message || '', conv.name);
       const msgDate = new Date(out.createdAt || Date.now());
 
-      // Deduplicate: skip if same message within 10 seconds
       if (!conv.messages.some(m => m.direction === 'out' && m.message === msgText && Math.abs(m.date - msgDate) < 10000)) {
-        conv.messages.push({
-          direction: 'out',
-          message: msgText,
-          date: msgDate
-        });
+        conv.messages.push({ direction: 'out', message: msgText, date: msgDate });
       }
     });
 
-
-    // 3. Fallback to local session cache only for messages not yet in database
-    const localCache = JSON.parse(localStorage.getItem('thanjai_wa_chat_cache')) || {};
-    Object.keys(localCache).forEach(p10 => {
-      if (!newMap.has(p10)) return;
-      const conv = newMap.get(p10);
-      const cacheMsgs = localCache[p10] || [];
-      cacheMsgs.forEach(cm => {
-        const cDate = new Date(cm.date || Date.now());
-        const expandedCached = expandTemplateKeyToFullText(cm.message, conv.name);
-        if (!conv.messages.some(m => m.message === expandedCached && Math.abs(m.date - cDate) < 10000)) {
-          conv.messages.push({
-            direction: cm.direction || 'out',
-            message: expandedCached,
-            date: cDate
-          });
-        }
-      });
-    });
-
+    // Sort each conversation's messages chronologically and compute sidebar preview
     newMap.forEach(conv => {
       conv.messages.sort((a, b) => a.date - b.date);
       if (conv.messages.length > 0) {
         const last = conv.messages[conv.messages.length - 1];
         conv.lastDate = last.date;
-        conv.lastMessage = last.message.replace('WhatsApp sent: ', '').replace('Customer replied: ', '');
+        conv.lastMessage = last.message;
         conv.lastTime = last.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
     });
@@ -331,6 +285,9 @@ export async function initWhatsAppLogView() {
       renderChatHistory(activePhone10, true);
     }
   }
+
+
+
 
   function renderSidebar(filter = '') {
     const term = filter.toLowerCase();
