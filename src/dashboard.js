@@ -76,22 +76,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       .admin-input { width: 100%; padding: 12px 16px 12px 46px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 12px; color: #ffffff; font-size: 0.95rem; outline: none; box-sizing: border-box; transition: border-color 0.2s; }
       .admin-input:focus { border-color: #eb5e28; }
       .admin-submit-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #eb5e28 0%, #d94e18 100%); border: none; border-radius: 12px; color: #ffffff; font-size: 1rem; font-weight: 800; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(235, 94, 40, 0.35); margin-top: 10px; }
-      .admin-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(235, 94, 40, 0.45); }
       .demo-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
       .demo-title { font-size: 0.82rem; font-weight: 700; color: #94a3b8; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
       .demo-pill { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 14px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
       .demo-pill:hover { background: rgba(235, 94, 40, 0.15); border-color: rgba(235, 94, 40, 0.4); }
       .demo-name { font-size: 0.88rem; font-weight: 700; color: #f1f5f9; }
-      .demo-role { font-size: 0.78rem; color: #eb5e28; font-weight: 700; }
+      .demo-role { font-size: 0.78rem; color: #eb5e28; font-weight: 700 }
+      .admin-input-wrap { position: relative; width: 100%; }
+      .admin-input-wrap i.admin-field-icon { position: absolute; left: 16px; right: auto !important; top: 50%; transform: translateY(-50%); color: #64748b; font-size: 1.1rem; pointer-events: none; }
+      .admin-input-wrap i.admin-toggle-icon { position: absolute; right: 16px; left: auto !important; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 1.15rem; cursor: pointer; z-index: 10; transition: color 0.2s; }
+      .admin-input-wrap i.admin-toggle-icon:hover { color: #eb5e28; }
+      .admin-input { width: 100%; padding: 12px 16px 12px 46px; background: rgba(15, 23, 42, 0.8); border: 1px solid #334155; border-radius: 12px; color: #ffffff; font-size: 0.95rem; outline: none; box-sizing: border-box; transition: border-color 0.2s; }
+      .admin-input:focus { border-color: #eb5e28; }
+      .admin-submit-btn { width: 100%; padding: 14px; background: #eb5e28; color: #ffffff; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+      .admin-submit-btn:hover { background: #d94e18; transform: translateY(-1px); }
+      .admin-submit-btn:active { transform: translateY(0); }
     `;
-    document.head.appendChild(loginStyle);
+    document.head.appendChild(style);
 
     const loginContainer = document.createElement('div');
-    loginContainer.className = 'admin-card';
+    loginContainer.id = 'admin-login-overlay';
     loginContainer.innerHTML = `
-      <div style="text-align: center; margin-bottom: 24px;">
-        <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" style="height: 48px; background: #fff; padding: 6px 12px; border-radius: 8px; margin-bottom: 16px;" />
-        <div style="display: block;">
+      <div class="admin-brand-header">
+        <div class="admin-logo-badge">
+          <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" style="height: 52px; width: auto; object-fit: contain; margin-bottom: 12px;" />
           <span class="admin-badge"><i class="ri-shield-keyhole-line"></i> Administrative Operating System</span>
         </div>
         <h1 class="admin-title">Admin Staff Login</h1>
@@ -102,23 +110,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="admin-form-group">
           <label class="admin-label" for="admin-email">STAFF EMAIL ADDRESS</label>
           <div class="admin-input-wrap">
-            <i class="ri-mail-line"></i>
+            <i class="ri-mail-line admin-field-icon"></i>
             <input type="email" id="admin-email" value="" required class="admin-input" placeholder="admin@realrest.example" />
           </div>
         </div>
         <div class="admin-form-group">
           <label class="admin-label" for="admin-password">SYSTEM PASSWORD</label>
-          <div class="admin-input-wrap" style="position: relative;">
-            <i class="ri-lock-2-line"></i>
-            <input type="password" id="admin-password" value="" required class="admin-input" placeholder="••••••••" style="padding-right: 42px;" />
-            <i class="ri-eye-line" id="toggle-admin-pw" title="Toggle password visibility" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #a0aec0; font-size: 1.15rem; transition: color 0.2s;"></i>
+          <div class="admin-input-wrap">
+            <i class="ri-lock-2-line admin-field-icon"></i>
+            <input type="password" id="admin-password" value="" required class="admin-input" placeholder="••••••••" style="padding-right: 48px;" />
+            <i class="ri-eye-line admin-toggle-icon" id="toggle-admin-pw" title="Toggle password visibility"></i>
           </div>
         </div>
         <button type="submit" class="admin-submit-btn" id="admin-signin-btn">
           <i class="ri-login-circle-line"></i> Sign In to Admin OS
         </button>
       </form>
-
     `;
     document.body.appendChild(loginContainer);
 
@@ -129,8 +136,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (adminPwInput) {
         const isPw = adminPwInput.type === 'password';
         adminPwInput.type = isPw ? 'text' : 'password';
-        toggleAdminPw.className = isPw ? 'ri-eye-off-line' : 'ri-eye-line';
-        toggleAdminPw.style.color = isPw ? '#eb5e28' : '#a0aec0';
+        toggleAdminPw.className = isPw ? 'ri-eye-off-line admin-toggle-icon' : 'ri-eye-line admin-toggle-icon';
+        toggleAdminPw.style.color = isPw ? '#eb5e28' : '#94a3b8';
       }
     });
 

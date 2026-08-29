@@ -77,13 +77,18 @@ function renCol($conn, $t, $o, $n, $d) {
   `id` varchar(255) PRIMARY KEY,
   `leadId` varchar(255) DEFAULT NULL,
   `phone` varchar(50) DEFAULT NULL,
+  `phone_number` varchar(50) DEFAULT NULL,
   `message` longtext DEFAULT NULL,
   `sender` varchar(255) DEFAULT 'Super Admin',
   `recipientName` varchar(255) DEFAULT NULL,
   `type` varchar(50) DEFAULT 'outbound',
+  `direction` varchar(50) DEFAULT 'outbound',
   `status` varchar(50) DEFAULT 'Delivered',
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
+
+@$conn->query("ALTER TABLE `whatsapp_logs` ADD COLUMN `phone_number` varchar(50) DEFAULT NULL");
+@$conn->query("ALTER TABLE `whatsapp_logs` ADD COLUMN `direction` varchar(50) DEFAULT 'outbound'");
 
 @$conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_incoming` (
   `id` int(11) AUTO_INCREMENT PRIMARY KEY,
@@ -96,6 +101,11 @@ function renCol($conn, $t, $o, $n, $d) {
   `raw_payload` longtext DEFAULT NULL,
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
+
+// Automatically populate whatsapp_logs table with all incoming messages so phpMyAdmin shows them!
+@$conn->query("INSERT IGNORE INTO `whatsapp_logs` (`id`, `phone_number`, `phone`, `message`, `direction`, `type`, `sender`, `recipientName`, `status`, `createdAt`)
+SELECT CONCAT('WA-IN-', id), from_phone, from_phone, message, 'inbound', 'inbound', IFNULL(NULLIF(from_name, ''), 'Customer'), 'Thanjai Property', 'Received', createdAt
+FROM `whatsapp_incoming`");
 
 @$conn->query("CREATE TABLE IF NOT EXISTS `audit_logs` (
   `id` varchar(255) PRIMARY KEY,
