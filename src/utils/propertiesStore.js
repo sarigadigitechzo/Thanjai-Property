@@ -100,6 +100,11 @@ export function approveSubmission(id) {
   props[idx].availability = 'Available';
   savePropertiesToStorage(props);
 
+  fetchFromAPI(`/properties/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(props[idx])
+  }).catch(err => console.error("API Error approving property:", err));
+
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
     
@@ -121,6 +126,11 @@ export function rejectSubmission(id, reason = 'Did not meet Patta title guidelin
   props[idx].status = 'Rejected';
   props[idx].rejectionReason = reason;
   savePropertiesToStorage(props);
+
+  fetchFromAPI(`/properties/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(props[idx])
+  }).catch(err => console.error("API Error rejecting property:", err));
 
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),

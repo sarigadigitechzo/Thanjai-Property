@@ -431,16 +431,16 @@ function openSubmissionPreviewModal(prop) {
 
   function bindModalEvents() {
     const closeModal = () => overlay.remove();
-    document.getElementById('close-approval-preview-btn')?.addEventListener('click', closeModal);
-    document.getElementById('modal-close-preview-btn')?.addEventListener('click', closeModal);
+    overlay.querySelector('#close-approval-preview-btn')?.addEventListener('click', closeModal);
+    overlay.querySelector('#modal-close-preview-btn')?.addEventListener('click', closeModal);
 
-    document.getElementById('prev-approval-media-btn')?.addEventListener('click', (e) => {
+    overlay.querySelector('#prev-approval-media-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
       activeMediaIndex = (activeMediaIndex - 1 + images.length) % images.length;
       renderModalContent();
     });
 
-    document.getElementById('next-approval-media-btn')?.addEventListener('click', (e) => {
+    overlay.querySelector('#next-approval-media-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
       activeMediaIndex = (activeMediaIndex + 1) % images.length;
       renderModalContent();
@@ -457,7 +457,7 @@ function openSubmissionPreviewModal(prop) {
       });
     });
 
-    document.getElementById('modal-approve-btn')?.addEventListener('click', (e) => {
+    overlay.querySelector('#modal-approve-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
       approveSubmission(prop.id);
       showToast(`Success! Property ${prop.id} Approved & Published Live!`, 'ri-checkbox-circle-fill');

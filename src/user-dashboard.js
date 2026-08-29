@@ -192,7 +192,7 @@ export function renderUserDashboard() {
                 <div class="kpi-icon-box orange"><i class="ri-stack-line"></i></div>
                 <div>
                   <h5 class="kpi-title">Total Submitted</h5>
-                  <div class="kpi-val">${submittedCount} Properties</div>
+                  <div class="kpi-val" id="kpi-submitted-count">${submittedCount} Properties</div>
                 </div>
               </div>
               <div class="kpi-footer-link">Manage Properties &rsaquo;</div>
@@ -203,7 +203,7 @@ export function renderUserDashboard() {
                 <div class="kpi-icon-box blue"><i class="ri-time-line"></i></div>
                 <div>
                   <h5 class="kpi-title">Awaiting Approval</h5>
-                  <div class="kpi-val">${pendingCount} Pending</div>
+                  <div class="kpi-val" id="kpi-pending-count">${pendingCount} Pending</div>
                 </div>
               </div>
               <div class="kpi-footer-link">Pending Verification &rsaquo;</div>
@@ -292,6 +292,11 @@ export function renderUserDashboard() {
     const updatedUserProps = currentAll.filter(p => {
       if (p.userId && user.id && p.userId === user.id) return true;
       if (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()) return true;
+      
+      // Check actualOwner metadata first if available
+      if (p.actualOwnerPhone === user.phone && (p.actualOwnerName === userName)) return true;
+
+      // Fallback to legacy check
       if (!p.userId && !p.userEmail) {
         return p.ownerPhone === user.phone && (p.listedBy === userName || p.ownerName === userName);
       }
@@ -308,6 +313,17 @@ export function renderUserDashboard() {
       panelBody.innerHTML = renderMyPropertiesTableHtml(updatedUserProps);
       bindTableActions();
     }
+
+    // Update KPIs dynamically
+    const submittedCount = updatedUserProps.length;
+    const pendingCount = updatedUserProps.filter(p => p.approvalStatus === 'Pending Approval' || p.status === 'Pending Approval').length;
+    const submittedKpi = document.getElementById('kpi-submitted-count');
+    const pendingKpi = document.getElementById('kpi-pending-count');
+    if (submittedKpi) submittedKpi.textContent = `${submittedCount} Properties`;
+    if (pendingKpi) pendingKpi.textContent = `${pendingCount} Pending`;
+    
+    const sidebarCount = document.getElementById('sidebar-props-count');
+    if (sidebarCount) sidebarCount.textContent = submittedCount;
   }
 
   function bindTableActions() {
