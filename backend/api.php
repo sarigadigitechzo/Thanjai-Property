@@ -1504,9 +1504,20 @@ elseif ($resource === 'webhook') {
         // 2. Generic / SmartPing / AiSensy flat or nested JSON format
         else {
             $from_phone = $data['from'] ?? ($data['sender'] ?? ($data['phone'] ?? ($data['mobile'] ?? ($data['waId'] ?? ($data['destination'] ?? '')))));
-            $from_name  = $data['name'] ?? ($data['userName'] ?? ($data['from_name'] ?? ($data['contactName'] ?? $from_phone)));
+            $from_name  = $data['name'] ?? ($data['userName'] ?? ($data['from_name'] ?? ($data['contactName'] ?? '')));
             
-            // Extract text message from various formats
+            // Check nested wrappers like $data['data'], $data['payload'], $data['contact']
+            $nested = $data['data'] ?? ($data['payload'] ?? ($data['contact'] ?? []));
+            if (is_array($nested)) {
+                if (empty($from_phone)) {
+                    $from_phone = $nested['from'] ?? ($nested['sender'] ?? ($nested['phone'] ?? ($nested['mobile'] ?? ($nested['waId'] ?? ($nested['destination'] ?? '')))));
+                }
+                if (empty($from_name)) {
+                    $from_name = $nested['name'] ?? ($nested['userName'] ?? ($nested['from_name'] ?? ($nested['contactName'] ?? '')));
+                }
+            }
+
+            // Extract text message from various formats & nested structures
             if (isset($data['text']) && is_string($data['text'])) {
                 $message = $data['text'];
             } elseif (isset($data['message']) && is_string($data['message'])) {
@@ -1517,6 +1528,12 @@ elseif ($resource === 'webhook') {
                 $message = $data['msg'];
             } elseif (isset($data['content']) && is_string($data['content'])) {
                 $message = $data['content'];
+            } elseif (isset($nested['text']) && is_string($nested['text'])) {
+                $message = $nested['text'];
+            } elseif (isset($nested['message']) && is_string($nested['message'])) {
+                $message = $nested['message'];
+            } elseif (isset($nested['body']) && is_string($nested['body'])) {
+                $message = $nested['body'];
             } elseif (isset($data['button']['text'])) {
                 $message = $data['button']['text'];
             } elseif (isset($data['text']['body'])) {
@@ -1525,9 +1542,10 @@ elseif ($resource === 'webhook') {
                 $message = is_array($data['message'] ?? null) ? json_encode($data['message']) : ($data['text'] ?? '');
             }
             
-            $timestamp  = $data['timestamp'] ?? ($data['time'] ?? date('c'));
-            $msg_type   = $data['type'] ?? ($data['messageType'] ?? 'text');
-            $media_url  = $data['mediaUrl'] ?? ($data['url'] ?? ($data['media']['url'] ?? ''));
+            $timestamp  = $data['timestamp'] ?? ($data['time'] ?? ($nested['timestamp'] ?? ($nested['time'] ?? date('c'))));
+            $msg_type   = $data['type'] ?? ($data['messageType'] ?? ($nested['type'] ?? 'text'));
+            $media_url  = $data['mediaUrl'] ?? ($data['url'] ?? ($data['media']['url'] ?? ($nested['mediaUrl'] ?? '')));
+            if (empty($from_name)) $from_name = $from_phone;
         }
 
         if ($from_phone) {
