@@ -1807,6 +1807,16 @@ elseif ($resource === 'whatsapp_incoming') {
         while ($row = $result->fetch_assoc()) { $rows[] = $row; }
         echo json_encode($rows);
     }
+    elseif ($method === 'DELETE') {
+        $del_id = intval($_GET['id'] ?? 0);
+        if ($del_id > 0) {
+            $conn->query("DELETE FROM `whatsapp_incoming` WHERE `id` = $del_id");
+            echo json_encode(["message" => "Deleted row $del_id"]);
+        } else {
+            http_response_code(400);
+            echo json_encode(["error" => "id required"]);
+        }
+    }
 }
 
 // Read raw webhook logs — so we can see exactly what SmartPing sends

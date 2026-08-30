@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       .admin-submit-btn:hover { background: #d94e18; transform: translateY(-1px); }
       .admin-submit-btn:active { transform: translateY(0); }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(loginStyle);
 
     const loginContainer = document.createElement('div');
     loginContainer.id = 'admin-login-overlay';
