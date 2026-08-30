@@ -347,12 +347,15 @@ The following key elements must be preserved:
 - `filterPropertiesList()`, `exportFilteredPropertiesToCSV()` in `src/crm-views/PropertiesView.js`.
 - `renderDiscoverView()`, `filterProperties()` in `src/views/DiscoverView.js`.
 - `parseCurrentRoute()`, `updateSeoMetadata()`, `renderApp()` in `src/main.js`.
+- **CRITICAL PROTECTED**: `initWhatsAppLogView()`, `loadAllMessagesAndConversations()`, `renderChatHistory()`, `renderSidebar()` in `src/crm-views/WhatsAppLogView.js` — **DO NOT MODIFY OR TOUCH**.
+- **CRITICAL PROTECTED**: SmartPing Webhook endpoint (`elseif ($resource === 'webhook')`), `send_whatsapp`, and `whatsapp_messages` CRUD in `backend/api.php` — **DO NOT MODIFY OR TOUCH**.
 
 ### Key DOM Element IDs & Classes
 - `#os-content`, `#os-app`, `.os-sidebar`, `.nav-item` in `dashboard.html`.
 - `#app` in `index.html`.
 - `#login-app`, `#login-form` in `login.html`.
 - `#open-add-property-form-btn`, `#export-props-csv-btn`, `#prop-admin-form`, `#select-location-map-btn`, `#leaflet-interactive-map` in `PropertiesView.js`.
+- `#wa-chat-list`, `#wa-chat-history`, `#wa-msg-input`, `#wa-btn-send` in `WhatsAppLogView.js`.
 
 ---
 
