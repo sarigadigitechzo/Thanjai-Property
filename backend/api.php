@@ -1519,6 +1519,14 @@ elseif ($resource === 'webhook') {
         }
 
 
+        // Filter out status updates / delivery receipts / echoes from SmartPing
+        $topic = $data['topic'] ?? '';
+        if ($topic === 'message.status.updated' || $topic === 'message.status' || $topic === 'message.sent' || $topic === 'message.delivered' || $topic === 'message.read') {
+            http_response_code(200);
+            echo json_encode(["status" => "status_update_ignored"]);
+            exit();
+        }
+
         // Parse incoming message payloads (SmartPing / AiSensy / Meta / Custom)
         $from_phone = '';
         $from_name  = '';
@@ -1530,6 +1538,15 @@ elseif ($resource === 'webhook') {
         // 1. SMARTPING OFFICIAL WEBHOOK FORMAT (topic = "message.sender.user", data.message object)
         if (isset($data['data']['message']) && is_array($data['data']['message'])) {
             $spMsg = $data['data']['message'];
+            
+            // Only process messages sent by real humans (USER). Ignore API/BOT/SYSTEM echoes.
+            $senderType = strtoupper($spMsg['sender'] ?? 'USER');
+            if ($senderType !== 'USER' && $senderType !== '') {
+                http_response_code(200);
+                echo json_encode(["status" => "non_user_message_ignored"]);
+                exit();
+            }
+
             $from_phone = $spMsg['phone_number'] ?? ($spMsg['from'] ?? ($spMsg['sender'] ?? ''));
             $from_name  = $spMsg['userName'] ?? ($spMsg['name'] ?? $from_phone);
             $msg_type   = strtolower($spMsg['message_type'] ?? ($spMsg['type'] ?? 'text'));
@@ -1727,96 +1744,8 @@ elseif ($resource === 'webhook') {
                 }
             }
 
-            // 3. Auto-Reply Welcome Message on Greetings or First Contact
-            $lowerMsg = strtolower(trim($message));
-            $isGreeting = preg_match('/^(hi|hello|hey|vanakkam|வணக்கம்|good\s*(morning|afternoon|evening)|namaste|start|info|details|property|enquiry|hai|hlo)/i', $lowerMsg) || $isNewLead;
-
-            if ($isGreeting) {
-                // Permanent master API key fallback
-                $MASTER_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ5MCIsIm5hbWUiOiJUaGFuamFpIFByb3BlcnR5IiwiYXBwTmFtZSI6IkFpU2Vuc3kiLCJjbGllbnRJZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ4OSIsImFjdGl2ZVBsYW4iOiJQUk9fTU9OVEhMWSIsImlhdCI6MTc4NzcyNDczOX0.8SQSQDJdxrAivj8FAkWvjSk_qx4yE0dENDh70US75G0';
-
-                // Fetch API Key from Settings, fall back to master key
-                $apiKey = '';
-                $setRes = $conn->query("SELECT setting_value FROM settings WHERE setting_key='whatsapp_integration'");
-                if ($setRes && $setRow = $setRes->fetch_assoc()) {
-                    $waSet = json_decode($setRow['setting_value'], true);
-                    $apiKey = $waSet['apiKey'] ?? '';
-                }
-                if (empty($apiKey)) {
-                    $apiKey = $MASTER_API_KEY;
-                }
-
-                $replyText = "Hello $displayName, Welcome to Thanjai Property! What type of property or location are you looking for in Thanjavur? Let us know your requirement and our property advisory desk will assist you.";
-                
-                $campaignName = 'welcome_message';
-                $stringParams = [(string)$displayName];
-
-                // PRIMARY: Dispatch via SmartPing
-                $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
-                $payload = json_encode([
-                    'apiKey' => $apiKey,
-                    'campaignName' => $campaignName,
-                    'destination' => $formattedPhone,
-                    'userName' => $displayName,
-                    'templateParams' => $stringParams
-                ]);
-
-                $ch = curl_init($smartPingUrl);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_POST, true);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-                curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                $resSp = curl_exec($ch);
-                curl_close($ch);
-
-                // FALLBACK: AiSensy if SmartPing didn't succeed
-                $resSpJson = json_decode($resSp, true);
-                if (($resSpJson['status'] ?? '') !== 'success' && !($resSpJson['submitted_message_id'] ?? false)) {
-                    $aiSensyUrl = 'https://backend.aisensy.com/campaign/t1/api/v2';
-                    $payloadAi = json_encode([
-                        'apiKey' => $apiKey,
-                        'campaignName' => $campaignName,
-                        'destination' => '91' . $last10,
-                        'userName' => $displayName,
-                        'templateParams' => $stringParams
-                    ]);
-                    $ch2 = curl_init($aiSensyUrl);
-                    curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
-                    curl_setopt($ch2, CURLOPT_POST, true);
-                    curl_setopt($ch2, CURLOPT_POSTFIELDS, $payloadAi);
-                    curl_setopt($ch2, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-                    curl_setopt($ch2, CURLOPT_TIMEOUT, 10);
-                    curl_exec($ch2);
-                    curl_close($ch2);
-                }
-
-                // Log outbound auto-welcome message in unified whatsapp_messages table
-                $safe_out_phone = $conn->real_escape_string($formattedPhone);
-                $safe_out_msg = $conn->real_escape_string($replyText);
-                $safe_out_disp = $conn->real_escape_string($displayName);
-                $conn->query("INSERT INTO `whatsapp_messages` (`direction`, `customer_phone`, `customer_name`, `message`, `source`) VALUES ('outbound', '$safe_out_phone', '$safe_out_disp', '$safe_out_msg', 'auto_reply')");
-
-                // Append welcome message to lead timeline
-                if ($matchedLeadId) {
-                    $ldRes = $conn->query("SELECT timeline FROM leads WHERE id='$matchedLeadId'");
-                    if ($ldRes && $ldRow = $ldRes->fetch_assoc()) {
-                        $tl = json_decode($ldRow['timeline'] ?? '[]', true) ?: [];
-                        array_unshift($tl, [
-                            'type'    => 'whatsapp',
-                            'date'    => date('c'),
-                            'message' => "🤖 Auto-replied welcome message: initial_contact_intro",
-                            'note'    => $replyText
-                        ]);
-                        $newTl = json_encode($tl);
-                        $updLead = $conn->prepare("UPDATE leads SET timeline=? WHERE id=?");
-                        if ($updLead) {
-                            $updLead->bind_param("ss", $newTl, $matchedLeadId);
-                            $updLead->execute();
-                        }
-                    }
-                }
-            }
+            // Lead matched or auto-created in CRM Pipeline above.
+            // Automated welcome message is already handled natively by SmartPing's campaign manager.
         }
 
         http_response_code(200);
