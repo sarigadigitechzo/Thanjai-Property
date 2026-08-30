@@ -88,6 +88,27 @@ function formatPhoneDisplay(phone) {
   return p;
 }
 
+function formatSidebarTime(d) {
+
+  if (!d || isNaN(d.getTime()) || d.getTime() === 0) return '';
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  if (isToday) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const isYesterday = new Date(now.setDate(now.getDate() - 1)).toDateString() === d.toDateString();
+  if (isYesterday) return 'Yesterday';
+  return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
+
+function formatMsgDate(d) {
+  if (!d || isNaN(d.getTime())) return '';
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (isToday) return timeStr;
+  return `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })}, ${timeStr}`;
+}
+
+
 function parseTimeline(timeline) {
   if (!timeline) return [];
   if (Array.isArray(timeline)) return timeline;
@@ -207,6 +228,10 @@ export async function initWhatsAppLogView() {
 
     // 1. Process real INBOUND messages from database (whatsapp_incoming table — customer → Thanjai)
     incomingList.forEach(inc => {
+      const msgRaw = inc.message || '';
+      // Skip artificial test probe noise
+      if (msgRaw.includes('Live test probe at') || msgRaw.includes('Test message from automated node check')) return;
+
       const p10 = cleanPhoneDigits(inc.from_phone);
       if (!p10) return;
 
@@ -228,7 +253,7 @@ export async function initWhatsAppLogView() {
       if (inc.from_name && conv.name.startsWith('Client (')) {
         conv.name = inc.from_name;
       }
-      const msgText = inc.message || '[Media received]';
+      const msgText = msgRaw || '[Media received]';
       const msgDate = new Date(inc.createdAt || inc.timestamp || Date.now());
 
       if (!conv.messages.some(m => m.direction === 'in' && m.message === msgText && Math.abs(m.date - msgDate) < 5000)) {
@@ -238,6 +263,10 @@ export async function initWhatsAppLogView() {
 
     // 2. Process all records from database (whatsapp_logs table — outbound & historical inbound)
     outboundList.forEach(out => {
+      const msgRaw = out.message || '';
+      // Skip artificial test probe noise
+      if (msgRaw.includes('Live test probe at') || msgRaw.includes('Test message from automated node check')) return;
+
       const dir = String(out.direction || out.type || 'outbound').toLowerCase();
       const isOutbound = dir !== 'inbound';
       const msgDirection = isOutbound ? 'out' : 'in';
@@ -260,7 +289,7 @@ export async function initWhatsAppLogView() {
       }
 
       const conv = newMap.get(p10);
-      const msgText = expandTemplateKeyToFullText(out.message || '', conv.name);
+      const msgText = expandTemplateKeyToFullText(msgRaw, conv.name);
       const msgDate = new Date(out.createdAt || Date.now());
 
       // Deduplicate: avoid adding identical message with same direction within 10 seconds
@@ -269,7 +298,6 @@ export async function initWhatsAppLogView() {
       }
     });
 
-
     // Sort each conversation's messages chronologically and compute sidebar preview
     newMap.forEach(conv => {
       conv.messages.sort((a, b) => a.date - b.date);
@@ -277,9 +305,10 @@ export async function initWhatsAppLogView() {
         const last = conv.messages[conv.messages.length - 1];
         conv.lastDate = last.date;
         conv.lastMessage = last.message;
-        conv.lastTime = last.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        conv.lastTime = formatSidebarTime(last.date);
       }
     });
+
 
     conversationsMap = newMap;
     renderSidebar(searchInput?.value || '');
@@ -391,7 +420,7 @@ export async function initWhatsAppLogView() {
 
     let html = '';
     conv.messages.forEach(msg => {
-      const timeStr = msg.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const timeStr = formatMsgDate(msg.date);
 
       if (msg.direction === 'out') {
         html += `
@@ -419,6 +448,7 @@ export async function initWhatsAppLogView() {
         `;
       }
     });
+
 
     historyContainer.innerHTML = html;
     if (!isSilent || wasAtBottom) {
