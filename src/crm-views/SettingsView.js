@@ -325,7 +325,12 @@ export function renderSettingsView() {
           <div class="settings-grid-2">
             <div class="settings-form-group">
               <label class="settings-label">API Key / Token</label>
-              <input type="password" id="settings-wa-api-key" class="settings-input" placeholder="Paste SmartPing / AiSensy API Key here" />
+              <div style="position: relative;">
+                <input type="password" id="settings-wa-api-key" class="settings-input" placeholder="Paste SmartPing / AiSensy API Key here" style="padding-right: 42px;" />
+                <button type="button" id="toggle-settings-wa-api-key" title="Toggle visibility" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #64748b; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;">
+                  <i class="ri-eye-line"></i>
+                </button>
+              </div>
             </div>
             <div class="settings-form-group">
               <label class="settings-label">Campaign Name (Live)</label>
@@ -586,15 +591,25 @@ export function initSettingsView() {
 
   // WhatsApp API Key & SmartPing Provider Save Logic
   const waApiKeyInput = document.getElementById('settings-wa-api-key');
+  const waApiKeyToggleBtn = document.getElementById('toggle-settings-wa-api-key');
   const waCampaignInput = document.getElementById('settings-wa-campaign');
   const waSaveBtn = document.getElementById('settings-wa-save-btn');
   const waProviderSelect = document.getElementById('settings-wa-provider');
+
+  if (waApiKeyToggleBtn && waApiKeyInput) {
+    waApiKeyToggleBtn.addEventListener('click', () => {
+      const isPass = waApiKeyInput.type === 'password';
+      waApiKeyInput.type = isPass ? 'text' : 'password';
+      waApiKeyToggleBtn.innerHTML = isPass ? '<i class="ri-eye-off-line"></i>' : '<i class="ri-eye-line"></i>';
+    });
+  }
   
   // 1. Pre-fill from localStorage or master fallback
   const initialApiKey = localStorage.getItem('thanjai_whatsapp_api_key') || DEFAULT_WHATSAPP_API_KEY;
   if (waApiKeyInput) waApiKeyInput.value = initialApiKey;
   if (waCampaignInput) waCampaignInput.value = localStorage.getItem('thanjai_wa_campaign') || 'initial_contact_intro';
   if (waProviderSelect) waProviderSelect.value = localStorage.getItem('thanjai_wa_provider') || 'smartping';
+
 
   // 2. Fetch from live MySQL backend to ensure 100% sync
   fetchFromAPI('/settings').then(settings => {

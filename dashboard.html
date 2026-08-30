@@ -27,8 +27,12 @@
   </head>
   <body class="os-body">
     <div id="os-app" style="display: none;">
+      <!-- Mobile Sidebar Backdrop Overlay -->
+      <div class="os-sidebar-backdrop" id="os-sidebar-backdrop"></div>
+
       <!-- Floating Sidebar -->
       <aside class="os-sidebar">
+
         <div class="sidebar-logo-container">
           <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" class="sidebar-logo" />
         </div>
@@ -139,6 +143,10 @@
       <main class="os-main">
         <!-- Floating Top Navigation -->
         <header class="os-header glassmorphism">
+          <button class="mobile-menu-toggle-btn" id="mobile-menu-toggle-btn" title="Toggle Navigation">
+            <i class="ri-menu-2-line"></i>
+          </button>
+
           <div class="search-container">
             <i class="ri-search-2-line"></i>
             <input type="text" placeholder="Search leads, properties, clients..." class="universal-search" />

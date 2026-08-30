@@ -510,6 +510,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('profile-logout-btn')?.addEventListener('click', handleAdminLogout);
   document.getElementById('sidebar-logout-btn')?.addEventListener('click', handleAdminLogout);
 
+  // Mobile Sidebar Drawer Toggle
+  const mobileMenuBtn = document.getElementById('mobile-menu-toggle-btn');
+  const sidebarEl = document.querySelector('.os-sidebar');
+  const backdropEl = document.getElementById('os-sidebar-backdrop');
+
+  function toggleMobileSidebar(open) {
+    if (!sidebarEl) return;
+    const shouldOpen = (open !== undefined) ? open : !sidebarEl.classList.contains('open');
+    sidebarEl.classList.toggle('open', shouldOpen);
+    if (backdropEl) backdropEl.classList.toggle('open', shouldOpen);
+  }
+
+  mobileMenuBtn?.addEventListener('click', () => toggleMobileSidebar());
+  backdropEl?.addEventListener('click', () => toggleMobileSidebar(false));
+
+  // Automatically close mobile sidebar when a nav item is clicked
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 900) {
+        toggleMobileSidebar(false);
+      }
+    });
+  });
+
   // Dynamic Follow-up Check
   function checkFollowUps() {
     const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
@@ -548,3 +572,4 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize
   handleHashChange();
 });
+
