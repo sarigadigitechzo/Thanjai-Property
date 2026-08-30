@@ -1549,12 +1549,18 @@ elseif ($resource === 'webhook') {
                 exit();
             }
 
-            // 1. Insert into whatsapp_incoming
-            $stmt = $conn->prepare("INSERT INTO whatsapp_incoming (from_phone, from_name, message, media_url, message_type, timestamp, raw_payload) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            if ($stmt) {
-                $stmt->bind_param("sssssss", $formattedPhone, $displayName, $message, $media_url, $msg_type, $timestamp, $raw);
-                $stmt->execute();
+            // 1. Insert into whatsapp_incoming (guaranteed direct SQL insert)
+            $safe_media = $conn->real_escape_string($media_url ?: '');
+            $safe_type = $conn->real_escape_string($msg_type ?: 'text');
+            $safe_time = $conn->real_escape_string($timestamp ?: date('c'));
+            $safe_raw = $conn->real_escape_string($raw ?: '');
+
+            $sql_inc = "INSERT INTO `whatsapp_incoming` (`from_phone`, `from_name`, `message`, `media_url`, `message_type`, `timestamp`, `raw_payload`) 
+                        VALUES ('$safe_in_phone', '$safe_in_sender', '$safe_in_msg', '$safe_media', '$safe_type', '$safe_time', '$safe_raw')";
+            if (!$conn->query($sql_inc)) {
+                $conn->query("INSERT INTO `whatsapp_incoming` (`from_phone`, `from_name`, `message`) VALUES ('$safe_in_phone', '$safe_in_sender', '$safe_in_msg')");
             }
+
 
             // 2. Match or Create Lead in CRM Pipeline
             $matchedLeadId = null;

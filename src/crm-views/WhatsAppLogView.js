@@ -236,11 +236,11 @@ export async function initWhatsAppLogView() {
       }
     });
 
-    // 2. Process real OUTBOUND messages from database (whatsapp_logs table — Thanjai → customer)
+    // 2. Process all records from database (whatsapp_logs table — outbound & historical inbound)
     outboundList.forEach(out => {
-      // Skip any leftover inbound-direction records from old syncs
-      const dir = out.direction || out.type || 'outbound';
-      if (dir === 'inbound') return;
+      const dir = String(out.direction || out.type || 'outbound').toLowerCase();
+      const isOutbound = dir !== 'inbound';
+      const msgDirection = isOutbound ? 'out' : 'in';
 
       const rawPhone = out.phone_number || out.phone || '';
       const p10 = cleanPhoneDigits(rawPhone);
@@ -248,7 +248,7 @@ export async function initWhatsAppLogView() {
 
       if (!newMap.has(p10)) {
         newMap.set(p10, {
-          id: `OUT-${out.id || p10}`,
+          id: `LOG-${out.id || p10}`,
           name: out.recipientName || `Client (+91 ${p10})`,
           phone: formatPhoneDisplay(rawPhone),
           phone10: p10,
@@ -263,10 +263,12 @@ export async function initWhatsAppLogView() {
       const msgText = expandTemplateKeyToFullText(out.message || '', conv.name);
       const msgDate = new Date(out.createdAt || Date.now());
 
-      if (!conv.messages.some(m => m.direction === 'out' && m.message === msgText && Math.abs(m.date - msgDate) < 10000)) {
-        conv.messages.push({ direction: 'out', message: msgText, date: msgDate });
+      // Deduplicate: avoid adding identical message with same direction within 10 seconds
+      if (!conv.messages.some(m => m.direction === msgDirection && m.message === msgText && Math.abs(m.date - msgDate) < 10000)) {
+        conv.messages.push({ direction: msgDirection, message: msgText, date: msgDate });
       }
     });
+
 
     // Sort each conversation's messages chronologically and compute sidebar preview
     newMap.forEach(conv => {
