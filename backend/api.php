@@ -1519,21 +1519,43 @@ elseif ($resource === 'webhook') {
         }
 
 
-        // Parse Meta Cloud API format
+        // Parse incoming message payloads (SmartPing / AiSensy / Meta / Custom)
         $from_phone = '';
         $from_name  = '';
         $message    = '';
         $media_url  = '';
         $msg_type   = 'text';
-        $timestamp  = '';
+        $timestamp  = date('c');
 
-        // 1. Meta Cloud API format
-        if (isset($data['entry'][0]['changes'][0]['value']['messages'][0])) {
+        // 1. SMARTPING OFFICIAL WEBHOOK FORMAT (topic = "message.sender.user", data.message object)
+        if (isset($data['data']['message']) && is_array($data['data']['message'])) {
+            $spMsg = $data['data']['message'];
+            $from_phone = $spMsg['phone_number'] ?? ($spMsg['from'] ?? ($spMsg['sender'] ?? ''));
+            $from_name  = $spMsg['userName'] ?? ($spMsg['name'] ?? $from_phone);
+            $msg_type   = strtolower($spMsg['message_type'] ?? ($spMsg['type'] ?? 'text'));
+            
+            // SmartPing message_content can be an object with text/caption or a raw string
+            if (isset($spMsg['message_content']) && is_array($spMsg['message_content'])) {
+                $message   = $spMsg['message_content']['text'] ?? ($spMsg['message_content']['caption'] ?? ($spMsg['message_content']['title'] ?? ''));
+                $media_url = $spMsg['message_content']['media_url'] ?? ($spMsg['message_content']['url'] ?? ($spMsg['message_content']['file_url'] ?? ''));
+            } elseif (isset($spMsg['message_content']) && is_string($spMsg['message_content'])) {
+                $message = $spMsg['message_content'];
+            } elseif (isset($spMsg['text']) && is_string($spMsg['text'])) {
+                $message = $spMsg['text'];
+            } elseif (isset($spMsg['message']) && is_string($spMsg['message'])) {
+                $message = $spMsg['message'];
+            }
+            if (isset($spMsg['sent_at'])) {
+                $timestamp = date('c', intval($spMsg['sent_at'] / 1000));
+            }
+        }
+        // 2. Meta Cloud API format
+        elseif (isset($data['entry'][0]['changes'][0]['value']['messages'][0])) {
             $msg = $data['entry'][0]['changes'][0]['value']['messages'][0];
             $contact = $data['entry'][0]['changes'][0]['value']['contacts'][0] ?? [];
             $from_phone = $msg['from'] ?? '';
             $from_name  = $contact['profile']['name'] ?? $from_phone;
-            $timestamp  = $msg['timestamp'] ?? '';
+            $timestamp  = isset($msg['timestamp']) ? date('c', intval($msg['timestamp'])) : date('c');
             $msg_type   = $msg['type'] ?? 'text';
 
             if ($msg_type === 'text') {
@@ -1552,7 +1574,7 @@ elseif ($resource === 'webhook') {
                 $message = "[{$msg_type} received]";
             }
         }
-        // 2. Generic / SmartPing / AiSensy flat or nested JSON format
+        // 3. Generic / AiSensy flat or nested JSON format
         else {
             $from_phone = $data['from'] ?? ($data['sender'] ?? ($data['phone'] ?? ($data['mobile'] ?? ($data['waId'] ?? ($data['destination'] ?? '')))));
             $from_name  = $data['name'] ?? ($data['userName'] ?? ($data['from_name'] ?? ($data['contactName'] ?? '')));
@@ -1561,14 +1583,14 @@ elseif ($resource === 'webhook') {
             $nested = $data['data'] ?? ($data['payload'] ?? ($data['contact'] ?? []));
             if (is_array($nested)) {
                 if (empty($from_phone)) {
-                    $from_phone = $nested['from'] ?? ($nested['sender'] ?? ($nested['phone'] ?? ($nested['mobile'] ?? ($nested['waId'] ?? ($nested['destination'] ?? '')))));
+                    $from_phone = $nested['from'] ?? ($nested['sender'] ?? ($nested['phone'] ?? ($nested['phone_number'] ?? ($nested['mobile'] ?? ($nested['waId'] ?? ($nested['destination'] ?? ''))))));
                 }
                 if (empty($from_name)) {
                     $from_name = $nested['name'] ?? ($nested['userName'] ?? ($nested['from_name'] ?? ($nested['contactName'] ?? '')));
                 }
             }
 
-            // Extract text message from various formats & nested structures
+            // Extract text message
             if (isset($data['text']) && is_string($data['text'])) {
                 $message = $data['text'];
             } elseif (isset($data['message']) && is_string($data['message'])) {
