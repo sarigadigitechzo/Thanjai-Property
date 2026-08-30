@@ -1744,8 +1744,80 @@ elseif ($resource === 'webhook') {
                 }
             }
 
-            // Lead matched or auto-created in CRM Pipeline above.
-            // Automated welcome message is already handled natively by SmartPing's campaign manager.
+            // 3. Send Official Welcome Message EXACTLY ONCE (Strict 24-Hour Cooldown)
+            $lowerMsg = strtolower(trim($message));
+            $isGreeting = preg_match('/^(hi|hello|hey|vanakkam|வணக்கம்|good\s*(morning|afternoon|evening)|namaste|start|info|details|property|enquiry|hai|hlo)/i', $lowerMsg) || $isNewLead;
+
+            if ($isGreeting) {
+                // Rate-limit check: Send welcome message at most ONCE every 24 hours per phone number
+                $welcomeCheck = $conn->query("SELECT id FROM `whatsapp_messages` WHERE `customer_phone`='$safe_in_phone' AND `direction`='outbound' AND `source`='auto_welcome' AND `createdAt` >= (NOW() - INTERVAL 24 HOUR) LIMIT 1");
+                
+                if (!$welcomeCheck || $welcomeCheck->num_rows === 0) {
+                    $MASTER_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ5MCIsIm5hbWUiOiJUaGFuamFpIFByb3BlcnR5IiwiYXBwTmFtZSI6IkFpU2Vuc3kiLCJjbGllbnRJZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ4OSIsImFjdGl2ZVBsYW4iOiJQUk9fTU9OVEhMWSIsImlhdCI6MTc4NzcyNDczOX0.8SQSQDJdxrAivj8FAkWvjSk_qx4yE0dENDh70US75G0';
+
+                    $apiKey = '';
+                    $setRes = $conn->query("SELECT setting_value FROM settings WHERE setting_key='whatsapp_integration'");
+                    if ($setRes && $setRow = $setRes->fetch_assoc()) {
+                        $waSet = json_decode($setRow['setting_value'], true);
+                        $apiKey = $waSet['apiKey'] ?? '';
+                    }
+                    if (empty($apiKey)) {
+                        $apiKey = $MASTER_API_KEY;
+                    }
+
+                    $cleanName = preg_replace('/[^\p{L}\p{N}\s]/u', '', $displayName) ?: 'Customer';
+                    $welcomeText = "Vanakkam $displayName! 🙏\n\nThank you for contacting Thanjai Property!\n\nWe have been dealing in properties since 2009, bridging the gap between genuine buyers and clear-title property owners.\n\nWhat type of property are you looking for right now?\n\n• DTCP Plots / Land\n• Independent House / Villa / Apartment\n• Farmland / Agriculture / Commercial Land / Building\n\nReply with your choice, and we'll share the best options with you!\n\nBest regards,\n*Thanjai Property Team*\n📞 +91 84899 96852";
+
+                    $campaignName = 'welcome_message';
+                    $stringParams = [(string)$cleanName];
+
+                    // Dispatch to SmartPing
+                    $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
+                    $payload = json_encode([
+                        'apiKey' => $apiKey,
+                        'campaignName' => $campaignName,
+                        'destination' => $formattedPhone,
+                        'userName' => (string)$displayName,
+                        'templateParams' => $stringParams
+                    ]);
+
+                    $ch = curl_init($smartPingUrl);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_POST, true);
+                    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+                    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+                    $resSp = curl_exec($ch);
+                    curl_close($ch);
+
+                    // Fallback to AiSensy if needed
+                    $resSpJson = json_decode($resSp, true);
+                    if (($resSpJson['status'] ?? '') !== 'success' && !($resSpJson['submitted_message_id'] ?? false)) {
+                        $aiSensyUrl = 'https://backend.aisensy.com/campaign/t1/api/v2';
+                        $payloadAi = json_encode([
+                            'apiKey' => $apiKey,
+                            'campaignName' => $campaignName,
+                            'destination' => '91' . $last10,
+                            'userName' => (string)$displayName,
+                            'templateParams' => $stringParams
+                        ]);
+                        $ch2 = curl_init($aiSensyUrl);
+                        curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+                        curl_setopt($ch2, CURLOPT_POST, true);
+                        curl_setopt($ch2, CURLOPT_POSTFIELDS, $payloadAi);
+                        curl_setopt($ch2, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+                        curl_setopt($ch2, CURLOPT_TIMEOUT, 8);
+                        curl_exec($ch2);
+                        curl_close($ch2);
+                    }
+
+                    // Record outbound welcome message in unified table
+                    $safe_out_phone = $conn->real_escape_string($formattedPhone);
+                    $safe_out_msg = $conn->real_escape_string($welcomeText);
+                    $safe_out_disp = $conn->real_escape_string($displayName);
+                    $conn->query("INSERT INTO `whatsapp_messages` (`direction`, `customer_phone`, `customer_name`, `message`, `source`) VALUES ('outbound', '$safe_out_phone', '$safe_out_disp', '$safe_out_msg', 'auto_welcome')");
+                }
+            }
         }
 
         http_response_code(200);
