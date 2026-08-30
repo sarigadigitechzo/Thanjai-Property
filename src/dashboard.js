@@ -18,6 +18,7 @@ import { renderReportsView, initReportsView } from './crm-views/ReportsView.js';
 import { renderStatCounterView } from './crm-views/StatCounterView.js';
 import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.js';
 import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsersView.js';
+import { renderHowToUseView, initHowToUseListeners } from './crm-views/HowToUseView.js';
 import { showToast, installGlobalPopupShield } from './utils/toast.js';
 
 installGlobalPopupShield();
@@ -341,6 +342,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       case 'builders':
         html = renderBuildersDirectoryView();
         afterRender = initBuildersDirectoryView;
+        break;
+      case 'how-to-use':
+      case 'guide':
+      case 'help':
+        html = renderHowToUseView();
+        afterRender = initHowToUseListeners;
         break;
       default:
         html = `
