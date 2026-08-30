@@ -1032,15 +1032,27 @@ elseif ($resource === 'send_whatsapp') {
             }
         }
 
-        // Auto-log to whatsapp_logs table
-        $logId = 'WA-' . round(microtime(true) * 1000);
-        $logStmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, phone_number, message, sender, recipientName, type, direction, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'outbound', 'outbound', 'Delivered')");
-        if ($logStmt) {
-            $senderName = 'Super Admin';
-            $leadIdParam = $data['leadId'] ?? null;
-            $logStmt->bind_param("sssssss", $logId, $leadIdParam, $smartPingPhone, $smartPingPhone, $renderedMsg, $senderName, $userName);
-            $logStmt->execute();
-        }
+        // Write outbound message to unified whatsapp_messages table
+        $conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_messages` (
+            `id` bigint NOT NULL AUTO_INCREMENT,
+            `direction` varchar(10) DEFAULT 'outbound',
+            `customer_phone` varchar(20) DEFAULT NULL,
+            `customer_name` varchar(255) DEFAULT NULL,
+            `message` longtext,
+            `media_url` text,
+            `message_type` varchar(20) DEFAULT 'text',
+            `source` varchar(30) DEFAULT 'crm_reply',
+            `raw_payload` longtext,
+            `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_phone` (`customer_phone`),
+            KEY `idx_createdAt` (`createdAt`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $safe_wa_phone = $conn->real_escape_string($smartPingPhone);
+        $safe_wa_name  = $conn->real_escape_string($userName);
+        $safe_wa_msg   = $conn->real_escape_string($renderedMsg);
+        $conn->query("INSERT INTO `whatsapp_messages` (`direction`, `customer_phone`, `customer_name`, `message`, `source`) VALUES ('outbound', '$safe_wa_phone', '$safe_wa_name', '$safe_wa_msg', 'crm_reply')");
 
         echo json_encode([
             'success' => $isSuccess,
@@ -1587,6 +1599,23 @@ elseif ($resource === 'webhook') {
             if (empty($from_name)) $from_name = $from_phone;
         }
 
+        // Auto-create unified whatsapp_messages table
+        $conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_messages` (
+            `id` bigint NOT NULL AUTO_INCREMENT,
+            `direction` varchar(10) DEFAULT 'inbound',
+            `customer_phone` varchar(20) DEFAULT NULL,
+            `customer_name` varchar(255) DEFAULT NULL,
+            `message` longtext,
+            `media_url` text,
+            `message_type` varchar(20) DEFAULT 'text',
+            `source` varchar(30) DEFAULT 'smartping',
+            `raw_payload` longtext,
+            `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            KEY `idx_phone` (`customer_phone`),
+            KEY `idx_createdAt` (`createdAt`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
         if ($from_phone) {
             // Clean & format phone
             $clean_phone = preg_replace('/\D/', '', $from_phone);
@@ -1599,24 +1628,24 @@ elseif ($resource === 'webhook') {
             $safe_in_sender = $conn->real_escape_string($displayName);
 
             // Deduplication Check: Skip identical message from same phone received in last 10 seconds
-            $dupCheck = $conn->query("SELECT id FROM `whatsapp_incoming` WHERE `from_phone`='$safe_in_phone' AND `message`='$safe_in_msg' AND `createdAt` >= (NOW() - INTERVAL 10 SECOND) LIMIT 1");
+            $dupCheck = $conn->query("SELECT id FROM `whatsapp_messages` WHERE `customer_phone`='$safe_in_phone' AND `message`='$safe_in_msg' AND `direction`='inbound' AND `createdAt` >= (NOW() - INTERVAL 10 SECOND) LIMIT 1");
             if ($dupCheck && $dupCheck->num_rows > 0) {
                 http_response_code(200);
                 echo json_encode(["status" => "success", "message" => "Duplicate webhook delivery skipped"]);
                 exit();
             }
 
-            // 1. Insert into whatsapp_incoming (guaranteed direct SQL insert)
+            // 1. Insert into unified whatsapp_messages (inbound)
             $safe_media = $conn->real_escape_string($media_url ?: '');
             $safe_type = $conn->real_escape_string($msg_type ?: 'text');
-            $safe_time = $conn->real_escape_string($timestamp ?: date('c'));
             $safe_raw = $conn->real_escape_string($raw ?: '');
 
-            $sql_inc = "INSERT INTO `whatsapp_incoming` (`from_phone`, `from_name`, `message`, `media_url`, `message_type`, `timestamp`, `raw_payload`) 
-                        VALUES ('$safe_in_phone', '$safe_in_sender', '$safe_in_msg', '$safe_media', '$safe_type', '$safe_time', '$safe_raw')";
-            if (!$conn->query($sql_inc)) {
-                $conn->query("INSERT INTO `whatsapp_incoming` (`from_phone`, `from_name`, `message`) VALUES ('$safe_in_phone', '$safe_in_sender', '$safe_in_msg')");
-            }
+            $conn->query("INSERT INTO `whatsapp_messages` (`direction`, `customer_phone`, `customer_name`, `message`, `media_url`, `message_type`, `source`, `raw_payload`) VALUES ('inbound', '$safe_in_phone', '$safe_in_sender', '$safe_in_msg', '$safe_media', '$safe_type', 'smartping', '$safe_raw')");
+
+            // Also insert into legacy whatsapp_incoming for backward compat
+            $sql_inc = "INSERT INTO `whatsapp_incoming` (`from_phone`, `from_name`, `message`, `media_url`, `message_type`, `timestamp`, `raw_payload`)
+                        VALUES ('$safe_in_phone', '$safe_in_sender', '$safe_in_msg', '$safe_media', '$safe_type', '$safe_in_phone', '$safe_raw')";
+            $conn->query($sql_inc);
 
 
             // 2. Match or Create Lead in CRM Pipeline
@@ -1740,15 +1769,11 @@ elseif ($resource === 'webhook') {
                     curl_close($ch2);
                 }
 
-                // Log outbound auto-welcome message in whatsapp_logs with all columns populated
-                $outLogId = 'WA-AUTO-' . round(microtime(true) * 1000);
-                $safe_out_id = $conn->real_escape_string($outLogId);
-                $safe_out_lead = $conn->real_escape_string($matchedLeadId ?: '');
+                // Log outbound auto-welcome message in unified whatsapp_messages table
                 $safe_out_phone = $conn->real_escape_string($formattedPhone);
                 $safe_out_msg = $conn->real_escape_string($replyText);
                 $safe_out_disp = $conn->real_escape_string($displayName);
-                $conn->query("INSERT INTO `whatsapp_logs` (`id`, `leadId`, `phone`, `phone_number`, `message`, `sender`, `recipientName`, `type`, `direction`, `status`) 
-                              VALUES ('$safe_out_id', '$safe_out_lead', '$safe_out_phone', '$safe_out_phone', '$safe_out_msg', 'Super Admin', '$safe_out_disp', 'outbound', 'outbound', 'Delivered')");
+                $conn->query("INSERT INTO `whatsapp_messages` (`direction`, `customer_phone`, `customer_name`, `message`, `source`) VALUES ('outbound', '$safe_out_phone', '$safe_out_disp', '$safe_out_msg', 'auto_reply')");
 
                 // Append welcome message to lead timeline
                 if ($matchedLeadId) {
@@ -1837,6 +1862,49 @@ elseif ($resource === 'webhook_raw_log') {
         $rows = [];
         if ($result) { while ($row = $result->fetch_assoc()) { $rows[] = $row; } }
         echo json_encode($rows);
+    }
+}
+
+// UNIFIED WhatsApp Messages — single clean table for all inbound + outbound
+elseif ($resource === 'whatsapp_messages') {
+    $conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_messages` (
+        `id` bigint NOT NULL AUTO_INCREMENT,
+        `direction` varchar(10) DEFAULT 'inbound',
+        `customer_phone` varchar(20) DEFAULT NULL,
+        `customer_name` varchar(255) DEFAULT NULL,
+        `message` longtext,
+        `media_url` text,
+        `message_type` varchar(20) DEFAULT 'text',
+        `source` varchar(30) DEFAULT 'smartping',
+        `raw_payload` longtext,
+        `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`),
+        KEY `idx_phone` (`customer_phone`),
+        KEY `idx_createdAt` (`createdAt`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    if ($method === 'GET') {
+        $phone_filter = $_GET['phone'] ?? null;
+        if ($phone_filter) {
+            $clean = preg_replace('/\D/', '', $phone_filter);
+            $last10 = substr($clean, -10);
+            $result = $conn->query("SELECT `id`,`direction`,`customer_phone`,`customer_name`,`message`,`media_url`,`message_type`,`source`,`createdAt` FROM `whatsapp_messages` WHERE `customer_phone` LIKE '%{$last10}' ORDER BY `createdAt` ASC");
+        } else {
+            $result = $conn->query("SELECT `id`,`direction`,`customer_phone`,`customer_name`,`message`,`media_url`,`message_type`,`source`,`createdAt` FROM `whatsapp_messages` ORDER BY `createdAt` DESC LIMIT 500");
+        }
+        $rows = [];
+        if ($result) { while ($row = $result->fetch_assoc()) { $rows[] = $row; } }
+        echo json_encode($rows);
+    }
+    elseif ($method === 'DELETE') {
+        $del_id = intval($_GET['id'] ?? 0);
+        if ($del_id > 0) {
+            $conn->query("DELETE FROM `whatsapp_messages` WHERE `id` = $del_id");
+            echo json_encode(["message" => "Deleted row $del_id"]);
+        } else {
+            http_response_code(400);
+            echo json_encode(["error" => "id required"]);
+        }
     }
 }
 

@@ -182,7 +182,7 @@ export async function initWhatsAppLogView() {
   let conversationsMap = new Map();
 
   async function loadAllMessagesAndConversations() {
-    // Load leads for contact names and phone numbers
+    // Load leads to get contact names and phones (for sidebar contacts list)
     let leads = [];
     try {
       const apiLeads = await fetchFromAPI('/leads');
@@ -192,23 +192,16 @@ export async function initWhatsAppLogView() {
       leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
     }
 
-    // Load inbound messages from database (whatsapp_incoming table)
-    let incomingList = [];
+    // SINGLE SOURCE OF TRUTH: fetch from unified whatsapp_messages table only
+    let allMessages = [];
     try {
-      const inc = await fetchFromAPI('/whatsapp_incoming');
-      if (inc && Array.isArray(inc)) incomingList = inc;
-    } catch(e) {}
-
-    // Load outbound messages from database (whatsapp_logs table)
-    let outboundList = [];
-    try {
-      const outb = await fetchFromAPI('/whatsapp_logs');
-      if (outb && Array.isArray(outb)) outboundList = outb;
+      const msgs = await fetchFromAPI('/whatsapp_messages');
+      if (msgs && Array.isArray(msgs)) allMessages = msgs;
     } catch(e) {}
 
     const newMap = new Map();
 
-    // Build conversation stubs from leads (for contact name + phone only — NO fake messages)
+    // Build conversation stubs from leads (contact name + phone — no fake messages)
     leads.forEach(l => {
       const rawPhone = l.phone || l.mobile || l.whatsapp || '';
       const p10 = cleanPhoneDigits(rawPhone);
@@ -216,30 +209,29 @@ export async function initWhatsAppLogView() {
 
       newMap.set(p10, {
         id: l.id || `C-${p10}`,
-        name: l.name || `Client (${p10})`,
+        name: l.name || `Client (+91 ${p10})`,
         phone: formatPhoneDisplay(rawPhone),
         phone10: p10,
-        messages: [],       // Messages loaded exclusively from database below
+        messages: [],
         lastTime: '',
         lastDate: new Date(0),
         lastMessage: 'No messages yet'
       });
     });
 
-    // 1. Process real INBOUND messages from database (whatsapp_incoming table — customer → Thanjai)
-    incomingList.forEach(inc => {
-      const msgRaw = inc.message || '';
-      // Skip artificial test probe noise
-      if (msgRaw.includes('Live test probe at') || msgRaw.includes('Test message from automated node check')) return;
-
-      const p10 = cleanPhoneDigits(inc.from_phone);
+    // Process all messages from the unified table
+    allMessages.forEach(row => {
+      const msgRaw = row.message || '';
+      const phone = row.customer_phone || '';
+      const p10 = cleanPhoneDigits(phone);
       if (!p10) return;
 
+      // Create conversation entry if not exists (customer who isn't a lead yet)
       if (!newMap.has(p10)) {
         newMap.set(p10, {
-          id: `IN-${inc.id || p10}`,
-          name: inc.from_name || `WhatsApp Contact (+91 ${p10})`,
-          phone: formatPhoneDisplay(inc.from_phone),
+          id: `WA-${p10}`,
+          name: row.customer_name || `WhatsApp (+91 ${p10})`,
+          phone: formatPhoneDisplay(phone),
           phone10: p10,
           messages: [],
           lastTime: '',
@@ -249,56 +241,28 @@ export async function initWhatsAppLogView() {
       }
 
       const conv = newMap.get(p10);
-      // Update contact name if we have a better name from inbound record
-      if (inc.from_name && conv.name.startsWith('Client (')) {
-        conv.name = inc.from_name;
-      }
-      const msgText = msgRaw || '[Media received]';
-      const msgDate = new Date(inc.createdAt || inc.timestamp || Date.now());
 
-      if (!conv.messages.some(m => m.direction === 'in' && m.message === msgText && Math.abs(m.date - msgDate) < 5000)) {
-        conv.messages.push({ direction: 'in', message: msgText, date: msgDate });
-      }
-    });
-
-    // 2. Process all records from database (whatsapp_logs table — outbound & historical inbound)
-    outboundList.forEach(out => {
-      const msgRaw = out.message || '';
-      // Skip artificial test probe noise
-      if (msgRaw.includes('Live test probe at') || msgRaw.includes('Test message from automated node check')) return;
-
-      const dir = String(out.direction || out.type || 'outbound').toLowerCase();
-      const isOutbound = dir !== 'inbound';
-      const msgDirection = isOutbound ? 'out' : 'in';
-
-      const rawPhone = out.phone_number || out.phone || '';
-      const p10 = cleanPhoneDigits(rawPhone);
-      if (!p10) return;
-
-      if (!newMap.has(p10)) {
-        newMap.set(p10, {
-          id: `LOG-${out.id || p10}`,
-          name: out.recipientName || `Client (+91 ${p10})`,
-          phone: formatPhoneDisplay(rawPhone),
-          phone10: p10,
-          messages: [],
-          lastTime: '',
-          lastDate: new Date(0),
-          lastMessage: ''
-        });
+      // Update name from message data if lead entry had generic name
+      if (row.customer_name && conv.name.startsWith('Client (')) {
+        conv.name = row.customer_name;
       }
 
-      const conv = newMap.get(p10);
+      const dir = (row.direction || 'inbound').toLowerCase();
+      const msgDirection = dir === 'outbound' ? 'out' : 'in';
+      const msgDate = new Date(row.createdAt || Date.now());
       const msgText = expandTemplateKeyToFullText(msgRaw, conv.name);
-      const msgDate = new Date(out.createdAt || Date.now());
 
-      // Deduplicate: avoid adding identical message with same direction within 10 seconds
-      if (!conv.messages.some(m => m.direction === msgDirection && m.message === msgText && Math.abs(m.date - msgDate) < 10000)) {
-        conv.messages.push({ direction: msgDirection, message: msgText, date: msgDate });
+      // Deduplicate: skip exact same message within 5 seconds
+      if (!conv.messages.some(m =>
+        m.direction === msgDirection &&
+        m.message === msgText &&
+        Math.abs(m.date - msgDate) < 5000
+      )) {
+        conv.messages.push({ direction: msgDirection, message: msgText, date: msgDate, source: row.source });
       }
     });
 
-    // Sort each conversation's messages chronologically and compute sidebar preview
+    // Sort each conversation chronologically and compute sidebar preview
     newMap.forEach(conv => {
       conv.messages.sort((a, b) => a.date - b.date);
       if (conv.messages.length > 0) {
@@ -309,15 +273,12 @@ export async function initWhatsAppLogView() {
       }
     });
 
-
     conversationsMap = newMap;
     renderSidebar(searchInput?.value || '');
     if (activePhone10) {
       renderChatHistory(activePhone10, true);
     }
   }
-
-
 
 
   function renderSidebar(filter = '') {
