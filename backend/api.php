@@ -1473,7 +1473,31 @@ elseif ($resource === 'webhook') {
             PRIMARY KEY (`id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+        // RAW WEBHOOK LOG TABLE — captures everything, even unparseable payloads
+        $conn->query("CREATE TABLE IF NOT EXISTS `webhook_raw_log` (
+            `id` bigint NOT NULL AUTO_INCREMENT,
+            `method` varchar(10) DEFAULT NULL,
+            `headers` text,
+            `body` longtext,
+            `ip` varchar(64) DEFAULT NULL,
+            `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
         $raw = file_get_contents("php://input");
+
+        // Log ALL incoming payloads verbatim so we can see what SmartPing actually sends
+        $safe_raw_log = $conn->real_escape_string(substr($raw ?: '(empty body)', 0, 65000));
+        $req_headers = [];
+        foreach ($_SERVER as $k => $v) {
+            if (strpos($k, 'HTTP_') === 0) $req_headers[substr($k, 5)] = $v;
+        }
+        $req_headers['CONTENT_TYPE'] = $_SERVER['CONTENT_TYPE'] ?? '';
+        $req_headers['REMOTE_ADDR'] = $_SERVER['REMOTE_ADDR'] ?? '';
+        $safe_hdrs = $conn->real_escape_string(json_encode($req_headers));
+        $safe_ip = $conn->real_escape_string($_SERVER['REMOTE_ADDR'] ?? '');
+        $conn->query("INSERT INTO `webhook_raw_log` (`method`, `headers`, `body`, `ip`) VALUES ('POST', '$safe_hdrs', '$safe_raw_log', '$safe_ip')");
+
         $data = json_decode($raw, true);
 
         // Fallback to $_POST if payload was sent as form data
@@ -1781,6 +1805,27 @@ elseif ($resource === 'whatsapp_incoming') {
         }
         $rows = [];
         while ($row = $result->fetch_assoc()) { $rows[] = $row; }
+        echo json_encode($rows);
+    }
+}
+
+// Read raw webhook logs — so we can see exactly what SmartPing sends
+elseif ($resource === 'webhook_raw_log') {
+    if ($method === 'GET') {
+        $conn->query("CREATE TABLE IF NOT EXISTS `webhook_raw_log` (
+            `id` bigint NOT NULL AUTO_INCREMENT,
+            `method` varchar(10) DEFAULT NULL,
+            `headers` text,
+            `body` longtext,
+            `ip` varchar(64) DEFAULT NULL,
+            `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
+        $result = $conn->query("SELECT `id`,`method`,`ip`,`createdAt`, SUBSTR(`body`,1,1000) as body_preview FROM `webhook_raw_log` ORDER BY `id` DESC LIMIT $limit");
+        $rows = [];
+        if ($result) { while ($row = $result->fetch_assoc()) { $rows[] = $row; } }
         echo json_encode($rows);
     }
 }
