@@ -1431,21 +1431,29 @@ elseif ($resource === 'site_images') {
 // Verify Token: thanjai_webhook_2026
 // =====================================================================
 elseif ($resource === 'webhook') {
-    // Step 1: Webhook verification handshake (GET from Meta)
+    // Step 1: Webhook verification handshake & health check (GET from Meta/SmartPing)
     if ($method === 'GET') {
         $VERIFY_TOKEN = 'thanjai_webhook_2026';
-        $hub_mode      = isset($_GET['hub_mode'])      ? $_GET['hub_mode']      : '';
-        $hub_challenge = isset($_GET['hub_challenge'])  ? $_GET['hub_challenge']  : '';
-        $hub_verify    = isset($_GET['hub_verify_token']) ? $_GET['hub_verify_token'] : '';
+        $hub_mode      = $_GET['hub_mode'] ?? ($_GET['hub.mode'] ?? '');
+        $hub_challenge = $_GET['hub_challenge'] ?? ($_GET['hub.challenge'] ?? '');
+        $hub_verify    = $_GET['hub_verify_token'] ?? ($_GET['hub.verify_token'] ?? '');
 
-        if ($hub_mode === 'subscribe' && $hub_verify === $VERIFY_TOKEN) {
+        if ($hub_challenge) {
             http_response_code(200);
             header('Content-Type: text/plain');
             echo $hub_challenge;
-        } else {
-            http_response_code(403);
-            echo 'Forbidden';
+            exit();
         }
+
+        // Return 200 OK for any generic health check / ping from SmartPing
+        http_response_code(200);
+        header('Content-Type: application/json');
+        echo json_encode([
+            "status" => "active",
+            "service" => "Thanjai Property WhatsApp Webhook",
+            "url" => "https://thanjaiproperty.com/api.php/webhook",
+            "time" => date('c')
+        ]);
         exit();
     }
 
@@ -1467,6 +1475,13 @@ elseif ($resource === 'webhook') {
 
         $raw = file_get_contents("php://input");
         $data = json_decode($raw, true);
+
+        // Fallback to $_POST if payload was sent as form data
+        if (!$data && !empty($_POST)) {
+            $data = $_POST;
+            $raw = json_encode($_POST);
+        }
+
 
         // Parse Meta Cloud API format
         $from_phone = '';
