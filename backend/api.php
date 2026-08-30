@@ -1537,6 +1537,18 @@ elseif ($resource === 'webhook') {
             $formattedPhone = (strlen($clean_phone) === 10) ? '+91' . $clean_phone : (str_starts_with($from_phone, '+') ? $from_phone : '+' . $clean_phone);
             $displayName = !empty($from_name) ? $from_name : "Customer ($last10)";
 
+            $safe_in_phone = $conn->real_escape_string($formattedPhone);
+            $safe_in_msg = $conn->real_escape_string($message);
+            $safe_in_sender = $conn->real_escape_string($displayName);
+
+            // Deduplication Check: Skip identical message from same phone received in last 10 seconds
+            $dupCheck = $conn->query("SELECT id FROM `whatsapp_incoming` WHERE `from_phone`='$safe_in_phone' AND `message`='$safe_in_msg' AND `createdAt` >= (NOW() - INTERVAL 10 SECOND) LIMIT 1");
+            if ($dupCheck && $dupCheck->num_rows > 0) {
+                http_response_code(200);
+                echo json_encode(["status" => "success", "message" => "Duplicate webhook delivery skipped"]);
+                exit();
+            }
+
             // 1. Insert into whatsapp_incoming
             $stmt = $conn->prepare("INSERT INTO whatsapp_incoming (from_phone, from_name, message, media_url, message_type, timestamp, raw_payload) VALUES (?, ?, ?, ?, ?, ?, ?)");
             if ($stmt) {
@@ -1544,20 +1556,7 @@ elseif ($resource === 'webhook') {
                 $stmt->execute();
             }
 
-            // 2. Insert into whatsapp_logs (inbound)
-            $inLogId = 'WA-IN-' . round(microtime(true) * 1000);
-            $safe_in_id = $conn->real_escape_string($inLogId);
-            $safe_in_phone = $conn->real_escape_string($formattedPhone);
-            $safe_in_msg = $conn->real_escape_string($message);
-            $safe_in_sender = $conn->real_escape_string($displayName);
-            $sql_in = "INSERT INTO `whatsapp_logs` (`id`, `phone_number`, `phone`, `message`, `direction`, `type`, `sender`, `recipientName`, `status`) 
-                       VALUES ('$safe_in_id', '$safe_in_phone', '$safe_in_phone', '$safe_in_msg', 'inbound', 'inbound', '$safe_in_sender', 'Thanjai Property', 'Received')";
-            if (!$conn->query($sql_in)) {
-                $conn->query("INSERT INTO `whatsapp_logs` (`id`, `phone_number`, `message`, `direction`, `status`) 
-                              VALUES ('$safe_in_id', '$safe_in_phone', '$safe_in_msg', 'inbound', 'Received')");
-            }
-
-            // 3. Match or Create Lead in CRM Pipeline
+            // 2. Match or Create Lead in CRM Pipeline
             $matchedLeadId = null;
             $isNewLead = true;
             $leads_raw = $conn->query("SELECT id, phone, timeline FROM leads");
@@ -1601,7 +1600,10 @@ elseif ($resource === 'webhook') {
                 $leadStage = 'New Lead';
                 $leadBudget = 'To be discussed';
                 $leadReq = 'Inbound WhatsApp Inquiry';
-                $assignedStaff = 'Unassigned';
+
+                // Assign to active staff if available
+                $staffRes = $conn->query("SELECT fullName FROM admin_staff WHERE status='Active' LIMIT 1");
+                $assignedStaff = ($staffRes && $staffRow = $staffRes->fetch_assoc()) ? $staffRow['fullName'] : 'Kavitha R.';
                 $todayDate = date('Y-m-d');
 
                 $insLead = $conn->prepare("INSERT INTO leads (id, name, phone, email, type, location, budget, stage, timeline, source, date, assignedTo, priority) VALUES (?, ?, ?, '', ?, 'Thanjavur', ?, ?, ?, ?, ?, ?, 'Medium')");
@@ -1611,7 +1613,7 @@ elseif ($resource === 'webhook') {
                 }
             }
 
-            // 4. Auto-Reply Welcome Message on Greetings or First Contact
+            // 3. Auto-Reply Welcome Message on Greetings or First Contact
             $lowerMsg = strtolower(trim($message));
             $isGreeting = preg_match('/^(hi|hello|hey|vanakkam|வணக்கம்|good\s*(morning|afternoon|evening)|namaste|start|info|details|property|enquiry|hai|hlo)/i', $lowerMsg) || $isNewLead;
 
@@ -1675,13 +1677,15 @@ elseif ($resource === 'webhook') {
                     curl_close($ch2);
                 }
 
-                // Log outbound auto-welcome message in whatsapp_logs
+                // Log outbound auto-welcome message in whatsapp_logs with all columns populated
                 $outLogId = 'WA-AUTO-' . round(microtime(true) * 1000);
-                $outStmt = $conn->prepare("INSERT INTO whatsapp_logs (id, leadId, phone, message, sender, recipientName, type, status) VALUES (?, ?, ?, ?, 'Super Admin', ?, 'outbound', 'Delivered')");
-                if ($outStmt) {
-                    $outStmt->bind_param("sssss", $outLogId, $matchedLeadId, $formattedPhone, $replyText, $displayName);
-                    $outStmt->execute();
-                }
+                $safe_out_id = $conn->real_escape_string($outLogId);
+                $safe_out_lead = $conn->real_escape_string($matchedLeadId ?: '');
+                $safe_out_phone = $conn->real_escape_string($formattedPhone);
+                $safe_out_msg = $conn->real_escape_string($replyText);
+                $safe_out_disp = $conn->real_escape_string($displayName);
+                $conn->query("INSERT INTO `whatsapp_logs` (`id`, `leadId`, `phone`, `phone_number`, `message`, `sender`, `recipientName`, `type`, `direction`, `status`) 
+                              VALUES ('$safe_out_id', '$safe_out_lead', '$safe_out_phone', '$safe_out_phone', '$safe_out_msg', 'Super Admin', '$safe_out_disp', 'outbound', 'outbound', 'Delivered')");
 
                 // Append welcome message to lead timeline
                 if ($matchedLeadId) {

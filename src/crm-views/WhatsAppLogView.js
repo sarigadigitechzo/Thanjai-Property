@@ -439,7 +439,7 @@ export async function initWhatsAppLogView() {
     try {
       const formattedPhone = '+91' + conv.phone10;
 
-      // 1. Dispatch via sendWhatsAppMessage (direct client dispatch with server relay)
+      // 1. Dispatch via server-relay sendWhatsAppMessage
       await sendWhatsAppMessage({
         campaignName: 'property_follow_up',
         destination: formattedPhone,
@@ -461,23 +461,6 @@ export async function initWhatsAppLogView() {
       conv.lastDate = new Date();
       conv.lastMessage = text;
       conv.lastTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      const localCache = JSON.parse(localStorage.getItem('thanjai_wa_chat_cache')) || {};
-      if (!localCache[conv.phone10]) localCache[conv.phone10] = [];
-      localCache[conv.phone10].push(newMsg);
-      localStorage.setItem('thanjai_wa_chat_cache', JSON.stringify(localCache));
-
-      fetchFromAPI('/whatsapp_logs', {
-        method: 'POST',
-        body: JSON.stringify({
-          id: `WA-${Date.now()}`,
-          phone: formattedPhone,
-          sender: 'Super Admin',
-          recipientName: conv.name,
-          message: text,
-          type: 'outbound'
-        })
-      }).catch(() => {});
 
       addAuditLog({
         action: `Sent WhatsApp to ${conv.name}`,
@@ -525,5 +508,5 @@ export async function initWhatsAppLogView() {
     } else {
       clearInterval(window.waLivePollTimer);
     }
-  }, 3500);
+  }, 3000);
 }
