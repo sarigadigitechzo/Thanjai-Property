@@ -1,5 +1,6 @@
 import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showAlertModal, showConfirmModal } from '../utils/toast.js';
+import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 export function renderLeadDetailView(id) {
   const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
   const lead = leads.find(l => l.id == id);
@@ -1472,36 +1473,16 @@ export function initLeadDetailView(id) {
       let rawPhone = lead.whatsapp || lead.mobile || '9566321457';
       let phone = rawPhone.replace(/\D/g, '');
       if (phone.length === 10) {
-        phone = '91' + phone;
-      }
-      
-      const provider = localStorage.getItem('thanjai_wa_provider') || 'aisensy';
-      const apiUrl = provider === 'smartping' 
-        ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
-        : 'https://backend.aisensy.com/campaign/t1/api/v2';
-
-      if (provider === 'smartping' && !phone.startsWith('+')) {
+        phone = '+91' + phone;
+      } else if (!phone.startsWith('+')) {
         phone = '+' + phone;
-      }
-
-      const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
-      if (!apiKey) {
-        alert('Please go to Settings > Integrations and paste your WhatsApp API Key first.');
-        return;
       }
       
       const originalBtnText = confirmWA.innerHTML;
       confirmWA.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sending...';
       confirmWA.disabled = true;
 
-      const payload = {
-        apiKey: apiKey,
-        campaignName: campaignName,
-        destination: phone,
-        userName: lead.name || "Client",
-        templateParams: templateParams
-      };
-      
+      let customMedia = undefined;
       if (campaignName.includes('initial_contact_intro')) {
         const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
         const selectedPropTitle = templateParams[1] || '';
@@ -1509,34 +1490,35 @@ export function initLeadDetailView(id) {
         const propImg = (matchedProp && matchedProp.images && matchedProp.images[0])
           ? matchedProp.images[0]
           : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
-        payload.media = { url: propImg, filename: "property.jpg" };
-        payload.mediaUrl = propImg;
+        customMedia = { url: propImg, filename: "property.jpg" };
       }
 
       if (campaignName.includes('property_shortlist')) {
-        const clientName = payload.userName || lead.name || "Client";
-        payload.templateParams = [clientName];
+        const clientName = lead.name || "Client";
+        templateParams = [clientName];
       }
 
-      fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      }).then(async res => {
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(`[${provider.toUpperCase()}] ${data.message || data.error || JSON.stringify(data)}`);
-        }
-        return data;
-      }).then(data => {
+      try {
+        await sendWhatsAppMessage({
+          campaignName: campaignName,
+          destination: phone,
+          userName: lead.name || "Client",
+          templateParams: templateParams,
+          media: customMedia,
+          messageText: isCustom ? templateParams[1] : undefined,
+          leadId: lead.id
+        });
+
         confirmWA.innerHTML = originalBtnText;
         confirmWA.disabled = false;
         waModal.classList.remove('show');
         
-        alert(`Message sent successfully via ${provider === 'smartping' ? 'SmartPing' : 'AiSensy'} WhatsApp API.`);
-        
+        let authorName = 'Super Admin';
+        try {
+          const userObj = JSON.parse(localStorage.getItem('thanjai_active_user'));
+          if (userObj) authorName = userObj.fullName || userObj.name || authorName;
+        } catch(e) {}
+
         if (idx !== -1) {
           if (!leads[idx].timeline) leads[idx].timeline = [];
           const isShortlist = campaignName.includes('property_shortlist');
@@ -1554,17 +1536,18 @@ export function initLeadDetailView(id) {
           leads[idx].timeline.unshift({
             type: 'whatsapp',
             message: `WhatsApp sent: ${isCustom ? 'Custom message' : campaignName}${shortlistNote}`,
-            author: localStorage.getItem('thanjai_active_user') || 'System',
+            author: authorName,
             date: new Date().toISOString()
           });
           saveAndSyncLeads(leads, id);
+          showToast('WhatsApp message sent & logged in chat!', 'ri-checkbox-circle-fill');
           window.dispatchEvent(new HashChangeEvent('hashchange'));
         }
-      }).catch(err => {
+      } catch (err) {
         confirmWA.innerHTML = originalBtnText;
         confirmWA.disabled = false;
         alert('Failed to send WhatsApp message:\n' + err.message);
-      });
+      }
     });
   }
 

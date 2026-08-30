@@ -1648,6 +1648,67 @@ body.os-body {
     font-size: 0.82rem;
   }
 
+  /* Hero Banner Responsive Stacking */
+  .os-hero {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    padding: 20px 16px !important;
+  }
+
+  .hero-text h1 {
+    font-size: 1.65rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .hero-text p {
+    font-size: 0.95rem !important;
+  }
+
+  .hero-ai-summary {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 14px 16px !important;
+  }
+
+  .ai-summary-title {
+    font-size: 0.78rem !important;
+    margin-bottom: 8px !important;
+  }
+
+  .ai-summary-list {
+    gap: 6px !important;
+  }
+
+  .ai-summary-list li {
+    font-size: 0.84rem !important;
+    gap: 8px !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+
+  /* Lead Detail Page Responsive Stacking */
+  .ld-content-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .ld-left-col {
+    width: 100% !important;
+  }
+
+  .ld-action-toolbar {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .ld-action-toolbar button,
+  .ld-action-toolbar .os-custom-select {
+    flex: 1 1 calc(50% - 8px) !important;
+    min-width: 130px !important;
+  }
+
   /* WhatsApp Log Responsive */
   .whatsapp-view {
     flex-direction: column !important;
@@ -1733,6 +1794,14 @@ body.os-body {
 
   .os-header {
     padding: 6px 10px;
+  }
+
+  .os-hero {
+    padding: 16px 12px !important;
+  }
+
+  .hero-text h1 {
+    font-size: 1.45rem !important;
   }
 
   .wa-sidebar {
