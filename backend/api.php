@@ -179,6 +179,7 @@ function renCol($conn, $t, $o, $n, $d) {
   `response` longtext DEFAULT NULL,
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
+@$conn->query("ALTER TABLE `ai_logs` MODIFY `id` varchar(255)");
 
 @$conn->query("CREATE TABLE IF NOT EXISTS `settings` (
   `setting_key` varchar(255) PRIMARY KEY,
