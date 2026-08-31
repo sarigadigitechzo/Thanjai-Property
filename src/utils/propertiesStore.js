@@ -72,8 +72,18 @@ export async function initPropertiesStore() {
         });
       }).filter(Boolean);
 
-      propertiesCache = remoteNormalized;
+      // Safe merge: always include legacy properties that aren't in remote data
+      const remoteIds = new Set(remoteNormalized.map(p => p.id));
+      const legacyToAdd = LEGACY_PROPERTIES
+        .filter(p => p.id && !remoteIds.has(p.id))
+        .map(p => normalizePropertyRecord(p))
+        .filter(Boolean);
+
+      propertiesCache = [...remoteNormalized, ...legacyToAdd];
       savePropertiesToStorage(propertiesCache);
+      if (legacyToAdd.length > 0) {
+        console.log(`[LegacyMerge] Re-merged ${legacyToAdd.length} legacy properties after API sync.`);
+      }
       window.dispatchEvent(new CustomEvent('propertiesUpdated'));
     }
   } catch (error) {
