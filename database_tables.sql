@@ -111,15 +111,6 @@ CREATE TABLE IF NOT EXISTS `whatsapp_logs` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 9. Pipeline Board (Stages Setup)
-CREATE TABLE IF NOT EXISTS `pipeline_stages` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `stage_name` varchar(100) NOT NULL,
-  `order_index` int(11) DEFAULT 0,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- 10. Reports
 CREATE TABLE IF NOT EXISTS `reports` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

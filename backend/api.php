@@ -272,7 +272,8 @@ addCol($conn, 'whatsapp_logs', 'type', 'varchar(50) DEFAULT "outbound"');
 addCol($conn, 'whatsapp_logs', 'status', 'varchar(50) DEFAULT "Delivered"');
 
 @$conn->query("DROP TABLE IF EXISTS `dashboard_stats`");
-$tables = ['leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'pipeline_stages', 'reports', 'portal_users', 'audit_logs'];
+@$conn->query("DROP TABLE IF EXISTS `pipeline_stages`");
+$tables = ['leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'reports', 'portal_users', 'audit_logs'];
 foreach($tables as $t) {
     renCol($conn, $t, 'created_at', 'createdAt', 'datetime DEFAULT CURRENT_TIMESTAMP');
 }
