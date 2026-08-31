@@ -243,6 +243,7 @@ function renderPropertyCard(prop) {
   if (prop.bedrooms) specsArray.push(`${prop.bedrooms} bed`);
   if (prop.bathrooms) specsArray.push(`${prop.bathrooms} bath`);
   if (prop.size) specsArray.push(prop.size);
+  if (prop.approval) specsArray.push(prop.approval);
 
   return `
     <div class="crm-ref-prop-card" data-id="${prop.id}" style="
