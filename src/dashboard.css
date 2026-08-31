@@ -1912,9 +1912,17 @@ body.os-body {
     grid-template-columns: 1fr !important;
   }
 
-  /* Ensure specific modules stack properly */
+  /* Ensure specific modules stack properly instead of using grid */
   .visits-layout, .pn-layout, .reports-chart-row {
+    display: flex !important;
     flex-direction: column !important;
+  }
+  
+  /* Make Calendar responsive */
+  .cal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
   
   /* Tables should scroll horizontally */
