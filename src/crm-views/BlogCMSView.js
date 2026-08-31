@@ -534,8 +534,8 @@ export function initBlogCMSListeners() {
         message: 'Are you sure you want to delete this blog article from the public website? This action cannot be undone.',
         confirmText: 'Delete Article',
         isDestructive: true,
-        onConfirm: () => {
-          deleteBlogPost(id);
+        onConfirm: async () => {
+          await deleteBlogPost(id);
           showToast('Article deleted successfully.', 'ri-delete-bin-line');
           refreshView();
         }
@@ -1250,8 +1250,8 @@ export function initBlogCMSListeners() {
 
     try {
       if (cmsState.editingPostId) {
-        // Assume update is still fire-and-forget for now, or we can make it async too later.
-        updateBlogPost(cmsState.editingPostId, payload);
+        showToast('Saving updates to database...', 'ri-loader-4-line');
+        await updateBlogPost(cmsState.editingPostId, payload);
         showToast('Article updated successfully!', 'ri-checkbox-circle-line');
       } else {
         showToast('Publishing to database...', 'ri-loader-4-line');

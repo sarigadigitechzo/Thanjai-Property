@@ -93,9 +93,21 @@ let isInitialized = false;
 export async function initBlogStore() {
   try {
     const data = await fetchFromAPI('/blog');
-    if (data && Array.isArray(data)) {
+    if (data && Array.isArray(data) && data.length > 0) {
       blogPostsCache = data;
       saveBlogPostsToStorage(blogPostsCache);
+      window.dispatchEvent(new CustomEvent('blogPostsUpdated'));
+      isInitialized = true;
+      return blogPostsCache;
+    } else if (data && Array.isArray(data) && data.length === 0) {
+      // Database has no blog posts yet! Auto-seed initial posts to database so public site displays articles
+      const local = loadBlogPostsFromStorage();
+      const postsToSeed = (local && local.length > 0) ? local : INITIAL_BLOG_POSTS;
+      blogPostsCache = postsToSeed;
+      saveBlogPostsToStorage(postsToSeed);
+      for (const post of postsToSeed) {
+        fetchFromAPI('/blog', { method: 'POST', body: JSON.stringify(post) }).catch(() => {});
+      }
       window.dispatchEvent(new CustomEvent('blogPostsUpdated'));
       isInitialized = true;
       return blogPostsCache;
@@ -123,15 +135,15 @@ function loadBlogPostsFromStorage() {
     const data = localStorage.getItem(STORAGE_KEY);
     if (data !== null) {
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) {
-        return parsed; // returns array even if empty (0 items)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
       }
     }
   } catch (e) {
     console.error("Error reading blog posts from localStorage", e);
   }
 
-  // Only on very first fresh load
+  // Only on very first fresh load or if empty
   saveBlogPostsToStorage(INITIAL_BLOG_POSTS);
   return INITIAL_BLOG_POSTS;
 }
@@ -184,13 +196,12 @@ export async function addBlogPost(data) {
     content: data.content || `<p class="blog-lead">${data.excerpt || 'Welcome to this article.'}</p>`
   };
 
-  // Save to local cache immediately to ensure reliable zero-data-loss storage
+  // Save to local cache immediately
   posts.unshift(newPost);
   saveBlogPostsToStorage(posts);
   
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    
     action: `Published Blog Article (${newPost.id})`,
     module: 'Blog CMS',
     details: `Published article "${newPost.title}" under ${newPost.category}.`
@@ -198,18 +209,20 @@ export async function addBlogPost(data) {
 
   window.dispatchEvent(new CustomEvent('blogPostsUpdated', { detail: { action: 'add', post: newPost } }));
 
-  // Background sync to remote API if available
-  fetchFromAPI('/blog', {
-    method: 'POST',
-    body: JSON.stringify(newPost)
-  }).catch(e => {
-    console.warn("Background API sync for new blog post skipped/failed:", e.message);
-  });
+  // Sync to database
+  try {
+    await fetchFromAPI('/blog', {
+      method: 'POST',
+      body: JSON.stringify(newPost)
+    });
+  } catch (e) {
+    console.warn("API sync for new blog post failed:", e.message);
+  }
 
   return newPost;
 }
 
-export function updateBlogPost(id, updatedFields) {
+export async function updateBlogPost(id, updatedFields) {
   const posts = getBlogPosts();
   const index = posts.findIndex(p => p.id === id || p.slug === id);
   if (index === -1) return false;
@@ -225,25 +238,29 @@ export function updateBlogPost(id, updatedFields) {
   posts[index] = merged;
   saveBlogPostsToStorage(posts);
   
-  // Async background sync
-  fetchFromAPI(`/blog/${current.id}`, {
-    method: 'PUT',
-    body: JSON.stringify(merged)
-  }).catch(e => console.error("Failed to sync updated blog post to API", e));
-
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    
     action: `Updated Blog Article (${current.id})`,
     module: 'Blog CMS',
     details: `Updated details for article "${merged.title}".`
   });
 
   window.dispatchEvent(new CustomEvent('blogPostsUpdated', { detail: { action: 'update', post: merged } }));
+
+  // Sync to database
+  try {
+    await fetchFromAPI(`/blog/${current.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(merged)
+    });
+  } catch (e) {
+    console.error("Failed to sync updated blog post to API", e);
+  }
+
   return merged;
 }
 
-export function deleteBlogPost(id) {
+export async function deleteBlogPost(id) {
   const posts = getBlogPosts();
   const target = posts.find(p => String(p.id) === String(id));
   if (!target) return false;
@@ -251,20 +268,24 @@ export function deleteBlogPost(id) {
   const filtered = posts.filter(p => String(p.id) !== String(id));
   saveBlogPostsToStorage(filtered);
   
-  // Async background sync
-  fetchFromAPI(`/blog/${id}`, {
-    method: 'DELETE'
-  }).catch(e => console.error("Failed to sync deleted blog post to API", e));
-
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    
     action: `Deleted Blog Article (${id})`,
     module: 'Blog CMS',
     details: `Deleted article "${target.title}".`
   });
 
   window.dispatchEvent(new CustomEvent('blogPostsUpdated', { detail: { action: 'delete', id } }));
+
+  // Sync to database
+  try {
+    await fetchFromAPI(`/blog/${id}`, {
+      method: 'DELETE'
+    });
+  } catch (e) {
+    console.error("Failed to sync deleted blog post to API", e);
+  }
+
   return true;
 }
 

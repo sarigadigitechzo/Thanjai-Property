@@ -115,15 +115,15 @@ function renCol($conn, $t, $o, $n, $d) {
   `date` varchar(50) DEFAULT NULL,
   `readTime` varchar(50) DEFAULT '5 min read',
   `author` varchar(100) DEFAULT 'Admin',
-  `authorAvatar` text DEFAULT NULL,
-  `image` text DEFAULT NULL,
-  `excerpt` text DEFAULT NULL,
+  `authorAvatar` longtext DEFAULT NULL,
+  `image` longtext DEFAULT NULL,
+  `excerpt` longtext DEFAULT NULL,
   `content` longtext DEFAULT NULL,
   `slug` varchar(255) DEFAULT NULL,
   `metaTitle` varchar(255) DEFAULT NULL,
-  `metaDescription` text DEFAULT NULL,
+  `metaDescription` longtext DEFAULT NULL,
   `authorRole` varchar(255) DEFAULT NULL,
-  `authorBio` text DEFAULT NULL,
+  `authorBio` longtext DEFAULT NULL,
   `authorSocial` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 )");
@@ -192,10 +192,16 @@ addCol($conn, 'leads', 'whatsapp', 'varchar(50) DEFAULT NULL');
 
 addCol($conn, 'blog_posts', 'slug', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'blog_posts', 'metaTitle', 'varchar(255) DEFAULT NULL');
-addCol($conn, 'blog_posts', 'metaDescription', 'text DEFAULT NULL');
+addCol($conn, 'blog_posts', 'metaDescription', 'longtext DEFAULT NULL');
 addCol($conn, 'blog_posts', 'authorRole', 'varchar(255) DEFAULT NULL');
-addCol($conn, 'blog_posts', 'authorBio', 'text DEFAULT NULL');
+addCol($conn, 'blog_posts', 'authorBio', 'longtext DEFAULT NULL');
 addCol($conn, 'blog_posts', 'authorSocial', 'varchar(255) DEFAULT NULL');
+@$conn->query("ALTER TABLE `blog_posts` MODIFY COLUMN `image` LONGTEXT");
+@$conn->query("ALTER TABLE `blog_posts` MODIFY COLUMN `authorAvatar` LONGTEXT");
+@$conn->query("ALTER TABLE `blog_posts` MODIFY COLUMN `content` LONGTEXT");
+@$conn->query("ALTER TABLE `blog_posts` MODIFY COLUMN `excerpt` LONGTEXT");
+@$conn->query("ALTER TABLE `blog_posts` MODIFY COLUMN `metaDescription` LONGTEXT");
+@$conn->query("ALTER TABLE `blog_posts` MODIFY COLUMN `authorBio` LONGTEXT");
 
 addCol($conn, 'admin_staff', 'fullName', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'email', 'varchar(255) DEFAULT NULL');
@@ -433,7 +439,7 @@ elseif ($resource === 'blog' || $resource === 'blog_posts') {
         $bBio = strval($data['authorBio'] ?? '');
         $bSocial = strval($data['authorSocial'] ?? '');
         
-        $stmt = $conn->prepare("INSERT INTO blog_posts (id, slug, title, category, date, readTime, author, authorAvatar, image, excerpt, content, metaTitle, metaDescription, authorRole, authorBio, authorSocial) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE title=VALUES(title), category=VALUES(category), date=VALUES(date), readTime=VALUES(readTime), image=VALUES(image), excerpt=VALUES(excerpt), content=VALUES(content), slug=VALUES(slug), metaTitle=VALUES(metaTitle), metaDescription=VALUES(metaDescription)");
+        $stmt = $conn->prepare("INSERT INTO blog_posts (id, slug, title, category, date, readTime, author, authorAvatar, image, excerpt, content, metaTitle, metaDescription, authorRole, authorBio, authorSocial) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE title=VALUES(title), category=VALUES(category), date=VALUES(date), readTime=VALUES(readTime), image=VALUES(image), excerpt=VALUES(excerpt), content=VALUES(content), slug=VALUES(slug), metaTitle=VALUES(metaTitle), metaDescription=VALUES(metaDescription), author=VALUES(author), authorAvatar=VALUES(authorAvatar), authorRole=VALUES(authorRole), authorBio=VALUES(authorBio), authorSocial=VALUES(authorSocial)");
         $stmt->bind_param("ssssssssssssssss", $bId, $bSlug, $bTitle, $bCat, $bDate, $bRead, $bAuthor, $bAvatar, $bImage, $bExcerpt, $bContent, $bMetaT, $bMetaD, $bRole, $bBio, $bSocial);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Saved successfully", "id" => $bId]);
@@ -461,8 +467,8 @@ elseif ($resource === 'blog' || $resource === 'blog_posts') {
         $bSocial = strval($data['authorSocial'] ?? '');
         $targetId = strval($id);
         
-        $stmt = $conn->prepare("UPDATE blog_posts SET slug=?, title=?, category=?, date=?, readTime=?, author=?, authorAvatar=?, image=?, excerpt=?, content=?, metaTitle=?, metaDescription=?, authorRole=?, authorBio=?, authorSocial=? WHERE id=?");
-        $stmt->bind_param("ssssssssssssssss", $bSlug, $bTitle, $bCat, $bDate, $bRead, $bAuthor, $bAvatar, $bImage, $bExcerpt, $bContent, $bMetaT, $bMetaD, $bRole, $bBio, $bSocial, $targetId);
+        $stmt = $conn->prepare("UPDATE blog_posts SET slug=?, title=?, category=?, date=?, readTime=?, author=?, authorAvatar=?, image=?, excerpt=?, content=?, metaTitle=?, metaDescription=?, authorRole=?, authorBio=?, authorSocial=? WHERE id=? OR slug=?");
+        $stmt->bind_param("sssssssssssssssss", $bSlug, $bTitle, $bCat, $bDate, $bRead, $bAuthor, $bAvatar, $bImage, $bExcerpt, $bContent, $bMetaT, $bMetaD, $bRole, $bBio, $bSocial, $targetId, $targetId);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Updated successfully"]);
         } else {
