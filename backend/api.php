@@ -621,41 +621,34 @@ elseif ($resource === 'agents') {
     }
 }
 
-elseif ($resource === 'site_images') {
+elseif ($resource === 'website_images') {
     if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM site_images");
+        $result = $conn->query("SELECT image_key as id, image_url as currentUrl FROM website_images");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        if ($result) {
+            while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        
-        
-        $stmt = $conn->prepare("INSERT INTO site_images (id, title, category, recommendedWidth, recommendedHeight, aspectRatio, format, maxSize, defaultUrl, currentUrl, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssiissssss", $data['id'], $data['title'], $data['category'], $data['recommendedWidth'], $data['recommendedHeight'], $data['aspectRatio'], $data['format'], $data['maxSize'], $data['defaultUrl'], $data['currentUrl'], $data['description']);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Created successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        if (!$data || empty($data['id'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Image ID/Key is required"]);
+            exit;
         }
-    }
-    elseif ($method === 'PUT' && $id) {
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        
-        $stmt = $conn->prepare("UPDATE site_images SET title=?, category=?, recommendedWidth=?, recommendedHeight=?, aspectRatio=?, format=?, maxSize=?, defaultUrl=?, currentUrl=?, description=? WHERE id=?");
-        $stmt->bind_param("ssiisssssss", $data['title'], $data['category'], $data['recommendedWidth'], $data['recommendedHeight'], $data['aspectRatio'], $data['format'], $data['maxSize'], $data['defaultUrl'], $data['currentUrl'], $data['description'], $id);
+        $stmt = $conn->prepare("INSERT INTO website_images (image_key, image_url) VALUES (?, ?) ON DUPLICATE KEY UPDATE image_url=VALUES(image_url)");
+        $currentUrl = $data['currentUrl'] ?? '';
+        $stmt->bind_param("ss", $data['id'], $currentUrl);
         if ($stmt->execute()) {
-            echo json_encode(["message" => "Updated successfully"]);
+            echo json_encode(["message" => "Created/Updated successfully"]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);
         }
     }
     elseif ($method === 'DELETE' && $id) {
-        $stmt = $conn->prepare("DELETE FROM site_images WHERE id=?");
+        $stmt = $conn->prepare("DELETE FROM website_images WHERE image_key=?");
         $stmt->bind_param("s", $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Deleted successfully"]);
@@ -1392,26 +1385,7 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
     }
 }
 
-elseif ($resource === 'site_images') {
-    if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM site_images");
-        $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
-        echo json_encode($rows);
-    } 
-    elseif ($method === 'POST') {
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        $stmt = $conn->prepare("INSERT INTO site_images (id, image_key, url) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE url = ?");
-        $stmt->bind_param("ssss", $data['id'], $data['image_key'], $data['url'], $data['url']);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Created/Updated successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
-        }
-    }
-}
+
 
 // =====================================================================
 // WhatsApp Webhook (Meta / AiSensy / SmartPing Incoming Messages)

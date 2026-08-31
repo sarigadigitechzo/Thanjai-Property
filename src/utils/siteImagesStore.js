@@ -333,16 +333,17 @@ let auditLogsCache = null;
 
 export async function initSiteImagesStore() {
   try {
-    const imagesData = await fetchFromAPI('/site_images');
+    const imagesData = await fetchFromAPI('/website_images');
     if (imagesData && Array.isArray(imagesData) && imagesData.length > 0) {
       siteImagesCache = {};
       imagesData.forEach(img => {
         siteImagesCache[img.id] = img.currentUrl;
       });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(siteImagesCache));
       window.dispatchEvent(new CustomEvent('siteImagesUpdated'));
     }
-  } catch (error) {}
+  } catch (error) {
+    console.error("Failed to load website_images from API", error);
+  }
 
   try {
     const auditData = await fetchFromAPI('/audit_logs');
@@ -355,15 +356,6 @@ export async function initSiteImagesStore() {
 
 function getSavedSiteImages() {
   if (siteImagesCache) return siteImagesCache;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      siteImagesCache = JSON.parse(saved);
-      return siteImagesCache;
-    }
-  } catch (e) {
-    console.error("Error parsing saved site images", e);
-  }
   siteImagesCache = {};
   return siteImagesCache;
 }
@@ -403,14 +395,11 @@ export function updateSiteImage(key, newUrl) {
   }
 
   const savedMap = getSavedSiteImages();
-  const oldUrl = savedMap[key] || DEFAULT_SITE_IMAGES[key].defaultUrl;
   savedMap[key] = newUrl;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(savedMap));
 
   // Log to Audit Trail
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    
     action: `Updated ${DEFAULT_SITE_IMAGES[key].title}`,
     module: 'Website Images',
     details: `Image asset "${DEFAULT_SITE_IMAGES[key].title}" was updated by admin.`,
@@ -422,9 +411,9 @@ export function updateSiteImage(key, newUrl) {
   window.dispatchEvent(new CustomEvent('siteImagesUpdated', { detail: { key, newUrl } }));
   
   // Async background sync
-  fetchFromAPI(`/site_images`, {
+  fetchFromAPI(`/website_images`, {
     method: 'POST',
-    body: JSON.stringify({ id: `img-${key}`, image_key: key, url: newUrl })
+    body: JSON.stringify({ id: key, currentUrl: newUrl })
   }).catch(e => console.error("API sync error", e));
   
   return true;
@@ -437,11 +426,9 @@ export function resetSiteImage(key) {
   const savedMap = getSavedSiteImages();
   if (savedMap[key]) {
     delete savedMap[key];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedMap));
 
     addAuditLog({
       timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-      
       action: `Reset ${DEFAULT_SITE_IMAGES[key].title}`,
       module: 'Website Images',
       details: `Restored default factory image for "${DEFAULT_SITE_IMAGES[key].title}".`,
@@ -449,21 +436,28 @@ export function resetSiteImage(key) {
     });
 
     window.dispatchEvent(new CustomEvent('siteImagesUpdated', { detail: { key, newUrl: DEFAULT_SITE_IMAGES[key].defaultUrl } }));
+
+    fetchFromAPI(`/website_images/${key}`, { method: 'DELETE' }).catch(e => console.error(e));
   }
   return true;
 }
 
 // Reset all site images to default
 export function resetAllSiteImages() {
-  localStorage.removeItem(STORAGE_KEY);
+  siteImagesCache = {};
   addAuditLog({
     timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
-    
     action: 'Reset All Website Images',
     module: 'Website Images',
     details: 'Restored factory default images for all website sections.'
   });
   window.dispatchEvent(new CustomEvent('siteImagesUpdated', { detail: { all: true } }));
+  
+  // NOTE: Resetting all images isn't currently supported by API unless we delete all. 
+  // We'll iterate and delete them individually to keep it simple.
+  Object.keys(DEFAULT_SITE_IMAGES).forEach(key => {
+    fetchFromAPI(`/website_images/${key}`, { method: 'DELETE' }).catch(() => {});
+  });
 }
 
 // Audit Log Helpers
