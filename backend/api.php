@@ -323,8 +323,19 @@ if ($resource === 'properties') {
         $userEmail = $data['userEmail'] ?? null;
         $actualOwnerName = $data['actualOwnerName'] ?? null;
         $actualOwnerPhone = $data['actualOwnerPhone'] ?? null;
-        $approval = $data['approval'] ?? '';
-        $stmt->bind_param("sssssssdsssssiissssssssssssssssss", $data['id'], $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, $data['description'], $features, $approval);
+        $approval = isset($data['approval']) ? strval($data['approval']) : '';
+        $bedrooms = isset($data['bedrooms']) && $data['bedrooms'] !== null ? strval($data['bedrooms']) : null;
+        $bathrooms = isset($data['bathrooms']) && $data['bathrooms'] !== null ? strval($data['bathrooms']) : null;
+        $price = floatval($data['price'] ?? 0);
+
+        $stmt->bind_param("sssssssdsssssssssssssssssssssssss", 
+            $data['id'], $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], 
+            $data['purpose'], $price, $data['priceFormatted'], $data['location'], $data['district'], $data['address'], 
+            $data['size'], $bedrooms, $bathrooms, $data['furnishing'], $data['status'], $data['availability'], 
+            $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], 
+            $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, 
+            $data['description'], $features, $approval
+        );
         if ($stmt->execute()) {
             echo json_encode(["message" => "Property created successfully"]);
         } else {
@@ -342,10 +353,25 @@ if ($resource === 'properties') {
         $userEmail = $data['userEmail'] ?? null;
         $actualOwnerName = $data['actualOwnerName'] ?? null;
         $actualOwnerPhone = $data['actualOwnerPhone'] ?? null;
-        $approval = $data['approval'] ?? '';
-        $stmt->bind_param("ssssssdsssssiisssssssssssssssssss", $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], $data['purpose'], $data['price'], $data['priceFormatted'], $data['location'], $data['district'], $data['address'], $data['size'], $data['bedrooms'], $data['bathrooms'], $data['furnishing'], $data['status'], $data['availability'], $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, $data['description'], $features, $approval, $id);
-        $stmt->execute();
-        echo json_encode(["message" => "Property updated successfully"]);
+        $approval = isset($data['approval']) ? strval($data['approval']) : '';
+        $bedrooms = isset($data['bedrooms']) && $data['bedrooms'] !== null ? strval($data['bedrooms']) : null;
+        $bathrooms = isset($data['bathrooms']) && $data['bathrooms'] !== null ? strval($data['bathrooms']) : null;
+        $price = floatval($data['price'] ?? 0);
+
+        $stmt->bind_param("sssssssdssssssssssssssssssssssssss", 
+            $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], 
+            $data['purpose'], $price, $data['priceFormatted'], $data['location'], $data['district'], $data['address'], 
+            $data['size'], $bedrooms, $bathrooms, $data['furnishing'], $data['status'], $data['availability'], 
+            $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], 
+            $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, 
+            $data['description'], $features, $approval, $id
+        );
+        if ($stmt->execute()) {
+            echo json_encode(["message" => "Property updated successfully"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        }
     }
     elseif ($method === 'DELETE' && $id) {
         $stmt = $conn->prepare("DELETE FROM properties WHERE id=?");
