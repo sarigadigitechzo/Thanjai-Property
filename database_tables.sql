@@ -5,14 +5,6 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+05:30";
 
--- 1. Dashboard (Metrics & Stats)
-CREATE TABLE IF NOT EXISTS `dashboard_stats` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `metric_name` varchar(100) NOT NULL,
-  `metric_value` varchar(255) DEFAULT NULL,
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 2. CRM Pipeline (Leads)
 CREATE TABLE IF NOT EXISTS `leads` (
