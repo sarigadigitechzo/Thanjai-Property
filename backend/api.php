@@ -216,6 +216,9 @@ addCol($conn, 'properties', 'userEmail', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'properties', 'actualOwnerName', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'properties', 'actualOwnerPhone', 'varchar(255) DEFAULT NULL');
 
+addCol($conn, 'partners', 'company', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'partners', 'type', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'partners', 'leads', 'int DEFAULT 0');
 addCol($conn, 'partners', 'contactPerson', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'partners', 'whatsapp', 'varchar(50) DEFAULT NULL');
 addCol($conn, 'partners', 'city', 'varchar(255) DEFAULT NULL');
