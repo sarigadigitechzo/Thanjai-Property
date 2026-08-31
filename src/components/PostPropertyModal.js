@@ -133,11 +133,12 @@ export function initPostPropertyModalListeners(onClose) {
       ownerName: ownerName || 'Property Owner',
       ownerPhone: ownerPhone || '',
       listedBy: ownerName || 'Website Submission',
-      status: 'Available',
-      availability: 'Available'
+      status: 'Pending Approval',
+      approvalStatus: 'Pending Approval',
+      availability: 'Pending'
     });
 
-    showToast(`Success! Property ${newProp.id} listed and published.`, 'ri-checkbox-circle-fill');
+    showToast(`Success! Property ${newProp.id} submitted for review.`, 'ri-checkbox-circle-fill');
     overlay?.classList.remove('active');
     setTimeout(onClose, 300);
   });
