@@ -1817,18 +1817,72 @@ body.os-body {
 /* Admin Dashboard Fixes for Mobile Layout */
 @media (max-width: 900px) {
   .dashboard-mixed-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
   
   .source-split-layout {
-    flex-direction: column;
+    flex-direction: column !important;
   }
 
   .source-left, .source-right {
-    width: 100%;
+    width: 100% !important;
   }
 
   .dashboard-kpi-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Lead Details Fix */
+  .ld-content-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* WhatsApp Layout Fix */
+  .whatsapp-view {
+    flex-direction: column !important;
+    height: calc(100vh - 80px) !important;
+  }
+  .wa-sidebar {
+    width: 100% !important;
+    height: 35% !important;
+    max-height: 35% !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(42, 24, 8, 0.1) !important;
+  }
+  .wa-main {
+    height: 65% !important;
+  }
+
+  /* Properties Grid Fix */
+  #os-content .os-app-content form > div[style*="grid-template-columns"], 
+  #os-content .os-app-content > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+  .os-prop-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Kanban Fix */
+  .kanban-board {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 16px;
+  }
+  .kanban-col {
+    min-width: 85% !important;
+    scroll-snap-align: center;
+  }
+  
+  /* AI Workspace Fix */
+  .ai-workspace {
+    flex-direction: column !important;
+  }
+  .ai-sidebar {
+    width: 100% !important;
+    height: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(42, 24, 8, 0.1) !important;
   }
 }
