@@ -1,4 +1,5 @@
 import { PROPERTIES as INITIAL_PROPERTIES } from '../data/properties.js';
+import { LEGACY_PROPERTIES } from '../data/legacy_properties.js';
 import { addAuditLog } from './siteImagesStore.js';
 import { fetchFromAPI } from './api.js';
 
@@ -10,15 +11,31 @@ function loadPropertiesFromStorage() {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map(p => normalizePropertyRecord(p)).filter(Boolean);
+        const existing = parsed.map(p => normalizePropertyRecord(p)).filter(Boolean);
+        // Safe merge: append any legacy properties whose IDs don't already exist
+        const existingIds = new Set(existing.map(p => p.id));
+        const newFromLegacy = LEGACY_PROPERTIES
+          .filter(p => p.id && !existingIds.has(p.id))
+          .map(p => normalizePropertyRecord(p))
+          .filter(Boolean);
+        if (newFromLegacy.length > 0) {
+          const merged = [...existing, ...newFromLegacy];
+          try { localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(merged)); } catch(e) {}
+          console.log(`[LegacyMerge] Appended ${newFromLegacy.length} legacy properties.`);
+          return merged;
+        }
+        return existing;
       }
     }
   } catch (e) {
     console.error("Failed reading properties from localStorage", e);
   }
   
-  // Seed fallback
-  const defaults = INITIAL_PROPERTIES.map(p => normalizePropertyRecord(p)).filter(Boolean);
+  // Seed fallback: combine initial + legacy, deduped by ID
+  const combined = [...INITIAL_PROPERTIES, ...LEGACY_PROPERTIES];
+  const seenIds = new Set();
+  const deduped = combined.filter(p => { if (!p.id || seenIds.has(p.id)) return false; seenIds.add(p.id); return true; });
+  const defaults = deduped.map(p => normalizePropertyRecord(p)).filter(Boolean);
   try {
     localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(defaults));
   } catch (e) {}
