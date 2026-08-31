@@ -1913,17 +1913,25 @@ body.os-body {
   }
 
   /* Ensure specific modules stack properly instead of using grid */
-  .visits-layout, .pn-layout, .reports-chart-row {
+  .visits-layout, .pn-container, .reports-chart-row {
     display: flex !important;
     flex-direction: column !important;
+    height: auto !important;
   }
   
-  /* Make Calendar responsive */
-  .cal-card {
+  /* Make Calendar and Sidebar responsive */
+  .cal-card, .pn-sidebar, .pn-content {
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
   }
+  
+  /* Make partner list shorter on mobile so details box is visible below */
+  .pn-sidebar {
+    max-height: 35vh !important;
+  }
+  
+
   
   /* Tables should scroll horizontally */
   #os-content table {
