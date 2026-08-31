@@ -890,7 +890,7 @@ export function initLeadDetailView(id) {
         let partnerName = 'Partner';
         if (partnerIdx !== -1) {
           partnerName = partners[partnerIdx].company || partners[partnerIdx].name;
-          partners[partnerIdx].leads = sharedLeadsData[partnerId].length;
+          partners[partnerIdx].leads = (partners[partnerIdx].leads || 0) + 1;
           localStorage.setItem('thanjai_partners', JSON.stringify(partners));
           if (sendWa) {
             await sendWhatsAppToPartner(partners[partnerIdx]);
