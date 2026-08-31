@@ -51,120 +51,124 @@ export function renderPartnersView() {
     <!-- Add/Edit Partner Modal -->
     <div class="os-modal-overlay" id="add-partner-modal">
       <div class="os-modal-card" style="max-width: 650px; width: 90%; background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-        <div class="os-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 id="partner-modal-title" style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b;">Add partner company</h2>
-          <button class="os-modal-close" id="close-partner-modal" style="background: none; border: none; font-size: 1.3rem; cursor: pointer;"><i class="ri-close-line"></i></button>
-        </div>
-        <div class="os-modal-body" style="max-height: 70vh; overflow-y: auto;">
-          <input type="hidden" id="ap-edit-id" value="" />
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Company name *</label>
-              <input type="text" id="ap-company" placeholder="e.g. Digitechzo Realty" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
-            </div>
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Contact person</label>
-              <input type="text" id="ap-contact" placeholder="e.g. Kaniga" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
-            </div>
+      <!-- MAIN LAYOUT -->
+      <div class="pn-layout">
+        <!-- SIDEBAR -->
+        <div class="pn-sidebar">
+          <div class="pn-sidebar-header">
+            <span>Registered Partners</span>
           </div>
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Phone</label>
-              <input type="text" id="ap-phone" placeholder="10-digit mobile" maxlength="10" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
-            </div>
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">WhatsApp</label>
-              <input type="text" id="ap-whatsapp" placeholder="WhatsApp number" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
-            </div>
-          </div>
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Email</label>
-              <input type="email" id="ap-email" placeholder="partner@example.com" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
-            </div>
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">City</label>
-              <input type="text" id="ap-city" placeholder="e.g. Madurai" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
-            </div>
-          </div>
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px;">
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Country</label>
-              <input type="text" id="ap-country" value="India" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
-            </div>
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Status</label>
-              <select id="ap-status" style="width: 100%; height: 42px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 12px; font-size: 0.9rem; color: #1e293b;">
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Notes / Commission Terms</label>
-            <textarea id="ap-notes" placeholder="e.g. 2% channel referral commission on plot sales." style="width: 100%; min-height: 80px; resize: vertical; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 12px; font-size: 0.9rem;"></textarea>
+          <div class="pn-sidebar-list" id="pn-sidebar-list">
+            <!-- Dynamic Partner List -->
           </div>
         </div>
-        <div class="os-modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
-          <button class="os-btn-secondary" id="cancel-partner-modal" style="padding: 8px 18px;">Cancel</button>
-          <button class="os-btn-primary" id="save-partner-modal" style="background: #e27c3e; border-color: #e27c3e; padding: 8px 22px;">Save Partner</button>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="pn-content">
+          <div class="pn-content-header" id="pn-content-title">
+            <h2>Select a partner to view details</h2>
+          </div>
+          <div id="pn-partner-info-card" style="display: none;"></div>
+          
+          <div id="pn-leads-container" style="display: none; margin-top: 24px;">
+            <!-- Leads shared with this partner -->
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Share Lead Modal -->
-    <div class="os-modal-overlay" id="share-lead-modal">
-      <div class="os-modal-card" style="max-width: 550px; width: 90%; background: #ffffff; border-radius: 12px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-        <div class="os-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h2 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: #1e293b;"><i class="ri-user-shared-line" style="color: #e27c3e;"></i> Share Lead to Partner</h2>
-          <button class="os-modal-close" id="close-share-lead-modal" style="background: none; border: none; font-size: 1.3rem; cursor: pointer;"><i class="ri-close-line"></i></button>
+      <!-- ADD PARTNER MODAL -->
+      <div class="os-modal-overlay" id="add-partner-modal">
+        <div class="os-modal" style="max-width: 500px;">
+          <div class="os-modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 16px; margin-bottom: 20px;">
+            <h3 style="font-family: var(--font-sans); font-size: 1.3rem; font-weight: 800; color: #1A202C;">Register New Partner</h3>
+            <button class="os-modal-close" id="close-add-partner-modal"><i class="ri-close-line"></i></button>
+          </div>
+          <div class="os-modal-body">
+            <div class="form-group">
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Company / Agency Name <span style="color: #e53e3e;">*</span></label>
+              <input type="text" id="add-partner-company" placeholder="e.g. Royal Realtors" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" required />
+            </div>
+            <div class="form-group">
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Contact Person <span style="color: #e53e3e;">*</span></label>
+              <input type="text" id="add-partner-contact" placeholder="e.g. Ramesh K." style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" required />
+            </div>
+            <div class="form-group">
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Official Phone Number <span style="color: #e53e3e;">*</span></label>
+              <input type="tel" id="add-partner-phone" placeholder="10-digit mobile number" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" required />
+            </div>
+            <div class="form-group">
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">WhatsApp Number</label>
+              <input type="tel" id="add-partner-whatsapp" placeholder="Same as phone if left blank" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
+            </div>
+            <div class="form-group" style="display: flex; gap: 16px;">
+              <div style="flex: 1;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Operating City</label>
+                <input type="text" id="add-partner-city" placeholder="e.g. Trichy" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
+              </div>
+              <div style="flex: 1;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Status</label>
+                <select id="add-partner-status" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="os-modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+            <button class="os-btn-secondary" id="cancel-add-partner-modal" style="padding: 8px 18px;">Cancel</button>
+            <button class="os-btn-primary" id="save-add-partner-btn" style="background: #e27c3e; border-color: #e27c3e; padding: 8px 22px;">Save Partner</button>
+          </div>
         </div>
-        <div class="os-modal-body">
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Select Lead from CRM</label>
-            <select id="sl-lead-select" style="width: 100%; height: 42px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 12px; font-size: 0.9rem;">
-              <option value="">-- Choose Existing Lead --</option>
-            </select>
+      </div>
+
+      <!-- SHARE LEAD MODAL -->
+      <div class="os-modal-overlay" id="share-lead-modal">
+        <div class="os-modal" style="max-width: 550px;">
+          <div class="os-modal-header" style="border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 16px; margin-bottom: 20px;">
+            <h3 style="font-family: var(--font-sans); font-size: 1.3rem; font-weight: 800; color: #1A202C;">Manually Add Shared Lead</h3>
+            <button class="os-modal-close" id="close-share-lead-modal"><i class="ri-close-line"></i></button>
           </div>
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+          <div class="os-modal-body">
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 16px;">Record a lead requirement that you are sharing with this partner.</p>
+            
             <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Client Name *</label>
-              <input type="text" id="sl-name" placeholder="Lead Name" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Client Name (Alias optional) <span style="color: #e53e3e;">*</span></label>
+              <input type="text" id="sl-name" placeholder="e.g. Ramesh (Buyer)" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" required />
             </div>
             <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Phone *</label>
-              <input type="text" id="sl-phone" placeholder="Phone Number" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Contact Phone (Optional - to protect data)</label>
+              <input type="tel" id="sl-phone" placeholder="e.g. 9876543210 or leave blank" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
             </div>
-          </div>
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+            <div class="form-group" style="display: flex; gap: 16px;">
+              <div style="flex: 1;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Property Type</label>
+                <input type="text" id="sl-type" placeholder="e.g. 3BHK Villa" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
+              </div>
+              <div style="flex: 1;">
+                <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Location Preference</label>
+                <input type="text" id="sl-location" placeholder="e.g. Vilar Road" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
+              </div>
+            </div>
             <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Location</label>
-              <input type="text" id="sl-location" placeholder="e.g. Thanjavur / Madurai" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Budget Range</label>
+              <input type="text" id="sl-budget" placeholder="e.g. ₹ 25 - 50 Lakhs" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
             </div>
-            <div class="form-group">
-              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Property Type</label>
-              <input type="text" id="sl-type" placeholder="e.g. Plot / Villa" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
+            <div class="form-group" style="margin-bottom: 0;">
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Handover Notes</label>
+              <textarea id="sl-notes" placeholder="Requirement specifics, preferred timeline, or client instructions..." style="width: 100%; min-height: 70px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 12px; font-size: 0.9rem;"></textarea>
             </div>
           </div>
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Budget Range</label>
-            <input type="text" id="sl-budget" placeholder="e.g. ₹ 25 - 50 Lakhs" style="width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;" />
+          <div class="os-modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+            <button class="os-btn-secondary" id="cancel-share-lead-modal" style="padding: 8px 18px;">Cancel</button>
+            <button class="os-btn-primary" id="save-share-lead-btn" style="background: #e27c3e; border-color: #e27c3e; padding: 8px 22px;">Share Lead</button>
           </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px;">Handover Notes</label>
-            <textarea id="sl-notes" placeholder="Requirement specifics, preferred timeline, or client instructions..." style="width: 100%; min-height: 70px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px 12px; font-size: 0.9rem;"></textarea>
-          </div>
-        </div>
-        <div class="os-modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
-          <button class="os-btn-secondary" id="cancel-share-lead-modal" style="padding: 8px 18px;">Cancel</button>
-          <button class="os-btn-primary" id="save-share-lead-btn" style="background: #e27c3e; border-color: #e27c3e; padding: 8px 22px;">Share Lead</button>
         </div>
       </div>
     </div>
   `;
 }
 
-export function initPartnersView() {
+export async function initPartnersView() {
   // 1. Data Initialization
   let partners = [];
   try {
@@ -178,54 +182,20 @@ export function initPartnersView() {
     partners = [];
   }
 
-  // 2. Shared Leads Data
+  // 2. Shared Leads Data (Fetch from API)
   let allSharedLeads = {};
   try {
-    allSharedLeads = JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {
-      '1': [
-        {
-          id: 'SL-101',
-          name: 'Karthikeyan V G',
-          phone: '9841298765',
-          location: 'Madurai',
-          propertyType: 'Plot',
-          budget: '₹ 1.10 Crore',
-          sharedBy: 'Arun Prakash',
-          sharedDate: '11 Aug 2026, 11:13',
-          status: 'Shared',
-          notes: 'Looking for DTCP approved commercial plot near bypass.'
-        },
-        {
-          id: 'SL-102',
-          name: 'Rajesh Annamalai',
-          phone: '9789012345',
-          location: 'Coimbatore',
-          propertyType: 'Townhouse',
-          budget: '₹ 1.40 Crore',
-          sharedBy: 'Kavitha Murugan',
-          sharedDate: '2 Jul 2026, 21:58',
-          status: 'In Progress',
-          notes: 'Prefers Saravanampatti but open to Vadavalli villas.'
+    const apiData = await fetchFromAPI('/shared_leads');
+    if (apiData && Array.isArray(apiData)) {
+      apiData.forEach(lead => {
+        if (!allSharedLeads[lead.partnerId]) {
+          allSharedLeads[lead.partnerId] = [];
         }
-      ],
-      '2': [
-        {
-          id: 'SL-103',
-          name: 'Muthukumar S',
-          phone: '9443219876',
-          location: 'Trichy Road',
-          propertyType: 'Villa',
-          budget: '₹ 85 Lakhs',
-          sharedBy: 'Aishwarya Raman',
-          sharedDate: '20 Aug 2026, 15:30',
-          status: 'Shared',
-          notes: 'Wants ready-to-occupy independent house with clear Patta.'
-        }
-      ]
-    };
+        allSharedLeads[lead.partnerId].push(lead);
+      });
+    }
   } catch (e) {
-    console.warn("Failed to parse shared leads", e);
-    allSharedLeads = {};
+    console.error("Failed to fetch shared leads from DB:", e);
   }
 
   // Ensure active partner is valid
@@ -634,34 +604,30 @@ export function initPartnersView() {
     }
   });
 
-  if (saveShareLeadBtn) {
-    saveShareLeadBtn.addEventListener('click', () => {
-      const name = document.getElementById('sl-name')?.value.trim();
-      const phone = document.getElementById('sl-phone')?.value.trim();
-      const location = document.getElementById('sl-location')?.value.trim() || 'Thanjavur';
-      const type = document.getElementById('sl-type')?.value.trim() || 'Plot';
-      const budget = document.getElementById('sl-budget')?.value.trim() || 'Contact for Budget';
-      const notes = document.getElementById('sl-notes')?.value.trim();
+    if (saveShareLeadBtn) {
+    saveShareLeadBtn.addEventListener('click', async () => {
+      if (!activePartnerId) return;
+      const leadIdStr = document.getElementById('sl-lead-select')?.value;
+      const name = document.getElementById('sl-name').value.trim();
+      const phone = document.getElementById('sl-phone').value.trim();
+      const location = document.getElementById('sl-location').value.trim();
+      const type = document.getElementById('sl-type').value.trim();
+      const budget = document.getElementById('sl-budget').value.trim();
+      const notes = document.getElementById('sl-notes').value.trim();
 
-      if (!name || !phone) {
-        showAlertModal({
-          title: 'Missing Contact Details',
-          message: 'Please enter both the <strong>Client Name</strong> and <strong>Phone Number</strong> to share this lead.',
-          type: 'warning'
-        });
+      if (!name) {
+        showToast('Please enter client name.', 'ri-error-warning-fill');
         return;
       }
 
-      if (!allSharedLeads[activePartnerId]) {
-        allSharedLeads[activePartnerId] = [];
-      }
-
-      const activeUser = JSON.parse(localStorage.getItem('thanjai_active_user')) || { fullName: 'Aishwarya Raman' };
+      const activeUser = JSON.parse(sessionStorage.getItem('thanjai_active_user')) || { fullName: 'Admin' };
       const now = new Date();
       const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       const newSharedLead = {
         id: `SL-${Date.now()}`,
+        partnerId: String(activePartnerId),
+        leadId: leadIdStr || null,
         name: name,
         phone: phone,
         location: location,
@@ -673,8 +639,16 @@ export function initPartnersView() {
         notes: notes
       };
 
-      allSharedLeads[activePartnerId].unshift(newSharedLead);
-      localStorage.setItem('thanjai_shared_leads', JSON.stringify(allSharedLeads));
+      try {
+        await fetchFromAPI('/shared_leads', {
+          method: 'POST',
+          body: JSON.stringify(newSharedLead)
+        });
+        if (!allSharedLeads[activePartnerId]) allSharedLeads[activePartnerId] = [];
+        allSharedLeads[activePartnerId].unshift(newSharedLead);
+      } catch (err) {
+        console.error("Failed to save shared lead to DB:", err);
+      }
 
       // Update partner lead count
       const partnerIdx = partners.findIndex(p => String(p.id) === String(activePartnerId));

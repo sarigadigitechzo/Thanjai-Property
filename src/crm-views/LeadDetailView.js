@@ -846,15 +846,20 @@ export function initLeadDetailView(id) {
 
       if (partnerId === 'ALL') {
         const activePartners = partners.filter(p => (p.status || 'Active').toLowerCase() === 'active');
-        activePartners.forEach(p => {
-          if (!sharedLeadsData[p.id]) sharedLeadsData[p.id] = [];
-          sharedLeadsData[p.id].unshift({...newSharedRecord});
-          p.leads = sharedLeadsData[p.id].length;
-          if (sendWa) sendWhatsAppToPartner(p);
-        });
+        
+        for (const p of activePartners) {
+          const pSharedRecord = { ...newSharedRecord, id: `SL-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`, partnerId: String(p.id) };
+          try {
+            await fetchFromAPI('/shared_leads', { method: 'POST', body: JSON.stringify(pSharedRecord) });
+            p.leads = (p.leads || 0) + 1;
+            if (sendWa) sendWhatsAppToPartner(p);
+          } catch (err) {
+            console.error("Failed to save shared lead to DB:", err);
+          }
+        }
+        
         if (sendWa) sendWhatsAppToClient(null);
 
-        localStorage.setItem('thanjai_shared_leads', JSON.stringify(sharedLeadsData));
         localStorage.setItem('thanjai_partners', JSON.stringify(partners));
 
         // Add timeline
@@ -874,9 +879,12 @@ export function initLeadDetailView(id) {
           initLeadDetailView(id);
         }
       } else if (partnerId) {
-        if (!sharedLeadsData[partnerId]) sharedLeadsData[partnerId] = [];
-        sharedLeadsData[partnerId].unshift(newSharedRecord);
-        localStorage.setItem('thanjai_shared_leads', JSON.stringify(sharedLeadsData));
+        newSharedRecord.partnerId = String(partnerId);
+        try {
+          await fetchFromAPI('/shared_leads', { method: 'POST', body: JSON.stringify(newSharedRecord) });
+        } catch (err) {
+          console.error("Failed to save shared lead to DB:", err);
+        }
 
         const partnerIdx = partners.findIndex(p => String(p.id) === String(partnerId));
         let partnerName = 'Partner';

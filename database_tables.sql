@@ -89,7 +89,24 @@ CREATE TABLE IF NOT EXISTS `ai_logs` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 8. WhatsApp Log
+-- 8. Shared Leads (Partner Collaboration)
+CREATE TABLE IF NOT EXISTS `shared_leads` (
+  `id` varchar(255) PRIMARY KEY,
+  `partnerId` varchar(255) DEFAULT NULL,
+  `leadId` varchar(255) DEFAULT NULL,
+  `name` varchar(255) DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `propertyType` varchar(255) DEFAULT NULL,
+  `budget` varchar(100) DEFAULT NULL,
+  `sharedBy` varchar(255) DEFAULT NULL,
+  `sharedDate` varchar(100) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'Shared',
+  `notes` longtext DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 9. WhatsApp Log
 CREATE TABLE IF NOT EXISTS `whatsapp_logs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `phone_number` varchar(50) NOT NULL,
