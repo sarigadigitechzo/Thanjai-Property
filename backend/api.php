@@ -59,19 +59,7 @@ function renCol($conn, $t, $o, $n, $d) {
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
 
-@$conn->query("CREATE TABLE IF NOT EXISTS `property_approvals` (
-  `id` varchar(255) PRIMARY KEY,
-  `propertyTitle` varchar(255) DEFAULT NULL,
-  `ownerName` varchar(255) DEFAULT NULL,
-  `ownerPhone` varchar(50) DEFAULT NULL,
-  `ownerEmail` varchar(255) DEFAULT NULL,
-  `price` varchar(100) DEFAULT NULL,
-  `location` varchar(255) DEFAULT NULL,
-  `propertyType` varchar(100) DEFAULT NULL,
-  `status` varchar(50) DEFAULT 'Pending Approval',
-  `details` longtext DEFAULT NULL,
-  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
-)");
+
 
 @$conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_logs` (
   `id` varchar(255) PRIMARY KEY,
@@ -247,15 +235,6 @@ addCol($conn, 'portal_users', 'propertiesCount', 'int(11) DEFAULT 0');
 addCol($conn, 'portal_users', 'visitorsCount', 'int(11) DEFAULT 0');
 addCol($conn, 'portal_users', 'buyersCount', 'int(11) DEFAULT 0');
 
-addCol($conn, 'property_approvals', 'propertyTitle', 'varchar(255) DEFAULT NULL');
-addCol($conn, 'property_approvals', 'ownerName', 'varchar(255) DEFAULT NULL');
-addCol($conn, 'property_approvals', 'ownerPhone', 'varchar(50) DEFAULT NULL');
-addCol($conn, 'property_approvals', 'ownerEmail', 'varchar(255) DEFAULT NULL');
-addCol($conn, 'property_approvals', 'price', 'varchar(100) DEFAULT NULL');
-addCol($conn, 'property_approvals', 'location', 'varchar(255) DEFAULT NULL');
-addCol($conn, 'property_approvals', 'propertyType', 'varchar(100) DEFAULT NULL');
-addCol($conn, 'property_approvals', 'status', 'varchar(50) DEFAULT "Pending Approval"');
-addCol($conn, 'property_approvals', 'details', 'longtext DEFAULT NULL');
 
 addCol($conn, 'website_images', 'asset_key', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'website_images', 'asset_url', 'longtext DEFAULT NULL');
@@ -273,7 +252,8 @@ addCol($conn, 'whatsapp_logs', 'status', 'varchar(50) DEFAULT "Delivered"');
 
 @$conn->query("DROP TABLE IF EXISTS `dashboard_stats`");
 @$conn->query("DROP TABLE IF EXISTS `pipeline_stages`");
-$tables = ['leads', 'properties', 'property_approvals', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'reports', 'portal_users', 'audit_logs'];
+@$conn->query("DROP TABLE IF EXISTS `property_approvals`");
+$tables = ['leads', 'properties', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'reports', 'portal_users', 'audit_logs'];
 foreach($tables as $t) {
     renCol($conn, $t, 'created_at', 'createdAt', 'datetime DEFAULT CURRENT_TIMESTAMP');
 }
@@ -1404,51 +1384,6 @@ elseif ($resource === 'portal_users' || $resource === 'users') {
         $stmt->bind_param("s", $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Portal user deleted successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
-        }
-    }
-}
-
-elseif ($resource === 'property_approvals') {
-    if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM property_approvals");
-        $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
-        echo json_encode($rows);
-    } 
-    elseif ($method === 'POST') {
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        
-        $stmt = $conn->prepare("INSERT INTO property_approvals (id, propertyId, requestedBy, status, comments) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssss", $data['id'], $data['propertyId'], $data['requestedBy'], $data['status'], $data['comments']);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Created successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
-        }
-    }
-    elseif ($method === 'PUT' && $id) {
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        
-        $stmt = $conn->prepare("UPDATE property_approvals SET propertyId=?, requestedBy=?, status=?, comments=? WHERE id=?");
-        $stmt->bind_param("sssss", $data['propertyId'], $data['requestedBy'], $data['status'], $data['comments'], $id);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Updated successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
-        }
-    }
-    elseif ($method === 'DELETE' && $id) {
-        $stmt = $conn->prepare("DELETE FROM property_approvals WHERE id=?");
-        $stmt->bind_param("s", $id);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Deleted successfully"]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);

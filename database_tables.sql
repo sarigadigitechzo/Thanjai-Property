@@ -54,17 +54,6 @@ CREATE TABLE IF NOT EXISTS `properties` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 4. Property Approvals
-CREATE TABLE IF NOT EXISTS `property_approvals` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `property_id` varchar(50) NOT NULL,
-  `status` varchar(50) DEFAULT 'Pending',
-  `reviewer_id` varchar(50) DEFAULT NULL,
-  `comments` text,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- 5. Site Visits & Appts
 CREATE TABLE IF NOT EXISTS `site_visits` (
   `id` varchar(50) NOT NULL,
