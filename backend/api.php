@@ -145,22 +145,6 @@ function renCol($conn, $t, $o, $n, $d) {
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
 
-@$conn->query("CREATE TABLE IF NOT EXISTS `shared_leads` (
-  `id` varchar(255) PRIMARY KEY,
-  `partnerId` varchar(255) DEFAULT NULL,
-  `leadId` varchar(255) DEFAULT NULL,
-  `name` varchar(255) DEFAULT NULL,
-  `phone` varchar(50) DEFAULT NULL,
-  `location` varchar(255) DEFAULT NULL,
-  `propertyType` varchar(255) DEFAULT NULL,
-  `budget` varchar(100) DEFAULT NULL,
-  `sharedBy` varchar(255) DEFAULT NULL,
-  `sharedDate` varchar(100) DEFAULT NULL,
-  `status` varchar(50) DEFAULT 'Shared',
-  `notes` longtext DEFAULT NULL,
-  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
-)");
-
 @$conn->query("CREATE TABLE IF NOT EXISTS `ai_logs` (
   `id` varchar(255) PRIMARY KEY,
   `user_id` varchar(255) DEFAULT NULL,
@@ -254,6 +238,7 @@ addCol($conn, 'whatsapp_logs', 'status', 'varchar(50) DEFAULT "Delivered"');
 @$conn->query("DROP TABLE IF EXISTS `pipeline_stages`");
 @$conn->query("DROP TABLE IF EXISTS `property_approvals`");
 @$conn->query("DROP TABLE IF EXISTS `reports`");
+@$conn->query("DROP TABLE IF EXISTS `shared_leads`");
 $tables = ['leads', 'properties', 'site_visits', 'partners', 'ai_logs', 'whatsapp_logs', 'portal_users', 'audit_logs'];
 foreach($tables as $t) {
     renCol($conn, $t, 'created_at', 'createdAt', 'datetime DEFAULT CURRENT_TIMESTAMP');
@@ -826,79 +811,6 @@ elseif ($resource === 'partners') {
     }
 }
 
-elseif ($resource === 'shared_leads') {
-    if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM shared_leads ORDER BY createdAt DESC");
-        $rows = [];
-        if ($result) {
-            while($row = $result->fetch_assoc()) { $rows[] = $row; }
-        }
-        echo json_encode($rows);
-    } 
-    elseif ($method === 'POST') {
-        $data = json_decode(file_get_contents("php://input"), true);
-        if (!$data || empty($data['id'])) {
-            http_response_code(400);
-            echo json_encode(["error" => "Shared Lead ID is required"]);
-            exit;
-        }
-        
-        $stmt = $conn->prepare("INSERT INTO shared_leads (id, partnerId, leadId, name, phone, location, propertyType, budget, sharedBy, sharedDate, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone), location=VALUES(location), propertyType=VALUES(propertyType), budget=VALUES(budget), sharedBy=VALUES(sharedBy), sharedDate=VALUES(sharedDate), status=VALUES(status), notes=VALUES(notes)");
-        $partnerId = $data['partnerId'] ?? '';
-        $leadId = $data['leadId'] ?? '';
-        $name = $data['name'] ?? '';
-        $phone = $data['phone'] ?? '';
-        $location = $data['location'] ?? '';
-        $propertyType = $data['propertyType'] ?? '';
-        $budget = $data['budget'] ?? '';
-        $sharedBy = $data['sharedBy'] ?? '';
-        $sharedDate = $data['sharedDate'] ?? '';
-        $status = $data['status'] ?? 'Shared';
-        $notes = $data['notes'] ?? '';
-
-        $stmt->bind_param("ssssssssssss", $data['id'], $partnerId, $leadId, $name, $phone, $location, $propertyType, $budget, $sharedBy, $sharedDate, $status, $notes);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Created successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
-        }
-    }
-    elseif ($method === 'PUT' && $id) {
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        $stmt = $conn->prepare("UPDATE shared_leads SET partnerId=?, leadId=?, name=?, phone=?, location=?, propertyType=?, budget=?, sharedBy=?, sharedDate=?, status=?, notes=? WHERE id=?");
-        $partnerId = $data['partnerId'] ?? '';
-        $leadId = $data['leadId'] ?? '';
-        $name = $data['name'] ?? '';
-        $phone = $data['phone'] ?? '';
-        $location = $data['location'] ?? '';
-        $propertyType = $data['propertyType'] ?? '';
-        $budget = $data['budget'] ?? '';
-        $sharedBy = $data['sharedBy'] ?? '';
-        $sharedDate = $data['sharedDate'] ?? '';
-        $status = $data['status'] ?? 'Shared';
-        $notes = $data['notes'] ?? '';
-
-        $stmt->bind_param("ssssssssssss", $partnerId, $leadId, $name, $phone, $location, $propertyType, $budget, $sharedBy, $sharedDate, $status, $notes, $id);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Updated successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
-        }
-    }
-    elseif ($method === 'DELETE' && $id) {
-        $stmt = $conn->prepare("DELETE FROM shared_leads WHERE id=?");
-        $stmt->bind_param("s", $id);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Deleted successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
-        }
-    }
-}
 
 elseif ($resource === 'send_whatsapp') {
     if ($method === 'POST') {
