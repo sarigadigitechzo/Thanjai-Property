@@ -122,6 +122,22 @@ ${(() => {
         </table>
       </div>
 
+      <!-- Pagination Footer -->
+      <div class="os-pagination-bar" style="display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding: 12px 20px; background: var(--os-white); border: var(--os-border-thin); border-radius: var(--os-radius-lg); font-size: 0.9rem; color: var(--os-gray-600); flex-wrap: wrap; gap: 12px;">
+        <div id="leads-pagination-info" style="font-weight: 500;">Showing 0 of 0 leads</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="leads-prev-btn" class="os-btn-secondary" style="padding: 6px 14px; font-size: 0.85rem; cursor: pointer;"><i class="ri-arrow-left-s-line"></i> Prev</button>
+          <span id="leads-page-indicator" style="font-weight: 600; padding: 0 4px;">Page 1 of 1</span>
+          <button id="leads-next-btn" class="os-btn-secondary" style="padding: 6px 14px; font-size: 0.85rem; cursor: pointer;">Next <i class="ri-arrow-right-s-line"></i></button>
+          <select id="leads-page-size" style="margin-left: 8px; padding: 6px 10px; border: var(--os-border-thin); border-radius: var(--os-radius-sm); background: var(--os-white); font-family: inherit; font-size: 0.85rem; color: var(--os-gray-600); cursor: pointer;">
+            <option value="25" selected>25 / page</option>
+            <option value="50">50 / page</option>
+            <option value="100">100 / page</option>
+            <option value="500">500 / page</option>
+          </select>
+        </div>
+      </div>
+
     </div>
     
     <!-- New Lead / Edit Lead Modal -->
@@ -307,6 +323,8 @@ import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showConfirmModal, showAlertModal } from '../utils/toast.js';
 import { addAuditLog } from '../utils/siteImagesStore.js';
 let cachedLeads = [];
+let currentPage = 1;
+let pageSize = 25;
 
 // Reusable mapping function: converts raw DB row → rich lead object
 function mapLeadFromAPI(l) {
@@ -318,7 +336,7 @@ function mapLeadFromAPI(l) {
 
   return {
     id: l.id,
-    name: l.name,
+    name: l.name || 'Unnamed Lead',
     mobile: mobile,
     phone: mobile,
     whatsapp: l.whatsapp || mobile,
@@ -331,7 +349,7 @@ function mapLeadFromAPI(l) {
     budgetMax: budget,
     budget: budget,
     bedrooms: l.bedrooms || '',
-    notes: l.notes ? (typeof l.notes === 'string' && l.notes.startsWith('[') ? JSON.parse(l.notes) : l.notes) : '',
+    notes: l.notes ? (typeof l.notes === 'string' && l.notes.startsWith('[') ? (tryParseJSON(l.notes) || l.notes) : l.notes) : '',
     type: type,
     propertyType: type,
     requirement: type,
@@ -342,9 +360,13 @@ function mapLeadFromAPI(l) {
     followup: l.followup || '—',
     createdAt: l.createdAt ? new Date(l.createdAt).getTime() : Date.now(),
     timeline: l.timeline
-      ? (typeof l.timeline === 'string' && l.timeline.startsWith('[') ? JSON.parse(l.timeline) : (Array.isArray(l.timeline) ? l.timeline : []))
+      ? (typeof l.timeline === 'string' && l.timeline.startsWith('[') ? (tryParseJSON(l.timeline) || []) : (Array.isArray(l.timeline) ? l.timeline : []))
       : []
   };
+}
+
+function tryParseJSON(str) {
+  try { return JSON.parse(str); } catch (e) { return null; }
 }
 
 // Data Store Initializer
@@ -371,8 +393,11 @@ function getLeads() {
 
 function saveLeads(leads) {
   cachedLeads = leads;
-  // Fallback save just in case
-  localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+  try {
+    localStorage.setItem('thanjai_leads', JSON.stringify(leads.slice(0, 100)));
+  } catch (err) {
+    console.warn('LocalStorage quota notice:', err);
+  }
 }
 
 function formatCurrency(val) {
@@ -427,15 +452,42 @@ function renderTable() {
       // Due Checkbox
       if (fDue) {
         if (!lead.followup || lead.followup === '—') return false;
-        // In a local demo, just showing items with a follow-up date assigned if 'Due' is checked
       }
       
       return true;
     });
   }
 
-  tbody.innerHTML = leads.map(lead => {
-    
+  const totalLeads = leads.length;
+  const totalPages = Math.max(1, Math.ceil(totalLeads / pageSize));
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  const startIdx = (currentPage - 1) * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, totalLeads);
+  const pagedLeads = leads.slice(startIdx, endIdx);
+
+  // Pagination UI Update
+  const infoEl = document.getElementById('leads-pagination-info');
+  const pageIndEl = document.getElementById('leads-page-indicator');
+  const prevBtn = document.getElementById('leads-prev-btn');
+  const nextBtn = document.getElementById('leads-next-btn');
+
+  if (infoEl) {
+    infoEl.innerHTML = totalLeads > 0 
+      ? `Showing <strong>${startIdx + 1}</strong> - <strong>${endIdx}</strong> of <strong>${totalLeads.toLocaleString()}</strong> leads`
+      : 'No leads found';
+  }
+  if (pageIndEl) pageIndEl.textContent = `Page ${currentPage} of ${totalPages.toLocaleString()}`;
+  if (prevBtn) prevBtn.disabled = currentPage <= 1;
+  if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+
+  if (pagedLeads.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--os-gray-400);">No matching leads found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = pagedLeads.map(lead => {
     let reqVal = lead.type || lead.propertyType || lead.requirement || '—';
     if (reqVal === 'undefined' || reqVal === 'null') reqVal = '—';
     let requirementHtml = `<div style="font-weight: 500; color: var(--os-gray-600);">${reqVal !== 'Any' ? reqVal : '—'}</div>`;
@@ -455,7 +507,7 @@ function renderTable() {
     if (statusTxt.includes('CONTACTED')) statusColor = 'badge-cyan';
     else if (statusTxt.includes('FOLLOW UP')) statusColor = 'badge-yellow';
     else if (statusTxt.includes('NEGOTIATION')) statusColor = 'badge-orange';
-    else if (statusTxt.includes('CONVERTED')) statusColor = 'badge-cyan'; // would be green ideally
+    else if (statusTxt.includes('CONVERTED')) statusColor = 'badge-cyan';
     
     let sourceTxt = lead.source ? lead.source.toUpperCase() : 'MANUAL';
 
@@ -520,6 +572,7 @@ function bindLeadEvents() {
         select.classList.remove('open');
         // Trigger table re-render if a filter dropdown changes
         if (select.id && select.id.startsWith('filter-')) {
+          currentPage = 1;
           renderTable();
         }
       });
@@ -531,12 +584,40 @@ function bindLeadEvents() {
     customSelects.forEach(select => select.classList.remove('open'));
   });
 
-  // Attach search and due checkbox event listeners
+  // Attach search, due checkbox and pagination event listeners
   const searchInput = document.getElementById('filter-search');
-  if (searchInput) searchInput.addEventListener('input', renderTable);
+  if (searchInput) searchInput.addEventListener('input', () => { currentPage = 1; renderTable(); });
   
   const dueCheckbox = document.getElementById('filter-due');
-  if (dueCheckbox) dueCheckbox.addEventListener('change', renderTable);
+  if (dueCheckbox) dueCheckbox.addEventListener('change', () => { currentPage = 1; renderTable(); });
+
+  const prevBtn = document.getElementById('leads-prev-btn');
+  const nextBtn = document.getElementById('leads-next-btn');
+  const pageSizeSelect = document.getElementById('leads-page-size');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTable();
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      currentPage++;
+      renderTable();
+    });
+  }
+
+  if (pageSizeSelect) {
+    pageSizeSelect.addEventListener('change', (e) => {
+      pageSize = parseInt(e.target.value) || 25;
+      currentPage = 1;
+      renderTable();
+    });
+  }
 
   // Modal Logic
   const modal = document.getElementById('new-lead-modal');
