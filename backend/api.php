@@ -172,6 +172,14 @@ function renCol($conn, $t, $o, $n, $d) {
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
 
+@$conn->query("CREATE TABLE IF NOT EXISTS `ai_logs` (
+  `id` varchar(255) PRIMARY KEY,
+  `user_id` varchar(255) DEFAULT NULL,
+  `prompt` longtext DEFAULT NULL,
+  `response` longtext DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
 @$conn->query("CREATE TABLE IF NOT EXISTS `settings` (
   `setting_key` varchar(255) PRIMARY KEY,
   `setting_value` longtext DEFAULT NULL,
@@ -1143,6 +1151,26 @@ elseif ($resource === 'site_visits') {
         $stmt->bind_param("s", $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Deleted successfully"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        }
+    }
+}
+
+elseif ($resource === 'ai_logs') {
+    if ($method === 'POST') {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data || empty($data['id'])) {
+            http_response_code(400);
+            echo json_encode(["error" => "Log ID is required"]);
+            exit;
+        }
+        
+        $stmt = $conn->prepare("INSERT INTO ai_logs (id, user_id, prompt, response) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id), prompt=VALUES(prompt), response=VALUES(response)");
+        $stmt->bind_param("ssss", $data['id'], $data['user_id'], $data['prompt'], $data['response']);
+        if ($stmt->execute()) {
+            echo json_encode(["message" => "Saved successfully"]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);

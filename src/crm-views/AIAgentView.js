@@ -52,6 +52,8 @@ export function renderAIAgentView() {
 }
 
 import { marked } from 'https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js';
+import { fetchFromAPI } from '../utils/api.js';
+import { getCurrentUser } from '../utils/userAuthStore.js';
 
 export function initAIAgentView() {
   const sendBtn = document.getElementById('ai-send-button');
@@ -145,6 +147,19 @@ export function initAIAgentView() {
       
       // Append AI response
       appendMessage('system', reply);
+
+      // Save log to database
+      const user = getCurrentUser();
+      const userId = user ? (user.email || user.username || 'admin') : 'system';
+      fetchFromAPI('/ai_logs', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: `AI-${Date.now()}`,
+          user_id: userId,
+          prompt: text,
+          response: reply
+        })
+      }).catch(err => console.warn('Failed to log AI conversation', err));
 
     } catch (error) {
       console.error('Error in AI simulator:', error);
