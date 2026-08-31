@@ -1812,5 +1812,24 @@ body.os-body {
   .wa-main {
     height: 62% !important;
   }
+  }
 }
 
+/* Admin Dashboard Fixes for Mobile Layout */
+@media (max-width: 900px) {
+  .dashboard-mixed-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .source-split-layout {
+    flex-direction: column;
+  }
+
+  .source-left, .source-right {
+    width: 100%;
+  }
+
+  .dashboard-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
