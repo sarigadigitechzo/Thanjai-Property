@@ -1167,13 +1167,18 @@ elseif ($resource === 'ai_logs') {
             exit;
         }
         
-        $stmt = $conn->prepare("INSERT INTO ai_logs (id, user_id, prompt, response) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id), prompt=VALUES(prompt), response=VALUES(response)");
+        $stmt = $conn->prepare("INSERT INTO ai_logs (id, user_id, prompt, response) VALUES (?, ?, ?, ?)");
+        if (!$stmt) {
+            http_response_code(500);
+            echo json_encode(["error" => "Prepare failed: " . $conn->error]);
+            exit;
+        }
         $stmt->bind_param("ssss", $data['id'], $data['user_id'], $data['prompt'], $data['response']);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Saved successfully"]);
         } else {
             http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+            echo json_encode(["error" => "Execute failed: " . $stmt->error]);
         }
     }
 }
