@@ -28,18 +28,18 @@ export function renderContactSection() {
       <!-- ═══════════════════════════════════════════════════════════════ -->
       <!-- SECTION 1 — HERO INQUIRY FORM + OFFICIAL OFFICE & TEAM PANEL   -->
       <!-- ═══════════════════════════════════════════════════════════════ -->
-      <div class="contact-body" id="contact-form-area" style="padding: 0;">
+      <div class="contact-body" id="contact-form-area">
         <div class="container">
-          <div class="contact-body-grid" style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 32px; align-items: start;">
+          <div class="contact-body-grid">
 
             <!-- LEFT: Editorial Property Brief Form -->
-            <div class="contact-form-col" id="contact-form-col" style="background: #ffffff; border-radius: 20px; padding: 36px; border: 1px solid #E7E0D8; box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
+            <div class="contact-form-col" id="contact-form-col">
 
               <div class="contact-form-editorial-header" style="margin-bottom: 24px;">
                 <span class="contact-form-step-label" style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; color: #eb5e28; font-weight: 700; display: block; margin-bottom: 6px;">
                   01 — YOUR PROPERTY BRIEF
                 </span>
-                <h2 class="contact-form-heading" style="font-family: var(--font-serif, 'DM Serif Display', serif); font-size: 1.8rem; color: #1a1a1a; margin-bottom: 8px;">
+                <h2 class="contact-form-heading" style="font-family: var(--font-serif, 'DM Serif Display', serif); font-size: clamp(1.5rem, 3vw, 1.8rem); color: #1a1a1a; margin-bottom: 8px;">
                   Tell us what you're looking for.
                 </h2>
                 <p class="contact-form-subtext" style="font-size: 0.92rem; color: #666;">
@@ -50,37 +50,37 @@ export function renderContactSection() {
               <form class="contact-form" id="contact-form" novalidate style="display: flex; flex-direction: column; gap: 20px;">
 
                 <!-- Row 1: Name & Phone -->
-                <div class="cf-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="cf-row">
                   <div class="cf-field">
                     <label class="cf-label" for="cf-name" style="font-size: 0.82rem; font-weight: 700; color: #333; display: block; margin-bottom: 6px;">Full Name *</label>
                     <div class="cf-input-wrap" style="position: relative;">
                       <i class="ri-user-3-line cf-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #888;"></i>
-                      <input type="text" id="cf-name" name="name" class="cf-input" placeholder="Your full name" required style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem;" />
+                      <input type="text" id="cf-name" name="name" class="cf-input" placeholder="Your full name" required style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem; box-sizing: border-box;" />
                     </div>
                   </div>
                   <div class="cf-field">
                     <label class="cf-label" for="cf-phone" style="font-size: 0.82rem; font-weight: 700; color: #333; display: block; margin-bottom: 6px;">Phone / WhatsApp *</label>
                     <div class="cf-input-wrap" style="position: relative;">
                       <i class="ri-phone-line cf-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #888;"></i>
-                      <input type="tel" id="cf-phone" name="phone" class="cf-input" placeholder="e.g. 9578311506" required maxlength="10" pattern="[0-9]{10}" style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem;" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                      <input type="tel" id="cf-phone" name="phone" class="cf-input" placeholder="e.g. 9578311506" required maxlength="10" pattern="[0-9]{10}" style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem; box-sizing: border-box;" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
                     </div>
                   </div>
                 </div>
 
                 <!-- Row 2: Email & Property Interest -->
-                <div class="cf-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="cf-row">
                   <div class="cf-field">
                     <label class="cf-label" for="cf-email" style="font-size: 0.82rem; font-weight: 700; color: #333; display: block; margin-bottom: 6px;">Email Address</label>
                     <div class="cf-input-wrap" style="position: relative;">
                       <i class="ri-mail-line cf-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #888;"></i>
-                      <input type="email" id="cf-email" name="email" class="cf-input" placeholder="you@example.com" style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem;" />
+                      <input type="email" id="cf-email" name="email" class="cf-input" placeholder="you@example.com" style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem; box-sizing: border-box;" />
                     </div>
                   </div>
                   <div class="cf-field" style="position: relative; z-index: 10;">
                     <label class="cf-label" for="cf-interest" style="font-size: 0.82rem; font-weight: 700; color: #333; display: block; margin-bottom: 6px;">Property Purpose / Type</label>
                     <div class="custom-select-wrapper" id="custom-property-type" style="position: relative;">
                       <input type="hidden" name="interest" id="cf-interest" value="">
-                      <div class="cf-input cf-input-wrap custom-select-trigger" id="custom-select-trigger" style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                      <div class="cf-input cf-input-wrap custom-select-trigger" id="custom-select-trigger" style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box;">
                         <i class="ri-home-4-line cf-icon" style="position: absolute; left: 14px; color: #888;"></i>
                         <span class="custom-select-text" id="custom-select-text" style="color: #666;">Select requirement</span>
                         <i class="ri-arrow-down-s-line cf-select-arrow" style="color: #888;"></i>
@@ -102,7 +102,7 @@ export function renderContactSection() {
                   <label class="cf-label" for="cf-location" style="font-size: 0.82rem; font-weight: 700; color: #333; display: block; margin-bottom: 6px;">Preferred District / Location</label>
                   <div class="cf-input-wrap" style="position: relative;">
                     <i class="ri-map-pin-2-line cf-icon" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #888;"></i>
-                    <input type="text" id="cf-location" name="location" class="cf-input" placeholder="e.g. Thanjavur, Kumbakonam, Trichy, Chennai..." style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem;" />
+                    <input type="text" id="cf-location" name="location" class="cf-input" placeholder="e.g. Thanjavur, Kumbakonam, Trichy, Chennai..." style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem; box-sizing: border-box;" />
                   </div>
                 </div>
 
@@ -123,7 +123,7 @@ export function renderContactSection() {
                   <label class="cf-label" for="cf-message" style="font-size: 0.82rem; font-weight: 700; color: #333; display: block; margin-bottom: 6px;">Your Message / Specific Requirements</label>
                   <div class="cf-input-wrap cf-textarea-wrap" style="position: relative;">
                     <i class="ri-chat-3-line cf-icon" style="position: absolute; left: 14px; top: 14px; color: #888;"></i>
-                    <textarea id="cf-message" name="message" class="cf-input cf-textarea" placeholder="Provide any details regarding preferred land size, road width, legal verification..." rows="4" style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem; font-family: inherit;"></textarea>
+                    <textarea id="cf-message" name="message" class="cf-input cf-textarea" placeholder="Provide any details regarding preferred land size, road width, legal verification..." rows="4" style="width: 100%; padding: 12px 14px 12px 42px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 0.92rem; font-family: inherit; box-sizing: border-box;"></textarea>
                   </div>
                 </div>
 
@@ -147,7 +147,7 @@ export function renderContactSection() {
 
             <!-- RIGHT: Official Office & Executive Team Panel -->
             <div class="contact-panel-col" id="contact-panel-col">
-              <div class="contact-dark-panel" style="background: #2A1808; color: #FFFFFF; border-radius: 20px; padding: 36px; box-shadow: 0 12px 36px rgba(42,24,8,0.25);">
+              <div class="contact-dark-panel">
 
                 <span style="font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-orange, #eb5e28); font-weight: 700; display: block; margin-bottom: 6px;">
                   02 — DIRECT OFFICE & TEAM CONTACTS
@@ -187,52 +187,52 @@ export function renderContactSection() {
 
                   <div style="display: flex; flex-direction: column; gap: 12px;">
                     <!-- S. Vijayaraghavan: Managing Director -->
-                    <div style="background: rgba(235,94,40,0.1); padding: 14px; border-radius: 14px; border: 1px solid rgba(235,94,40,0.3); display: flex; flex-direction: column; gap: 10px;">
-                      <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="background: rgba(235,94,40,0.1); padding: 14px; border-radius: 14px; border: 1px solid rgba(235,94,40,0.3); display: flex; flex-direction: column; gap: 10px; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+                      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                         <div>
                           <strong style="font-size: 1rem; color: #fff; display: block;">S. Vijayaraghavan</strong>
                           <span style="font-size: 0.78rem; color: #eb5e28; font-weight: 700;">Managing Director</span>
                         </div>
-                        <a href="tel:+919578311506" style="background: #eb5e28; color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                        <a href="tel:+919578311506" style="background: #eb5e28; color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                           <i class="ri-phone-line"></i> +91 95783 11506
                         </a>
                       </div>
 
                       <!-- Priority Founder Email Box -->
-                      <div style="background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(235,94,40,0.2);">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                          <i class="ri-mail-star-line" style="color: #eb5e28; font-size: 1.1rem;"></i>
-                          <div>
+                      <div style="background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(235,94,40,0.2); flex-wrap: wrap; gap: 8px; max-width: 100%; box-sizing: border-box;">
+                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 180px;">
+                          <i class="ri-mail-star-line" style="color: #eb5e28; font-size: 1.1rem; flex-shrink: 0;"></i>
+                          <div style="min-width: 0; overflow: hidden;">
                             <span style="font-size: 0.65rem; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: 800; display: block;">DIRECT SUPPORT EMAIL</span>
-                            <a href="https://mail.google.com/mail/?view=cm&fs=1&to=vijayaraghavan@thanjaiproperty.com" target="_blank" style="color: #fff; font-size: 0.85rem; font-weight: 700; text-decoration: none;">
+                            <a href="https://mail.google.com/mail/?view=cm&fs=1&to=vijayaraghavan@thanjaiproperty.com" target="_blank" style="color: #fff; font-size: 0.8rem; font-weight: 700; text-decoration: none; word-break: break-all; overflow-wrap: anywhere; display: block;">
                               vijayaraghavan@thanjaiproperty.com
                             </a>
                           </div>
                         </div>
-                        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=vijayaraghavan@thanjaiproperty.com" target="_blank" style="background: rgba(255,255,255,0.15); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-decoration: none;">
+                        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=vijayaraghavan@thanjaiproperty.com" target="_blank" style="background: rgba(255,255,255,0.15); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-decoration: none; flex-shrink: 0;">
                           Email
                         </a>
                       </div>
                     </div>
 
                     <!-- Radhakrishnan: Co-Partner -->
-                    <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255,255,255,0.08);">
+                    <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; gap: 8px;">
                       <div>
                         <strong style="font-size: 0.95rem; color: #fff; display: block;">Radhakrishnan</strong>
                         <span style="font-size: 0.78rem; color: #38a169; font-weight: 700;">Co-Partner</span>
                       </div>
-                      <a href="tel:+919585777772" style="background: rgba(255,255,255,0.15); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                      <a href="tel:+919585777772" style="background: rgba(255,255,255,0.15); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                         <i class="ri-phone-line"></i> +91 95857 77772
                       </a>
                     </div>
 
                     <!-- Admin Desk -->
-                    <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255,255,255,0.08);">
+                    <div style="background: rgba(255,255,255,0.05); padding: 14px; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; border: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap; gap: 8px;">
                       <div>
                         <strong style="font-size: 0.95rem; color: #fff; display: block;">Admin</strong>
                         <span style="font-size: 0.78rem; color: rgba(255,255,255,0.6); font-weight: 700;">Admin</span>
                       </div>
-                      <a href="tel:+919585598263" style="background: rgba(255,255,255,0.15); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                      <a href="tel:+919585598263" style="background: rgba(255,255,255,0.15); color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                         <i class="ri-phone-line"></i> +91 95855 98263
                       </a>
                     </div>
