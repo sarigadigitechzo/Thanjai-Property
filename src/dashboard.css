@@ -1913,8 +1913,27 @@ body.os-body {
   }
 
   /* Ensure specific modules stack properly */
-  .visits-container, .partners-layout, .reports-chart-row {
+  .visits-layout, .pn-layout, .reports-chart-row {
     flex-direction: column !important;
+  }
+  
+  /* Tables should scroll horizontally */
+  #os-content table {
+    display: block !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+  }
+  
+  /* Settings Tabs */
+  .settings-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+  }
+  
+  /* Template Cards Wrap */
+  .template-action {
+    margin-left: 0 !important;
+    margin-top: 12px !important;
   }
 }
 
