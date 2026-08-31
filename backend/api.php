@@ -118,6 +118,7 @@ function renCol($conn, $t, $o, $n, $d) {
   `details` text DEFAULT NULL,
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
+@$conn->query("ALTER TABLE `audit_logs` MODIFY `id` varchar(255)");
 
 @$conn->query("CREATE TABLE IF NOT EXISTS `blog_posts` (
   `id` varchar(255) PRIMARY KEY,
