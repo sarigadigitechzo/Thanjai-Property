@@ -83,7 +83,7 @@ export function renderBlogView(blogState, onSelectPost, onNavigateToContact) {
               ">
                 <div style="position: relative; aspect-ratio: 16/9; background: #0f172a; overflow: hidden; align-self: center; border-radius: 16px; margin: 24px; width: calc(100% - 48px); box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
                   <img src="${featuredPost.image}" alt="${featuredPost.title}" style="width: 100%; height: 100%; object-fit: cover; object-position: center;" />
-                  <span class="badge badge-orange" style="position: absolute; top: 20px; left: 20px; font-weight: 800; letter-spacing: 0.05em;">
+                  <span class="badge badge-orange featured-cat-badge" style="position: absolute; top: 16px; left: 16px; font-weight: 800; letter-spacing: 0.05em; max-width: calc(100% - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-block; font-size: 0.78rem; padding: 4px 12px; z-index: 2; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                     FEATURED • ${featuredPost.category}
                   </span>
                 </div>

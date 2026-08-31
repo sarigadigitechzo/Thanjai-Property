@@ -53,10 +53,10 @@ export function renderLocationExplorer() {
         </div>
 
         <!-- Main Explorer Split Layout (Exact Same Height) -->
-        <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: stretch;">
+        <div class="location-explorer-layout" style="display: flex; gap: 24px; flex-wrap: wrap; align-items: stretch;">
           
           <!-- LEFT: REAL LEAFLET MAP -->
-          <div style="flex: 1 1 480px; height: 550px; background: #e2e8f0; border-radius: 22px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.06); position: relative; box-sizing: border-box;">
+          <div class="location-map-card" style="flex: 1 1 480px; height: 550px; background: #e2e8f0; border-radius: 22px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.06); position: relative; box-sizing: border-box;">
             <div id="thanjavur-explorer-map" style="width: 100%; height: 100%; z-index: 1;"></div>
             
             <!-- Re-center Control Button -->
@@ -73,7 +73,7 @@ export function renderLocationExplorer() {
           </div>
 
           <!-- RIGHT: SELECTED LOCATION INFORMATION PANEL -->
-          <div style="flex: 1 1 440px; height: 550px; max-height: 550px; background: #ffffff; border-radius: 22px; padding: 22px 24px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.06); display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow-y: auto;" id="selected-location-panel">
+          <div class="location-panel-card" style="flex: 1 1 440px; height: 550px; max-height: 550px; background: #ffffff; border-radius: 22px; padding: 22px 24px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.06); display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow-y: auto;" id="selected-location-panel">
             ${renderLocationPanelContent(activeLoc)}
           </div>
 

@@ -63,32 +63,32 @@ export function renderExploreSection() {
         <div class="editorial-asymmetric-showcase">
           
           <!-- LEFT 65%: PROMOTIONAL LAND & PROPERTY SPOTLIGHT BANNER -->
-          <div class="editorial-hero-slider-wrap" style="height: 100%; min-height: 400px; border-radius: 24px; overflow: hidden; position: relative;">
+          <div class="editorial-hero-slider-wrap explore-seller-banner" style="height: 100%; min-height: 480px; border-radius: 24px; overflow: hidden; position: relative;">
             <img src="${postCtaBg}" alt="Promote Land with Thanjai Property" style="width: 100%; height: 100%; object-fit: cover;" />
             <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(42,24,8,0.85) 100%);"></div>
 
-            <div style="position: absolute; top: 24px; left: 24px;">
+            <div style="position: absolute; top: 24px; left: 24px; z-index: 2;">
               <span class="badge badge-orange" style="font-size: 0.8rem; font-weight: 800;">
                 <i class="ri-rocket-fill"></i> ALL PROPERTY SELLER DESK
               </span>
             </div>
 
             <!-- Floating White/Glass Action Box -->
-            <div style="
+            <div class="explore-seller-card" style="
               position: absolute; bottom: 24px; left: 24px; right: 24px;
               background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px);
               border-radius: 20px; padding: 28px; border: 1px solid rgba(255,255,255,0.4);
-              box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+              box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 3;
             ">
-              <h3 style="font-family: var(--font-serif); font-size: 1.5rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">
+              <h3 style="font-family: var(--font-serif); font-size: 1.45rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; line-height: 1.25;">
                 Do You Have a Property to Sell in Tamil Nadu?
               </h3>
-              <p style="font-size: 0.92rem; color: #555; line-height: 1.5; margin-bottom: 20px;">
+              <p style="font-size: 0.9rem; color: #555; line-height: 1.5; margin-bottom: 18px;">
                 Share your property details in just 60 seconds. Our expert team will verify the documents and present your listing to verified, ready-to-buy seekers.
               </p>
 
-              <button class="btn btn-primary post-land-trigger-btn" style="padding: 14px 28px; font-size: 0.95rem; border-radius: 10px; width: 100%; justify-content: center;">
-                <i class="ri-add-circle-line" style="font-size: 1.25rem;"></i>
+              <button class="btn btn-primary post-land-trigger-btn" style="padding: 12px 18px; font-size: 0.92rem; border-radius: 10px; width: 100%; justify-content: center; text-align: center; white-space: normal; line-height: 1.35; word-break: break-word;">
+                <i class="ri-add-circle-line" style="font-size: 1.2rem; flex-shrink: 0;"></i>
                 <span>Click here to Sell / Promote your Property Now</span>
               </button>
             </div>

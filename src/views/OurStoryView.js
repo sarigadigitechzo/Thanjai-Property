@@ -78,7 +78,7 @@ export function renderOurStoryView(onNavigateToDiscover) {
               ">
                 <img src="${getSiteImage('our_philosophy_img')}" alt="Thanjai Heritage Architecture" style="width: 100%; height: auto; display: block;" />
               </div>
-              <div style="
+              <div class="story-since-badge" style="
                 position: absolute; bottom: -24px; left: -24px; background: #2A1808; color: #F8F4EC;
                 padding: 24px 28px; border-radius: 16px; max-width: 280px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
               ">
