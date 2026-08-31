@@ -1887,34 +1887,39 @@ body.os-body {
   }
 
   /* Global Overrides for Mobile Layout Overflows */
-  .os-content, .os-app-content { 
-    overflow-x: hidden !important; 
+  .os-content { 
     max-width: 100vw !important;
   }
 
   /* Force top-level flex containers to wrap so buttons don't overflow */
-  .os-app-content div[style*="justify-content: space-between"],
-  .os-app-content div[style*="gap: 12px"],
-  .os-app-content div[style*="gap: 14px"],
-  .os-app-content div[style*="gap: 16px"],
-  .os-app-content div[style*="gap: 24px"] {
+  #os-content div[style*="justify-content: space-between"],
+  #os-content div[style*="gap: 12px"],
+  #os-content div[style*="gap: 14px"],
+  #os-content div[style*="gap: 16px"],
+  #os-content div[style*="gap: 24px"] {
     flex-wrap: wrap !important;
   }
 
   /* Prevent button icons from wrapping weirdly */
-  .os-app-content button[style*="display: inline-flex"] {
+  #os-content button[style*="display: inline-flex"] {
     flex-wrap: nowrap !important;
   }
 
   /* Force specific split layouts to stack vertically */
-  .os-app-content div[style*="grid-template-columns: 2fr 1fr"],
-  .os-app-content div[style*="grid-template-columns: 350px 1fr"],
-  .os-app-content div[style*="grid-template-columns: 240px 1fr"] {
+  #os-content div[style*="grid-template-columns: 2fr 1fr"],
+  #os-content div[style*="grid-template-columns: 350px 1fr"],
+  #os-content div[style*="grid-template-columns: 240px 1fr"] {
     grid-template-columns: 1fr !important;
   }
 
   /* Ensure specific modules stack properly */
   .visits-container, .partners-layout, .reports-chart-row {
     flex-direction: column !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #os-content div[style*="display: grid"] {
+    grid-template-columns: 1fr !important;
   }
 }
