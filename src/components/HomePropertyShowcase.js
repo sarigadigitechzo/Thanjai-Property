@@ -69,7 +69,7 @@ export function renderHomePropertyShowcase(properties, onSelectProperty, onNavig
 
                 <div style="display: flex; gap: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.85rem; color: #555; margin-top: auto;">
                   <span><i class="ri-ruler-2-line"></i> ${formatSizeDisplay(prop.size)}</span>
-                  ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : `<span><i class="ri-shield-check-line"></i> ${prop.approval || 'DTCP & RERA Approved'}</span>`}
+                  ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : (prop.approval ? `<span><i class="ri-shield-check-line"></i> ${prop.approval}</span>` : '')}
                 </div>
 
                 <button class="btn btn-outline-dark" style="margin-top: 20px; width: 100%; border-radius: 10px; font-size: 0.9rem;">

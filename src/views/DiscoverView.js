@@ -248,9 +248,11 @@ function renderPropertyDetailView(property, onNavigateToContact) {
           </button>
 
           <div style="display: flex; gap: 10px; align-items: center;">
-            <span style="background: #E6FFFA; color: #234E52; font-weight: 800; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #B2F5EA;">
-              <i class="ri-checkbox-circle-fill" style="color: #38A169;"></i> ${property.approval || 'DTCP & RERA Approved'}
-            </span>
+            ${property.approval ? `
+              <span style="background: #E6FFFA; color: #234E52; font-weight: 800; padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; border: 1px solid #B2F5EA;">
+                <i class="ri-checkbox-circle-fill" style="color: #38A169;"></i> ${property.approval}
+              </span>
+            ` : ''}
           </div>
         </div>
 

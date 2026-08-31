@@ -733,6 +733,12 @@ function renderFullPagePropertyForm(prop) {
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Area (sqft)</label>
                 <input type="text" id="form-prop-size" value="${isEdit ? prop?.size || '' : ''}" placeholder="e.g. 2,400 sqft or 6.5 Acres" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
+
+              <!-- Approval Status (Optional) -->
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Approval Status (Optional)</label>
+                <input type="text" id="form-prop-approval" value="${isEdit ? prop?.approval || '' : ''}" placeholder="e.g. DTCP Approved, RERA Approved (Optional)" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+              </div>
             </div>
 
             <!-- DYNAMIC RESIDENTIAL STRUCTURE FIELDS -->
@@ -1653,6 +1659,7 @@ function initPropertyFormListeners() {
     const ownerName = document.getElementById('form-prop-owner-company')?.value.trim();
     const listedBy = document.getElementById('form-prop-contact-name')?.value.trim();
     const ownerPhone = document.getElementById('form-prop-contact-phone')?.value.trim();
+    const approval = document.getElementById('form-prop-approval')?.value.trim() || '';
     const featuresStr = document.getElementById('form-prop-features')?.value.trim();
     const description = document.getElementById('form-prop-desc')?.value.trim();
     const videoUrl = document.getElementById('form-prop-videolink')?.value.trim() || formVideoFileUrl;
@@ -1702,6 +1709,7 @@ function initPropertyFormListeners() {
       availability: availability || 'Available',
       status: availability || 'Available',
       approvalStatus: 'Approved',
+      approval: approval,
       adType: adType,
       ownerName: ownerName || (adType === 'paid' ? 'Verified Owner' : 'Thanjai Property'),
       listedBy: listedBy || 'Aishwarya Raman',

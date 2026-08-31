@@ -217,7 +217,7 @@ export function addProperty(data) {
     bathrooms: data.bathrooms ? parseInt(data.bathrooms, 10) : null,
     furnishing: data.furnishing || 'Not specified',
     facing: data.facing || 'East Facing',
-    approval: data.approval || 'DTCP & RERA Approved',
+    approval: data.approval || '',
     status: availability,
     availability: availability,
     latitude: data.latitude || '10.786999',
@@ -228,8 +228,8 @@ export function addProperty(data) {
     userId: data.userId || null,
     userEmail: data.userEmail || null,
     images: data.images && data.images.length > 0 ? data.images : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'],
-    description: data.description || 'Luxury property in prime growth corridor.',
-    features: data.features && data.features.length > 0 ? data.features : ['Clear Patta Title', 'Gated Community'],
+    description: data.description || '',
+    features: Array.isArray(data.features) ? data.features : [],
     listedBy: data.listedBy || 'Aishwarya Raman',
     createdAt: new Date().toISOString()
   };
@@ -406,7 +406,22 @@ function normalizePropertyRecord(p) {
     location: loc,
     district: dist || 'Thanjavur',
     images: (() => {
-      const rawImgs = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+      let raw = p.images;
+      if (typeof raw === 'string' && raw.trim()) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) raw = parsed;
+        } catch (e) {
+          if (raw.includes('||||')) {
+            raw = raw.split('||||').map(s => s.trim()).filter(Boolean);
+          } else if (raw.includes(',')) {
+            raw = raw.split(',').map(s => s.trim()).filter(Boolean);
+          } else {
+            raw = [raw.trim()];
+          }
+        }
+      }
+      const rawImgs = Array.isArray(raw) ? raw.filter(Boolean) : [];
       const uniqueImgs = [...new Set(rawImgs)];
       return uniqueImgs.length > 0 ? uniqueImgs : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'];
     })(),
@@ -414,7 +429,24 @@ function normalizePropertyRecord(p) {
     ownerName: p.ownerName || p.owner_name || (String(p.adType || '').toLowerCase().trim() === 'paid' ? 'Verified Owner' : 'Thanjai Property'),
     ownerPhone: p.ownerPhone || p.owner_phone || (String(p.adType || '').toLowerCase().trim() === 'paid' ? '8489996852' : '8489996852'),
     description: p.description || 'Luxury property in prime growth corridor.',
-    features: Array.isArray(p.features) ? p.features : ['Clear Patta Title', 'Gated Community']
+    approval: p.approval || '',
+    features: (() => {
+      let raw = p.features;
+      if (typeof raw === 'string' && raw.trim()) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) raw = parsed;
+        } catch (e) {
+          if (raw.includes(',')) {
+            raw = raw.split(',').map(s => s.trim()).filter(Boolean);
+          } else {
+            raw = [raw.trim()];
+          }
+        }
+      }
+      if (Array.isArray(raw)) return raw.filter(Boolean);
+      return [];
+    })()
   };
 }
 
