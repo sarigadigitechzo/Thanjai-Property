@@ -64,8 +64,27 @@ export async function initPropertiesStore() {
         const resolvedOwnerName = (remoteP.ownerName || remoteP.owner_name || (resolvedAdType === 'paid' ? 'Verified Owner' : 'Thanjai Property'));
         const resolvedOwnerPhone = (remoteP.ownerPhone || remoteP.owner_phone || (resolvedAdType === 'paid' ? '8489996852' : '8489996852'));
         
+        // Preserve local approval, features, and images if remote API data has empty/null values
+        const localMatch = propertiesCache.find(lp => lp && lp.id === remoteP.id);
+        const resolvedApproval = (remoteP.approval && String(remoteP.approval).trim()) 
+          ? String(remoteP.approval).trim() 
+          : (localMatch && localMatch.approval ? localMatch.approval : '');
+
+        let resolvedFeatures = remoteP.features;
+        if ((!resolvedFeatures || (Array.isArray(resolvedFeatures) && resolvedFeatures.length === 0)) && localMatch && Array.isArray(localMatch.features) && localMatch.features.length > 0) {
+          resolvedFeatures = localMatch.features;
+        }
+
+        let resolvedImages = remoteP.images;
+        if ((!resolvedImages || (Array.isArray(resolvedImages) && resolvedImages.length === 0)) && localMatch && Array.isArray(localMatch.images) && localMatch.images.length > 0) {
+          resolvedImages = localMatch.images;
+        }
+
         return normalizePropertyRecord({
           ...remoteP,
+          approval: resolvedApproval,
+          features: resolvedFeatures,
+          images: resolvedImages,
           adType: resolvedAdType,
           ownerName: resolvedOwnerName,
           ownerPhone: resolvedOwnerPhone
