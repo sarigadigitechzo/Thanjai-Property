@@ -364,10 +364,43 @@ input[type="date"].reports-date-box:focus {
 @media (max-width: 768px) {
   .reports-header-bar {
     flex-direction: column;
+    align-items: flex-start;
     gap: 16px;
   }
+  .reports-header-bar > div[style*="display:flex"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    width: 100%;
+  }
   .reports-date-pickers {
+    flex-direction: column;
     align-items: flex-start;
     width: 100%;
+    gap: 10px;
+  }
+  .reports-date-input {
+    width: 100%;
+  }
+  .reports-date-box {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Make charts horizontally scrollable on mobile */
+  .report-chart-area {
+    overflow-x: auto;
+    padding-bottom: 16px;
+  }
+  .os-bars {
+    min-width: 600px;
+  }
+
+  /* Make bottom stats single column */
+  .buyer-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .report-table-wrapper {
+    overflow-x: auto;
   }
 }
