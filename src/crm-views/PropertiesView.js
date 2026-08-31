@@ -999,19 +999,31 @@ function filterPropertiesList(list) {
   if (!Array.isArray(list)) return [];
   return list.filter(prop => {
     if (!prop) return false;
-    // Exclude unapproved pending submissions from Properties Inventory
-    if (prop.approvalStatus === 'Pending Approval' || prop.status === 'Pending Approval') {
+
+    const q = activeSearch ? activeSearch.toLowerCase().trim() : '';
+    const cleanQ = q.replace(/[^a-z0-9]/gi, '');
+    const propId = String(prop.id || '').toLowerCase();
+    const cleanId = propId.replace(/[^a-z0-9]/gi, '');
+    const isDirectIdSearch = q.length > 0 && (propId.includes(q) || (cleanQ.length > 0 && cleanId.includes(cleanQ)));
+
+    // Exclude unapproved pending submissions unless explicitly searching by ID
+    if (!isDirectIdSearch && (prop.approvalStatus === 'Pending Approval' || prop.status === 'Pending Approval')) {
       return false;
     }
+
     // 1. Keyword search
     if (activeSearch) {
-      const q = activeSearch.toLowerCase().trim();
       const matchTitle = (prop.title || '').toLowerCase().includes(q);
       const matchLoc = (prop.location || '').toLowerCase().includes(q);
       const matchDist = (prop.district || '').toLowerCase().includes(q);
-      const matchId = (prop.id || '').toLowerCase().includes(q);
+      const matchAddress = (prop.address || '').toLowerCase().includes(q);
       const matchType = (prop.type || '').toLowerCase().includes(q);
-      if (!matchTitle && !matchLoc && !matchDist && !matchId && !matchType) return false;
+      const matchOwner = (prop.ownerName || '').toLowerCase().includes(q) || (prop.ownerPhone || '').includes(q);
+      const matchStatus = (prop.status || prop.availability || '').toLowerCase().includes(q);
+
+      if (!isDirectIdSearch && !matchTitle && !matchLoc && !matchDist && !matchAddress && !matchType && !matchOwner && !matchStatus) {
+        return false;
+      }
     }
 
     // 2. Type Filter
@@ -1944,7 +1956,7 @@ function downloadSamplePropertiesCSV() {
   showToast('Downloaded sample CSV template successfully!', 'ri-file-download-line');
 }
 
-function refreshPropertiesView() {
+export function refreshPropertiesView() {
   // Remove any stale overlay attached directly to document.body
   document.getElementById('admin-prop-modal-overlay')?.remove();
 

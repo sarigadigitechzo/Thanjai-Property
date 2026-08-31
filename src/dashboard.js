@@ -1,6 +1,6 @@
 import { renderDashboardView, initDashboardListeners } from './crm-views/DashboardView.js';
 import { renderLeadsView, initLeadsView } from './crm-views/LeadsView.js';
-import { renderPropertiesView, initPropertiesListeners, resetPropertiesViewMode } from './crm-views/PropertiesView.js';
+import { renderPropertiesView, initPropertiesListeners, resetPropertiesViewMode, setPropertiesSearchFilter, refreshPropertiesView } from './crm-views/PropertiesView.js';
 import { renderSiteVisitsView, initSiteVisitsView } from './crm-views/SiteVisitsView.js';
 import { renderPipelineBoardView, initPipelineBoardView } from './crm-views/PipelineBoardView.js?v=2';
 import { renderPartnersView, initPartnersView } from './crm-views/PartnersView.js';
@@ -430,6 +430,41 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.addEventListener('hashchange', handleHashChange);
 
   // Header Interactions
+  const universalSearchInputs = document.querySelectorAll('.universal-search');
+  universalSearchInputs.forEach(input => {
+    input.addEventListener('input', (e) => {
+      const q = e.target.value;
+      
+      // Update properties search filter
+      setPropertiesSearchFilter(q);
+
+      // Sync into page search inputs if present on DOM
+      const propSearchEl = document.getElementById('props-search-input');
+      if (propSearchEl && propSearchEl !== input) {
+        propSearchEl.value = q;
+      }
+
+      const leadSearchEl = document.getElementById('filter-search');
+      if (leadSearchEl && leadSearchEl !== input) {
+        leadSearchEl.value = q;
+        leadSearchEl.dispatchEvent(new Event('input'));
+      }
+
+      // Check current active view
+      const activeNav = document.querySelector('.nav-item.active');
+      const currentView = activeNav ? activeNav.dataset.view : '';
+
+      if (currentView === 'properties') {
+        refreshPropertiesView();
+      } else if (currentView !== 'leads') {
+        // If user starts typing a Property ID or query from another view, switch to Properties Inventory
+        loadView('properties');
+        setActiveNav('properties');
+        keepUrlClean();
+      }
+    });
+  });
+
   const aiBtn = document.getElementById('header-ai-btn');
   const notifBtn = document.getElementById('header-notif-btn');
   const notifMenu = document.getElementById('notif-dropdown');
