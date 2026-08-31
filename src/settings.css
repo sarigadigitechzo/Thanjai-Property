@@ -420,3 +420,34 @@
 .settings-btn-save-small:hover {
   filter: brightness(0.9);
 }
+
+@media (max-width: 768px) {
+  .template-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .template-info {
+    padding-right: 0 !important;
+    width: 100% !important;
+  }
+  .template-action {
+    margin-left: 0 !important;
+    margin-top: 12px !important;
+    width: 100% !important;
+  }
+  .template-action .settings-btn-view {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .settings-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+  .currency-section {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .currency-section .settings-btn-primary {
+    width: 100% !important;
+    margin-top: 10px !important;
+  }
+}
