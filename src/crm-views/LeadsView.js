@@ -15,7 +15,6 @@ export function renderLeadsView() {
           <button class="os-btn-secondary" id="btn-import-csv"><i class="ri-upload-cloud-2-line"></i> Import CSV</button>
           <button class="os-btn-secondary" id="btn-sample-csv" style="border: none; background: transparent;"><i class="ri-download-line"></i> Sample CSV</button>
           <button class="os-btn-secondary" id="btn-export-csv"><i class="ri-download-cloud-2-line"></i> Export CSV</button>
-          <button class="os-btn-secondary" id="btn-import-legacy-leads" style="border-color: #7c3aed; color: #7c3aed;" title="One-time import of legacy portal users as leads"><i class="ri-database-2-line"></i> Import DB Leads</button>
           <button class="os-btn-primary" id="open-new-lead-btn" style="background: var(--os-luxury-orange); border-color: var(--os-luxury-orange);"><i class="ri-add-line"></i> New lead</button>
         </div>
       </div>
@@ -701,64 +700,6 @@ function bindLeadEvents() {
   if (importBtn) {
     importBtn.addEventListener('click', () => {
       fileInput.click();
-    });
-  }
-
-  // Legacy DB Import Button
-  const legacyImportBtn = document.getElementById('btn-import-legacy-leads');
-  if (legacyImportBtn) {
-    legacyImportBtn.addEventListener('click', async () => {
-      const already = localStorage.getItem('thanjai_legacy_leads_imported');
-      if (already) {
-        showAlertModal({ title: 'Already Imported', message: `Legacy leads were already imported (${already}). They are visible in the CRM Pipeline.`, type: 'info' });
-        return;
-      }
-      
-      legacyImportBtn.disabled = true;
-      legacyImportBtn.innerHTML = '<i class="ri-loader-4-line"></i> Importing...';
-      
-      try {
-        const response = await fetch('/imported_leads.json');
-        if (!response.ok) throw new Error('Failed to fetch legacy leads file.');
-        const legacyLeads = await response.json();
-        
-        // Get existing leads and build ID set for dedup
-        const existingLeads = JSON.parse(localStorage.getItem('thanjai_leads') || '[]');
-        const existingIds = new Set(existingLeads.map(l => l.id));
-        
-        // Filter out duplicates
-        const newLeads = legacyLeads.filter(l => l.id && !existingIds.has(l.id));
-        
-        // Merge and save in batches to avoid memory issues
-        const BATCH_SIZE = 500;
-        let merged = [...existingLeads];
-        for (let i = 0; i < newLeads.length; i += BATCH_SIZE) {
-          merged = [...merged, ...newLeads.slice(i, i + BATCH_SIZE)];
-        }
-        
-        localStorage.setItem('thanjai_leads', JSON.stringify(merged));
-        const importDate = new Date().toLocaleString('en-IN');
-        localStorage.setItem('thanjai_legacy_leads_imported', importDate);
-        
-        // Reload the table
-        cachedLeads = merged;
-        renderTable();
-        
-        showAlertModal({
-          title: 'Import Successful!',
-          message: `Successfully imported ${newLeads.length} legacy leads from the portal database. ${existingLeads.length} existing leads were preserved.`,
-          type: 'success'
-        });
-        
-        legacyImportBtn.innerHTML = '<i class="ri-check-line"></i> Imported';
-        legacyImportBtn.style.color = '#16a34a';
-        legacyImportBtn.style.borderColor = '#16a34a';
-      } catch (err) {
-        console.error('Legacy import error:', err);
-        showAlertModal({ title: 'Import Failed', message: err.message, type: 'error' });
-        legacyImportBtn.disabled = false;
-        legacyImportBtn.innerHTML = '<i class="ri-database-2-line"></i> Import DB Leads';
-      }
     });
   }
 
