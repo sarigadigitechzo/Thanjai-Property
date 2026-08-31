@@ -240,6 +240,7 @@ addCol($conn, 'website_images', 'asset_url', 'longtext DEFAULT NULL');
 addCol($conn, 'website_images', 'default_url', 'longtext DEFAULT NULL');
 addCol($conn, 'website_images', 'title', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'website_images', 'category', 'varchar(100) DEFAULT NULL');
+@$conn->query("ALTER TABLE website_images MODIFY COLUMN image_url LONGTEXT");
 
 addCol($conn, 'whatsapp_logs', 'sender', 'varchar(255) DEFAULT "Super Admin"');
 addCol($conn, 'whatsapp_logs', 'recipientName', 'varchar(255) DEFAULT NULL');
