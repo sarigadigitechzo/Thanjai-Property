@@ -4974,17 +4974,30 @@ a.contact-panel-row-value:hover {
     line-height: 1.35 !important;
   }
 
-  /* Location Explorer Scroll Removal (Issue 2) */
+  /* Location Explorer Scroll Removal & Mobile Map Visibility (Issue 2) */
   .location-explorer-layout {
     flex-direction: column !important;
     gap: 16px !important;
+    width: 100% !important;
   }
 
   .location-map-card {
-    height: 300px !important;
-    min-height: 300px !important;
+    height: 360px !important;
+    min-height: 360px !important;
+    width: 100% !important;
     flex: 1 1 100% !important;
     border-radius: 16px !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  #thanjavur-explorer-map {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 360px !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 1 !important;
   }
 
   .location-panel-card,

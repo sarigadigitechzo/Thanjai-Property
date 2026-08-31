@@ -308,10 +308,31 @@ function initLeafletMap(onLocationSelect) {
 
   // Initial focus: fit only the primary 9 Thanjavur city locations with generous padding to prevent text clipping
   recenterToThanjavurCity();
+
+  // Invalidate size on load and resize to guarantee tiles render on all mobile and desktop screens
+  setTimeout(() => {
+    if (leafletExplorerMap) {
+      leafletExplorerMap.invalidateSize();
+      recenterToThanjavurCity();
+    }
+  }, 250);
+
+  setTimeout(() => {
+    if (leafletExplorerMap) {
+      leafletExplorerMap.invalidateSize();
+    }
+  }, 750);
+
+  window.addEventListener('resize', () => {
+    if (leafletExplorerMap) {
+      leafletExplorerMap.invalidateSize();
+    }
+  });
 }
 
 function recenterToThanjavurCity() {
   if (!leafletExplorerMap) return;
+  leafletExplorerMap.invalidateSize();
   const primaryMarkers = leafletExplorerMarkers
     .filter(m => !m.loc.isOuterLocation)
     .map(m => m.marker);
