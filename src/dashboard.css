@@ -1885,4 +1885,36 @@ body.os-body {
     border-right: none !important;
     border-bottom: 1px solid rgba(42, 24, 8, 0.1) !important;
   }
+
+  /* Global Overrides for Mobile Layout Overflows */
+  .os-content, .os-app-content { 
+    overflow-x: hidden !important; 
+    max-width: 100vw !important;
+  }
+
+  /* Force top-level flex containers to wrap so buttons don't overflow */
+  .os-app-content div[style*="justify-content: space-between"],
+  .os-app-content div[style*="gap: 12px"],
+  .os-app-content div[style*="gap: 14px"],
+  .os-app-content div[style*="gap: 16px"],
+  .os-app-content div[style*="gap: 24px"] {
+    flex-wrap: wrap !important;
+  }
+
+  /* Prevent button icons from wrapping weirdly */
+  .os-app-content button[style*="display: inline-flex"] {
+    flex-wrap: nowrap !important;
+  }
+
+  /* Force specific split layouts to stack vertically */
+  .os-app-content div[style*="grid-template-columns: 2fr 1fr"],
+  .os-app-content div[style*="grid-template-columns: 350px 1fr"],
+  .os-app-content div[style*="grid-template-columns: 240px 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure specific modules stack properly */
+  .visits-container, .partners-layout, .reports-chart-row {
+    flex-direction: column !important;
+  }
 }
