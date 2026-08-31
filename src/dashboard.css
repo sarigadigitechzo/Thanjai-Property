@@ -1912,9 +1912,36 @@ body.os-body {
     grid-template-columns: 1fr !important;
   }
 
-  /* Ensure specific modules stack properly */
-  .visits-container, .partners-layout, .reports-chart-row {
+  /* Ensure specific modules stack properly instead of using grid */
+  .visits-layout, .pn-layout, .reports-chart-row {
+    display: flex !important;
     flex-direction: column !important;
+  }
+  
+  /* Make Calendar responsive */
+  .cal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Tables should scroll horizontally */
+  #os-content table {
+    display: block !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+  }
+  
+  /* Settings Tabs */
+  .settings-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+  }
+  
+  /* Template Cards Wrap */
+  .template-action {
+    margin-left: 0 !important;
+    margin-top: 12px !important;
   }
 }
 
