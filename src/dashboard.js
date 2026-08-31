@@ -65,8 +65,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('os-app').style.display = 'none';
     const loginStyle = document.createElement('style');
     loginStyle.textContent = `
-      body { margin: 0; padding: 0; font-family: 'Manrope', 'Inter', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #f8fafc; }
+      body { margin: 0; padding: 16px; font-family: 'Manrope', 'Inter', sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #f8fafc; box-sizing: border-box; }
       .admin-card { width: 100%; max-width: 480px; background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 24px; padding: 44px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); backdrop-filter: blur(12px); box-sizing: border-box; }
+      @media (max-width: 480px) {
+        .admin-card { padding: 24px 20px; border-radius: 20px; }
+        .admin-title { font-size: 1.8rem !important; }
+      }
       .admin-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(235, 94, 40, 0.15); color: #eb5e28; font-size: 0.78rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(235, 94, 40, 0.3); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.08em; }
       .admin-title { font-family: 'DM Serif Display', serif; font-size: 2.2rem; margin: 0 0 8px 0; color: #ffffff; }
       .admin-subtitle { color: #94a3b8; font-size: 0.95rem; margin: 0 0 32px 0; line-height: 1.5; }
@@ -97,10 +101,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const loginContainer = document.createElement('div');
     loginContainer.id = 'admin-login-overlay';
+    loginContainer.className = 'admin-card';
     loginContainer.innerHTML = `
-      <div class="admin-brand-header">
-        <div class="admin-logo-badge">
-          <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" style="height: 52px; width: auto; object-fit: contain; margin-bottom: 12px;" />
+      <div class="admin-brand-header" style="text-align: center;">
+        <div class="admin-logo-badge" style="display: flex; flex-direction: column; align-items: center;">
+          <div style="background: #ffffff; padding: 10px 20px; border-radius: 12px; margin-bottom: 16px; display: inline-block;">
+            <img src="/thanjai-official-new.png" alt="Thanjai Property Logo" style="height: 52px; width: auto; object-fit: contain; display: block;" />
+          </div>
           <span class="admin-badge"><i class="ri-shield-keyhole-line"></i> Administrative Operating System</span>
         </div>
         <h1 class="admin-title">Admin Staff Login</h1>
