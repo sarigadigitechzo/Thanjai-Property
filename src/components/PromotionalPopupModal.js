@@ -254,11 +254,17 @@ function handleCTAClick(p) {
     const svModal = document.getElementById('schedule-visit-modal');
     if (svModal) {
       svModal.classList.add('show');
+      svModal.style.display = 'flex';
     } else {
       window.location.hash = '#contact';
     }
-  } else if (p.ctaType === 'link' && p.ctaValue) {
-    window.open(p.ctaValue, '_blank');
+  } else if (p.ctaType === 'link') {
+    const url = p.ctaValue || '#discover';
+    if (url.startsWith('#') || url.startsWith('/')) {
+      window.location.href = url;
+    } else {
+      window.open(url, '_blank');
+    }
   }
 }
 

@@ -1,11 +1,33 @@
 import { getPopups, addPopup, updatePopup, deletePopup, initPopupsStore } from '../utils/popupsStore.js';
 import { showToast, showAlertModal, showConfirmModal } from '../utils/toast.js';
 
+function getPopupScheduleState(p) {
+  if (p.status !== 'Active') {
+    return { label: '⚪ PAUSED', text: 'Paused / Inactive', color: '#64748b', bg: '#f1f5f9', state: 'paused' };
+  }
+  const now = new Date();
+  if (p.startDate) {
+    const start = new Date(p.startDate);
+    start.setHours(0, 0, 0, 0);
+    if (now < start) {
+      return { label: `🟡 SCHEDULED`, text: `Starts ${p.startDate}`, color: '#d97706', bg: '#fef3c7', state: 'scheduled' };
+    }
+  }
+  if (p.endDate) {
+    const end = new Date(p.endDate);
+    end.setHours(23, 59, 59, 999);
+    if (now > end) {
+      return { label: `🔴 EXPIRED`, text: `Ended ${p.endDate}`, color: '#dc2626', bg: '#fee2e2', state: 'expired' };
+    }
+  }
+  return { label: '🟢 LIVE NOW', text: 'Active & Displaying', color: '#16a34a', bg: '#dcfce7', state: 'live' };
+}
+
 export function renderPopupsView() {
   const popups = getPopups();
-  const activeCount = popups.filter(p => p.status === 'Active').length;
-  const festivalCount = popups.filter(p => p.type === 'festival').length;
-  const adCount = popups.filter(p => p.type === 'ad_offer' || p.type === 'project_launch').length;
+  const liveCount = popups.filter(p => getPopupScheduleState(p).state === 'live').length;
+  const scheduledCount = popups.filter(p => getPopupScheduleState(p).state === 'scheduled').length;
+  const pausedCount = popups.filter(p => getPopupScheduleState(p).state === 'paused' || getPopupScheduleState(p).state === 'expired').length;
 
   return `
     <div class="view-enter">
@@ -37,35 +59,35 @@ export function renderPopupsView() {
 
         <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Active on Website</span>
+            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Live On Website</span>
             <div style="width: 36px; height: 36px; border-radius: 8px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
               <i class="ri-checkbox-circle-line"></i>
             </div>
           </div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #10b981; margin-top: 10px;" id="kpi-active-popups">${activeCount}</div>
-          <span style="font-size: 0.78rem; color: #64748b;">Currently live to visitors</span>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #10b981; margin-top: 10px;" id="kpi-active-popups">${liveCount}</div>
+          <span style="font-size: 0.78rem; color: #64748b;">Currently active to visitors</span>
         </div>
 
         <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Festival & Seasonal</span>
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #fdf4ff; color: #c026d3; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-              <i class="ri-sparkling-line"></i>
+            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Scheduled Deals</span>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+              <i class="ri-calendar-event-line"></i>
             </div>
           </div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-top: 10px;">${festivalCount}</div>
-          <span style="font-size: 0.78rem; color: #64748b;">Pongal, Diwali & Special Days</span>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #d97706; margin-top: 10px;">${scheduledCount}</div>
+          <span style="font-size: 0.78rem; color: #64748b;">Starts on scheduled dates</span>
         </div>
 
         <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
           <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Ad & Property Deals</span>
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-              <i class="ri-fire-line"></i>
+            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Paused / Ended</span>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+              <i class="ri-pause-circle-line"></i>
             </div>
           </div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-top: 10px;">${adCount}</div>
-          <span style="font-size: 0.78rem; color: #64748b;">Project launches & flash deals</span>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-top: 10px;">${pausedCount}</div>
+          <span style="font-size: 0.78rem; color: #64748b;">Drafts or past campaigns</span>
         </div>
       </div>
 
@@ -73,9 +95,9 @@ export function renderPopupsView() {
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
         <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="popup-filter-tabs">
           <button class="os-tab-btn active" data-filter="all" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #eb5e28; color: #fff; border: none;">All Popups (${popups.length})</button>
-          <button class="os-tab-btn" data-filter="active" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Active Only (${activeCount})</button>
-          <button class="os-tab-btn" data-filter="festival" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Festival & Seasonal</button>
-          <button class="os-tab-btn" data-filter="ad_offer" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Ad Offers</button>
+          <button class="os-tab-btn" data-filter="live" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Live Now (${liveCount})</button>
+          <button class="os-tab-btn" data-filter="scheduled" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Scheduled (${scheduledCount})</button>
+          <button class="os-tab-btn" data-filter="paused" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Paused / Expired</button>
         </div>
 
         <div style="display: flex; align-items: center; gap: 8px; background: #fff; padding: 6px 14px; border-radius: 8px; border: 1px solid #cbd5e1;">
@@ -91,54 +113,58 @@ export function renderPopupsView() {
     </div>
 
     <!-- Create / Edit Popup Modal -->
-    <div class="os-modal-overlay" id="popup-editor-modal" style="display: none; align-items: center; justify-content: center; z-index: 9999; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px);">
-      <div class="os-modal-card" style="max-width: 900px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+    <div class="os-modal-overlay" id="popup-editor-modal" style="display: none; align-items: center; justify-content: center; z-index: 99999; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(5px);">
+      <div class="os-modal-card" style="max-width: 980px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 18px; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); border: 1px solid #e2e8f0;">
         
-        <div class="os-modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid #e2e8f0;">
+        <div class="os-modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 28px; border-bottom: 1px solid #e2e8f0; background: #ffffff;">
           <div>
-            <h2 id="popup-modal-heading" style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0;">Create Promotional Popup</h2>
-            <p style="font-size: 0.8rem; color: #64748b; margin: 2px 0 0 0;">Customize the banner visuals, highlights, scheduling, and WhatsApp CTA button.</p>
+            <h2 id="popup-modal-heading" style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0;">Create Promotional Popup</h2>
+            <p style="font-size: 0.84rem; color: #64748b; margin: 3px 0 0 0;">Customize banner visual poster, custom category, action buttons, and active dates.</p>
           </div>
-          <button class="os-modal-close" id="close-popup-modal-btn" style="background: none; border: none; font-size: 1.4rem; color: #64748b; cursor: pointer;"><i class="ri-close-line"></i></button>
+          <button class="os-modal-close" id="close-popup-modal-btn" style="background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; color: #64748b; cursor: pointer;"><i class="ri-close-line"></i></button>
         </div>
 
-        <div class="os-modal-body" style="padding: 24px; overflow-y: auto; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px;">
-          <!-- Left Column: Form Inputs -->
-          <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="os-modal-body" style="padding: 24px 28px; overflow-y: auto; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 28px; background: #fafafa;">
+          <!-- Left Column: Clean Professional Form Fields -->
+          <div style="background: #ffffff; padding: 22px; border-radius: 14px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
             <input type="hidden" id="edit-popup-id" value="" />
 
             <div class="form-group">
-              <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Popup Title *</label>
-              <input type="text" id="popup-input-title" class="os-input" placeholder="e.g. 🌾 Grand Pongal Property Mela 2026" style="width: 100%;" required />
+              <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Popup Title *</label>
+              <input type="text" id="popup-input-title" class="os-input" placeholder="e.g. 🌾 Grand Pongal Property Mela 2026" style="width: 100%; border-radius: 8px; font-size: 0.9rem;" required />
             </div>
 
             <div class="form-group">
-              <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Subtitle / Description</label>
-              <textarea id="popup-input-subtitle" class="os-input" rows="2" placeholder="Brief 1-2 line description of this offer or announcement..." style="width: 100%; resize: vertical;"></textarea>
+              <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Subtitle / Description</label>
+              <textarea id="popup-input-subtitle" class="os-input" rows="2" placeholder="Brief 1-2 line description of this offer or announcement..." style="width: 100%; border-radius: 8px; font-size: 0.88rem; resize: vertical;"></textarea>
             </div>
 
+            <!-- Custom Category Type Input & Badge Text -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div class="form-group">
-                <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Category / Type</label>
-                <select id="popup-input-type" class="os-input" style="width: 100%; cursor: pointer;">
-                  <option value="festival">🌾 Festival & Seasonal</option>
-                  <option value="ad_offer">⚡ Property Ad / Flash Deal</option>
-                  <option value="project_launch">🏗️ New Project Launch</option>
-                  <option value="announcement">📢 General Announcement</option>
-                </select>
+                <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Category / Campaign Type</label>
+                <input type="text" id="popup-input-type" class="os-input" placeholder="Type category (e.g. Festival, Deal, Launch)" list="popup-category-datalist" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
+                <datalist id="popup-category-datalist">
+                  <option value="Festival & Seasonal">
+                  <option value="Special Ad Offer">
+                  <option value="New Project Launch">
+                  <option value="Flash Discount">
+                  <option value="Farmland / Agri Deal">
+                  <option value="General Announcement">
+                </datalist>
               </div>
 
               <div class="form-group">
-                <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Badge Tag Text</label>
-                <input type="text" id="popup-input-badge" class="os-input" placeholder="e.g. 🎉 FESTIVE OFFER" value="🎉 FESTIVE OFFER" style="width: 100%;" />
+                <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Badge Tag Text</label>
+                <input type="text" id="popup-input-badge" class="os-input" placeholder="e.g. 🎉 FESTIVE OFFER" value="🎉 FESTIVE OFFER" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
               </div>
             </div>
 
             <div class="form-group">
-              <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Banner Poster Image URL</label>
+              <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Banner Poster Image</label>
               <div style="display: flex; gap: 8px;">
-                <input type="text" id="popup-input-image" class="os-input" placeholder="https://..." style="flex: 1;" />
-                <label style="padding: 9px 14px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <input type="text" id="popup-input-image" class="os-input" placeholder="Paste image URL or upload below..." style="flex: 1; border-radius: 8px; font-size: 0.88rem;" />
+                <label style="padding: 9px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; color: #334155;">
                   <i class="ri-upload-2-line"></i> Upload
                   <input type="file" id="popup-image-file-input" accept="image/*" style="display: none;" />
                 </label>
@@ -146,43 +172,52 @@ export function renderPopupsView() {
             </div>
 
             <div class="form-group">
-              <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Key Highlights (1 point per line)</label>
-              <textarea id="popup-input-highlights" class="os-input" rows="3" placeholder="Spot Patta Transfer & 0% Brokerage&#10;Ready for immediate villa construction&#10;Special ₹50,000 spot booking cashback" style="width: 100%; font-family: monospace; font-size: 0.85rem;"></textarea>
+              <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Key Highlights (1 point per line)</label>
+              <textarea id="popup-input-highlights" class="os-input" rows="3" placeholder="Spot Patta Transfer & 0% Brokerage&#10;Ready for immediate villa construction&#10;Special ₹50,000 spot booking cashback" style="width: 100%; border-radius: 8px; font-size: 0.85rem;"></textarea>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px;">
+            <!-- CTA Action Row & Dynamic Target Input -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div class="form-group">
-                <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">CTA Button Text</label>
-                <input type="text" id="popup-input-cta-text" class="os-input" value="Claim Festive Offer on WhatsApp" style="width: 100%;" />
+                <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">CTA Button Text</label>
+                <input type="text" id="popup-input-cta-text" class="os-input" value="Claim Festive Offer on WhatsApp" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
               </div>
 
               <div class="form-group">
-                <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">CTA Action</label>
-                <select id="popup-input-cta-type" class="os-input" style="width: 100%;">
+                <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">CTA Button Action</label>
+                <select id="popup-input-cta-type" class="os-input" style="width: 100%; border-radius: 8px; font-size: 0.88rem; cursor: pointer;">
                   <option value="whatsapp">💬 Open WhatsApp</option>
+                  <option value="call">📞 Phone Direct Call</option>
                   <option value="site_visit">📅 Book Site Visit</option>
-                  <option value="call">📞 Phone Call</option>
-                  <option value="link">🔗 Open Custom Link</option>
+                  <option value="link">🔗 Open Custom Link / URL</option>
                 </select>
               </div>
             </div>
 
+            <!-- Dynamic CTA Value / Target Input Box -->
+            <div class="form-group" id="cta-target-container">
+              <label id="cta-target-label" style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">WhatsApp Phone Number</label>
+              <input type="text" id="popup-input-cta-value" class="os-input" placeholder="+91 84899 96852" value="+91 84899 96852" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
+              <small id="cta-target-hint" style="font-size: 0.76rem; color: #64748b; margin-top: 4px; display: block;">Default: +91 84899 96852 (Thanjai Property Official Support)</small>
+            </div>
+
+            <!-- Schedule Dates -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div class="form-group">
-                <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Start Date (Optional)</label>
-                <input type="date" id="popup-input-start-date" class="os-input" style="width: 100%;" />
+                <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Start Date (Optional)</label>
+                <input type="date" id="popup-input-start-date" class="os-input" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
               </div>
 
               <div class="form-group">
-                <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">End Date (Optional)</label>
-                <input type="date" id="popup-input-end-date" class="os-input" style="width: 100%;" />
+                <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">End Date (Optional)</label>
+                <input type="date" id="popup-input-end-date" class="os-input" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div class="form-group">
-                <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Display Delay</label>
-                <select id="popup-input-delay" class="os-input" style="width: 100%;">
+                <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Display Delay</label>
+                <select id="popup-input-delay" class="os-input" style="width: 100%; border-radius: 8px; font-size: 0.88rem;">
                   <option value="2">2 seconds after page load</option>
                   <option value="3" selected>3 seconds (Recommended)</option>
                   <option value="5">5 seconds after page load</option>
@@ -191,60 +226,60 @@ export function renderPopupsView() {
               </div>
 
               <div class="form-group">
-                <label style="font-size: 0.82rem; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">Status</label>
-                <select id="popup-input-status" class="os-input" style="width: 100%;">
-                  <option value="Active">🟢 Active (Live)</option>
+                <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Status</label>
+                <select id="popup-input-status" class="os-input" style="width: 100%; border-radius: 8px; font-size: 0.88rem;">
+                  <option value="Active">🟢 Active (Live / Scheduled)</option>
                   <option value="Inactive">⚪ Inactive (Draft / Paused)</option>
                 </select>
               </div>
             </div>
           </div>
 
-          <!-- Right Column: Realtime Visual Live Preview -->
-          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; align-items: center;">
-            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <span style="font-size: 0.78rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Live Realtime Preview</span>
-              <span style="font-size: 0.74rem; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 6px; font-weight: 700;">Front-End View</span>
+          <!-- Right Column: Clean Visual Live Preview -->
+          <div style="display: flex; flex-direction: column; align-items: center;">
+            <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <span style="font-size: 0.82rem; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">Live Realtime Preview</span>
+              <span style="font-size: 0.74rem; background: #e0f2fe; color: #0284c7; padding: 3px 10px; border-radius: 20px; font-weight: 700;">Front-End View</span>
             </div>
 
-            <!-- The Preview Card -->
-            <div id="popup-live-preview-box" style="width: 100%; max-width: 360px; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; position: relative;">
+            <!-- The Clean Preview Card -->
+            <div id="popup-live-preview-box" style="width: 100%; max-width: 380px; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; position: sticky; top: 10px;">
               <!-- Image Banner with Badge -->
-              <div style="position: relative; height: 160px; background: #1e293b; overflow: hidden;">
+              <div style="position: relative; height: 170px; background: #0f172a; overflow: hidden;">
                 <img id="preview-img" src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80" style="width: 100%; height: 100%; object-fit: cover;" />
-                <span id="preview-badge" style="position: absolute; top: 12px; left: 12px; background: #eb5e28; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; box-shadow: 0 2px 6px rgba(235,94,40,0.4); text-transform: uppercase;">
+                <span id="preview-badge" style="position: absolute; top: 12px; left: 12px; background: #eb5e28; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); text-transform: uppercase;">
                   🎉 FESTIVE OFFER
                 </span>
-                <span style="position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                <span style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
                   ✕
                 </span>
               </div>
 
-              <!-- Card Content -->
-              <div style="padding: 18px 20px;">
-                <h3 id="preview-title" style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; line-height: 1.3;">🌾 Grand Festive Property Mela 2026</h3>
-                <p id="preview-subtitle" style="font-size: 0.8rem; color: #64748b; margin: 0 0 12px 0; line-height: 1.4;">Special limited-time booking discount on DTCP & RERA approved residential plots in Thanjavur & Trichy Road.</p>
+              <!-- Content Body with Title at Top of Content -->
+              <div style="padding: 18px 20px 22px 20px;">
+                <h3 id="preview-title" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; line-height: 1.35; font-family: 'DM Serif Display', Georgia, serif;">🌾 Grand Festive Property Mela 2026</h3>
+                <p id="preview-subtitle" style="font-size: 0.84rem; color: #64748b; margin: 0 0 14px 0; line-height: 1.45;">Special limited-time booking discount on DTCP & RERA approved residential plots in Thanjavur & Trichy Road.</p>
                 
-                <div id="preview-highlights-list" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;">
-                  <div style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #334155;">
-                    <i class="ri-checkbox-circle-fill" style="color: #10b981;"></i> <span>Spot Patta Transfer & 0% Brokerage</span>
+                <div id="preview-highlights-list" style="display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px;">
+                  <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155;">
+                    <i class="ri-checkbox-circle-fill" style="color: #10b981; font-size: 0.95rem;"></i> <span>Spot Patta Transfer & 0% Brokerage</span>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #334155;">
-                    <i class="ri-checkbox-circle-fill" style="color: #10b981;"></i> <span>Ready for immediate villa construction</span>
+                  <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155;">
+                    <i class="ri-checkbox-circle-fill" style="color: #10b981; font-size: 0.95rem;"></i> <span>Ready for immediate villa construction</span>
                   </div>
                 </div>
 
-                <button id="preview-cta-btn" style="width: 100%; background: #eb5e28; color: #fff; border: none; padding: 10px 16px; border-radius: 10px; font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(235,94,40,0.3);">
-                  <i class="ri-whatsapp-fill"></i> <span id="preview-cta-text">Claim Festive Offer on WhatsApp</span>
+                <button id="preview-cta-btn" style="width: 100%; background: #eb5e28; color: #fff; border: none; padding: 11px 16px; border-radius: 10px; font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 6px 16px rgba(235,94,40,0.3);">
+                  <i id="preview-cta-icon" class="ri-whatsapp-fill"></i> <span id="preview-cta-text">Claim Festive Offer on WhatsApp</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="os-modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc;">
+        <div class="os-modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; padding: 18px 28px; border-top: 1px solid #e2e8f0; background: #ffffff;">
           <button class="os-btn-secondary" id="cancel-popup-modal-btn">Cancel</button>
-          <button class="os-btn-primary" id="save-popup-modal-btn" style="background: #eb5e28; border-color: #eb5e28; color: #fff;">
+          <button class="os-btn-primary" id="save-popup-modal-btn" style="background: #eb5e28; border-color: #eb5e28; color: #fff; padding: 10px 22px; font-weight: 700;">
             <i class="ri-save-line"></i> Save & Publish Popup
           </button>
         </div>
@@ -266,24 +301,27 @@ export function initPopupsView() {
     const query = (searchInput?.value || '').toLowerCase().trim();
 
     let filtered = popups.filter(p => {
-      if (currentFilter === 'active' && p.status !== 'Active') return false;
-      if (currentFilter === 'festival' && p.type !== 'festival') return false;
-      if (currentFilter === 'ad_offer' && p.type !== 'ad_offer' && p.type !== 'project_launch') return false;
+      const stateObj = getPopupScheduleState(p);
+
+      if (currentFilter === 'live' && stateObj.state !== 'live') return false;
+      if (currentFilter === 'scheduled' && stateObj.state !== 'scheduled') return false;
+      if (currentFilter === 'paused' && (stateObj.state !== 'paused' && stateObj.state !== 'expired')) return false;
 
       if (query) {
         return (p.title || '').toLowerCase().includes(query) ||
                (p.subtitle || '').toLowerCase().includes(query) ||
-               (p.badge || '').toLowerCase().includes(query);
+               (p.badge || '').toLowerCase().includes(query) ||
+               (p.type || '').toLowerCase().includes(query);
       }
       return true;
     });
 
     if (filtered.length === 0) {
       container.innerHTML = `
-        <div style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: #fff; border-radius: 12px; border: 1px dashed #cbd5e1;">
-          <i class="ri-advertisement-line" style="font-size: 3rem; color: #94a3b8; display: block; margin-bottom: 12px;"></i>
-          <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0 0 6px 0;">No popups found</h3>
-          <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 16px 0;">Create a festive offer or property deal popup to engage website visitors.</p>
+        <div style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: #fff; border-radius: 14px; border: 1px dashed #cbd5e1;">
+          <i class="ri-advertisement-line" style="font-size: 3.2rem; color: #94a3b8; display: block; margin-bottom: 12px;"></i>
+          <h3 style="font-size: 1.15rem; font-weight: 700; color: #1e293b; margin: 0 0 6px 0;">No popups found</h3>
+          <p style="font-size: 0.88rem; color: #64748b; margin: 0 0 18px 0;">Create a festive offer or property deal popup to engage website visitors.</p>
           <button class="os-btn-primary" id="empty-create-popup-btn"><i class="ri-add-line"></i> Create First Popup</button>
         </div>
       `;
@@ -292,53 +330,58 @@ export function initPopupsView() {
     }
 
     container.innerHTML = filtered.map(p => {
-      const isActive = p.status === 'Active';
+      const stateObj = getPopupScheduleState(p);
       const highlights = Array.isArray(p.highlights) ? p.highlights : [];
       const imageSrc = p.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
 
       return `
-        <div class="popup-card hover-lift" style="background: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex; flex-direction: column;">
+        <div class="popup-card hover-lift" style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex; flex-direction: column;">
           
           <!-- Card Thumbnail -->
           <div style="position: relative; height: 160px; background: #0f172a; overflow: hidden;">
             <img src="${imageSrc}" style="width: 100%; height: 100%; object-fit: cover;" />
-            <span style="position: absolute; top: 12px; left: 12px; background: #eb5e28; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+            <span style="position: absolute; top: 12px; left: 12px; background: #eb5e28; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.25);">
               ${p.badge || 'OFFER'}
             </span>
-            <div style="position: absolute; top: 12px; right: 12px; background: ${isActive ? '#10b981' : '#64748b'}; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 20px;">
-              ${isActive ? '🟢 LIVE' : '⚪ PAUSED'}
+            <div style="position: absolute; top: 12px; right: 12px; background: ${stateObj.bg}; color: ${stateObj.color}; font-size: 0.74rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+              ${stateObj.label}
             </div>
           </div>
 
           <!-- Card Body -->
-          <div style="padding: 18px; flex: 1; display: flex; flex-direction: column;">
-            <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; line-height: 1.3;">${p.title}</h3>
-            <p style="font-size: 0.82rem; color: #64748b; margin: 0 0 12px 0; line-height: 1.4; flex: 1;">${p.subtitle || 'No description'}</p>
+          <div style="padding: 20px; flex: 1; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+              <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; background: #f1f5f9; padding: 2px 8px; border-radius: 6px;">${p.type || 'Custom Deal'}</span>
+              ${p.startDate ? `<span style="font-size: 0.74rem; color: #94a3b8;"><i class="ri-calendar-line"></i> ${p.startDate} ${p.endDate ? 'to ' + p.endDate : ''}</span>` : ''}
+            </div>
+
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; line-height: 1.35; font-family: 'DM Serif Display', Georgia, serif;">${p.title}</h3>
+            <p style="font-size: 0.84rem; color: #64748b; margin: 0 0 14px 0; line-height: 1.45; flex: 1;">${p.subtitle || 'No description provided'}</p>
 
             <!-- Highlights -->
             ${highlights.length > 0 ? `
-              <div style="background: #f8fafc; border-radius: 8px; padding: 10px; margin-bottom: 14px; font-size: 0.78rem; color: #334155; display: flex; flex-direction: column; gap: 4px;">
+              <div style="background: #f8fafc; border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; font-size: 0.8rem; color: #334155; display: flex; flex-direction: column; gap: 5px;">
                 ${highlights.slice(0, 2).map(h => `<div style="display: flex; align-items: center; gap: 6px;"><i class="ri-check-line" style="color: #10b981; font-weight: bold;"></i> <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${h}</span></div>`).join('')}
               </div>
             ` : ''}
 
             <!-- Meta info -->
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #64748b; margin-bottom: 14px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: #64748b; margin-bottom: 14px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
               <span><i class="ri-timer-line"></i> Delay: ${p.delaySeconds || 3}s</span>
-              <span><i class="ri-repeat-line"></i> ${p.frequency === 'once_session' ? 'Once per session' : 'Every page'}</span>
+              <span><i class="ri-link"></i> ${p.ctaType === 'whatsapp' ? 'WhatsApp' : (p.ctaType === 'call' ? 'Phone Call' : (p.ctaType === 'site_visit' ? 'Site Visit' : 'Custom Link'))}</span>
             </div>
 
             <!-- Actions Bar -->
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-              <button class="btn-toggle-status" data-id="${p.id}" data-status="${p.status}" style="padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1px solid ${isActive ? '#fecaca' : '#bbf7d0'}; background: ${isActive ? '#fef2f2' : '#f0fdf4'}; color: ${isActive ? '#dc2626' : '#16a34a'};">
-                ${isActive ? '<i class="ri-pause-circle-line"></i> Pause' : '<i class="ri-play-circle-line"></i> Activate'}
+              <button class="btn-toggle-status" data-id="${p.id}" data-status="${p.status}" style="padding: 7px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; border: 1px solid ${p.status === 'Active' ? '#fecaca' : '#bbf7d0'}; background: ${p.status === 'Active' ? '#fef2f2' : '#f0fdf4'}; color: ${p.status === 'Active' ? '#dc2626' : '#16a34a'};">
+                ${p.status === 'Active' ? '<i class="ri-pause-circle-line"></i> Pause' : '<i class="ri-play-circle-line"></i> Activate'}
               </button>
 
               <div style="display: flex; gap: 6px;">
-                <button class="btn-edit-popup" data-id="${p.id}" style="padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; cursor: pointer;">
+                <button class="btn-edit-popup" data-id="${p.id}" style="padding: 7px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; cursor: pointer;">
                   <i class="ri-edit-line"></i> Edit
                 </button>
-                <button class="btn-delete-popup" data-id="${p.id}" style="padding: 6px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; background: #fff; border: 1px solid #fee2e2; color: #dc2626; cursor: pointer;">
+                <button class="btn-delete-popup" data-id="${p.id}" style="padding: 7px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; background: #fff; border: 1px solid #fee2e2; color: #dc2626; cursor: pointer;">
                   <i class="ri-delete-bin-line"></i>
                 </button>
               </div>
@@ -408,7 +451,6 @@ export function initPopupsView() {
   // Modal references
   const modal = document.getElementById('popup-editor-modal');
   if (modal) {
-    // Remove duplicates attached to body from previous renders
     document.querySelectorAll('body > #popup-editor-modal').forEach(m => {
       if (m !== modal) m.remove();
     });
@@ -422,14 +464,56 @@ export function initPopupsView() {
   const saveBtn = document.getElementById('save-popup-modal-btn');
   const createBtn = document.getElementById('btn-create-popup');
 
-  // Input bindings for realtime preview
+  // Input bindings
   const inputTitle = document.getElementById('popup-input-title');
   const inputSubtitle = document.getElementById('popup-input-subtitle');
+  const inputType = document.getElementById('popup-input-type');
   const inputBadge = document.getElementById('popup-input-badge');
   const inputImage = document.getElementById('popup-input-image');
   const inputHighlights = document.getElementById('popup-input-highlights');
   const inputCtaText = document.getElementById('popup-input-cta-text');
+  const inputCtaType = document.getElementById('popup-input-cta-type');
+  const inputCtaValue = document.getElementById('popup-input-cta-value');
+  const ctaTargetLabel = document.getElementById('cta-target-label');
+  const ctaTargetHint = document.getElementById('cta-target-hint');
   const inputImageFile = document.getElementById('popup-image-file-input');
+
+  const updateCtaFields = () => {
+    const action = inputCtaType?.value || 'whatsapp';
+    if (!ctaTargetLabel || !inputCtaValue || !ctaTargetHint) return;
+
+    if (action === 'whatsapp') {
+      ctaTargetLabel.textContent = 'WhatsApp Phone Number (with Country Code)';
+      inputCtaValue.placeholder = '+91 84899 96852';
+      ctaTargetHint.textContent = 'Default: +91 84899 96852. Enter customer support or manager WhatsApp number.';
+      if (!inputCtaValue.value.trim() || inputCtaValue.value.startsWith('http')) {
+        inputCtaValue.value = '+91 84899 96852';
+      }
+    } else if (action === 'call') {
+      ctaTargetLabel.textContent = 'Phone Number for Direct Phone Call';
+      inputCtaValue.placeholder = '+91 84899 96852';
+      ctaTargetHint.textContent = 'Default: +91 84899 96852. Clicking will immediately trigger the phone dialer.';
+      if (!inputCtaValue.value.trim() || inputCtaValue.value.startsWith('http')) {
+        inputCtaValue.value = '+91 84899 96852';
+      }
+    } else if (action === 'site_visit') {
+      ctaTargetLabel.textContent = 'Site Visit Booking Action';
+      inputCtaValue.placeholder = 'Pre-filled Property Location / Code';
+      ctaTargetHint.textContent = 'Opens the built-in "Schedule Free Site Visit" modal dialog on the website for instant appointment booking.';
+    } else if (action === 'link') {
+      ctaTargetLabel.textContent = 'Destination Webpage Link / URL *';
+      inputCtaValue.placeholder = 'https://thanjaiproperty.com/#discover';
+      ctaTargetHint.textContent = 'Enter any internal page route (#discover, #our-story) or external project link.';
+      if (inputCtaValue.value.includes('84899') || inputCtaValue.value.startsWith('+91')) {
+        inputCtaValue.value = 'https://thanjaiproperty.com/#discover';
+      }
+    }
+  };
+
+  inputCtaType?.addEventListener('change', () => {
+    updateCtaFields();
+    updateLivePreview();
+  });
 
   const updateLivePreview = () => {
     const titleEl = document.getElementById('preview-title');
@@ -437,6 +521,7 @@ export function initPopupsView() {
     const badgeEl = document.getElementById('preview-badge');
     const imgEl = document.getElementById('preview-img');
     const ctaTextEl = document.getElementById('preview-cta-text');
+    const ctaIconEl = document.getElementById('preview-cta-icon');
     const highlightsListEl = document.getElementById('preview-highlights-list');
 
     if (titleEl) titleEl.textContent = inputTitle.value.trim() || '🌾 Your Offer Title Here';
@@ -445,25 +530,32 @@ export function initPopupsView() {
     if (imgEl && inputImage.value.trim()) imgEl.src = inputImage.value.trim();
     if (ctaTextEl) ctaTextEl.textContent = inputCtaText.value.trim() || 'Claim Offer on WhatsApp';
 
+    if (ctaIconEl && inputCtaType) {
+      if (inputCtaType.value === 'whatsapp') ctaIconEl.className = 'ri-whatsapp-fill';
+      else if (inputCtaType.value === 'call') ctaIconEl.className = 'ri-phone-fill';
+      else if (inputCtaType.value === 'site_visit') ctaIconEl.className = 'ri-calendar-check-fill';
+      else ctaIconEl.className = 'ri-arrow-right-up-line';
+    }
+
     if (highlightsListEl) {
       const lines = (inputHighlights.value || '').split('\n').map(l => l.trim()).filter(l => l);
       if (lines.length > 0) {
         highlightsListEl.innerHTML = lines.map(line => `
-          <div style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #334155;">
-            <i class="ri-checkbox-circle-fill" style="color: #10b981;"></i> <span>${line}</span>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155;">
+            <i class="ri-checkbox-circle-fill" style="color: #10b981; font-size: 0.95rem;"></i> <span>${line}</span>
           </div>
         `).join('');
       } else {
         highlightsListEl.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #334155;">
-            <i class="ri-checkbox-circle-fill" style="color: #10b981;"></i> <span>Spot Patta Transfer & 0% Brokerage</span>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155;">
+            <i class="ri-checkbox-circle-fill" style="color: #10b981; font-size: 0.95rem;"></i> <span>Spot Patta Transfer & 0% Brokerage</span>
           </div>
         `;
       }
     }
   };
 
-  [inputTitle, inputSubtitle, inputBadge, inputImage, inputHighlights, inputCtaText].forEach(input => {
+  [inputTitle, inputSubtitle, inputBadge, inputImage, inputHighlights, inputCtaText, inputType].forEach(input => {
     input?.addEventListener('input', updateLivePreview);
   });
 
@@ -485,17 +577,19 @@ export function initPopupsView() {
     document.getElementById('edit-popup-id').value = '';
     inputTitle.value = '';
     inputSubtitle.value = '';
-    document.getElementById('popup-input-type').value = 'festival';
+    inputType.value = 'Festival & Seasonal';
     inputBadge.value = '🎉 FESTIVE OFFER';
     inputImage.value = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
     inputHighlights.value = 'Spot Patta Transfer & 0% Brokerage\nReady for immediate villa construction\nSpecial ₹50,000 spot booking cashback';
     inputCtaText.value = 'Claim Festive Offer on WhatsApp';
-    document.getElementById('popup-input-cta-type').value = 'whatsapp';
+    inputCtaType.value = 'whatsapp';
+    inputCtaValue.value = '+91 84899 96852';
     document.getElementById('popup-input-start-date').value = '';
     document.getElementById('popup-input-end-date').value = '';
     document.getElementById('popup-input-delay').value = '3';
     document.getElementById('popup-input-status').value = 'Active';
 
+    updateCtaFields();
     updateLivePreview();
     modal.style.display = 'flex';
     modal.classList.add('show');
@@ -507,17 +601,19 @@ export function initPopupsView() {
     document.getElementById('edit-popup-id').value = p.id;
     inputTitle.value = p.title || '';
     inputSubtitle.value = p.subtitle || '';
-    document.getElementById('popup-input-type').value = p.type || 'festival';
+    inputType.value = p.type || 'Festival & Seasonal';
     inputBadge.value = p.badge || 'PROMOTION';
     inputImage.value = p.image || '';
     inputHighlights.value = Array.isArray(p.highlights) ? p.highlights.join('\n') : '';
     inputCtaText.value = p.ctaText || 'Claim Festive Offer on WhatsApp';
-    document.getElementById('popup-input-cta-type').value = p.ctaType || 'whatsapp';
+    inputCtaType.value = p.ctaType || 'whatsapp';
+    inputCtaValue.value = p.ctaValue || '+91 84899 96852';
     document.getElementById('popup-input-start-date').value = p.startDate || '';
     document.getElementById('popup-input-end-date').value = p.endDate || '';
     document.getElementById('popup-input-delay').value = p.delaySeconds ? p.delaySeconds.toString() : '3';
     document.getElementById('popup-input-status').value = p.status || 'Active';
 
+    updateCtaFields();
     updateLivePreview();
     modal.style.display = 'flex';
     modal.classList.add('show');
@@ -550,12 +646,13 @@ export function initPopupsView() {
     const payload = {
       title: title,
       subtitle: inputSubtitle.value.trim(),
-      type: document.getElementById('popup-input-type').value,
+      type: inputType.value.trim() || 'Custom Deal',
       badge: inputBadge.value.trim() || 'OFFER',
       image: inputImage.value.trim(),
       highlights: highlights,
       ctaText: inputCtaText.value.trim() || 'Claim Offer on WhatsApp',
-      ctaType: document.getElementById('popup-input-cta-type').value,
+      ctaType: inputCtaType.value,
+      ctaValue: inputCtaValue.value.trim() || '+91 84899 96852',
       startDate: document.getElementById('popup-input-start-date').value,
       endDate: document.getElementById('popup-input-end-date').value,
       delaySeconds: parseInt(document.getElementById('popup-input-delay').value) || 3,
