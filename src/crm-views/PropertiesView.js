@@ -1,4 +1,4 @@
-import { getProperties, addProperty, updateProperty, deleteProperty, resetPropertiesToDefault, formatPropertySize, parsePropertyVideos } from '../utils/propertiesStore.js';
+import { getProperties, addProperty, updateProperty, deleteProperty, resetPropertiesToDefault, formatPropertySize } from '../utils/propertiesStore.js';
 import { addAuditLog } from '../utils/siteImagesStore.js';
 import { showToast } from '../utils/toast.js';
 
@@ -24,10 +24,9 @@ export function setPropertiesSearchFilter(query) {
   activeSearch = query;
 }
 
-// State for active form image gallery & multiple video uploads/links
+// State for active form image gallery & video upload
 let formImagesList = [];
-let formVideoLinksList = [''];
-let formVideoFilesList = [];
+let formVideoFileUrl = '';
 let leafletMapInstance = null;
 let leafletMarkerInstance = null;
 
@@ -379,31 +378,46 @@ function renderAdminPropertyPreviewModal(prop) {
   const images = uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
   const status = prop.status || prop.availability || 'Available';
 
-  const videoList = parsePropertyVideos(prop.videoUrl);
-  videoList.forEach((vUrl, vIdx) => {
-    let isEmbeddableVideo = false;
-    let videoEmbedSrc = vUrl;
+  const allMediaItems = [];
 
-    if (vUrl.includes('youtube.com') || vUrl.includes('youtu.be')) {
-      const videoIdMatch = vUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-      if (videoIdMatch && videoIdMatch[1]) {
-        videoEmbedSrc = `https://www.youtube.com/embed/${videoIdMatch[1]}?autoplay=0`;
+  // Video items if videoUrl exists
+  if (prop.videoUrl) {
+    let rawList = [];
+    if (Array.isArray(prop.videoUrl)) rawList = prop.videoUrl;
+    else if (typeof prop.videoUrl === 'string') {
+      if (prop.videoUrl.startsWith('[') && prop.videoUrl.endsWith(']')) {
+        try { rawList = JSON.parse(prop.videoUrl); } catch(e) { rawList = prop.videoUrl.split(/[\n,]+/); }
+      } else {
+        rawList = prop.videoUrl.split(/[\n,]+/);
+      }
+    }
+    const cleanVideos = rawList.map(v => typeof v === 'string' ? v.trim() : '').filter(Boolean);
+
+    cleanVideos.forEach((vUrl, vIdx) => {
+      let isEmbeddableVideo = false;
+      let videoEmbedSrc = vUrl;
+
+      if (vUrl.includes('youtube.com') || vUrl.includes('youtu.be')) {
+        const videoIdMatch = vUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+        if (videoIdMatch && videoIdMatch[1]) {
+          videoEmbedSrc = `https://www.youtube.com/embed/${videoIdMatch[1]}?autoplay=0`;
+          isEmbeddableVideo = true;
+        }
+      } else if (vUrl.includes('facebook.com') || vUrl.includes('fb.watch') || vUrl.includes('fb.com')) {
+        videoEmbedSrc = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(vUrl)}&show_text=0&width=560&autoplay=0`;
         isEmbeddableVideo = true;
       }
-    } else if (vUrl.includes('facebook.com') || vUrl.includes('fb.watch') || vUrl.includes('fb.com')) {
-      videoEmbedSrc = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(vUrl)}&show_text=0&width=560&autoplay=0`;
-      isEmbeddableVideo = true;
-    }
 
-    allMediaItems.push({
-      type: 'video',
-      url: videoEmbedSrc,
-      rawUrl: vUrl,
-      isEmbeddable: isEmbeddableVideo,
-      title: videoList.length > 1 ? `Property Video Tour ${vIdx + 1}` : 'Property Video Tour',
-      thumb: images[0]
+      allMediaItems.push({
+        type: 'video',
+        url: videoEmbedSrc,
+        rawUrl: vUrl,
+        isEmbeddable: isEmbeddableVideo,
+        title: cleanVideos.length > 1 ? `Property Video ${vIdx + 1}` : 'Property Video Tour',
+        thumb: images[0]
+      });
     });
-  });
+  }
 
   // Image items
   images.forEach((img, idx) => {
@@ -869,68 +883,24 @@ function renderFullPagePropertyForm(prop) {
             </h4>
 
             <div style="display: flex; flex-direction: column; gap: 20px;">
-              
-              <!-- Multiple Video Links Section -->
-              <div style="background: #faf8f5; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                  <div>
-                    <label style="font-size: 0.85rem; font-weight: 800; color: #2d3748; display: block;">YouTube & Facebook Video Links</label>
-                    <span style="font-size: 0.78rem; color: #718096;">Add one or multiple video links (YouTube, Facebook Video, Vimeo, etc.)</span>
-                  </div>
-                  <button type="button" id="add-video-link-row-btn" style="
-                    display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px;
-                    background: #eb5e28; color: #ffffff; border: none; font-size: 0.82rem; font-weight: 700; cursor: pointer;
-                  ">
-                    <i class="ri-add-line"></i> Add Another Video Link
-                  </button>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
+                <div>
+                  <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">YouTube / Facebook Video Links</label>
+                  <textarea id="form-prop-videolink" placeholder="e.g. https://youtube.com/watch?v=...&#10;Add multiple YouTube/Facebook links separated by new line or comma" rows="2" style="width: 100%; padding: 10px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; resize: vertical;">${isEdit ? prop?.videoUrl || '' : ''}</textarea>
                 </div>
 
-                <div id="video-links-container" style="display: flex; flex-direction: column; gap: 10px;">
-                  ${formVideoLinksList.map((vLink, idx) => `
-                    <div class="video-link-row" style="display: flex; gap: 8px; align-items: center;">
-                      <input type="url" class="form-prop-videolink-input" value="${vLink || ''}" placeholder="e.g. https://youtube.com/watch?v=... or https://facebook.com/.../videos/..." style="flex: 1; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;" />
-                      ${formVideoLinksList.length > 1 ? `
-                        <button type="button" class="remove-video-link-row-btn" data-index="${idx}" style="background: #fed7d7; color: #c53030; border: none; border-radius: 8px; padding: 10px 12px; cursor: pointer; font-size: 0.9rem;" title="Remove this video link">
-                          <i class="ri-delete-bin-line"></i>
-                        </button>
-                      ` : ''}
-                    </div>
-                  `).join('')}
-                </div>
-              </div>
-
-              <!-- Upload Video Files Section -->
-              <div style="background: #faf8f5; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                  <div>
-                    <label style="font-size: 0.85rem; font-weight: 800; color: #2d3748; display: block;">Upload Video Files (.mp4 / .mov)</label>
-                    <span style="font-size: 0.78rem; color: #718096;">Upload one or multiple property tour video files</span>
-                  </div>
+                <div>
+                  <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Upload Video File(s)</label>
                   <label style="
-                    display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px;
-                    background: #ffffff; border: 1px dashed #cbd5e0; color: #2d3748; font-weight: 700; font-size: 0.82rem; cursor: pointer;
+                    display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 10px;
+                    background: #f7fafc; border: 1px dashed #cbd5e0; color: #4a5568; font-weight: 600; font-size: 0.88rem; cursor: pointer; height: 44px;
                   ">
-                    <i class="ri-video-upload-line" style="color: #eb5e28; font-size: 1.1rem;"></i>
-                    <span>Browse Video Files</span>
+                    <i class="ri-video-upload-line" style="color: var(--color-orange, #eb5e28); font-size: 1.2rem;"></i>
+                    <span id="video-file-label-text">${formVideoFileUrl ? 'Video(s) Uploaded' : 'Upload Video (.mp4 / .mov)'}</span>
                     <input type="file" id="form-prop-video-file-input" accept="video/*" multiple style="display: none;" />
                   </label>
                 </div>
-                
-                <div id="video-files-preview-container" style="display: flex; flex-wrap: wrap; gap: 8px;">
-                  ${formVideoFilesList.map((vf, idx) => `
-                    <span style="display: inline-flex; align-items: center; gap: 6px; background: #EDF2F7; border: 1px solid #CBD5E0; padding: 6px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; color: #2D3748;">
-                      <i class="ri-movie-fill" style="color: #eb5e28;"></i>
-                      <span>${vf.name || `Video ${idx + 1}`}</span>
-                      <button type="button" class="delete-uploaded-video-file-btn" data-index="${idx}" style="background: none; border: none; color: #E53E3E; cursor: pointer; padding: 0; margin-left: 4px;" title="Remove video">
-                        <i class="ri-close-circle-fill"></i>
-                      </button>
-                    </span>
-                  `).join('')}
-                </div>
-              </div>
 
-              <!-- Coordinates Grid -->
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
                 <div>
                   <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Latitude</label>
                   <input type="text" id="form-prop-latitude" value="${isEdit ? prop?.latitude || '' : ''}" placeholder="e.g. 10.786999" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
@@ -1673,98 +1643,27 @@ function initPropertyFormListeners() {
     }
   });
 
-  // Dynamic Video Link Rows
-  const addVideoLinkBtn = document.getElementById('add-video-link-row-btn');
-  const videoLinksContainer = document.getElementById('video-links-container');
-
-  function renderVideoLinkRows() {
-    if (!videoLinksContainer) return;
-    videoLinksContainer.innerHTML = formVideoLinksList.map((vLink, idx) => `
-      <div class="video-link-row" style="display: flex; gap: 8px; align-items: center;">
-        <input type="url" class="form-prop-videolink-input" data-index="${idx}" value="${vLink || ''}" placeholder="e.g. https://youtube.com/watch?v=... or https://facebook.com/.../videos/..." style="flex: 1; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;" />
-        ${formVideoLinksList.length > 1 ? `
-          <button type="button" class="remove-video-link-row-btn" data-index="${idx}" style="background: #fed7d7; color: #c53030; border: none; border-radius: 8px; padding: 10px 12px; cursor: pointer; font-size: 0.9rem;" title="Remove this video link">
-            <i class="ri-delete-bin-line"></i>
-          </button>
-        ` : ''}
-      </div>
-    `).join('');
-
-    videoLinksContainer.querySelectorAll('.remove-video-link-row-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.index, 10);
-        if (!isNaN(idx) && formVideoLinksList.length > 1) {
-          formVideoLinksList.splice(idx, 1);
-          renderVideoLinkRows();
-        }
-      });
-    });
-
-    videoLinksContainer.querySelectorAll('.form-prop-videolink-input').forEach(inp => {
-      inp.addEventListener('input', () => {
-        const idx = parseInt(inp.dataset.index, 10);
-        if (!isNaN(idx)) {
-          formVideoLinksList[idx] = inp.value;
-        }
-      });
-    });
-  }
-
-  addVideoLinkBtn?.addEventListener('click', () => {
-    formVideoLinksList.push('');
-    renderVideoLinkRows();
-  });
-
-  renderVideoLinkRows();
-
-  // Multi-Video File Upload Listener
+  // Video File Upload Input Listener (Multiple files supported)
   const videoFileInput = document.getElementById('form-prop-video-file-input');
-  const videoFilesContainer = document.getElementById('video-files-preview-container');
-
-  function renderVideoFilesChips() {
-    if (!videoFilesContainer) return;
-    videoFilesContainer.innerHTML = formVideoFilesList.map((vf, idx) => `
-      <span style="display: inline-flex; align-items: center; gap: 6px; background: #EDF2F7; border: 1px solid #CBD5E0; padding: 6px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; color: #2D3748;">
-        <i class="ri-movie-fill" style="color: #eb5e28;"></i>
-        <span>${vf.name || `Video ${idx + 1}`}</span>
-        <button type="button" class="delete-uploaded-video-file-btn" data-index="${idx}" style="background: none; border: none; color: #E53E3E; cursor: pointer; padding: 0; margin-left: 4px;" title="Remove video">
-          <i class="ri-close-circle-fill"></i>
-        </button>
-      </span>
-    `).join('');
-
-    videoFilesContainer.querySelectorAll('.delete-uploaded-video-file-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.index, 10);
-        if (!isNaN(idx)) {
-          formVideoFilesList.splice(idx, 1);
-          renderVideoFilesChips();
-          showToast('Video removed', 'ri-delete-bin-line');
-        }
-      });
-    });
-  }
-
-  videoFileInput?.addEventListener('change', (e) => {
+  const videoLabelText = document.getElementById('video-file-label-text');
+  let uploadedVideosList = [];
+  videoFileInput?.addEventListener('change', async (e) => {
     const files = Array.from(e.target.files);
     if (!files || files.length === 0) return;
-
-    showToast(`Loading ${files.length} video(s)...`, 'ri-loader-4-line');
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        formVideoFilesList.push({
-          name: file.name,
-          dataUrl: evt.target.result
-        });
-        renderVideoFilesChips();
-        showToast(`Video "${file.name}" attached!`, 'ri-video-upload-line');
-      };
-      reader.readAsDataURL(file);
-    });
+    showToast(`Processing ${files.length} video file(s)...`, 'ri-loader-4-line');
+    for (const file of files) {
+      await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          if (evt.target.result) uploadedVideosList.push(evt.target.result);
+          resolve();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    if (videoLabelText) videoLabelText.textContent = `${uploadedVideosList.length} Video(s) Uploaded`;
+    showToast(`${files.length} video file(s) attached!`, 'ri-video-upload-line');
   });
-
-  renderVideoFilesChips();
 
   bindGalleryDeleteButtons();
 
@@ -1786,11 +1685,11 @@ function initPropertyFormListeners() {
     const featuresStr = document.getElementById('form-prop-features')?.value.trim();
     const description = document.getElementById('form-prop-desc')?.value.trim();
     
-    // Collect all video links and video data URLs
-    const videoLinkInputs = Array.from(document.querySelectorAll('.form-prop-videolink-input')).map(inp => inp.value.trim()).filter(Boolean);
-    const videoFiles = formVideoFilesList.map(vf => vf.dataUrl).filter(Boolean);
-    const allVideos = [...new Set([...videoLinkInputs, ...videoFiles])];
-    const videoUrl = allVideos.length === 1 ? allVideos[0] : (allVideos.length > 1 ? JSON.stringify(allVideos) : '');
+    const rawVideoText = document.getElementById('form-prop-videolink')?.value.trim() || '';
+    const videoLinks = rawVideoText ? rawVideoText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean) : [];
+    const allCombinedVideos = [...videoLinks, ...uploadedVideosList];
+    if (formVideoFileUrl && !allCombinedVideos.includes(formVideoFileUrl)) allCombinedVideos.push(formVideoFileUrl);
+    const videoUrl = allCombinedVideos.length > 0 ? (allCombinedVideos.length === 1 ? allCombinedVideos[0] : allCombinedVideos.join('\n')) : '';
 
     const rawLatitude = document.getElementById('form-prop-latitude')?.value.trim();
     const rawLongitude = document.getElementById('form-prop-longitude')?.value.trim();
@@ -1868,8 +1767,7 @@ function initPropertyFormListeners() {
     currentViewMode = 'list';
     editingPropertyId = null;
     formImagesList = [];
-    formVideoLinksList = [''];
-    formVideoFilesList = [];
+    formVideoFileUrl = '';
     refreshPropertiesView();
   });
 }

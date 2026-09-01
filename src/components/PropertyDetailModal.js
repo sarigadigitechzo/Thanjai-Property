@@ -2,7 +2,7 @@ import { isFavorite, toggleFavorite } from '../utils/favorites.js';
 import { showToast } from '../utils/toast.js';
 import { fetchFromAPI } from '../utils/api.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
-import { formatPropertySize, formatLocationDisplay, parsePropertyVideos } from '../utils/propertiesStore.js';
+import { formatPropertySize, formatLocationDisplay } from '../utils/propertiesStore.js';
 
 export function renderPropertyDetailModal(property) {
   if (!property) return '';
@@ -31,7 +31,18 @@ export function renderPropertyDetailModal(property) {
   const rawImgs = Array.isArray(property.images) ? property.images.filter(Boolean) : [];
   const uniqueImgs = [...new Set(rawImgs)];
   const images = uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
-  const videoList = parsePropertyVideos(property.videoUrl);
+
+  let allVideos = [];
+  const rawVid = property.videoUrl || property.videos;
+  if (Array.isArray(rawVid)) allVideos = rawVid.filter(Boolean);
+  else if (typeof rawVid === 'string' && rawVid.trim()) {
+    if (rawVid.trim().startsWith('[') && rawVid.trim().endsWith(']')) {
+      try { const p = JSON.parse(rawVid); if (Array.isArray(p)) allVideos = p; } catch(e) { allVideos = rawVid.split(/[\n,]+/); }
+    } else {
+      allVideos = rawVid.split(/[\n,]+/);
+    }
+  }
+  allVideos = allVideos.map(v => typeof v === 'string' ? v.trim() : '').filter(Boolean);
 
   return `
     <div class="modal-overlay active" id="property-details-modal-overlay">
@@ -66,10 +77,10 @@ export function renderPropertyDetailModal(property) {
             ${images.slice(0, 4).map((img, i) => `
               <img src="${img}" alt="Thumbnail ${i+1}" class="gallery-thumb-img modal-thumb" data-type="image" data-src="${img}" />
             `).join('')}
-            ${videoList.map((vUrl, vIdx) => `
+            ${allVideos.map((vUrl, vIdx) => `
               <div class="gallery-thumb-img modal-thumb" data-type="video" data-src="${vUrl}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #1a202c; color: #fff; cursor: pointer; border-radius: 8px;">
-                <i class="ri-play-circle-fill" style="color: #eb5e28; font-size: 1.5rem;"></i>
-                <span style="font-size: 0.65rem; font-weight: 800;">${videoList.length > 1 ? `VIDEO ${vIdx + 1}` : 'VIDEO'}</span>
+                <i class="ri-play-circle-fill" style="color: #eb5e28; font-size: 1.4rem;"></i>
+                <span style="font-size: 0.6rem; font-weight: 800;">VIDEO ${allVideos.length > 1 ? (vIdx + 1) : ''}</span>
               </div>
             `).join('')}
           </div>

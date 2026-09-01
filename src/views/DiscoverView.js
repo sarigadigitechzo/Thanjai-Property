@@ -137,64 +137,31 @@ export function renderDiscoverView(discoverState, onPropertySelect, onNavigateTo
             </div>
 
             ${hasActiveFilters(discoverState) ? `
-              <div style="display: flex; align-items: flex-end;">
-                <button id="clear-all-filters-btn" style="
-                  width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px dashed #e53e3e;
-                  background: #fff5f5; color: #c53030; font-size: 0.85rem; font-weight: 700;
-                  display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
-                ">
-                  <i class="ri-refresh-line"></i> Reset Filters
-                </button>
-              </div>
+              <button class="os-btn-secondary" id="clear-all-filters-btn" style="font-size: 0.85rem; padding: 6px 16px; border-radius: 20px; color: #e53e3e;">
+                <i class="ri-close-circle-line"></i> Clear Filters
+              </button>
             ` : ''}
           </div>
 
-          <!-- RESULTS COUNT & ACTIVE FILTER BADGES -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-            <div style="font-size: 1.1rem; font-weight: 800; color: #2d3748;">
-              Found <span style="color: var(--color-orange, #eb5e28);">${filteredProps.length}</span> verified properties
-            </div>
-            <div style="font-size: 0.85rem; color: #718096; font-weight: 600;">
-              100% Clear Titles • RERA & DTCP Assured
-            </div>
-          </div>
-
-          <!-- PROPERTY RESULTS GRID -->
+          <!-- Cards Grid or Empty State -->
           ${filteredProps.length > 0 ? `
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 32px;">
               ${filteredProps.map(prop => `
-                <div class="editorial-prop-card hover-lift property-item-card" data-id="${prop.id}" style="
-                  background: #ffffff;
-                  border-radius: 20px;
-                  overflow: hidden;
-                  border: 1px solid rgba(0,0,0,0.08);
-                  box-shadow: 0 6px 20px rgba(0,0,0,0.04);
-                  display: flex;
-                  flex-direction: column;
-                  cursor: pointer;
+                <div class="discover-prop-card hover-lift" data-id="${prop.id}" style="
+                  background: #ffffff; border-radius: 20px; overflow: hidden;
+                  border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 18px rgba(0,0,0,0.04);
+                  display: flex; flex-direction: column; cursor: pointer; transition: all 0.3s ease;
                 ">
                   <div style="position: relative; width: 100%; height: 240px; overflow: hidden; background: #111;">
-                    <img src="${(prop.images && prop.images[0]) || '/default-property.jpg'}" alt="${prop.title}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease;" />
-                    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.65) 100%);"></div>
+                    <img src="${prop.images[0]}" alt="${prop.title}" style="width: 100%; height: 100%; object-fit: cover;" />
                     
-                    <span class="badge badge-orange" style="position: absolute; top: 16px; left: 16px; font-weight: 700; font-size: 0.75rem;">
-                      ${prop.categoryLabel || prop.type || 'Property'}
+                    <span class="badge badge-orange" style="position: absolute; top: 16px; left: 16px; font-weight: 700;">
+                      ${prop.categoryLabel}
                     </span>
 
-                    <span style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.7); color: #ffffff; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 12px; backdrop-filter: blur(4px);">
-                      ${prop.purpose === 'rent' ? 'FOR RENT' : 'FOR SALE'}
+                    <span class="badge badge-dark" style="position: absolute; top: 16px; right: 16px; text-transform: uppercase;">
+                      ${prop.purpose === 'rent' ? 'For Rent' : 'For Sale'}
                     </span>
-
-                    <div style="position: absolute; bottom: 14px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
-                      <span style="background: rgba(255,255,255,0.9); color: #1a202c; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.05em;">
-                        ID: ${prop.id}
-                      </span>
-                      ${prop.approval ? `
-                        <span style="background: rgba(56, 161, 105, 0.9); color: #ffffff; font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 6px;">
-                          <i class="ri-shield-check-fill"></i> ${prop.approval}
-                        </span>
-                      ` : ''}
-                    </div>
                   </div>
 
                   <div style="padding: 24px; display: flex; flex-direction: column; flex: 1;">
@@ -211,29 +178,75 @@ export function renderDiscoverView(discoverState, onPropertySelect, onNavigateTo
                       <span>${formatLocationDisplay(prop.location, prop.district)}</span>
                     </div>
 
+                    ${prop.description ? `
+                      <p style="font-size: 0.88rem; color: #666; line-height: 1.5; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${prop.description}
+                      </p>
+                    ` : ''}
+
                     <div style="display: flex; gap: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.85rem; color: #555; margin-top: auto; flex-wrap: wrap;">
                       ${prop.size ? `<span><i class="ri-ruler-2-line"></i> ${formatSizeDisplay(prop.size)}</span>` : ''}
-                      ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : ''}
+                      ${prop.facing ? `<span><i class="ri-compass-3-line"></i> ${prop.facing}</span>` : ''}
+                      ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : (prop.approval ? `<span><i class="ri-shield-check-line"></i> ${prop.approval}</span>` : '')}
                     </div>
+
+                    <button class="btn btn-outline-dark" style="margin-top: 20px; width: 100%; border-radius: 10px; font-size: 0.9rem;">
+                      <span>View Property Details</span>
+                      <i class="ri-arrow-right-line"></i>
+                    </button>
                   </div>
                 </div>
               `).join('')}
             </div>
           ` : `
-            <div style="text-align: center; padding: 80px 20px; background: #fff; border-radius: 20px; border: 1px solid #e2e8f0;">
-              <i class="ri-search-eye-line" style="font-size: 3rem; color: #cbd5e0; margin-bottom: 16px; display: block;"></i>
-              <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: #2d3748; margin-bottom: 8px;">No properties matched</h3>
-              <p style="color: #718096; margin-bottom: 24px;">Try adjusting your filters or search keywords.</p>
-              <button id="empty-clear-filters-btn" class="btn btn-outline-dark" style="padding: 10px 24px; border-radius: 10px;">Clear Filters</button>
+            <!-- Empty State -->
+            <div style="
+              text-align: center; padding: 80px 20px; background: #faf8f5; border-radius: 24px;
+              border: 1px dashed #cbd5e0; max-width: 580px; margin: 0 auto;
+            ">
+              <i class="ri-search-eye-line" style="font-size: 3.5rem; color: #a0aec0; margin-bottom: 16px; display: block;"></i>
+              <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: #2d3748; margin-bottom: 10px;">
+                No properties found
+              </h3>
+              <p style="color: #718096; font-size: 0.95rem; margin-bottom: 24px; line-height: 1.6;">
+                We couldn't find any properties matching your current filter selections. Try adjusting your search query or location filters.
+              </p>
+              <button class="btn btn-primary" id="empty-clear-filters-btn" style="padding: 12px 28px; border-radius: 10px;">
+                <i class="ri-refresh-line"></i> Clear All Filters
+              </button>
             </div>
           `}
+
         </div>
       </section>
+
     </div>
   `;
 }
 
 let activeDetailPhotoIndex = 0;
+
+function extractAllVideos(videoData) {
+  if (!videoData) return [];
+  let list = [];
+  if (Array.isArray(videoData)) {
+    list = videoData;
+  } else if (typeof videoData === 'string') {
+    const trimmed = videoData.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) list = parsed;
+        else list = [trimmed];
+      } catch (e) {
+        list = trimmed.split(/[\n,]+/);
+      }
+    } else {
+      list = trimmed.split(/[\n,]+/);
+    }
+  }
+  return list.map(v => (typeof v === 'string' ? v.trim() : '')).filter(Boolean);
+}
 
 function extractVideoInfo(url) {
   if (!url || typeof url !== 'string') return null;
@@ -277,15 +290,10 @@ function renderPropertyDetailView(property, onNavigateToContact) {
   const uniqueImgs = [...new Set(rawImgs)];
   const images = uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
 
-  const mediaItems = images.map(img => ({ type: 'image', url: img }));
-  const videoList = parsePropertyVideos(property.videoUrl);
-  videoList.forEach((vUrl, vIdx) => {
-    mediaItems.push({
-      type: 'video',
-      url: vUrl,
-      videoIndex: vIdx + 1,
-      totalVideos: videoList.length
-    });
+  const allVideos = extractAllVideos(property.videoUrl || property.videos);
+  const mediaItems = images.map((img, i) => ({ type: 'image', url: img, index: i + 1, total: images.length }));
+  allVideos.forEach((vUrl, vIdx) => {
+    mediaItems.push({ type: 'video', url: vUrl, index: vIdx + 1, total: allVideos.length });
   });
 
   if (activeDetailPhotoIndex >= mediaItems.length) activeDetailPhotoIndex = 0;
@@ -331,7 +339,7 @@ function renderPropertyDetailView(property, onNavigateToContact) {
               <!-- Top Left Counter Badge -->
               <div style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.75); color: #ffffff; font-size: 0.82rem; font-weight: 700; padding: 6px 16px; border-radius: 20px; backdrop-filter: blur(6px); display: flex; align-items: center; gap: 6px; z-index: 10;">
                 <i class="${isVideo ? 'ri-movie-line' : 'ri-image-line'}" style="color: #eb5e28;"></i>
-                <span id="detail-photo-counter">${isVideo ? (videoList.length > 1 ? `Video Tour ${currentMedia.videoIndex} of ${videoList.length}` : 'Property Video Tour') : `Photo ${activeDetailPhotoIndex + 1} of ${images.length}`}</span>
+                <span id="detail-photo-counter">${isVideo ? (allVideos.length > 1 ? `Property Video ${currentMedia.index} of ${allVideos.length}` : 'Property Video Tour') : `Photo ${activeDetailPhotoIndex + 1} of ${images.length}`}</span>
               </div>
 
               <!-- Top Right Status Badge -->
@@ -375,8 +383,8 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                       <img src="${item.url}" style="width: 100%; height: 100%; object-fit: cover;" />
                     ` : `
                       <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); color: #ffffff;">
-                        <i class="ri-play-circle-fill" style="font-size: 1.6rem; color: #eb5e28;"></i>
-                        <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; margin-top: 2px;">${videoList.length > 1 ? `VIDEO ${item.videoIndex}` : 'VIDEO'}</span>
+                        <i class="ri-play-circle-fill" style="font-size: 1.8rem; color: #eb5e28;"></i>
+                        <span style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; margin-top: 2px;">VIDEO ${allVideos.length > 1 ? item.index : ''}</span>
                       </div>
                     `}
                   </div>
@@ -395,8 +403,8 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                   <span class="badge badge-orange" style="font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em; display: inline-block;">
                     ${property.categoryLabel || property.type || 'Property'}
                   </span>
-                  <span style="background: #EDF2F7; color: #2D3748; font-weight: 800; font-size: 0.82rem; padding: 4px 10px; border-radius: 6px; letter-spacing: 0.05em; border: 1px solid #E2E8F0; display: inline-flex; align-items: center; gap: 4px;">
-                    <i class="ri-hashtag" style="color: #eb5e28;"></i> PROPERTY ID: ${property.id}
+                  <span style="font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #718096; background: #EDF2F7; padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #E2E8F0;">
+                    <i class="ri-hashtag" style="color: #eb5e28; font-size: 0.9rem;"></i> ID: ${property.id}
                   </span>
                 </div>
                 <h1 style="font-family: var(--font-serif); font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 800; color: #1A202C; margin-bottom: 10px; line-height: 1.25;">
@@ -637,10 +645,11 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
     });
   }
 
+  // Detail Hero Carousel Prev/Next & Thumbnails
   const selectedProp = discoverState.selectedPropertyId ? getPublicProperties().find(p => p.id === discoverState.selectedPropertyId) : null;
   const propImages = selectedProp && Array.isArray(selectedProp.images) ? selectedProp.images.filter(Boolean) : [];
-  const videoList = parsePropertyVideos(selectedProp?.videoUrl);
-  const totalMediaCount = Math.max(1, propImages.length + videoList.length);
+  const propVideos = selectedProp ? extractAllVideos(selectedProp.videoUrl || selectedProp.videos) : [];
+  const totalMediaCount = Math.max(1, propImages.length + propVideos.length);
 
   document.getElementById('detail-prev-photo-btn')?.addEventListener('click', () => {
     if (totalMediaCount > 1) {
