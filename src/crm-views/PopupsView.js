@@ -31,88 +31,75 @@ export function renderPopupsView() {
 
   return `
     <div class="view-enter">
-      <!-- Header -->
-      <div class="view-header-flex">
-        <div>
-          <h1 class="view-title">Ad & Seasonal Festival Popups</h1>
-          <p class="view-subtitle">Create and schedule festival deals, promotional announcement banners, and lead generation popups for your website.</p>
-        </div>
-        <div class="header-actions-right">
-          <button class="os-btn-primary" id="btn-create-popup">
-            <i class="ri-add-line"></i> Create New Popup
-          </button>
-        </div>
-      </div>
+      <style>
+        .popup-select-input {
+          height: 42px;
+          padding: 8px 36px 8px 14px;
+          border: 1px solid #cbd5e1;
+          border-radius: 8px;
+          background-color: #ffffff;
+          color: #0f172a;
+          font-size: 0.88rem;
+          font-weight: 600;
+          cursor: pointer;
+          outline: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%2364748b'%3E%3Cpath d='M12 16L6 10H18L12 16Z'%3E%3C/path%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 12px center;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+          width: 100%;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .popup-select-input:focus {
+          border-color: #eb5e28;
+          box-shadow: 0 0 0 3px rgba(235,94,40,0.15);
+        }
+        .popup-text-input {
+          height: 42px;
+          padding: 8px 14px;
+          border: 1px solid #cbd5e1;
+          border-radius: 8px;
+          background: #ffffff;
+          color: #0f172a;
+          font-size: 0.88rem;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+          width: 100%;
+          outline: none;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .popup-text-input:focus {
+          border-color: #eb5e28;
+          box-shadow: 0 0 0 3px rgba(235,94,40,0.15);
+        }
+        @media (max-width: 900px) {
+          #popup-editor-modal .os-modal-body {
+            grid-template-columns: 1fr !important;
+            padding: 16px !important;
+            gap: 20px !important;
+          }
+          #popup-editor-modal .os-modal-card {
+            width: 96% !important;
+            max-height: 95vh !important;
+          }
+          #popup-live-preview-box {
+            position: static !important;
+            max-width: 100% !important;
+          }
+          .popups-responsive-controls {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+          }
+          #popup-search-input-box {
+            width: 100% !important;
+          }
+        }
+      </style>
 
-      <!-- KPI Summary Cards -->
-      <div class="os-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
-        <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Popups</span>
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #fff7ed; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-              <i class="ri-advertisement-line"></i>
-            </div>
-          </div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-top: 10px;" id="kpi-total-popups">${popups.length}</div>
-          <span style="font-size: 0.78rem; color: #64748b;">Created banners in library</span>
-        </div>
-
-        <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Live On Website</span>
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-              <i class="ri-checkbox-circle-line"></i>
-            </div>
-          </div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #10b981; margin-top: 10px;" id="kpi-active-popups">${liveCount}</div>
-          <span style="font-size: 0.78rem; color: #64748b;">Currently active to visitors</span>
-        </div>
-
-        <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Scheduled Deals</span>
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-              <i class="ri-calendar-event-line"></i>
-            </div>
-          </div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #d97706; margin-top: 10px;">${scheduledCount}</div>
-          <span style="font-size: 0.78rem; color: #64748b;">Starts on scheduled dates</span>
-        </div>
-
-        <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Paused / Ended</span>
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-              <i class="ri-pause-circle-line"></i>
-            </div>
-          </div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-top: 10px;">${pausedCount}</div>
-          <span style="font-size: 0.78rem; color: #64748b;">Drafts or past campaigns</span>
-        </div>
-      </div>
-
-      <!-- Filter Tabs & Controls -->
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="popup-filter-tabs">
-          <button class="os-tab-btn active" data-filter="all" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #eb5e28; color: #fff; border: none;">All Popups (${popups.length})</button>
-          <button class="os-tab-btn" data-filter="live" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Live Now (${liveCount})</button>
-          <button class="os-tab-btn" data-filter="scheduled" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Scheduled (${scheduledCount})</button>
-          <button class="os-tab-btn" data-filter="paused" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Paused / Expired</button>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 8px; background: #fff; padding: 6px 14px; border-radius: 8px; border: 1px solid #cbd5e1;">
-          <i class="ri-search-line" style="color: #94a3b8;"></i>
-          <input type="text" id="popup-search-input" placeholder="Search popups..." style="border: none; outline: none; font-size: 0.88rem; width: 200px;" />
-        </div>
-      </div>
-
-      <!-- Popups Grid -->
-      <div id="popups-grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px;">
-        <!-- Rendered by JS -->
-      </div>
-    </div>
-
-    <!-- Create / Edit Popup Modal -->
+      <!-- Create / Edit Popup Modal -->
     <div class="os-modal-overlay" id="popup-editor-modal" style="display: none; align-items: center; justify-content: center; z-index: 99999; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(5px);">
       <div class="os-modal-card" style="max-width: 980px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 18px; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); border: 1px solid #e2e8f0;">
         
@@ -131,19 +118,19 @@ export function renderPopupsView() {
 
             <div class="form-group">
               <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Popup Title *</label>
-              <input type="text" id="popup-input-title" class="os-input" placeholder="e.g. 🌾 Grand Pongal Property Mela 2026" style="width: 100%; border-radius: 8px; font-size: 0.9rem;" required />
+              <input type="text" id="popup-input-title" class="popup-text-input" placeholder="e.g. 🌾 Grand Pongal Property Mela 2026" required />
             </div>
 
             <div class="form-group">
               <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Subtitle / Description</label>
-              <textarea id="popup-input-subtitle" class="os-input" rows="2" placeholder="Brief 1-2 line description of this offer or announcement..." style="width: 100%; border-radius: 8px; font-size: 0.88rem; resize: vertical;"></textarea>
+              <textarea id="popup-input-subtitle" class="popup-text-input" rows="2" placeholder="Brief 1-2 line description of this offer or announcement..." style="height: auto; min-height: 60px; resize: vertical;"></textarea>
             </div>
 
             <!-- Custom Category Type Input & Badge Text -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div class="form-group">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Category / Campaign Type</label>
-                <input type="text" id="popup-input-type" class="os-input" placeholder="Type category (e.g. Festival, Deal, Launch)" list="popup-category-datalist" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
+                <input type="text" id="popup-input-type" class="popup-text-input" placeholder="e.g. Festival, Deal, Launch" list="popup-category-datalist" />
                 <datalist id="popup-category-datalist">
                   <option value="Festival & Seasonal">
                   <option value="Special Ad Offer">
@@ -156,15 +143,15 @@ export function renderPopupsView() {
 
               <div class="form-group">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Badge Tag Text</label>
-                <input type="text" id="popup-input-badge" class="os-input" placeholder="e.g. 🎉 FESTIVE OFFER" value="🎉 FESTIVE OFFER" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
+                <input type="text" id="popup-input-badge" class="popup-text-input" placeholder="e.g. 🎉 FESTIVE OFFER" value="🎉 FESTIVE OFFER" />
               </div>
             </div>
 
             <div class="form-group">
               <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Banner Poster Image</label>
               <div style="display: flex; gap: 8px;">
-                <input type="text" id="popup-input-image" class="os-input" placeholder="Paste image URL or upload below..." style="flex: 1; border-radius: 8px; font-size: 0.88rem;" />
-                <label style="padding: 9px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; color: #334155;">
+                <input type="text" id="popup-input-image" class="popup-text-input" placeholder="Paste image URL or upload below..." style="flex: 1;" />
+                <label style="padding: 0 16px; height: 42px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; color: #334155; white-space: nowrap;">
                   <i class="ri-upload-2-line"></i> Upload
                   <input type="file" id="popup-image-file-input" accept="image/*" style="display: none;" />
                 </label>
@@ -173,19 +160,19 @@ export function renderPopupsView() {
 
             <div class="form-group">
               <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Key Highlights (1 point per line)</label>
-              <textarea id="popup-input-highlights" class="os-input" rows="3" placeholder="Spot Patta Transfer & 0% Brokerage&#10;Ready for immediate villa construction&#10;Special ₹50,000 spot booking cashback" style="width: 100%; border-radius: 8px; font-size: 0.85rem;"></textarea>
+              <textarea id="popup-input-highlights" class="popup-text-input" rows="3" placeholder="Spot Patta Transfer & 0% Brokerage&#10;Ready for immediate villa construction&#10;Special ₹50,000 spot booking cashback" style="height: auto; min-height: 75px; font-family: monospace; font-size: 0.85rem;"></textarea>
             </div>
 
             <!-- CTA Action Row & Dynamic Target Input -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div class="form-group">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">CTA Button Text</label>
-                <input type="text" id="popup-input-cta-text" class="os-input" value="Claim Festive Offer on WhatsApp" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
+                <input type="text" id="popup-input-cta-text" class="popup-text-input" value="Claim Festive Offer on WhatsApp" />
               </div>
 
               <div class="form-group">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">CTA Button Action</label>
-                <select id="popup-input-cta-type" class="os-input" style="width: 100%; border-radius: 8px; font-size: 0.88rem; cursor: pointer;">
+                <select id="popup-input-cta-type" class="popup-select-input">
                   <option value="whatsapp">💬 Open WhatsApp</option>
                   <option value="call">📞 Phone Direct Call</option>
                   <option value="site_visit">📅 Book Site Visit</option>
@@ -197,7 +184,7 @@ export function renderPopupsView() {
             <!-- Dynamic CTA Value / Target Input Box -->
             <div class="form-group" id="cta-target-container">
               <label id="cta-target-label" style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">WhatsApp Phone Number</label>
-              <input type="text" id="popup-input-cta-value" class="os-input" placeholder="+91 84899 96852" value="+91 84899 96852" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
+              <input type="text" id="popup-input-cta-value" class="popup-text-input" placeholder="+91 84899 96852" value="+91 84899 96852" />
               <small id="cta-target-hint" style="font-size: 0.76rem; color: #64748b; margin-top: 4px; display: block;">Default: +91 84899 96852 (Thanjai Property Official Support)</small>
             </div>
 
@@ -205,19 +192,19 @@ export function renderPopupsView() {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div class="form-group">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Start Date (Optional)</label>
-                <input type="date" id="popup-input-start-date" class="os-input" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
+                <input type="date" id="popup-input-start-date" class="popup-text-input" />
               </div>
 
               <div class="form-group">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">End Date (Optional)</label>
-                <input type="date" id="popup-input-end-date" class="os-input" style="width: 100%; border-radius: 8px; font-size: 0.88rem;" />
+                <input type="date" id="popup-input-end-date" class="popup-text-input" />
               </div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
               <div class="form-group">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Display Delay</label>
-                <select id="popup-input-delay" class="os-input" style="width: 100%; border-radius: 8px; font-size: 0.88rem;">
+                <select id="popup-input-delay" class="popup-select-input">
                   <option value="2">2 seconds after page load</option>
                   <option value="3" selected>3 seconds (Recommended)</option>
                   <option value="5">5 seconds after page load</option>
@@ -227,7 +214,7 @@ export function renderPopupsView() {
 
               <div class="form-group">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Status</label>
-                <select id="popup-input-status" class="os-input" style="width: 100%; border-radius: 8px; font-size: 0.88rem;">
+                <select id="popup-input-status" class="popup-select-input">
                   <option value="Active">🟢 Active (Live / Scheduled)</option>
                   <option value="Inactive">⚪ Inactive (Draft / Paused)</option>
                 </select>
