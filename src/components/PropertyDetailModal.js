@@ -2,7 +2,7 @@ import { isFavorite, toggleFavorite } from '../utils/favorites.js';
 import { showToast } from '../utils/toast.js';
 import { fetchFromAPI } from '../utils/api.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
-import { formatPropertySize, formatLocationDisplay } from '../utils/propertiesStore.js';
+import { formatPropertySize, formatLocationDisplay, parsePropertyVideos } from '../utils/propertiesStore.js';
 
 export function renderPropertyDetailModal(property) {
   if (!property) return '';
@@ -31,6 +31,7 @@ export function renderPropertyDetailModal(property) {
   const rawImgs = Array.isArray(property.images) ? property.images.filter(Boolean) : [];
   const uniqueImgs = [...new Set(rawImgs)];
   const images = uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
+  const videoList = parsePropertyVideos(property.videoUrl);
 
   return `
     <div class="modal-overlay active" id="property-details-modal-overlay">
@@ -65,12 +66,12 @@ export function renderPropertyDetailModal(property) {
             ${images.slice(0, 4).map((img, i) => `
               <img src="${img}" alt="Thumbnail ${i+1}" class="gallery-thumb-img modal-thumb" data-type="image" data-src="${img}" />
             `).join('')}
-            ${property.videoUrl ? `
-              <div class="gallery-thumb-img modal-thumb" data-type="video" data-src="${property.videoUrl}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #1a202c; color: #fff; cursor: pointer; border-radius: 8px;">
+            ${videoList.map((vUrl, vIdx) => `
+              <div class="gallery-thumb-img modal-thumb" data-type="video" data-src="${vUrl}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #1a202c; color: #fff; cursor: pointer; border-radius: 8px;">
                 <i class="ri-play-circle-fill" style="color: #eb5e28; font-size: 1.5rem;"></i>
-                <span style="font-size: 0.65rem; font-weight: 800;">VIDEO</span>
+                <span style="font-size: 0.65rem; font-weight: 800;">${videoList.length > 1 ? `VIDEO ${vIdx + 1}` : 'VIDEO'}</span>
               </div>
-            ` : ''}
+            `).join('')}
           </div>
         </div>
 

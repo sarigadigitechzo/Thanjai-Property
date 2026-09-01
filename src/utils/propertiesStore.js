@@ -218,7 +218,6 @@ export function formatLocationDisplay(location, district) {
   const combined = [];
   for (const part of [...locParts, ...distParts]) {
     const lower = part.toLowerCase();
-    if (lower === 'tamil nadu' || lower === 'tamilnadu' || lower === 'india' || lower === 'tn') continue;
     if (!combined.some(c => c.toLowerCase() === lower)) {
       combined.push(part);
     }
@@ -226,6 +225,29 @@ export function formatLocationDisplay(location, district) {
   
   if (combined.length === 0) return 'Thanjavur, Tamil Nadu';
   return `${combined.join(', ')}, Tamil Nadu`;
+}
+
+export function parsePropertyVideos(videoUrl) {
+  if (!videoUrl) return [];
+  if (Array.isArray(videoUrl)) return videoUrl.map(v => typeof v === 'string' ? v.trim() : '').filter(Boolean);
+  if (typeof videoUrl === 'string') {
+    const trimmed = videoUrl.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.map(v => typeof v === 'string' ? v.trim() : '').filter(Boolean);
+      } catch (e) {}
+    }
+    if (trimmed.includes('||||')) {
+      return trimmed.split('||||').map(s => s.trim()).filter(Boolean);
+    }
+    if (trimmed.includes('\n')) {
+      return trimmed.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+    return [trimmed];
+  }
+  return [];
 }
 
 export function addProperty(data) {
