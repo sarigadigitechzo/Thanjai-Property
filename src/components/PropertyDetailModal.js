@@ -15,8 +15,11 @@ export function renderPropertyDetailModal(property) {
   if (!specsList.some(s => s.label.toLowerCase() === 'area') && formattedSize) {
     specsList.unshift({ label: 'Area', value: formattedSize });
   }
-  if (!specsList.some(s => s.label.toLowerCase() === 'facing') && property.facing) {
-    specsList.push({ label: 'Facing', value: property.facing });
+  if (!specsList.some(s => s.label.toLowerCase() === 'facing') && (property.facing || property.address)) {
+    specsList.push({ label: 'Facing', value: property.facing || property.address });
+  }
+  if (property.approval) {
+    specsList.push({ label: 'Approval Status', value: property.approval });
   }
   if (property.road && property.road !== 'Other / Outside Road') {
     specsList.push({ label: 'Road Corridor', value: property.road });
@@ -127,13 +130,19 @@ export function renderPropertyDetailModal(property) {
               ${formattedSize ? `
                 <div class="fact-block">
                   <div class="fact-value">${formattedSize}</div>
-                  <div class="fact-label">BUILT-UP AREA</div>
+                  <div class="fact-label">TOTAL AREA</div>
                 </div>
               ` : ''}
-              ${property.facing ? `
+              ${(property.facing || property.address) ? `
                 <div class="fact-block">
-                  <div class="fact-value">${property.facing}</div>
+                  <div class="fact-value">${property.facing || property.address}</div>
                   <div class="fact-label">FACING</div>
+                </div>
+              ` : ''}
+              ${property.approval ? `
+                <div class="fact-block">
+                  <div class="fact-value">${property.approval}</div>
+                  <div class="fact-label">APPROVAL</div>
                 </div>
               ` : ''}
               ${property.bedrooms ? `

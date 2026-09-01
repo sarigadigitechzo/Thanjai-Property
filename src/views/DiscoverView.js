@@ -442,10 +442,17 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                 </div>
               ` : ''}
 
-              ${property.facing ? `
+              ${(property.facing || property.address) ? `
                 <div>
                   <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Facing</span>
-                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-compass-3-line" style="color: #eb5e28;"></i> ${property.facing}</strong>
+                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-compass-3-line" style="color: #eb5e28;"></i> ${property.facing || property.address}</strong>
+                </div>
+              ` : ''}
+
+              ${property.approval ? `
+                <div>
+                  <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Approval Status</span>
+                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-shield-check-line" style="color: #38A169;"></i> ${property.approval}</strong>
                 </div>
               ` : ''}
 
@@ -460,6 +467,13 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                 <div>
                   <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Taluk</span>
                   <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-government-line" style="color: #eb5e28;"></i> ${property.taluk}</strong>
+                </div>
+              ` : ''}
+
+              ${property.district ? `
+                <div>
+                  <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">District</span>
+                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-map-pin-line" style="color: #eb5e28;"></i> ${property.district}</strong>
                 </div>
               ` : ''}
 

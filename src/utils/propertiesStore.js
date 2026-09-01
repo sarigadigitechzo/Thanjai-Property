@@ -64,8 +64,13 @@ export async function initPropertiesStore() {
         const resolvedOwnerName = (remoteP.ownerName || remoteP.owner_name || (resolvedAdType === 'paid' ? 'Verified Owner' : 'Thanjai Property'));
         const resolvedOwnerPhone = (remoteP.ownerPhone || remoteP.owner_phone || (resolvedAdType === 'paid' ? '8489996852' : '8489996852'));
         
-        // Preserve local approval, features, and images if remote API data has empty/null values
         const localMatch = propertiesCache.find(lp => lp && lp.id === remoteP.id);
+        const resolvedFacing = remoteP.facing || (localMatch ? localMatch.facing : '') || remoteP.address || '';
+        const resolvedRoad = remoteP.road || (localMatch ? localMatch.road : '');
+        const resolvedTaluk = remoteP.taluk || (localMatch ? localMatch.taluk : '');
+        const resolvedArea = remoteP.area || (localMatch ? localMatch.area : '');
+        const resolvedDistrict = remoteP.district || (localMatch ? localMatch.district : '');
+        const resolvedInquiryPhone = remoteP.inquiryPhone || (localMatch ? localMatch.inquiryPhone : '8489996852');
         const resolvedApproval = (remoteP.approval && String(remoteP.approval).trim()) 
           ? String(remoteP.approval).trim() 
           : (localMatch && localMatch.approval ? localMatch.approval : '');
@@ -82,6 +87,12 @@ export async function initPropertiesStore() {
 
         return normalizePropertyRecord({
           ...remoteP,
+          facing: resolvedFacing,
+          road: resolvedRoad,
+          taluk: resolvedTaluk,
+          area: resolvedArea,
+          district: resolvedDistrict,
+          inquiryPhone: resolvedInquiryPhone,
           approval: resolvedApproval,
           features: resolvedFeatures,
           images: resolvedImages,
@@ -502,7 +513,6 @@ function normalizePropertyRecord(p) {
     inquiryPhone: p.inquiryPhone || p.inquiry_phone || '8489996852',
     description: p.description || '',
     approval: p.approval || '',
-    facing: p.facing || '',
     features: (() => {
       let raw = p.features;
       if (typeof raw === 'string' && raw.trim()) {

@@ -40,7 +40,50 @@ function renCol($conn, $t, $o, $n, $d) {
     } catch (\Throwable $e) {}
 }
 
-// Auto-create core tables if not existing
+@$conn->query("CREATE TABLE IF NOT EXISTS `properties` (
+  `id` varchar(50) PRIMARY KEY,
+  `title` varchar(255) NOT NULL,
+  `type` varchar(100) DEFAULT NULL,
+  `category` varchar(100) DEFAULT NULL,
+  `categoryRaw` varchar(100) DEFAULT NULL,
+  `categoryLabel` varchar(100) DEFAULT NULL,
+  `purpose` varchar(50) DEFAULT 'buy',
+  `price` decimal(15,2) DEFAULT 0,
+  `priceFormatted` varchar(100) DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `area` varchar(255) DEFAULT NULL,
+  `taluk` varchar(255) DEFAULT NULL,
+  `district` varchar(100) DEFAULT NULL,
+  `road` varchar(255) DEFAULT NULL,
+  `address` text DEFAULT NULL,
+  `facing` varchar(100) DEFAULT NULL,
+  `size` varchar(100) DEFAULT NULL,
+  `bedrooms` varchar(50) DEFAULT NULL,
+  `bathrooms` varchar(50) DEFAULT NULL,
+  `floor` varchar(50) DEFAULT NULL,
+  `furnishing` varchar(100) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'Available',
+  `availability` varchar(50) DEFAULT 'Available',
+  `approval` varchar(255) DEFAULT NULL,
+  `latitude` varchar(50) DEFAULT NULL,
+  `longitude` varchar(50) DEFAULT NULL,
+  `videoUrl` longtext DEFAULT NULL,
+  `ownerName` varchar(255) DEFAULT NULL,
+  `ownerPhone` varchar(50) DEFAULT NULL,
+  `inquiryPhone` varchar(50) DEFAULT '8489996852',
+  `listedBy` varchar(255) DEFAULT 'Thanjai Property',
+  `adType` varchar(50) DEFAULT 'free',
+  `userId` varchar(255) DEFAULT NULL,
+  `userEmail` varchar(255) DEFAULT NULL,
+  `actualOwnerName` varchar(255) DEFAULT NULL,
+  `actualOwnerPhone` varchar(50) DEFAULT NULL,
+  `images` longtext DEFAULT NULL,
+  `description` longtext DEFAULT NULL,
+  `features` longtext DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)");
+
 @$conn->query("CREATE TABLE IF NOT EXISTS `portal_users` (
   `id` varchar(255) PRIMARY KEY,
   `fullName` varchar(255) DEFAULT NULL,
