@@ -579,6 +579,93 @@ function renderPropertyDetailView(property, onNavigateToContact) {
               </div>
             </div>
 
+            <!-- RELATED / SIMILAR PROPERTIES SECTION -->
+            ${(() => {
+              const allProps = getPublicProperties();
+              const otherProps = allProps.filter(p => p && p.id !== property.id);
+              
+              // Find matches by same road corridor, same taluk, same district, or same category/type
+              const roadMatches = property.road && property.road !== 'Other / Outside Road'
+                ? otherProps.filter(p => p.road === property.road)
+                : [];
+
+              const talukMatches = property.taluk
+                ? otherProps.filter(p => p.taluk && p.taluk.toLowerCase() === property.taluk.toLowerCase() && !roadMatches.some(rm => rm.id === p.id))
+                : [];
+
+              const catMatches = otherProps.filter(p => 
+                (p.category === property.category || p.type === property.type) && 
+                !roadMatches.some(rm => rm.id === p.id) && 
+                !talukMatches.some(tm => tm.id === p.id)
+              );
+
+              const districtMatches = otherProps.filter(p => 
+                p.district === property.district && 
+                !roadMatches.some(rm => rm.id === p.id) && 
+                !talukMatches.some(tm => tm.id === p.id) &&
+                !catMatches.some(cm => cm.id === p.id)
+              );
+
+              const relatedList = [...roadMatches, ...talukMatches, ...catMatches, ...districtMatches, ...otherProps].filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i).slice(0, 3);
+
+              if (relatedList.length === 0) return '';
+
+              return `
+                <div style="margin-top: 50px;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                      <span style="font-size: 0.8rem; font-weight: 800; color: #eb5e28; text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 4px;">EXPLORE MORE OPTIONS</span>
+                      <h3 style="font-family: var(--font-serif); font-size: 1.8rem; font-weight: 800; color: #1A202C; margin: 0;">
+                        Similar Properties in this Location & Category
+                      </h3>
+                    </div>
+                    <a href="#discover" style="color: #eb5e28; font-weight: 700; font-size: 0.92rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                      View All Listings <i class="ri-arrow-right-line"></i>
+                    </a>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                    ${relatedList.map(rel => {
+                      const relImg = rel.images && rel.images[0] ? rel.images[0] : '/default-property.jpg';
+                      const relLoc = rel.area || rel.location || rel.district || 'Thanjavur';
+                      return `
+                        <div class="property-card" style="background: #ffffff; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04); display: flex; flex-direction: column; transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;" onclick="window.location.hash = '#discover?propertyId=${encodeURIComponent(rel.id)}'; window.scrollTo({top: 0, behavior: 'smooth'});">
+                          <div style="height: 180px; position: relative; overflow: hidden;">
+                            <img src="${relImg}" alt="${rel.title}" style="width: 100%; height: 100%; object-fit: cover;" />
+                            <span style="position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">
+                              ${rel.categoryLabel || rel.type || 'Property'}
+                            </span>
+                            ${rel.road && rel.road !== 'Other / Outside Road' ? `
+                              <span style="position: absolute; bottom: 10px; left: 12px; background: #eb5e28; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 700;">
+                                <i class="ri-road-map-line"></i> ${rel.road}
+                              </span>
+                            ` : ''}
+                          </div>
+                          <div style="padding: 16px 18px; display: flex; flex-direction: column; flex: 1;">
+                            <div style="font-size: 1.15rem; font-weight: 800; color: #eb5e28; margin-bottom: 4px;">
+                              ${rel.priceFormatted || '₹ ' + (rel.price || 0).toLocaleString('en-IN')}
+                            </div>
+                            <h4 style="font-size: 0.98rem; font-weight: 700; color: #1A202C; margin: 0 0 6px 0; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                              ${rel.title}
+                            </h4>
+                            <p style="font-size: 0.8rem; color: #718096; margin: 0 0 12px 0; display: flex; align-items: center; gap: 4px;">
+                              <i class="ri-map-pin-line" style="color: #eb5e28;"></i> ${relLoc}
+                            </p>
+                            <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid #EDF2F7; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; color: #4A5568; font-weight: 700;">
+                              <span>${rel.size ? formatSizeDisplay(rel.size) : 'Prime Plot'}</span>
+                              <span style="color: #eb5e28; display: inline-flex; align-items: center; gap: 2px;">
+                                Details <i class="ri-arrow-right-s-line"></i>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+              `;
+            })()}
+
           </div>
 
         </div>

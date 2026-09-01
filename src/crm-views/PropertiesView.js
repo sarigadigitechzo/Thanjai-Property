@@ -548,7 +548,7 @@ function renderAdminPropertyPreviewModal(prop) {
           </div>
 
           <!-- Key Specs Grid -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; background: #faf8f5; padding: 20px; border-radius: 14px; border: 1px solid #e2e8f0;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; background: #faf8f5; padding: 20px; border-radius: 14px; border: 1px solid #e2e8f0;">
             <div>
               <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">EXPECTED PRICE</span>
               <div style="font-size: 1.3rem; font-weight: 800; color: #eb5e28;">${prop.priceFormatted || '₹ ' + (prop.price || 0).toLocaleString('en-IN')}</div>
@@ -558,8 +558,28 @@ function renderAdminPropertyPreviewModal(prop) {
               <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.type || 'Property'} • ${prop.categoryRaw || 'Sale'}</div>
             </div>
             <div>
-              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">LOCATION / DISTRICT</span>
-              <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.location || prop.district}</div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">AREA / LOCALITY</span>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.area || prop.location || 'N/A'}</div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">ROAD / CORRIDOR</span>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.road || 'N/A'}</div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">TALUK</span>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.taluk || 'N/A'}</div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">DISTRICT</span>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.district || 'Thanjavur'}</div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">FACING</span>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.facing || prop.address || 'N/A'}</div>
+            </div>
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">APPROVAL STATUS</span>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #38A169;">${prop.approval || 'Verified Patta Title'}</div>
             </div>
             <div>
               <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">AREA SIZE</span>
@@ -587,10 +607,12 @@ function renderAdminPropertyPreviewModal(prop) {
           <div style="background: #FFF; border: 1px solid #E2E8F0; padding: 20px; border-radius: 14px;">
             <h4 style="font-size: 0.85rem; font-weight: 800; color: #4A5568; text-transform: uppercase; margin-bottom: 12px;">OWNER & CONTACT DETAILS</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; font-size: 0.9rem;">
-              <div><strong>Owner Name:</strong> ${prop.ownerName || 'Thanjai Property Owner'}</div>
-              <div><strong>Contact Phone:</strong> ${prop.ownerPhone || '+91 95857 77772'}</div>
-              <div><strong>Listed By:</strong> ${prop.listedBy || 'Aishwarya Raman'}</div>
-              <div><strong>Patta Verification:</strong> <span style="color: #38A169; font-weight: 700;">Verified Legal Title</span></div>
+              <div><strong>Listing Plan:</strong> <span style="font-weight: 700; color: ${prop.adType === 'paid' ? '#3182CE' : '#C05621'};">${prop.adType === 'paid' ? '👑 Paid Ad' : '🛡️ Free Ad'}</span></div>
+              <div><strong>Owner / Company Name:</strong> ${prop.ownerName || 'Thanjai Property Owner'}</div>
+              <div><strong>Owner Direct Phone (Private):</strong> ${prop.ownerPhone || 'N/A'}</div>
+              <div><strong>Inquiry / Advisory Phone (Public):</strong> ${prop.inquiryPhone || '8489996852'}</div>
+              <div><strong>Listed By:</strong> ${prop.listedBy || 'Thanjai Property'}</div>
+              <div><strong>Legal Verification:</strong> <span style="color: #38A169; font-weight: 700;">Verified Legal Title</span></div>
             </div>
           </div>
 
