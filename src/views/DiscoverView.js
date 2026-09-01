@@ -581,8 +581,16 @@ function renderPropertyDetailView(property, onNavigateToContact) {
 
             <!-- RELATED / SIMILAR PROPERTIES SECTION -->
             ${(() => {
+              const currId = String(property.id || '').trim().toLowerCase();
+              const currTitle = String(property.title || '').trim().toLowerCase();
               const allProps = getPublicProperties();
-              const otherProps = allProps.filter(p => p && p.id !== property.id);
+              
+              const otherProps = allProps.filter(p => {
+                if (!p) return false;
+                const pId = String(p.id || '').trim().toLowerCase();
+                const pTitle = String(p.title || '').trim().toLowerCase();
+                return pId !== currId && pTitle !== currTitle;
+              });
               
               // Find matches by same road corridor, same taluk, same district, or same category/type
               const roadMatches = property.road && property.road !== 'Other / Outside Road'
@@ -606,7 +614,21 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                 !catMatches.some(cm => cm.id === p.id)
               );
 
-              const relatedList = [...roadMatches, ...talukMatches, ...catMatches, ...districtMatches, ...otherProps].filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i).slice(0, 3);
+              const candidates = [...roadMatches, ...talukMatches, ...catMatches, ...districtMatches, ...otherProps];
+              const seenKeys = new Set();
+              const relatedList = [];
+              for (const p of candidates) {
+                if (!p) continue;
+                const pId = String(p.id || '').trim().toLowerCase();
+                const pTitle = String(p.title || '').trim().toLowerCase();
+                if (pId === currId || pTitle === currTitle) continue;
+                if (!seenKeys.has(pId) && !seenKeys.has(pTitle)) {
+                  seenKeys.add(pId);
+                  seenKeys.add(pTitle);
+                  relatedList.push(p);
+                }
+                if (relatedList.length >= 3) break;
+              }
 
               if (relatedList.length === 0) return '';
 
