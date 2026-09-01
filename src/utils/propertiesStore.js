@@ -211,7 +211,7 @@ export function formatPropertySize(size) {
 }
 
 export function formatLocationDisplay(location, district) {
-  if (!location && !district) return 'Thanjavur, Tamil Nadu';
+  if (!location && !district) return 'Tamil Nadu';
   const locParts = (location || '').split(',').map(p => p.trim()).filter(Boolean);
   const distParts = (district || '').split(',').map(p => p.trim()).filter(Boolean);
   
@@ -224,7 +224,7 @@ export function formatLocationDisplay(location, district) {
     }
   }
   
-  if (combined.length === 0) return 'Thanjavur, Tamil Nadu';
+  if (combined.length === 0) return 'Tamil Nadu';
   return `${combined.join(', ')}, Tamil Nadu`;
 }
 
@@ -260,12 +260,11 @@ export function addProperty(data) {
     categoryLabel: data.categoryLabel || getCategoryLabel(type),
     purpose: purpose,
     price: numPrice,
-    priceFormatted: formattedPrice,
-    location: data.location || 'Thanjavur',
+    location: data.location || [data.area, data.road && data.road !== 'Other / Outside Road' ? data.road : '', data.taluk, data.district].filter(Boolean).join(', ') || '',
     area: data.area || '',
     road: data.road || '',
     taluk: data.taluk || '',
-    district: data.district || data.location?.split(',')[1]?.trim() || data.location?.split(',')[0]?.trim() || 'Thanjavur',
+    district: data.district || '',
     address: data.address || '',
     facing: data.facing || '',
     size: data.size ? formatPropertySize(data.size) : '',
@@ -463,11 +462,11 @@ function normalizePropertyRecord(p) {
     userEmail: p.userEmail || null,
     price: numPrice,
     priceFormatted: formattedPrice,
-    location: loc,
+    location: loc || '',
     area: p.area || (loc ? loc.split(',')[0]?.trim() : ''),
     road: p.road || '',
     taluk: p.taluk || '',
-    district: dist || 'Thanjavur',
+    district: p.district || (dist !== 'Thanjavur' ? dist : (loc ? dist : '')),
     address: p.address || '',
     facing: p.facing || p.address || '',
     size: p.size ? formatPropertySize(p.size) : '',

@@ -704,7 +704,7 @@ export function renderUserDashboard() {
 
       const roadPart = road && road !== 'Other / Outside Road' ? road : '';
       const locParts = [area, roadPart, taluk, district].filter(Boolean);
-      const location = locParts.length > 0 ? [...new Set(locParts)].join(', ') : (area || district || 'Thanjavur');
+      const location = locParts.length > 0 ? [...new Set(locParts)].join(', ') : (area || district || '');
 
       const features = Array.from(document.querySelectorAll('.user-feature-chk:checked')).map(c => c.value);
 
@@ -1377,6 +1377,7 @@ function renderPostPropertyFormHtml(propToEdit = null, adType = 'free') {
             <div>
               <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Category / Purpose *</label>
               <select id="user-prop-category" required style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; background: #fff; box-sizing: border-box;">
+                <option value="" disabled ${!propToEdit?.categoryRaw ? 'selected' : ''}>-- Select Category --</option>
                 <option value="Sale" ${propToEdit?.categoryRaw === 'Sale' || propToEdit?.purpose === 'buy' ? 'selected' : ''}>Sale (Buy)</option>
                 <option value="Rent" ${propToEdit?.categoryRaw === 'Rent' || propToEdit?.purpose === 'rent' ? 'selected' : ''}>Rent</option>
                 <option value="Lease" ${propToEdit?.categoryRaw === 'Lease' ? 'selected' : ''}>Lease</option>
@@ -1389,31 +1390,32 @@ function renderPostPropertyFormHtml(propToEdit = null, adType = 'free') {
             </div>
 
             <div>
-              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Road / Prime Corridor *</label>
-              <select id="user-prop-road" required style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; background: #fff; box-sizing: border-box;">
-                <option value="Medical College Road" ${propToEdit?.road === 'Medical College Road' || propToEdit?.location?.includes('Medical College Road') ? 'selected' : ''}>Medical College Road</option>
-                <option value="Trichy Road" ${propToEdit?.road === 'Trichy Road' || propToEdit?.location?.includes('Trichy Road') ? 'selected' : ''}>Trichy Road</option>
-                <option value="Pudukkottai Road" ${propToEdit?.road === 'Pudukkottai Road' || propToEdit?.location?.includes('Pudukkottai Road') ? 'selected' : ''}>Pudukkottai Road</option>
-                <option value="Madhakottai Road" ${propToEdit?.road === 'Madhakottai Road' || propToEdit?.location?.includes('Madhakottai Road') ? 'selected' : ''}>Madhakottai Road</option>
-                <option value="Nanjikottai Road" ${propToEdit?.road === 'Nanjikottai Road' || propToEdit?.location?.includes('Nanjikottai Road') ? 'selected' : ''}>Nanjikottai Road</option>
-                <option value="Villar Road" ${propToEdit?.road === 'Villar Road' || propToEdit?.location?.includes('Villar Road') ? 'selected' : ''}>Villar Road</option>
-                <option value="Pattukottai Bypass" ${propToEdit?.road === 'Pattukottai Bypass' || propToEdit?.location?.includes('Pattukottai Bypass') ? 'selected' : ''}>Pattukottai Bypass</option>
-                <option value="Mariyamman Kovil Road" ${propToEdit?.road === 'Mariyamman Kovil Road' || propToEdit?.location?.includes('Mariyamman Kovil Road') ? 'selected' : ''}>Mariyamman Kovil Road</option>
-                <option value="Srinivasapuram" ${propToEdit?.road === 'Srinivasapuram' || propToEdit?.location?.includes('Srinivasapuram') ? 'selected' : ''}>Srinivasapuram</option>
-                <option value="Reddipalayam Road" ${propToEdit?.road === 'Reddipalayam Road' || propToEdit?.location?.includes('Reddipalayam Road') ? 'selected' : ''}>Reddipalayam Road</option>
-                <option value="Kumbakonam Bypass" ${propToEdit?.road === 'Kumbakonam Bypass' || propToEdit?.location?.includes('Kumbakonam Bypass') ? 'selected' : ''}>Kumbakonam Bypass</option>
-                <option value="Other / Outside Road" ${propToEdit?.road === 'Other / Outside Road' || !propToEdit?.road ? 'selected' : ''}>Other / Outside Road</option>
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Road / Prime Corridor</label>
+              <select id="user-prop-road" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; background: #fff; box-sizing: border-box;">
+                <option value="" ${!propToEdit?.road ? 'selected' : ''}>-- Select Road Corridor (Optional) --</option>
+                <option value="Medical College Road" ${propToEdit?.road === 'Medical College Road' ? 'selected' : ''}>Medical College Road</option>
+                <option value="Trichy Road" ${propToEdit?.road === 'Trichy Road' ? 'selected' : ''}>Trichy Road</option>
+                <option value="Pudukkottai Road" ${propToEdit?.road === 'Pudukkottai Road' ? 'selected' : ''}>Pudukkottai Road</option>
+                <option value="Madhakottai Road" ${propToEdit?.road === 'Madhakottai Road' ? 'selected' : ''}>Madhakottai Road</option>
+                <option value="Nanjikottai Road" ${propToEdit?.road === 'Nanjikottai Road' ? 'selected' : ''}>Nanjikottai Road</option>
+                <option value="Villar Road" ${propToEdit?.road === 'Villar Road' ? 'selected' : ''}>Villar Road</option>
+                <option value="Pattukottai Bypass" ${propToEdit?.road === 'Pattukottai Bypass' ? 'selected' : ''}>Pattukottai Bypass</option>
+                <option value="Mariyamman Kovil Road" ${propToEdit?.road === 'Mariyamman Kovil Road' ? 'selected' : ''}>Mariyamman Kovil Road</option>
+                <option value="Srinivasapuram" ${propToEdit?.road === 'Srinivasapuram' ? 'selected' : ''}>Srinivasapuram</option>
+                <option value="Reddipalayam Road" ${propToEdit?.road === 'Reddipalayam Road' ? 'selected' : ''}>Reddipalayam Road</option>
+                <option value="Kumbakonam Bypass" ${propToEdit?.road === 'Kumbakonam Bypass' ? 'selected' : ''}>Kumbakonam Bypass</option>
+                <option value="Other / Outside Road" ${propToEdit?.road === 'Other / Outside Road' ? 'selected' : ''}>Other / Outside Road</option>
               </select>
             </div>
 
             <div>
-              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Taluk *</label>
-              <input type="text" id="user-prop-taluk" required value="${propToEdit?.taluk || 'Thanjavur'}" placeholder="e.g. Thanjavur, Kumbakonam" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Taluk</label>
+              <input type="text" id="user-prop-taluk" value="${propToEdit?.taluk || ''}" placeholder="e.g. Thanjavur, Kumbakonam" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
             </div>
 
             <div>
-              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">District *</label>
-              <input type="text" id="user-prop-district" required value="${propToEdit?.district || 'Thanjavur'}" placeholder="e.g. Thanjavur" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">District</label>
+              <input type="text" id="user-prop-district" value="${propToEdit?.district || ''}" placeholder="e.g. Thanjavur, Trichy, Madurai" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
             </div>
 
             <div>

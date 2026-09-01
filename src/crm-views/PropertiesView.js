@@ -726,6 +726,7 @@ function renderFullPagePropertyForm(prop) {
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Category *</label>
                 <select id="form-prop-category" required style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
+                  <option value="" disabled ${!isEdit || !prop?.categoryRaw ? 'selected' : ''}>-- Select Category --</option>
                   <option value="Sale" ${isEdit && (prop?.categoryRaw === 'Sale' || prop?.category === 'Sale' || prop?.purpose === 'buy') ? 'selected' : ''}>Sale</option>
                   <option value="Rent" ${isEdit && (prop?.categoryRaw === 'Rent' || prop?.category === 'Rent' || prop?.purpose === 'rent') ? 'selected' : ''}>Rent</option>
                   <option value="Lease" ${isEdit && prop?.categoryRaw === 'Lease' ? 'selected' : ''}>Lease</option>
@@ -742,33 +743,34 @@ function renderFullPagePropertyForm(prop) {
 
               <!-- Road / Location Hub (11 Road Dropdown) -->
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Road / Prime Corridor *</label>
-                <select id="form-prop-road" required style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
-                  <option value="Medical College Road" ${isEdit && (prop?.road === 'Medical College Road' || prop?.location?.includes('Medical College Road')) ? 'selected' : ''}>Medical College Road</option>
-                  <option value="Trichy Road" ${isEdit && (prop?.road === 'Trichy Road' || prop?.location?.includes('Trichy Road')) ? 'selected' : ''}>Trichy Road</option>
-                  <option value="Pudukkottai Road" ${isEdit && (prop?.road === 'Pudukkottai Road' || prop?.location?.includes('Pudukkottai Road')) ? 'selected' : ''}>Pudukkottai Road</option>
-                  <option value="Madhakottai Road" ${isEdit && (prop?.road === 'Madhakottai Road' || prop?.location?.includes('Madhakottai Road')) ? 'selected' : ''}>Madhakottai Road</option>
-                  <option value="Nanjikottai Road" ${isEdit && (prop?.road === 'Nanjikottai Road' || prop?.location?.includes('Nanjikottai Road')) ? 'selected' : ''}>Nanjikottai Road</option>
-                  <option value="Villar Road" ${isEdit && (prop?.road === 'Villar Road' || prop?.location?.includes('Villar Road')) ? 'selected' : ''}>Villar Road</option>
-                  <option value="Pattukottai Bypass" ${isEdit && (prop?.road === 'Pattukottai Bypass' || prop?.location?.includes('Pattukottai Bypass')) ? 'selected' : ''}>Pattukottai Bypass</option>
-                  <option value="Mariyamman Kovil Road" ${isEdit && (prop?.road === 'Mariyamman Kovil Road' || prop?.location?.includes('Mariyamman Kovil Road')) ? 'selected' : ''}>Mariyamman Kovil Road</option>
-                  <option value="Srinivasapuram" ${isEdit && (prop?.road === 'Srinivasapuram' || prop?.location?.includes('Srinivasapuram')) ? 'selected' : ''}>Srinivasapuram</option>
-                  <option value="Reddipalayam Road" ${isEdit && (prop?.road === 'Reddipalayam Road' || prop?.location?.includes('Reddipalayam Road')) ? 'selected' : ''}>Reddipalayam Road</option>
-                  <option value="Kumbakonam Bypass" ${isEdit && (prop?.road === 'Kumbakonam Bypass' || prop?.location?.includes('Kumbakonam Bypass')) ? 'selected' : ''}>Kumbakonam Bypass</option>
-                  <option value="Other / Outside Road" ${isEdit && (prop?.road === 'Other / Outside Road' || !prop?.road) ? 'selected' : ''}>Other / Outside Road</option>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Road / Prime Corridor</label>
+                <select id="form-prop-road" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
+                  <option value="" ${!isEdit || !prop?.road ? 'selected' : ''}>-- Select Road Corridor (Optional) --</option>
+                  <option value="Medical College Road" ${isEdit && prop?.road === 'Medical College Road' ? 'selected' : ''}>Medical College Road</option>
+                  <option value="Trichy Road" ${isEdit && prop?.road === 'Trichy Road' ? 'selected' : ''}>Trichy Road</option>
+                  <option value="Pudukkottai Road" ${isEdit && prop?.road === 'Pudukkottai Road' ? 'selected' : ''}>Pudukkottai Road</option>
+                  <option value="Madhakottai Road" ${isEdit && prop?.road === 'Madhakottai Road' ? 'selected' : ''}>Madhakottai Road</option>
+                  <option value="Nanjikottai Road" ${isEdit && prop?.road === 'Nanjikottai Road' ? 'selected' : ''}>Nanjikottai Road</option>
+                  <option value="Villar Road" ${isEdit && prop?.road === 'Villar Road' ? 'selected' : ''}>Villar Road</option>
+                  <option value="Pattukottai Bypass" ${isEdit && prop?.road === 'Pattukottai Bypass' ? 'selected' : ''}>Pattukottai Bypass</option>
+                  <option value="Mariyamman Kovil Road" ${isEdit && prop?.road === 'Mariyamman Kovil Road' ? 'selected' : ''}>Mariyamman Kovil Road</option>
+                  <option value="Srinivasapuram" ${isEdit && prop?.road === 'Srinivasapuram' ? 'selected' : ''}>Srinivasapuram</option>
+                  <option value="Reddipalayam Road" ${isEdit && prop?.road === 'Reddipalayam Road' ? 'selected' : ''}>Reddipalayam Road</option>
+                  <option value="Kumbakonam Bypass" ${isEdit && prop?.road === 'Kumbakonam Bypass' ? 'selected' : ''}>Kumbakonam Bypass</option>
+                  <option value="Other / Outside Road" ${isEdit && prop?.road === 'Other / Outside Road' ? 'selected' : ''}>Other / Outside Road</option>
                 </select>
               </div>
 
               <!-- Taluk -->
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Taluk *</label>
-                <input type="text" id="form-prop-taluk" required value="${isEdit ? prop?.taluk || 'Thanjavur' : 'Thanjavur'}" placeholder="e.g. Thanjavur, Kumbakonam, Pattukkottai" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Taluk</label>
+                <input type="text" id="form-prop-taluk" value="${isEdit ? prop?.taluk || '' : ''}" placeholder="e.g. Thanjavur, Kumbakonam, Pattukkottai" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
               <!-- District -->
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">District *</label>
-                <input type="text" id="form-prop-district" required value="${isEdit ? prop?.district || 'Thanjavur' : 'Thanjavur'}" placeholder="e.g. Thanjavur, Trichy, Madurai" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">District</label>
+                <input type="text" id="form-prop-district" value="${isEdit ? prop?.district || '' : ''}" placeholder="e.g. Thanjavur, Trichy, Madurai" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
               <!-- Facing -->
@@ -1745,7 +1747,7 @@ function initPropertyFormListeners() {
 
     const roadPart = road && road !== 'Other / Outside Road' ? road : '';
     const locParts = [area, roadPart, taluk, district].filter(Boolean);
-    const combinedLocation = locParts.length > 0 ? [...new Set(locParts)].join(', ') : (area || district || 'Thanjavur');
+    const combinedLocation = locParts.length > 0 ? [...new Set(locParts)].join(', ') : (area || district || '');
 
     const val = (type || '').toLowerCase();
     const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room'];
