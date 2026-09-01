@@ -869,7 +869,7 @@ function renderFullPagePropertyForm(prop) {
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Listing Plan (Ad Type)</label>
                 <select id="form-prop-ad-type" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; background: #fff;">
                   <option value="free" ${isEdit && prop?.adType === 'paid' ? '' : 'selected'}>🛡️ Free Ad (Thanjai Property Desk +91 84899 96852)</option>
-                  <option value="paid" ${isEdit && prop?.adType === 'paid' ? 'selected' : ''}>👑 Paid Ad (Direct Owner Contact & Call Enabled)</option>
+                  <option value="paid" ${isEdit && prop?.adType === 'paid' ? 'selected' : ''}>👑 Paid Ad (Direct Advisory Call & WhatsApp)</option>
                 </select>
               </div>
 
@@ -884,8 +884,13 @@ function renderFullPagePropertyForm(prop) {
               </div>
 
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Owner Direct Phone</label>
-                <input type="tel" id="form-prop-contact-phone" value="${isEdit ? prop?.ownerPhone || '' : ''}" placeholder="10-digit number" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Owner Direct Phone <span style="font-size: 0.72rem; color: #e53e3e; font-weight: 600;">(Private / CRM Only)</span></label>
+                <input type="tel" id="form-prop-contact-phone" value="${isEdit ? prop?.ownerPhone || '' : ''}" placeholder="e.g. 9345717490 (Private)" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+              </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Inquiry / Advisory Phone <span style="font-size: 0.72rem; color: #38a169; font-weight: 600;">(Public Call & WhatsApp)</span></label>
+                <input type="tel" id="form-prop-inquiry-phone" value="${isEdit ? prop?.inquiryPhone || '' : ''}" placeholder="e.g. 8489996852 (Website Queries)" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
             </div>
           </div>
@@ -1777,9 +1782,11 @@ function initPropertyFormListeners() {
       images: finalImages,
       features: featuresArray,
       description: description || '',
-      ownerName: document.getElementById('form-prop-owner-name')?.value.trim() || 'Aishwarya Raman',
-      ownerPhone: document.getElementById('form-prop-owner-phone')?.value.trim() || '8489996852',
-      listedBy: 'Aishwarya Raman'
+      adType: document.getElementById('form-prop-ad-type')?.value || 'free',
+      ownerName: document.getElementById('form-prop-owner-company')?.value.trim() || document.getElementById('form-prop-owner-name')?.value?.trim() || '',
+      ownerPhone: document.getElementById('form-prop-contact-phone')?.value.trim() || document.getElementById('form-prop-owner-phone')?.value?.trim() || '',
+      inquiryPhone: document.getElementById('form-prop-inquiry-phone')?.value.trim() || '8489996852',
+      listedBy: document.getElementById('form-prop-contact-name')?.value.trim() || 'Thanjai Property'
     };
 
     if (editingPropertyId) {

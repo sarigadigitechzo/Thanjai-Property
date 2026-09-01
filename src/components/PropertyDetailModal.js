@@ -188,69 +188,40 @@ export function renderPropertyDetailModal(property) {
           <div>
             <div class="sticky-enquiry-card">
               ${(() => {
-                const isPaidAd = String(property.adType || property.ad_type || property.adTier || property.listingPlan || '').toLowerCase().trim() === 'paid';
-                const ownerDisplayName = isPaidAd ? (property.ownerName || 'Verified Owner') : 'Thanjai Property';
-                const ownerDisplayPhone = isPaidAd ? (property.ownerPhone || '8489996852') : '8489996852';
-                const formattedOwnerPhone = ownerDisplayPhone.startsWith('+91') ? ownerDisplayPhone : `+91 ${ownerDisplayPhone}`;
-                const rawOwnerPhoneClean = ownerDisplayPhone.replace(/[^0-9]/g, '');
-                const ownerWaNumber = rawOwnerPhoneClean.startsWith('91') && rawOwnerPhoneClean.length === 12 ? rawOwnerPhoneClean : (rawOwnerPhoneClean.length === 10 ? `91${rawOwnerPhoneClean}` : '918489996852');
+                const specialistDisplayName = property.ownerName || 'Thanjai Property';
+                const publicPhone = property.inquiryPhone || '8489996852';
+                const cleanPublicPhone = publicPhone.replace(/[^0-9]/g, '');
+                const formattedPhone = cleanPublicPhone.length === 10 ? `+91 ${cleanPublicPhone}` : (cleanPublicPhone.startsWith('91') && cleanPublicPhone.length === 12 ? `+${cleanPublicPhone}` : `+91 ${publicPhone}`);
+                const waNumber = cleanPublicPhone.startsWith('91') && cleanPublicPhone.length === 12 ? cleanPublicPhone : (cleanPublicPhone.length === 10 ? `91${cleanPublicPhone}` : '918489996852');
 
-                if (isPaidAd) {
-                  return `
-                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border);">
-                      <div style="width: 54px; height: 54px; border-radius: 50%; background: #EBF8FF; color: #3182CE; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; border: 2px solid #3182CE; flex-shrink: 0;">
-                        <i class="ri-user-star-fill"></i>
-                      </div>
-                      <div>
-                        <h4 style="font-size: 1rem; font-weight: 800; color: var(--color-brown);">${ownerDisplayName}</h4>
-                        <div style="font-size: 0.75rem; color: #38A169; font-weight: 700;">👑 Direct Owner Listing • 0% Brokerage</div>
-                      </div>
+                return `
+                  <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border);">
+                    <div style="width: 54px; height: 54px; border-radius: 50%; background: #2A1808; color: #eb5e28; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; border: 2px solid #eb5e28; flex-shrink: 0;">
+                      TP
                     </div>
-
-                    <h4 style="font-size: 1.125rem; font-weight: 800; color: var(--color-brown); margin-bottom: 16px;">Contact Direct Owner</h4>
-
-                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
-                      <a href="tel:${formattedOwnerPhone}" class="btn btn-brown" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="ri-phone-fill"></i> CALL OWNER (${ownerDisplayPhone})
-                      </a>
-                      <a href="https://wa.me/${ownerWaNumber}?text=Hi%20${encodeURIComponent(ownerDisplayName)},%20I%20am%20interested%20in%20your%20property%20${encodeURIComponent(property.title)}%20(ID:%20${property.id})" target="_blank" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #25D366; border-color: #25D366;">
-                        <i class="ri-whatsapp-line" style="font-size: 1.2rem;"></i> WHATSAPP OWNER
-                      </a>
-                      <button class="btn btn-outline-dark" id="modal-schedule-btn" style="width: 100%;">
-                        <i class="ri-calendar-line"></i> SCHEDULE SITE VISIT
-                      </button>
+                    <div>
+                      <h4 style="font-size: 1rem; font-weight: 800; color: var(--color-brown);">${specialistDisplayName}</h4>
+                      <div style="font-size: 0.75rem; color: var(--color-orange); font-weight: 700;">🛡️ Executive Real Estate Advisory Desk</div>
                     </div>
-                  `;
-                } else {
-                  return `
-                    <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--color-border);">
-                      <div style="width: 54px; height: 54px; border-radius: 50%; background: #2A1808; color: #eb5e28; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; border: 2px solid #eb5e28; flex-shrink: 0;">
-                        TP
-                      </div>
-                      <div>
-                        <h4 style="font-size: 1rem; font-weight: 800; color: var(--color-brown);">Thanjai Property</h4>
-                        <div style="font-size: 0.75rem; color: var(--color-orange); font-weight: 700;">Executive Real Estate Advisory</div>
-                      </div>
-                    </div>
+                  </div>
 
-                    <h4 style="font-size: 1.125rem; font-weight: 800; color: var(--color-brown); margin-bottom: 16px;">Interested in this Property?</h4>
+                  <h4 style="font-size: 1.125rem; font-weight: 800; color: var(--color-brown); margin-bottom: 16px;">Interested in this Property?</h4>
 
-                    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
-                      <a href="tel:+918489996852" class="btn btn-brown" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="ri-phone-fill"></i> CALL DESK (+91 84899 96852)
-                      </a>
-                      <a href="https://wa.me/918489996852?text=Hi%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}%20(ID:%20${property.id})" target="_blank" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="ri-whatsapp-line" style="font-size: 1.2rem;"></i> WHATSAPP CHAT
-                      </a>
-                      <a href="mailto:vijayaraghavan@thanjaiproperty.com?subject=Inquiry%20for%20${encodeURIComponent(property.title)}" class="btn btn-outline-dark" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="ri-mail-line" style="color: #eb5e28;"></i> EMAIL ADVISORY DESK
-                      </a>
-                      <button class="btn btn-outline-dark" id="modal-schedule-btn" style="width: 100%;">
-                        <i class="ri-calendar-line"></i> SCHEDULE SITE VISIT
-                      </button>
-                    </div>
-                  `;
-                }
+                  <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+                    <a href="tel:${formattedPhone.replace(/\s+/g, '')}" class="btn btn-brown" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                      <i class="ri-phone-fill"></i> CALL SELLER (${formattedPhone})
+                    </a>
+                    <a href="https://wa.me/${waNumber}?text=Hi%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}%20(ID:%20${property.id})" target="_blank" class="btn btn-primary" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #25D366; border-color: #25D366;">
+                      <i class="ri-whatsapp-line" style="font-size: 1.2rem;"></i> WHATSAPP CHAT
+                    </a>
+                    <a href="mailto:vijayaraghavan@thanjaiproperty.com?subject=Inquiry%20for%20${encodeURIComponent(property.title)}" class="btn btn-outline-dark" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                      <i class="ri-mail-line" style="color: #eb5e28;"></i> EMAIL ADVISORY DESK
+                    </a>
+                    <button class="btn btn-outline-dark" id="modal-schedule-btn" style="width: 100%;">
+                      <i class="ri-calendar-line"></i> SCHEDULE SITE VISIT
+                    </button>
+                  </div>
+                `;
               })()}
 
               <!-- Instant Direct Enquiry Form -->

@@ -487,29 +487,28 @@ function renderPropertyDetailView(property, onNavigateToContact) {
 
             <!-- POSTER / OWNER INFORMATION CARD -->
             ${(() => {
-              const isPaidAd = String(property.adType || property.ad_type || property.adTier || property.listingPlan || '').toLowerCase().trim() === 'paid';
-              const ownerDisplayName = isPaidAd ? (property.ownerName || 'Verified Owner') : 'Thanjai Property';
-              const ownerDisplayPhone = isPaidAd ? (property.ownerPhone || '8489996852') : '8489996852';
-              const formattedOwnerPhone = ownerDisplayPhone.startsWith('+91') ? ownerDisplayPhone : `+91 ${ownerDisplayPhone}`;
-              const rawOwnerPhoneClean = ownerDisplayPhone.replace(/[^0-9]/g, '');
-              const ownerWaNumber = rawOwnerPhoneClean.startsWith('91') && rawOwnerPhoneClean.length === 12 ? rawOwnerPhoneClean : (rawOwnerPhoneClean.length === 10 ? `91${rawOwnerPhoneClean}` : '918489996852');
+              const specialistDisplayName = property.ownerName || 'Thanjai Property';
+              const publicPhone = property.inquiryPhone || '8489996852';
+              const cleanPublicPhone = publicPhone.replace(/[^0-9]/g, '');
+              const formattedPhone = cleanPublicPhone.length === 10 ? `+91 ${cleanPublicPhone}` : (cleanPublicPhone.startsWith('91') && cleanPublicPhone.length === 12 ? `+${cleanPublicPhone}` : `+91 ${publicPhone}`);
+              const waNumber = cleanPublicPhone.startsWith('91') && cleanPublicPhone.length === 12 ? cleanPublicPhone : (cleanPublicPhone.length === 10 ? `91${cleanPublicPhone}` : '918489996852');
 
               return `
                 <div style="background: #FAF8F5; padding: 20px 24px; border-radius: 16px; border: 1px solid #E7E0D8; margin-bottom: 36px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                   <div>
                     <span style="font-size: 0.78rem; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Verified Property Seller / Specialist:</span>
-                    <strong style="font-size: 1.1rem; color: #1A202C;">${ownerDisplayName}</strong>
-                    <div style="font-size: 0.75rem; font-weight: 700; color: ${isPaidAd ? '#38A169' : '#eb5e28'}; margin-top: 2px;">
-                      ${isPaidAd ? '👑 Direct Owner Listing • 0% Brokerage' : '🛡️ Executive Real Estate Advisory Desk'}
+                    <strong style="font-size: 1.1rem; color: #1A202C;">${specialistDisplayName}</strong>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: #eb5e28; margin-top: 2px;">
+                      🛡️ Executive Real Estate Advisory Desk
                     </div>
                   </div>
 
                   <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <a href="tel:${formattedOwnerPhone}" style="background: #ffffff; border: 1px solid #CBD5E0; color: #2D3748; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
-                      <i class="ri-phone-line" style="color: #eb5e28;"></i> ${isPaidAd ? `Call Owner (${ownerDisplayPhone})` : 'Call Seller (+91 84899 96852)'}
+                    <a href="tel:${formattedPhone.replace(/\s+/g, '')}" style="background: #ffffff; border: 1px solid #CBD5E0; color: #2D3748; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                      <i class="ri-phone-line" style="color: #eb5e28;"></i> Call Seller (${formattedPhone})
                     </a>
-                    <a href="${isPaidAd ? `https://wa.me/${ownerWaNumber}?text=Hi%20${encodeURIComponent(ownerDisplayName)},%20I%20am%20interested%20in%20your%20property%20${encodeURIComponent(property.title)}` : `https://wa.me/918489996852?text=Hello%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}`}" target="_blank" style="background: #25D366; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,211,102,0.25);">
-                      <i class="ri-whatsapp-line"></i> ${isPaidAd ? 'WhatsApp Owner' : 'WhatsApp Chat'}
+                    <a href="https://wa.me/${waNumber}?text=Hello%20Thanjai%20Property,%20I%20am%20interested%20in%20${encodeURIComponent(property.title)}%20(ID:%20${encodeURIComponent(property.id)})" target="_blank" style="background: #25D366; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,211,102,0.25);">
+                      <i class="ri-whatsapp-line"></i> WhatsApp Chat
                     </a>
                     <a href="mailto:vijayaraghavan@thanjaiproperty.com?subject=Inquiry%20for%20${encodeURIComponent(property.title)}" style="background: #1a1a1a; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 0.88rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
                       <i class="ri-mail-line" style="color: #eb5e28;"></i> Email Us

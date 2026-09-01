@@ -278,14 +278,16 @@ export function addProperty(data) {
     latitude: data.latitude || '',
     longitude: data.longitude || '',
     videoUrl: data.videoUrl || '',
+    adType: data.adType || 'free',
     ownerName: data.ownerName || '',
     ownerPhone: data.ownerPhone || '',
+    inquiryPhone: data.inquiryPhone || '8489996852',
     userId: data.userId || null,
     userEmail: data.userEmail || null,
     images: data.images && data.images.length > 0 ? data.images : ['/default-property.jpg'],
     description: data.description || '',
     features: Array.isArray(data.features) ? data.features : [],
-    listedBy: data.listedBy || 'Aishwarya Raman',
+    listedBy: data.listedBy || 'Thanjai Property',
     createdAt: new Date().toISOString()
   };
 
@@ -495,8 +497,9 @@ function normalizePropertyRecord(p) {
       return uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
     })(),
     adType: String(p.adType || p.ad_type || p.adTier || p.listingPlan || 'free').toLowerCase().trim(),
-    ownerName: p.ownerName || p.owner_name || (String(p.adType || '').toLowerCase().trim() === 'paid' ? 'Verified Owner' : 'Thanjai Property'),
-    ownerPhone: p.ownerPhone || p.owner_phone || (String(p.adType || '').toLowerCase().trim() === 'paid' ? '8489996852' : '8489996852'),
+    ownerName: p.ownerName || p.owner_name || '',
+    ownerPhone: p.ownerPhone || p.owner_phone || '',
+    inquiryPhone: p.inquiryPhone || p.inquiry_phone || '8489996852',
     description: p.description || '',
     approval: p.approval || '',
     facing: p.facing || '',
