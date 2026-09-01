@@ -1,12 +1,7 @@
-import { getProperties, getPublicProperties } from '../utils/propertiesStore.js';
+import { getProperties, getPublicProperties, formatPropertySize, formatLocationDisplay } from '../utils/propertiesStore.js';
 
 function formatSizeDisplay(size) {
-  if (!size) return '2,400 Sq.Ft';
-  const str = String(size).trim();
-  if (/^\d+$/.test(str)) {
-    return `${parseInt(str, 10).toLocaleString('en-IN')} Sq.Ft`;
-  }
-  return str;
+  return formatPropertySize(size);
 }
 
 export function renderDiscoverView(discoverState, onPropertySelect, onNavigateToContact) {
@@ -180,16 +175,19 @@ export function renderDiscoverView(discoverState, onPropertySelect, onNavigateTo
 
                     <div style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: #666; margin-bottom: 16px;">
                       <i class="ri-map-pin-2-line" style="color: var(--color-orange, #eb5e28);"></i>
-                      <span>${prop.location}, ${prop.district}</span>
+                      <span>${formatLocationDisplay(prop.location, prop.district)}</span>
                     </div>
 
-                    <p style="font-size: 0.88rem; color: #666; line-height: 1.5; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                      ${prop.description}
-                    </p>
+                    ${prop.description ? `
+                      <p style="font-size: 0.88rem; color: #666; line-height: 1.5; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        ${prop.description}
+                      </p>
+                    ` : ''}
 
-                    <div style="display: flex; gap: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.85rem; color: #555; margin-top: auto;">
-                      <span><i class="ri-ruler-2-line"></i> ${prop.size}</span>
-                      ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : `<span><i class="ri-shield-check-line"></i> ${prop.approval}</span>`}
+                    <div style="display: flex; gap: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.85rem; color: #555; margin-top: auto; flex-wrap: wrap;">
+                      ${prop.size ? `<span><i class="ri-ruler-2-line"></i> ${formatSizeDisplay(prop.size)}</span>` : ''}
+                      ${prop.facing ? `<span><i class="ri-compass-3-line"></i> ${prop.facing}</span>` : ''}
+                      ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : (prop.approval ? `<span><i class="ri-shield-check-line"></i> ${prop.approval}</span>` : '')}
                     </div>
 
                     <button class="btn btn-outline-dark" style="margin-top: 20px; width: 100%; border-radius: 10px; font-size: 0.9rem;">
@@ -326,8 +324,11 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                   ${property.title}
                 </h1>
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 1.05rem; color: #4A5568; font-weight: 600;">
-                  <i class="ri-map-pin-2-fill" style="color: #eb5e28; font-size: 1.2rem;"></i>
-                  <span>${property.location}, ${property.district}, Tamil Nadu</span>
+                  <a href="${property.latitude && property.longitude ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.latitude)},${encodeURIComponent(property.longitude)}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([property.location, property.district, 'Tamil Nadu'].filter(Boolean).join(', '))}`}" target="_blank" rel="noopener noreferrer" style="color: #4A5568; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: color 0.2s ease;" onmouseover="this.style.color='#eb5e28'" onmouseout="this.style.color='#4A5568'" title="Open Location on Google Maps">
+                    <i class="ri-map-pin-2-fill" style="color: #eb5e28; font-size: 1.2rem;"></i>
+                    <span>${formatLocationDisplay(property.location, property.district)}</span>
+                    <i class="ri-external-link-line" style="font-size: 0.85rem; color: #a0aec0;"></i>
+                  </a>
                 </div>
               </div>
 
@@ -347,10 +348,19 @@ function renderPropertyDetailView(property, onNavigateToContact) {
               display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;
               padding: 24px; background: #F8FAFC; border-radius: 16px; border: 1px solid #E2E8F0; margin-bottom: 36px;
             ">
-              <div>
-                <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Total Area</span>
-                <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-ruler-2-line" style="color: #eb5e28;"></i> ${formatSizeDisplay(property.size)}</strong>
-              </div>
+              ${property.size ? `
+                <div>
+                  <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Total Area</span>
+                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-ruler-2-line" style="color: #eb5e28;"></i> ${formatSizeDisplay(property.size)}</strong>
+                </div>
+              ` : ''}
+
+              ${property.facing ? `
+                <div>
+                  <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Facing</span>
+                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-compass-3-line" style="color: #eb5e28;"></i> ${property.facing}</strong>
+                </div>
+              ` : ''}
 
               ${property.bedrooms ? `
                 <div>
@@ -366,10 +376,12 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                 </div>
               ` : ''}
 
-              <div>
-                <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Furnishing</span>
-                <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-armchair-line" style="color: #eb5e28;"></i> ${property.furnishing || 'Not specified'}</strong>
-              </div>
+              ${property.furnishing && property.furnishing !== 'Not specified' ? `
+                <div>
+                  <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Furnishing</span>
+                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-armchair-line" style="color: #eb5e28;"></i> ${property.furnishing}</strong>
+                </div>
+              ` : ''}
             </div>
 
             <!-- POSTER / OWNER INFORMATION CARD -->
@@ -407,12 +419,14 @@ function renderPropertyDetailView(property, onNavigateToContact) {
             })()}
 
             <!-- DESCRIPTION OVERVIEW -->
-            <div style="margin-bottom: 40px;">
-              <h3 style="font-family: var(--font-serif); font-size: 1.4rem; font-weight: 800; margin-bottom: 14px; color: #1A202C;">Property Overview</h3>
-              <p style="font-size: 1.05rem; color: #4A5568; line-height: 1.7; margin: 0;">
-                ${property.description || 'Luxury property in prime growth corridor with clear Patta title and excellent connectivity.'}
-              </p>
-            </div>
+            ${property.description ? `
+              <div style="margin-bottom: 40px;">
+                <h3 style="font-family: var(--font-serif); font-size: 1.4rem; font-weight: 800; margin-bottom: 14px; color: #1A202C;">Property Overview</h3>
+                <p style="font-size: 1.05rem; color: #4A5568; line-height: 1.7; margin: 0; white-space: pre-line;">
+                  ${property.description}
+                </p>
+              </div>
+            ` : ''}
 
             <!-- KEY FEATURES & AMENITIES GRID -->
             ${property.features && property.features.length > 0 ? `

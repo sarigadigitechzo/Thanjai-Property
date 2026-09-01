@@ -2,11 +2,31 @@ import { isFavorite, toggleFavorite } from '../utils/favorites.js';
 import { showToast } from '../utils/toast.js';
 import { fetchFromAPI } from '../utils/api.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
+import { formatPropertySize, formatLocationDisplay } from '../utils/propertiesStore.js';
 
 export function renderPropertyDetailModal(property) {
   if (!property) return '';
 
   const saved = isFavorite(property.id);
+  const formattedSize = formatPropertySize(property.size);
+
+  // Assemble dynamic technical specs
+  const specsList = Array.isArray(property.specs) && property.specs.length > 0 ? [...property.specs] : [];
+  if (!specsList.some(s => s.label.toLowerCase() === 'area') && formattedSize) {
+    specsList.unshift({ label: 'Area', value: formattedSize });
+  }
+  if (!specsList.some(s => s.label.toLowerCase() === 'facing') && property.facing) {
+    specsList.push({ label: 'Facing', value: property.facing });
+  }
+  if (property.furnishing && property.furnishing !== 'Not specified') {
+    specsList.push({ label: 'Furnishing', value: property.furnishing });
+  }
+  if (property.floor) {
+    specsList.push({ label: 'Floor', value: property.floor });
+  }
+  if (property.district) {
+    specsList.push({ label: 'District', value: property.district });
+  }
 
   return `
     <div class="modal-overlay active" id="property-details-modal-overlay">
@@ -24,7 +44,7 @@ export function renderPropertyDetailModal(property) {
               <span class="badge badge-dark">
                 <i class="ri-image-line"></i> ${property.images.length} High-Res Photos
               </span>
-              <span class="badge badge-orange">${property.tag}</span>
+              <span class="badge badge-orange">${property.tag || property.categoryLabel}</span>
             </div>
 
             <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px;">
@@ -58,8 +78,11 @@ export function renderPropertyDetailModal(property) {
                   ${property.title}
                 </h2>
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 0.9375rem; color: var(--color-text-muted); margin-top: 8px;">
-                  <i class="ri-map-pin-2-line" style="color: var(--color-orange);"></i>
-                  <span>${property.area}, Tamil Nadu</span>
+                  <a href="${property.latitude && property.longitude ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.latitude)},${encodeURIComponent(property.longitude)}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([property.location, property.district, 'Tamil Nadu'].filter(Boolean).join(', '))}`}" target="_blank" rel="noopener noreferrer" style="color: var(--color-text-muted); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: color 0.2s ease;" onmouseover="this.style.color='var(--color-orange)'" onmouseout="this.style.color='var(--color-text-muted)'" title="Open Location on Google Maps">
+                    <i class="ri-map-pin-2-line" style="color: var(--color-orange);"></i>
+                    <span>${formatLocationDisplay(property.location, property.district)}</span>
+                    <i class="ri-external-link-line" style="font-size: 0.85rem; color: #a0aec0;"></i>
+                  </a>
                 </div>
               </div>
 
@@ -67,46 +90,62 @@ export function renderPropertyDetailModal(property) {
                 <div class="font-serif" style="font-size: 2.5rem; color: var(--color-brown); font-weight: 700;">
                   ${property.priceFormatted}
                 </div>
-                <div style="font-size: 0.8125rem; color: var(--color-text-muted);">${property.priceSqft}</div>
+                ${property.priceSqft ? `<div style="font-size: 0.8125rem; color: var(--color-text-muted);">${property.priceSqft}</div>` : ''}
               </div>
             </div>
 
             <!-- Section 14: Editorial Property Facts -->
             <div class="facts-editorial-grid">
-              <div class="fact-block">
-                <div class="fact-value">${property.size}</div>
-                <div class="fact-label">BUILT-UP AREA</div>
-              </div>
-              <div class="fact-block">
-                <div class="fact-value">${property.bedrooms || '—'}</div>
-                <div class="fact-label">BEDROOMS</div>
-              </div>
-              <div class="fact-block">
-                <div class="fact-value">${property.bathrooms || '—'}</div>
-                <div class="fact-label">BATHROOMS</div>
-              </div>
+              ${formattedSize ? `
+                <div class="fact-block">
+                  <div class="fact-value">${formattedSize}</div>
+                  <div class="fact-label">BUILT-UP AREA</div>
+                </div>
+              ` : ''}
+              ${property.facing ? `
+                <div class="fact-block">
+                  <div class="fact-value">${property.facing}</div>
+                  <div class="fact-label">FACING</div>
+                </div>
+              ` : ''}
+              ${property.bedrooms ? `
+                <div class="fact-block">
+                  <div class="fact-value">${property.bedrooms} BHK</div>
+                  <div class="fact-label">BEDROOMS</div>
+                </div>
+              ` : ''}
+              ${property.bathrooms ? `
+                <div class="fact-block">
+                  <div class="fact-value">${property.bathrooms}</div>
+                  <div class="fact-label">BATHROOMS</div>
+                </div>
+              ` : ''}
             </div>
 
             <!-- Description -->
-            <div style="margin-bottom: 40px;">
-              <h3 class="font-serif" style="font-size: 1.5rem; color: var(--color-brown); margin-bottom: 12px;">Property Overview</h3>
-              <p style="color: var(--color-text-main); font-size: 1rem; line-height: 1.7; white-space: pre-line;">
-                ${property.description}
-              </p>
-            </div>
+            ${property.description ? `
+              <div style="margin-bottom: 40px;">
+                <h3 class="font-serif" style="font-size: 1.5rem; color: var(--color-brown); margin-bottom: 12px;">Property Overview</h3>
+                <p style="color: var(--color-text-main); font-size: 1rem; line-height: 1.7; white-space: pre-line;">
+                  ${property.description}
+                </p>
+              </div>
+            ` : ''}
 
             <!-- Key Specifications Table -->
-            <div style="margin-bottom: 40px;">
-              <h3 class="font-serif" style="font-size: 1.5rem; color: var(--color-brown); margin-bottom: 16px;">Key Technical Specifications</h3>
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; background: var(--color-cream-light); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
-                ${property.specs.map(s => `
-                  <div style="display: flex; flex-direction: column;">
-                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">${s.label}</span>
-                    <span style="font-size: 0.9375rem; font-weight: 700; color: var(--color-brown);">${s.value}</span>
-                  </div>
-                `).join('')}
+            ${specsList.length > 0 ? `
+              <div style="margin-bottom: 40px;">
+                <h3 class="font-serif" style="font-size: 1.5rem; color: var(--color-brown); margin-bottom: 16px;">Key Technical Specifications</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; background: var(--color-cream-light); padding: 24px; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                  ${specsList.map(s => `
+                    <div style="display: flex; flex-direction: column;">
+                      <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase;">${s.label}</span>
+                      <span style="font-size: 0.9375rem; font-weight: 700; color: var(--color-brown);">${s.value}</span>
+                    </div>
+                  `).join('')}
+                </div>
               </div>
-            </div>
+            ` : ''}
 
             <!-- Floor Plan Section -->
             <div style="margin-bottom: 32px;">

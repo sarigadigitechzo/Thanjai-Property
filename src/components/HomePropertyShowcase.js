@@ -1,10 +1,7 @@
+import { formatPropertySize, formatLocationDisplay } from '../utils/propertiesStore.js';
+
 function formatSizeDisplay(size) {
-  if (!size) return '2,400 Sq.Ft';
-  const str = String(size).trim();
-  if (/^\d+$/.test(str)) {
-    return `${parseInt(str, 10).toLocaleString('en-IN')} Sq.Ft`;
-  }
-  return str;
+  return formatPropertySize(size);
 }
 
 export function renderHomePropertyShowcase(properties, onSelectProperty, onNavigateToDiscover) {
@@ -64,11 +61,12 @@ export function renderHomePropertyShowcase(properties, onSelectProperty, onNavig
 
                 <div style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: #666; margin-bottom: 16px;">
                   <i class="ri-map-pin-2-line" style="color: var(--color-orange, #eb5e28);"></i>
-                  <span>${prop.location}, ${prop.district}</span>
+                  <span>${formatLocationDisplay(prop.location, prop.district)}</span>
                 </div>
 
-                <div style="display: flex; gap: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.85rem; color: #555; margin-top: auto;">
-                  <span><i class="ri-ruler-2-line"></i> ${formatSizeDisplay(prop.size)}</span>
+                <div style="display: flex; gap: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.85rem; color: #555; margin-top: auto; flex-wrap: wrap;">
+                  ${prop.size ? `<span><i class="ri-ruler-2-line"></i> ${formatSizeDisplay(prop.size)}</span>` : ''}
+                  ${prop.facing ? `<span><i class="ri-compass-3-line"></i> ${prop.facing}</span>` : ''}
                   ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : (prop.approval ? `<span><i class="ri-shield-check-line"></i> ${prop.approval}</span>` : '')}
                 </div>
 

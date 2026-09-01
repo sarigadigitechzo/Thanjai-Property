@@ -245,20 +245,7 @@ ${(() => {
             <div class="form-row">
               <div class="form-group">
                 <label>Source</label>
-                <div class="os-custom-select modal-select" id="lead-source-select">
-                  <div class="select-value">Manual</div>
-                  <i class="ri-arrow-down-s-line"></i>
-                  <div class="select-dropdown">
-                    <div class="select-option">Visa Form</div>
-                    <div class="select-option">Website Form</div>
-                    <div class="select-option selected">Manual</div>
-                    <div class="select-option">Referral</div>
-                    <div class="select-option">Whatsapp</div>
-                    <div class="select-option">Import</div>
-                    <div class="select-option">Partner</div>
-                    <div class="select-option">Meta Ads</div>
-                  </div>
-                </div>
+                <input type="text" id="lead-source" placeholder="e.g. Manual, Walk-in, Referral, Instagram, Meta Ads..." value="Manual" />
               </div>
               <div class="form-group">
                 <label>Priority</label>
@@ -633,6 +620,8 @@ function bindLeadEvents() {
       form.reset();
       document.getElementById('lead-id').value = '';
       document.getElementById('lead-followup').value = '';
+      const srcInput = document.getElementById('lead-source');
+      if (srcInput) srcInput.value = 'Manual';
       modalTitle.textContent = 'New lead';
       saveBtn.textContent = 'Create lead';
       // reset custom selects visually
@@ -676,7 +665,8 @@ function bindLeadEvents() {
       const leads = getLeads();
       const leadToUpdate = idField ? leads.find(l => l.id == idField) : null;
       const type = document.getElementById('lead-type-select').querySelector('.select-value').textContent;
-      const source = document.getElementById('lead-source-select').querySelector('.select-value').textContent;
+      const srcInput = document.getElementById('lead-source');
+      const source = (srcInput ? srcInput.value.trim() : '') || 'Manual';
       const assignTo = document.getElementById('lead-assign-select').querySelector('.select-value').textContent;
 
       const area = document.getElementById('lead-area').value;
@@ -987,8 +977,8 @@ function bindLeadEvents() {
          const typeSel = document.getElementById('lead-type-select');
          if(typeSel) typeSel.querySelector('.select-value').textContent = lead.type || 'Any';
          
-         const srcSel = document.getElementById('lead-source-select');
-         if(srcSel) srcSel.querySelector('.select-value').textContent = lead.source || 'Manual';
+         const srcInput = document.getElementById('lead-source');
+         if(srcInput) srcInput.value = lead.source || 'Manual';
 
          const asnSel = document.getElementById('lead-assign-select');
          if(asnSel) asnSel.querySelector('.select-value').textContent = lead.assignTo || 'Unassigned';

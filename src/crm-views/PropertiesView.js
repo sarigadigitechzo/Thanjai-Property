@@ -1,4 +1,4 @@
-import { getProperties, addProperty, updateProperty, deleteProperty, resetPropertiesToDefault } from '../utils/propertiesStore.js';
+import { getProperties, addProperty, updateProperty, deleteProperty, resetPropertiesToDefault, formatPropertySize } from '../utils/propertiesStore.js';
 import { addAuditLog } from '../utils/siteImagesStore.js';
 import { showToast } from '../utils/toast.js';
 
@@ -242,7 +242,8 @@ function renderPropertyCard(prop) {
   const specsArray = [];
   if (prop.bedrooms) specsArray.push(`${prop.bedrooms} bed`);
   if (prop.bathrooms) specsArray.push(`${prop.bathrooms} bath`);
-  if (prop.size) specsArray.push(prop.size);
+  if (prop.size) specsArray.push(formatPropertySize(prop.size));
+  if (prop.facing) specsArray.push(prop.facing);
   if (prop.approval) specsArray.push(prop.approval);
 
   return `
@@ -723,16 +724,16 @@ function renderFullPagePropertyForm(prop) {
                 <input type="text" id="form-prop-location" required value="${isEdit ? prop?.location || '' : ''}" placeholder="e.g. Anna Nagar, Chennai" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
-              <!-- Address -->
+              <!-- Facing -->
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Address</label>
-                <input type="text" id="form-prop-address" value="${isEdit ? prop?.address || '' : ''}" placeholder="Street address or landmark" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Facing</label>
+                <input type="text" id="form-prop-facing" value="${isEdit ? prop?.facing || prop?.address || '' : ''}" placeholder="e.g. North, East, South-East, North-Facing" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
               <!-- Area (sqft) -->
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Area (sqft)</label>
-                <input type="text" id="form-prop-size" value="${isEdit ? prop?.size || '' : ''}" placeholder="e.g. 2,400 sqft or 6.5 Acres" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <input type="text" id="form-prop-size" value="${isEdit ? prop?.size || '' : ''}" placeholder="e.g. 2400 or 2,400 sqft or 6.5 Acres" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
               <!-- Approval Status (Optional) -->
@@ -1648,8 +1649,9 @@ function initPropertyFormListeners() {
     const type = document.getElementById('form-prop-type')?.value.trim();
     const category = document.getElementById('form-prop-category')?.value;
     const location = document.getElementById('form-prop-location')?.value.trim();
-    const address = document.getElementById('form-prop-address')?.value.trim();
-    const size = document.getElementById('form-prop-size')?.value.trim();
+    const facing = document.getElementById('form-prop-facing')?.value.trim();
+    const sizeRaw = document.getElementById('form-prop-size')?.value.trim();
+    const size = formatPropertySize(sizeRaw);
     const bedrooms = document.getElementById('form-prop-bedrooms')?.value;
     const bathrooms = document.getElementById('form-prop-bathrooms')?.value;
     const floor = document.getElementById('form-prop-floor')?.value.trim();
@@ -1682,11 +1684,19 @@ function initPropertyFormListeners() {
 
     const locStr = location || '';
     let parsedDistrict = 'Thanjavur';
+    const knownDistricts = ['Thanjavur', 'Trichy', 'Tiruchirappalli', 'Madurai', 'Chennai', 'Coimbatore', 'Kumbakonam', 'Pudukkottai', 'Tiruvarur', 'Nagapattinam', 'Salem', 'Dindigul', 'Karur', 'Perambalur', 'Ariyalur', 'Mayiladuthurai'];
+    
     if (locStr.includes(',')) {
-      const parts = locStr.split(',');
-      parsedDistrict = parts[parts.length - 1].trim() || parts[0].trim();
-    } else if (locStr.trim() !== '') {
-      parsedDistrict = locStr.trim();
+      const parts = locStr.split(',').map(p => p.trim());
+      const matched = knownDistricts.find(d => parts.some(p => p.toLowerCase() === d.toLowerCase()));
+      if (matched) {
+        parsedDistrict = matched;
+      } else {
+        parsedDistrict = parts[parts.length - 1] || 'Thanjavur';
+      }
+    } else {
+      const matched = knownDistricts.find(d => locStr.toLowerCase().includes(d.toLowerCase()));
+      parsedDistrict = matched || 'Thanjavur';
     }
 
     const val = (type || '').toLowerCase();
@@ -1700,21 +1710,22 @@ function initPropertyFormListeners() {
       categoryRaw: category || 'Sale',
       location: locStr || 'Thanjavur',
       district: parsedDistrict,
-      address: address || '',
+      facing: facing || '',
+      address: facing || '',
       size: size || '',
       bedrooms: isRes && bedrooms ? parseInt(bedrooms, 10) : null,
       bathrooms: isRes && bathrooms ? parseInt(bathrooms, 10) : null,
       floor: floor || null,
-      furnishing: furnishing || 'Not specified',
+      furnishing: furnishing && furnishing !== 'Not specified' ? furnishing : '',
       price: parseFloat(priceNum) || 0,
       availability: availability || 'Available',
       status: availability || 'Available',
       approvalStatus: 'Approved',
       approval: approval,
       adType: adType,
-      ownerName: ownerName || (adType === 'paid' ? 'Verified Owner' : 'Thanjai Property'),
+      ownerName: ownerName || '',
       listedBy: listedBy || 'Aishwarya Raman',
-      ownerPhone: ownerPhone || (adType === 'paid' ? '8489996852' : '8489996852'),
+      ownerPhone: ownerPhone || '',
       videoUrl: videoUrl || '',
       latitude: latitude || '',
       longitude: longitude || '',

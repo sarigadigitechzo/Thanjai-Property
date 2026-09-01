@@ -195,6 +195,39 @@ export function getPropertyById(id) {
   return props.find(p => p.id === id) || null;
 }
 
+export function formatPropertySize(size) {
+  if (!size) return '';
+  const str = String(size).trim();
+  if (!str) return '';
+  // Handles "2600", "2600sqft", "2600 sqft", "2,600 sq.ft", "2600 sq ft"
+  const sqftMatch = str.match(/^([\d,]+(?:\.\d+)?)\s*(?:sq\.?\s*ft\.?|sqft|square\s*feet)?$/i);
+  if (sqftMatch) {
+    const cleanNum = parseFloat(sqftMatch[1].replace(/,/g, ''));
+    if (!isNaN(cleanNum)) {
+      return `${cleanNum.toLocaleString('en-IN')} Sq.Ft`;
+    }
+  }
+  return str;
+}
+
+export function formatLocationDisplay(location, district) {
+  if (!location && !district) return 'Thanjavur, Tamil Nadu';
+  const locParts = (location || '').split(',').map(p => p.trim()).filter(Boolean);
+  const distParts = (district || '').split(',').map(p => p.trim()).filter(Boolean);
+  
+  const combined = [];
+  for (const part of [...locParts, ...distParts]) {
+    const lower = part.toLowerCase();
+    if (lower === 'tamil nadu' || lower === 'tamilnadu' || lower === 'india' || lower === 'tn') continue;
+    if (!combined.some(c => c.toLowerCase() === lower)) {
+      combined.push(part);
+    }
+  }
+  
+  if (combined.length === 0) return 'Thanjavur, Tamil Nadu';
+  return `${combined.join(', ')}, Tamil Nadu`;
+}
+
 export function addProperty(data) {
   const props = getProperties();
   const newId = `TP-${Date.now().toString().slice(-4)}`;
@@ -231,16 +264,17 @@ export function addProperty(data) {
     location: data.location || 'Thanjavur',
     district: data.district || data.location?.split(',')[1]?.trim() || data.location?.split(',')[0]?.trim() || 'Thanjavur',
     address: data.address || '',
-    size: data.size || '2,400 sq.ft',
+    size: data.size ? formatPropertySize(data.size) : '',
     bedrooms: data.bedrooms ? parseInt(data.bedrooms, 10) : null,
     bathrooms: data.bathrooms ? parseInt(data.bathrooms, 10) : null,
-    furnishing: data.furnishing || 'Not specified',
-    facing: data.facing || 'East Facing',
+    floor: data.floor || null,
+    furnishing: data.furnishing && data.furnishing !== 'Not specified' ? data.furnishing : '',
+    facing: data.facing || '',
     approval: data.approval || '',
     status: availability,
     availability: availability,
-    latitude: data.latitude || '10.786999',
-    longitude: data.longitude || '79.137827',
+    latitude: data.latitude || '',
+    longitude: data.longitude || '',
     videoUrl: data.videoUrl || '',
     ownerName: data.ownerName || '',
     ownerPhone: data.ownerPhone || '',
@@ -386,12 +420,16 @@ function normalizePropertyRecord(p) {
 
   const loc = p.location || 'Thanjavur';
   let dist = p.district;
-  if (!dist) {
+  const knownDistricts = ['Thanjavur', 'Trichy', 'Tiruchirappalli', 'Madurai', 'Chennai', 'Coimbatore', 'Kumbakonam', 'Pudukkottai', 'Tiruvarur', 'Nagapattinam', 'Salem', 'Dindigul', 'Karur', 'Perambalur', 'Ariyalur', 'Mayiladuthurai'];
+  
+  if (!dist || dist === loc) {
     if (loc.includes(',')) {
-      const parts = loc.split(',');
-      dist = parts[parts.length - 1].trim() || parts[0].trim();
+      const parts = loc.split(',').map(s => s.trim());
+      const matched = knownDistricts.find(d => parts.some(part => part.toLowerCase() === d.toLowerCase()));
+      dist = matched || parts[parts.length - 1] || 'Thanjavur';
     } else {
-      dist = loc;
+      const matched = knownDistricts.find(d => loc.toLowerCase().includes(d.toLowerCase()));
+      dist = matched || 'Thanjavur';
     }
   }
 
@@ -424,6 +462,13 @@ function normalizePropertyRecord(p) {
     priceFormatted: formattedPrice,
     location: loc,
     district: dist || 'Thanjavur',
+    address: p.address || '',
+    facing: p.facing || '',
+    size: p.size ? formatPropertySize(p.size) : '',
+    bedrooms: p.bedrooms ? parseInt(p.bedrooms, 10) : null,
+    bathrooms: p.bathrooms ? parseInt(p.bathrooms, 10) : null,
+    floor: p.floor || null,
+    furnishing: p.furnishing && p.furnishing !== 'Not specified' ? p.furnishing : '',
     images: (() => {
       let raw = p.images;
       if (typeof raw === 'string' && raw.trim()) {
@@ -447,8 +492,9 @@ function normalizePropertyRecord(p) {
     adType: String(p.adType || p.ad_type || p.adTier || p.listingPlan || 'free').toLowerCase().trim(),
     ownerName: p.ownerName || p.owner_name || (String(p.adType || '').toLowerCase().trim() === 'paid' ? 'Verified Owner' : 'Thanjai Property'),
     ownerPhone: p.ownerPhone || p.owner_phone || (String(p.adType || '').toLowerCase().trim() === 'paid' ? '8489996852' : '8489996852'),
-    description: p.description || 'Luxury property in prime growth corridor.',
+    description: p.description || '',
     approval: p.approval || '',
+    facing: p.facing || '',
     features: (() => {
       let raw = p.features;
       if (typeof raw === 'string' && raw.trim()) {
