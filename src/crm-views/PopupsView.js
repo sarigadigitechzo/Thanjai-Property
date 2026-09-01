@@ -99,7 +99,88 @@ export function renderPopupsView() {
         }
       </style>
 
-      <!-- Create / Edit Popup Modal -->
+      <!-- Header -->
+      <div class="view-header-flex">
+        <div>
+          <h1 class="view-title">Ad & Seasonal Festival Popups</h1>
+          <p class="view-subtitle">Create and schedule festival deals, promotional announcement banners, and lead generation popups for your website.</p>
+        </div>
+        <div class="header-actions-right">
+          <button class="os-btn-primary" id="btn-create-popup">
+            <i class="ri-add-line"></i> Create New Popup
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="os-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Popups</span>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #fff7ed; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+              <i class="ri-advertisement-line"></i>
+            </div>
+          </div>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-top: 10px;" id="kpi-total-popups">${popups.length}</div>
+          <span style="font-size: 0.78rem; color: #64748b;">Created banners in library</span>
+        </div>
+
+        <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Live On Website</span>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #ecfdf5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+              <i class="ri-checkbox-circle-line"></i>
+            </div>
+          </div>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #10b981; margin-top: 10px;" id="kpi-active-popups">${liveCount}</div>
+          <span style="font-size: 0.78rem; color: #64748b;">Currently active to visitors</span>
+        </div>
+
+        <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Scheduled Deals</span>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+              <i class="ri-calendar-event-line"></i>
+            </div>
+          </div>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #d97706; margin-top: 10px;">${scheduledCount}</div>
+          <span style="font-size: 0.78rem; color: #64748b;">Starts on scheduled dates</span>
+        </div>
+
+        <div class="os-kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--os-border-color, #e2e8f0); box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.82rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Paused / Ended</span>
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+              <i class="ri-pause-circle-line"></i>
+            </div>
+          </div>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-top: 10px;">${pausedCount}</div>
+          <span style="font-size: 0.78rem; color: #64748b;">Drafts or past campaigns</span>
+        </div>
+      </div>
+
+      <!-- Filter Tabs & Controls -->
+      <div class="popups-responsive-controls" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="popup-filter-tabs">
+          <button class="os-tab-btn active" data-filter="all" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #eb5e28; color: #fff; border: none;">All Popups (${popups.length})</button>
+          <button class="os-tab-btn" data-filter="live" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Live Now (${liveCount})</button>
+          <button class="os-tab-btn" data-filter="scheduled" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Scheduled (${scheduledCount})</button>
+          <button class="os-tab-btn" data-filter="paused" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">Paused / Expired</button>
+        </div>
+
+        <div id="popup-search-input-box" style="display: flex; align-items: center; gap: 8px; background: #fff; padding: 6px 14px; border-radius: 8px; border: 1px solid #cbd5e1;">
+          <i class="ri-search-line" style="color: #94a3b8;"></i>
+          <input type="text" id="popup-search-input" placeholder="Search popups by keyword..." style="border: none; outline: none; font-size: 0.88rem; width: 100%; min-width: 180px;" />
+        </div>
+      </div>
+
+      <!-- Popups Grid -->
+      <div id="popups-grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Create / Edit Popup Modal -->
     <div class="os-modal-overlay" id="popup-editor-modal" style="display: none; align-items: center; justify-content: center; z-index: 99999; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(5px);">
       <div class="os-modal-card" style="max-width: 980px; width: 95%; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 18px; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35); border: 1px solid #e2e8f0;">
         
