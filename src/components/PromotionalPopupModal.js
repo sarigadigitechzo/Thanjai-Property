@@ -61,7 +61,6 @@ export function initPromotionalPopups() {
         <!-- Top Banner Image & Glowing Badge -->
         <div style="position: relative; height: 180px; background: #0f172a; overflow: hidden;">
           <img id="promo-popup-img" src="" alt="Offer" style="width: 100%; height: 100%; object-fit: cover;" />
-          <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(15,23,42,0.85) 0%, transparent 60%);"></div>
           
           <span id="promo-popup-badge" style="
             position: absolute;
@@ -69,36 +68,34 @@ export function initPromotionalPopups() {
             left: 14px;
             background: #eb5e28;
             color: #ffffff;
-            font-size: 0.72rem;
+            font-size: 0.74rem;
             font-weight: 800;
-            padding: 5px 12px;
+            padding: 5px 14px;
             border-radius: 20px;
-            box-shadow: 0 4px 10px rgba(235,94,40,0.4);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             letter-spacing: 0.5px;
             text-transform: uppercase;
           ">
             🎉 FESTIVE OFFER
           </span>
-
-          <div style="position: absolute; bottom: 12px; left: 16px; right: 16px;">
-            <h2 id="promo-popup-title" style="
-              color: #ffffff;
-              font-size: 1.18rem;
-              font-weight: 800;
-              margin: 0;
-              line-height: 1.25;
-              text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-            "></h2>
-          </div>
         </div>
 
         <!-- Popup Body -->
-        <div style="padding: 18px 20px 22px 20px;">
+        <div style="padding: 20px 22px 24px 22px;">
+          <h2 id="promo-popup-title" style="
+            color: #0f172a;
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin: 0 0 8px 0;
+            line-height: 1.35;
+            font-family: 'DM Serif Display', Georgia, serif;
+          "></h2>
+
           <p id="promo-popup-subtitle" style="
-            font-size: 0.86rem;
-            color: #475569;
-            margin: 0 0 14px 0;
-            line-height: 1.45;
+            font-size: 0.88rem;
+            color: #64748b;
+            margin: 0 0 16px 0;
+            line-height: 1.5;
           "></p>
 
           <div id="promo-popup-highlights" style="

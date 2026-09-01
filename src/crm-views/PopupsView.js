@@ -407,6 +407,16 @@ export function initPopupsView() {
 
   // Modal references
   const modal = document.getElementById('popup-editor-modal');
+  if (modal) {
+    // Remove duplicates attached to body from previous renders
+    document.querySelectorAll('body > #popup-editor-modal').forEach(m => {
+      if (m !== modal) m.remove();
+    });
+    if (modal.parentNode !== document.body) {
+      document.body.appendChild(modal);
+    }
+  }
+
   const closeBtn = document.getElementById('close-popup-modal-btn');
   const cancelBtn = document.getElementById('cancel-popup-modal-btn');
   const saveBtn = document.getElementById('save-popup-modal-btn');
@@ -470,6 +480,7 @@ export function initPopupsView() {
   });
 
   function openCreateModal() {
+    if (!modal) return;
     document.getElementById('popup-modal-heading').textContent = 'Create Promotional Popup';
     document.getElementById('edit-popup-id').value = '';
     inputTitle.value = '';
@@ -487,9 +498,11 @@ export function initPopupsView() {
 
     updateLivePreview();
     modal.style.display = 'flex';
+    modal.classList.add('show');
   }
 
   function openEditModal(p) {
+    if (!modal) return;
     document.getElementById('popup-modal-heading').textContent = 'Edit Promotional Popup';
     document.getElementById('edit-popup-id').value = p.id;
     inputTitle.value = p.title || '';
@@ -507,12 +520,22 @@ export function initPopupsView() {
 
     updateLivePreview();
     modal.style.display = 'flex';
+    modal.classList.add('show');
   }
 
-  const closeModal = () => { if (modal) modal.style.display = 'none'; };
+  const closeModal = () => { 
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.remove('show');
+    }
+  };
+
   closeBtn?.addEventListener('click', closeModal);
   cancelBtn?.addEventListener('click', closeModal);
   createBtn?.addEventListener('click', openCreateModal);
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
 
   saveBtn?.addEventListener('click', async () => {
     const title = inputTitle.value.trim();
