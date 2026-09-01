@@ -629,7 +629,7 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                       const relImg = rel.images && rel.images[0] ? rel.images[0] : '/default-property.jpg';
                       const relLoc = rel.area || rel.location || rel.district || 'Thanjavur';
                       return `
-                        <div class="property-card" style="background: #ffffff; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04); display: flex; flex-direction: column; transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;" onclick="window.location.hash = '#discover?propertyId=${encodeURIComponent(rel.id)}'; window.scrollTo({top: 0, behavior: 'smooth'});">
+                        <div class="property-card discover-prop-card related-prop-card" data-id="${rel.id}" style="background: #ffffff; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.04); display: flex; flex-direction: column; transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;">
                           <div style="height: 180px; position: relative; overflow: hidden;">
                             <img src="${relImg}" alt="${rel.title}" style="width: 100%; height: 100%; object-fit: cover;" />
                             <span style="position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">
@@ -838,12 +838,14 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
     });
   });
 
-  // Property Cards Click
-  document.querySelectorAll('.discover-prop-card').forEach(card => {
-    card.addEventListener('click', () => {
+  // Property Cards & Related Property Cards Click
+  document.querySelectorAll('.discover-prop-card, .related-prop-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      e.preventDefault();
       const id = card.dataset.id;
       if (id && onPropertySelect) {
         activeDetailPhotoIndex = 0;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         onPropertySelect(id);
       }
     });

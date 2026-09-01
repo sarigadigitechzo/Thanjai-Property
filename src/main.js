@@ -197,6 +197,7 @@ function renderApp() {
         discoverState,
         (propId) => {
           discoverState.selectedPropertyId = propId;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
           renderApp();
         },
         () => navigateToRoute('contact')
@@ -278,6 +279,7 @@ function renderApp() {
         },
         (propId) => {
           discoverState.selectedPropertyId = propId;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
           renderApp();
         },
         () => navigateToRoute('contact')
