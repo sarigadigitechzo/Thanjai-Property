@@ -662,7 +662,7 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                   seenKeys.add(pTitle);
                   relatedList.push(p);
                 }
-                if (relatedList.length >= 6) break;
+                if (relatedList.length >= 3) break;
               }
 
               if (relatedList.length === 0) return '';
@@ -676,9 +676,9 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                         Similar Properties in this Location & Category
                       </h3>
                     </div>
-                    <a href="#discover" style="color: #eb5e28; font-weight: 700; font-size: 0.92rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+                    <button id="view-all-similar-btn" style="background: none; border: none; padding: 0; color: #eb5e28; font-weight: 700; font-size: 0.92rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
                       View All Listings <i class="ri-arrow-right-line"></i>
-                    </a>
+                    </button>
                   </div>
 
                   <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
@@ -893,6 +893,16 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
       discoverState.budget = 'all';
       onStateUpdate(discoverState);
     });
+  });
+
+  // View All Listings in Similar Section
+  document.getElementById('view-all-similar-btn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (onPropertySelect) {
+      activeDetailPhotoIndex = 0;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      onPropertySelect(null);
+    }
   });
 
   // Property Cards & Related Property Cards Click
