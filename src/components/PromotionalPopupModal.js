@@ -156,13 +156,25 @@ function loadAndStartQueue() {
   const activePopups = getActiveFrontEndPopups();
   if (!activePopups || activePopups.length === 0) return;
 
-  // Filter popups not already dismissed in this session
+  // Filter popups based on configured frequency (every_load, once_session, once_day)
   activeQueue = activePopups.filter(p => {
-    if (p.frequency === 'once_session') {
+    const freq = p.frequency || 'once_session';
+    if (freq === 'every_load') {
+      return true; // Always display on every single page load / refresh!
+    } else if (freq === 'once_day') {
+      const lastSeen = localStorage.getItem(`thanjai_popup_last_seen_${p.id}`);
+      if (lastSeen) {
+        const timeDiff = Date.now() - parseInt(lastSeen, 10);
+        if (timeDiff < 24 * 60 * 60 * 1000) {
+          return false; // Already seen within 24 hours
+        }
+      }
+      return true;
+    } else {
+      // Default: once per browser session
       const dismissed = sessionStorage.getItem(`thanjai_dismissed_popup_${p.id}`);
       return !dismissed;
     }
-    return true;
   });
 
   if (activeQueue.length === 0) return;
@@ -276,6 +288,7 @@ function closeCurrentPopup() {
   const currentPopup = activeQueue[currentQueueIndex];
   if (currentPopup) {
     sessionStorage.setItem(`thanjai_dismissed_popup_${currentPopup.id}`, 'true');
+    localStorage.setItem(`thanjai_popup_last_seen_${currentPopup.id}`, Date.now().toString());
   }
 
   modalOverlay.style.opacity = '0';

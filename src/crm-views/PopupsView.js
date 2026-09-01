@@ -282,22 +282,32 @@ export function renderPopupsView() {
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <!-- Delay, Frequency, and Status Row -->
+            <div style="display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 12px;">
               <div class="form-group">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Display Delay</label>
                 <select id="popup-input-delay" class="popup-select-input">
-                  <option value="2">2 seconds after page load</option>
-                  <option value="3" selected>3 seconds (Recommended)</option>
-                  <option value="5">5 seconds after page load</option>
+                  <option value="2">2 seconds</option>
+                  <option value="3" selected>3s (Default)</option>
+                  <option value="5">5 seconds</option>
                   <option value="8">8 seconds</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Show Frequency</label>
+                <select id="popup-input-frequency" class="popup-select-input">
+                  <option value="every_load">🔄 Every Time Page Loads</option>
+                  <option value="once_session" selected>⏱️ Once per Browser Session</option>
+                  <option value="once_day">📅 Once per Day (24h)</option>
                 </select>
               </div>
 
               <div class="form-group">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Status</label>
                 <select id="popup-input-status" class="popup-select-input">
-                  <option value="Active">🟢 Active (Live / Scheduled)</option>
-                  <option value="Inactive">⚪ Inactive (Draft / Paused)</option>
+                  <option value="Active">🟢 Active (Live)</option>
+                  <option value="Inactive">⚪ Inactive (Paused)</option>
                 </select>
               </div>
             </div>
@@ -655,6 +665,7 @@ export function initPopupsView() {
     document.getElementById('popup-input-start-date').value = '';
     document.getElementById('popup-input-end-date').value = '';
     document.getElementById('popup-input-delay').value = '3';
+    document.getElementById('popup-input-frequency').value = 'once_session';
     document.getElementById('popup-input-status').value = 'Active';
 
     updateCtaFields();
@@ -679,6 +690,7 @@ export function initPopupsView() {
     document.getElementById('popup-input-start-date').value = p.startDate || '';
     document.getElementById('popup-input-end-date').value = p.endDate || '';
     document.getElementById('popup-input-delay').value = p.delaySeconds ? p.delaySeconds.toString() : '3';
+    document.getElementById('popup-input-frequency').value = p.frequency || 'once_session';
     document.getElementById('popup-input-status').value = p.status || 'Active';
 
     updateCtaFields();
@@ -724,6 +736,7 @@ export function initPopupsView() {
       startDate: document.getElementById('popup-input-start-date').value,
       endDate: document.getElementById('popup-input-end-date').value,
       delaySeconds: parseInt(document.getElementById('popup-input-delay').value) || 3,
+      frequency: document.getElementById('popup-input-frequency').value || 'once_session',
       status: document.getElementById('popup-input-status').value
     };
 
