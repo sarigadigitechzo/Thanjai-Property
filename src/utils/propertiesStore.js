@@ -280,7 +280,7 @@ export function addProperty(data) {
     ownerPhone: data.ownerPhone || '',
     userId: data.userId || null,
     userEmail: data.userEmail || null,
-    images: data.images && data.images.length > 0 ? data.images : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'],
+    images: data.images && data.images.length > 0 ? data.images : ['/default-property.jpg'],
     description: data.description || '',
     features: Array.isArray(data.features) ? data.features : [],
     listedBy: data.listedBy || 'Aishwarya Raman',
@@ -487,7 +487,7 @@ function normalizePropertyRecord(p) {
       }
       const rawImgs = Array.isArray(raw) ? raw.filter(Boolean) : [];
       const uniqueImgs = [...new Set(rawImgs)];
-      return uniqueImgs.length > 0 ? uniqueImgs : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'];
+      return uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
     })(),
     adType: String(p.adType || p.ad_type || p.adTier || p.listingPlan || 'free').toLowerCase().trim(),
     ownerName: p.ownerName || p.owner_name || (String(p.adType || '').toLowerCase().trim() === 'paid' ? 'Verified Owner' : 'Thanjai Property'),

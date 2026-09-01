@@ -237,7 +237,7 @@ function renderPropertyCard(prop) {
                     : statusClass === 'rented' ? '#2b6cb0' 
                     : '#742a2a';
 
-  const mainImg = prop.images && prop.images[0] ? prop.images[0] : 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80';
+  const mainImg = prop.images && prop.images[0] ? prop.images[0] : '/default-property.jpg';
 
   const specsArray = [];
   if (prop.bedrooms) specsArray.push(`${prop.bedrooms} bed`);
@@ -375,7 +375,7 @@ function renderAdminPropertyPreviewModal(prop) {
 
   const rawImgs = Array.isArray(prop.images) ? prop.images.filter(Boolean) : [];
   const uniqueImgs = [...new Set(rawImgs)];
-  const images = uniqueImgs.length > 0 ? uniqueImgs : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'];
+  const images = uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
   const status = prop.status || prop.availability || 'Available';
 
   const allMediaItems = [];
@@ -391,6 +391,9 @@ function renderAdminPropertyPreviewModal(prop) {
         videoEmbedSrc = `https://www.youtube.com/embed/${videoIdMatch[1]}?autoplay=0`;
         isEmbeddableVideo = true;
       }
+    } else if (prop.videoUrl.includes('facebook.com') || prop.videoUrl.includes('fb.watch') || prop.videoUrl.includes('fb.com')) {
+      videoEmbedSrc = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(prop.videoUrl)}&show_text=0&width=560&autoplay=0`;
+      isEmbeddableVideo = true;
     }
 
     allMediaItems.push({
@@ -869,8 +872,8 @@ function renderFullPagePropertyForm(prop) {
             <div style="display: flex; flex-direction: column; gap: 20px;">
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px;">
                 <div>
-                  <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">YouTube Video Link</label>
-                  <input type="url" id="form-prop-videolink" value="${isEdit ? prop?.videoUrl || '' : ''}" placeholder="https://youtube.com/watch?v=..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                  <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">YouTube / Facebook Video Link</label>
+                  <input type="url" id="form-prop-videolink" value="${isEdit ? prop?.videoUrl || '' : ''}" placeholder="e.g. https://youtube.com/watch?v=... or https://facebook.com/.../videos/..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
                 </div>
 
                 <div>
@@ -1557,12 +1560,17 @@ function initPropertyFormListeners() {
           const lngInput = document.getElementById('form-prop-longitude');
           if (latInput) latInput.value = lat;
           if (lngInput) lngInput.value = lng;
+          if (leafletMapInstance && leafletMarkerInstance) {
+            leafletMarkerInstance.setLatLng([lat, lng]);
+            leafletMapInstance.setView([lat, lng], 15);
+          }
           showToast(`GPS set to Lat: ${lat}, Lng: ${lng}`, 'ri-map-pin-user-fill');
         },
         (err) => {
           console.warn('Geolocation error:', err);
-          showToast('Could not fetch GPS. Set default coordinates.', 'ri-error-warning-line');
-        }
+          showToast('Could not fetch GPS location. Please check browser permissions.', 'ri-error-warning-line');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
       showToast('Geolocation is not supported by your browser.', 'ri-error-warning-line');
@@ -1640,34 +1648,28 @@ function initPropertyFormListeners() {
 
   bindGalleryDeleteButtons();
 
-  // Submit Handler
-  const form = document.getElementById('prop-admin-form');
-  form?.addEventListener('submit', (e) => {
+  // Form Submit Handler
+  document.getElementById('prop-admin-form')?.addEventListener('submit', (e) => {
     e.preventDefault();
-
     const title = document.getElementById('form-prop-title')?.value.trim();
-    const type = document.getElementById('form-prop-type')?.value.trim();
+    const type = document.getElementById('form-prop-type')?.value;
     const category = document.getElementById('form-prop-category')?.value;
+    const price = document.getElementById('form-prop-price')?.value;
     const location = document.getElementById('form-prop-location')?.value.trim();
     const facing = document.getElementById('form-prop-facing')?.value.trim();
-    const sizeRaw = document.getElementById('form-prop-size')?.value.trim();
-    const size = formatPropertySize(sizeRaw);
+    const size = document.getElementById('form-prop-size')?.value.trim();
     const bedrooms = document.getElementById('form-prop-bedrooms')?.value;
     const bathrooms = document.getElementById('form-prop-bathrooms')?.value;
-    const floor = document.getElementById('form-prop-floor')?.value.trim();
     const furnishing = document.getElementById('form-prop-furnishing')?.value;
-    const priceNum = document.getElementById('form-prop-price-num')?.value;
-    const availability = document.getElementById('form-prop-availability')?.value;
-    const adType = document.getElementById('form-prop-ad-type')?.value || 'free';
-    const ownerName = document.getElementById('form-prop-owner-company')?.value.trim();
-    const listedBy = document.getElementById('form-prop-contact-name')?.value.trim();
-    const ownerPhone = document.getElementById('form-prop-contact-phone')?.value.trim();
-    const approval = document.getElementById('form-prop-approval')?.value.trim() || '';
+    const status = document.getElementById('form-prop-status')?.value;
+    const approval = document.getElementById('form-prop-approval')?.value.trim();
     const featuresStr = document.getElementById('form-prop-features')?.value.trim();
     const description = document.getElementById('form-prop-desc')?.value.trim();
     const videoUrl = document.getElementById('form-prop-videolink')?.value.trim() || formVideoFileUrl;
-    const latitude = document.getElementById('form-prop-latitude')?.value.trim();
-    const longitude = document.getElementById('form-prop-longitude')?.value.trim();
+    const rawLatitude = document.getElementById('form-prop-latitude')?.value.trim();
+    const rawLongitude = document.getElementById('form-prop-longitude')?.value.trim();
+    const latitude = rawLatitude ? String(parseCoordinate(rawLatitude, rawLatitude)) : '';
+    const longitude = rawLongitude ? String(parseCoordinate(rawLongitude, rawLongitude)) : '';
     const mainImg = document.getElementById('form-prop-img-main')?.value.trim();
 
     let finalImages = [...formImagesList];
@@ -1677,17 +1679,17 @@ function initPropertyFormListeners() {
     finalImages = [...new Set(finalImages.filter(Boolean))];
 
     if (finalImages.length === 0) {
-      finalImages.push('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80');
+      finalImages.push('/default-property.jpg');
     }
 
     const featuresArray = featuresStr ? featuresStr.split(',').map(f => f.trim()).filter(Boolean) : [];
 
-    const locStr = location || '';
+    const loc = location || '';
     let parsedDistrict = 'Thanjavur';
     const knownDistricts = ['Thanjavur', 'Trichy', 'Tiruchirappalli', 'Madurai', 'Chennai', 'Coimbatore', 'Kumbakonam', 'Pudukkottai', 'Tiruvarur', 'Nagapattinam', 'Salem', 'Dindigul', 'Karur', 'Perambalur', 'Ariyalur', 'Mayiladuthurai'];
     
-    if (locStr.includes(',')) {
-      const parts = locStr.split(',').map(p => p.trim());
+    if (loc.includes(',')) {
+      const parts = loc.split(',').map(p => p.trim());
       const matched = knownDistricts.find(d => parts.some(p => p.toLowerCase() === d.toLowerCase()));
       if (matched) {
         parsedDistrict = matched;
@@ -1695,7 +1697,7 @@ function initPropertyFormListeners() {
         parsedDistrict = parts[parts.length - 1] || 'Thanjavur';
       }
     } else {
-      const matched = knownDistricts.find(d => locStr.toLowerCase().includes(d.toLowerCase()));
+      const matched = knownDistricts.find(d => loc.toLowerCase().includes(d.toLowerCase()));
       parsedDistrict = matched || 'Thanjavur';
     }
 
@@ -1707,54 +1709,66 @@ function initPropertyFormListeners() {
       title: title || 'Untitled Property',
       type: type || 'Villa',
       category: category || 'Sale',
-      categoryRaw: category || 'Sale',
-      location: locStr || 'Thanjavur',
+      price: parseFloat(price) || 0,
+      location: location || 'Thanjavur',
       district: parsedDistrict,
       facing: facing || '',
-      address: facing || '',
-      size: size || '',
-      bedrooms: isRes && bedrooms ? parseInt(bedrooms, 10) : null,
-      bathrooms: isRes && bathrooms ? parseInt(bathrooms, 10) : null,
-      floor: floor || null,
-      furnishing: furnishing && furnishing !== 'Not specified' ? furnishing : '',
-      price: parseFloat(priceNum) || 0,
-      availability: availability || 'Available',
-      status: availability || 'Available',
-      approvalStatus: 'Approved',
-      approval: approval,
-      adType: adType,
-      ownerName: ownerName || '',
-      listedBy: listedBy || 'Aishwarya Raman',
-      ownerPhone: ownerPhone || '',
-      videoUrl: videoUrl || '',
-      latitude: latitude || '',
-      longitude: longitude || '',
+      size: size ? formatPropertySize(size) : '',
+      bedrooms: (isRes && bedrooms) ? parseInt(bedrooms, 10) : null,
+      bathrooms: (isRes && bathrooms) ? parseInt(bathrooms, 10) : null,
+      furnishing: isRes ? (furnishing || 'Not specified') : 'Not specified',
+      status: status || 'Available',
+      availability: status || 'Available',
+      approval: approval || '',
+      latitude: latitude,
+      longitude: longitude,
+      videoUrl: videoUrl,
       images: finalImages,
+      features: featuresArray,
       description: description || '',
-      features: featuresArray
+      ownerName: document.getElementById('form-prop-owner-name')?.value.trim() || 'Aishwarya Raman',
+      ownerPhone: document.getElementById('form-prop-owner-phone')?.value.trim() || '8489996852',
+      listedBy: 'Aishwarya Raman'
     };
 
-    const wasEditing = editingPropertyId;
-    editingPropertyId = null;
-    previewPropertyId = null;
-    activeMediaIndex = 0;
-    activeSearch = '';
-    activeTypeFilter = 'all';
-    activeCategoryFilter = 'all';
-    activeStatusFilter = 'all';
-    activeMaxPriceFilter = 'all';
-    currentViewMode = 'list';
-
-    if (wasEditing) {
-      updateProperty(wasEditing, formData);
-      showToast(`Property listing updated successfully!`, 'ri-checkbox-circle-fill');
+    if (editingPropertyId) {
+      updateProperty(editingPropertyId, formData);
+      showToast(`Property ${editingPropertyId} updated successfully!`, 'ri-checkbox-circle-fill');
     } else {
-      const created = addProperty(formData);
-      showToast(`New property ${created.id} published to website!`, 'ri-checkbox-circle-fill');
+      addProperty(formData);
+      showToast('New property listing published!', 'ri-checkbox-circle-fill');
     }
 
+    currentViewMode = 'list';
+    editingPropertyId = null;
+    formImagesList = [];
+    formVideoFileUrl = '';
     refreshPropertiesView();
   });
+}
+
+function parseCoordinate(coordStr, defaultVal) {
+  if (!coordStr || typeof coordStr !== 'string') return defaultVal;
+  const clean = coordStr.trim();
+  if (!clean) return defaultVal;
+
+  const dec = parseFloat(clean);
+  if (!isNaN(dec) && !clean.includes('°') && !clean.includes("'") && !clean.includes('"')) {
+    return dec;
+  }
+
+  const dmsMatch = clean.match(/(\d+)[°\s]+(\d+)[`'\s]+([\d.]+)(?:["\s]*([NSEWnsew])?)?/);
+  if (dmsMatch) {
+    const deg = parseFloat(dmsMatch[1]) || 0;
+    const min = parseFloat(dmsMatch[2]) || 0;
+    const sec = parseFloat(dmsMatch[3]) || 0;
+    const dir = dmsMatch[4] ? dmsMatch[4].toUpperCase() : '';
+    let val = deg + (min / 60) + (sec / 3600);
+    if (dir === 'S' || dir === 'W') val = -val;
+    return parseFloat(val.toFixed(6));
+  }
+
+  return !isNaN(dec) ? dec : defaultVal;
 }
 
 function initInteractiveLeafletMap() {
@@ -1780,8 +1794,8 @@ function createLeafletMapWidget() {
   const latInp = document.getElementById('form-prop-latitude');
   const lngInp = document.getElementById('form-prop-longitude');
 
-  let initLat = parseFloat(latInp?.value) || 10.786999;
-  let initLng = parseFloat(lngInp?.value) || 79.137827;
+  let initLat = parseCoordinate(latInp?.value, 10.786999);
+  let initLng = parseCoordinate(lngInp?.value, 79.137827);
 
   if (leafletMapInstance) {
     leafletMapInstance.remove();
@@ -1811,6 +1825,10 @@ function createLeafletMapWidget() {
     if (lngInp) lngInp.value = lng.toFixed(6);
     showToast(`Pinpoint moved to clicked location: ${lat.toFixed(6)}, ${lng.toFixed(6)}`, 'ri-map-pin-2-fill');
   });
+
+  setTimeout(() => {
+    if (leafletMapInstance) leafletMapInstance.invalidateSize();
+  }, 200);
 }
 
 function refreshGalleryPreviewGrid() {

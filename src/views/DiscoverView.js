@@ -226,14 +226,57 @@ export function renderDiscoverView(discoverState, onPropertySelect, onNavigateTo
 
 let activeDetailPhotoIndex = 0;
 
+function extractVideoInfo(url) {
+  if (!url || typeof url !== 'string') return null;
+  const clean = url.trim();
+  if (!clean) return null;
+
+  // YouTube match
+  const ytMatch = clean.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return {
+      type: 'youtube',
+      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0`
+    };
+  }
+
+  // Facebook Video match
+  if (/facebook\.com|fb\.watch|fb\.com/i.test(clean)) {
+    return {
+      type: 'facebook',
+      embedUrl: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(clean)}&show_text=0&width=560&autoplay=1`
+    };
+  }
+
+  // Direct video file or base64
+  if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(clean) || clean.startsWith('data:video/')) {
+    return {
+      type: 'file',
+      url: clean
+    };
+  }
+
+  return {
+    type: 'iframe',
+    url: clean
+  };
+}
+
 // Render dynamic Property Detail Page
 function renderPropertyDetailView(property, onNavigateToContact) {
   const rawImgs = Array.isArray(property.images) ? property.images.filter(Boolean) : [];
   const uniqueImgs = [...new Set(rawImgs)];
-  const images = uniqueImgs.length > 0 ? uniqueImgs : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'];
+  const images = uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
 
-  if (activeDetailPhotoIndex >= images.length) activeDetailPhotoIndex = 0;
-  const mainImage = images[activeDetailPhotoIndex] || images[0];
+  const mediaItems = images.map(img => ({ type: 'image', url: img }));
+  if (property.videoUrl && property.videoUrl.trim()) {
+    mediaItems.push({ type: 'video', url: property.videoUrl.trim() });
+  }
+
+  if (activeDetailPhotoIndex >= mediaItems.length) activeDetailPhotoIndex = 0;
+  const currentMedia = mediaItems[activeDetailPhotoIndex] || mediaItems[0];
+  const isVideo = currentMedia.type === 'video';
+  const videoInfo = isVideo ? extractVideoInfo(currentMedia.url) : null;
 
   return `
     <div class="page-view view-enter property-detail-page" style="padding-top: 110px; padding-bottom: 90px; background: #faf8f5;">
@@ -260,12 +303,20 @@ function renderPropertyDetailView(property, onNavigateToContact) {
           <!-- STATE-OF-THE-ART HERO MEDIA VIEWPORT (500px) WITH CAROUSEL ARROWS -->
           <div style="width: 100%; position: relative;">
             <div style="width: 100%; height: 500px; background: #0f172a; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center;">
-              <img id="detail-hero-img" src="${mainImage}" alt="${property.title}" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease;" />
+              ${!isVideo ? `
+                <img id="detail-hero-img" src="${currentMedia.url}" alt="${property.title}" style="width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease;" />
+              ` : `
+                ${videoInfo?.type === 'youtube' || videoInfo?.type === 'facebook' || videoInfo?.type === 'iframe' ? `
+                  <iframe src="${videoInfo.embedUrl || videoInfo.url}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="width: 100%; height: 100%; border: 0; background: #000;"></iframe>
+                ` : `
+                  <video src="${videoInfo?.url || currentMedia.url}" controls autoplay style="width: 100%; height: 100%; object-fit: contain; background: #000;"></video>
+                `}
+              `}
 
               <!-- Top Left Counter Badge -->
               <div style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.75); color: #ffffff; font-size: 0.82rem; font-weight: 700; padding: 6px 16px; border-radius: 20px; backdrop-filter: blur(6px); display: flex; align-items: center; gap: 6px; z-index: 10;">
-                <i class="ri-image-line" style="color: #eb5e28;"></i>
-                <span id="detail-photo-counter">Photo ${activeDetailPhotoIndex + 1} of ${images.length}</span>
+                <i class="${isVideo ? 'ri-movie-line' : 'ri-image-line'}" style="color: #eb5e28;"></i>
+                <span id="detail-photo-counter">${isVideo ? 'Property Video Tour' : `Photo ${activeDetailPhotoIndex + 1} of ${images.length}`}</span>
               </div>
 
               <!-- Top Right Status Badge -->
@@ -274,8 +325,8 @@ function renderPropertyDetailView(property, onNavigateToContact) {
               </span>
 
               <!-- Left/Right Carousel Swipe Arrows -->
-              ${images.length > 1 ? `
-                <button id="detail-prev-photo-btn" title="Previous photo" style="
+              ${mediaItems.length > 1 ? `
+                <button id="detail-prev-photo-btn" title="Previous media" style="
                   position: absolute; left: 20px; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%;
                   background: rgba(0,0,0,0.65); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-size: 1.5rem;
                   display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px);
@@ -284,7 +335,7 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                   <i class="ri-arrow-left-s-line"></i>
                 </button>
 
-                <button id="detail-next-photo-btn" title="Next photo" style="
+                <button id="detail-next-photo-btn" title="Next media" style="
                   position: absolute; right: 20px; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%;
                   background: rgba(0,0,0,0.65); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); font-size: 1.5rem;
                   display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(8px);
@@ -296,15 +347,23 @@ function renderPropertyDetailView(property, onNavigateToContact) {
             </div>
 
             <!-- Thumbnail Selector Bar Below Hero Image -->
-            ${images.length > 1 ? `
+            ${mediaItems.length > 1 ? `
               <div style="display: flex; gap: 12px; overflow-x: auto; padding: 16px 20px; background: #1A202C; scrollbar-width: thin; scrollbar-color: #eb5e28 #2D3748;">
-                ${images.map((img, idx) => `
+                ${mediaItems.map((item, idx) => `
                   <div class="detail-thumb-item" data-index="${idx}" style="
                     width: 96px; height: 68px; border-radius: 10px; overflow: hidden; flex-shrink: 0; cursor: pointer;
                     border: 2px solid ${idx === activeDetailPhotoIndex ? '#eb5e28' : 'transparent'};
                     opacity: ${idx === activeDetailPhotoIndex ? '1' : '0.6'}; transition: all 0.2s ease;
+                    position: relative; background: #111;
                   ">
-                    <img src="${img}" style="width: 100%; height: 100%; object-fit: cover;" />
+                    ${item.type === 'image' ? `
+                      <img src="${item.url}" style="width: 100%; height: 100%; object-fit: cover;" />
+                    ` : `
+                      <div style="width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); color: #ffffff;">
+                        <i class="ri-play-circle-fill" style="font-size: 1.8rem; color: #eb5e28;"></i>
+                        <span style="font-size: 0.68rem; font-weight: 800; letter-spacing: 0.05em; margin-top: 2px;">VIDEO</span>
+                      </div>
+                    `}
                   </div>
                 `).join('')}
               </div>
@@ -561,17 +620,18 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
   // Detail Hero Carousel Prev/Next & Thumbnails
   const selectedProp = discoverState.selectedPropertyId ? getPublicProperties().find(p => p.id === discoverState.selectedPropertyId) : null;
   const propImages = selectedProp && Array.isArray(selectedProp.images) ? selectedProp.images.filter(Boolean) : [];
+  const totalMediaCount = Math.max(1, propImages.length + (selectedProp?.videoUrl && selectedProp.videoUrl.trim() ? 1 : 0));
 
   document.getElementById('detail-prev-photo-btn')?.addEventListener('click', () => {
-    if (propImages.length > 0) {
-      activeDetailPhotoIndex = (activeDetailPhotoIndex - 1 + propImages.length) % propImages.length;
+    if (totalMediaCount > 1) {
+      activeDetailPhotoIndex = (activeDetailPhotoIndex - 1 + totalMediaCount) % totalMediaCount;
       onStateUpdate(discoverState);
     }
   });
 
   document.getElementById('detail-next-photo-btn')?.addEventListener('click', () => {
-    if (propImages.length > 0) {
-      activeDetailPhotoIndex = (activeDetailPhotoIndex + 1) % propImages.length;
+    if (totalMediaCount > 1) {
+      activeDetailPhotoIndex = (activeDetailPhotoIndex + 1) % totalMediaCount;
       onStateUpdate(discoverState);
     }
   });

@@ -28,6 +28,10 @@ export function renderPropertyDetailModal(property) {
     specsList.push({ label: 'District', value: property.district });
   }
 
+  const rawImgs = Array.isArray(property.images) ? property.images.filter(Boolean) : [];
+  const uniqueImgs = [...new Set(rawImgs)];
+  const images = uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
+
   return `
     <div class="modal-overlay active" id="property-details-modal-overlay">
       <div class="property-modal-card">
@@ -38,11 +42,11 @@ export function renderPropertyDetailModal(property) {
 
         <!-- Cinematic Gallery -->
         <div class="modal-gallery-container">
-          <div class="gallery-main-img-wrap">
-            <img src="${property.images[0]}" alt="${property.title}" class="gallery-main-img" id="modal-main-gallery-img" />
+          <div class="gallery-main-img-wrap" id="modal-gallery-media-viewport" style="position: relative;">
+            <img src="${images[0]}" alt="${property.title}" class="gallery-main-img" id="modal-main-gallery-img" />
             <div style="position: absolute; bottom: 16px; left: 16px; display: flex; gap: 8px;">
               <span class="badge badge-dark">
-                <i class="ri-image-line"></i> ${property.images.length} High-Res Photos
+                <i class="ri-image-line"></i> ${images.length} High-Res Photos
               </span>
               <span class="badge badge-orange">${property.tag || property.categoryLabel}</span>
             </div>
@@ -58,9 +62,15 @@ export function renderPropertyDetailModal(property) {
           </div>
 
           <div class="gallery-thumbs-col">
-            ${property.images.slice(1, 3).map((img, i) => `
-              <img src="${img}" alt="Thumbnail ${i+1}" class="gallery-thumb-img modal-thumb" data-src="${img}" />
+            ${images.slice(0, 4).map((img, i) => `
+              <img src="${img}" alt="Thumbnail ${i+1}" class="gallery-thumb-img modal-thumb" data-type="image" data-src="${img}" />
             `).join('')}
+            ${property.videoUrl ? `
+              <div class="gallery-thumb-img modal-thumb" data-type="video" data-src="${property.videoUrl}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #1a202c; color: #fff; cursor: pointer; border-radius: 8px;">
+                <i class="ri-play-circle-fill" style="color: #eb5e28; font-size: 1.5rem;"></i>
+                <span style="font-size: 0.65rem; font-weight: 800;">VIDEO</span>
+              </div>
+            ` : ''}
           </div>
         </div>
 
@@ -256,11 +266,63 @@ export function initPropertyDetailModalListeners(property, onClose) {
     }
   });
 
-  // Thumbnail Click to switch main gallery image
+  function getEmbedUrl(url) {
+    if (!url) return '';
+    const clean = url.trim();
+    const ytMatch = clean.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      return { type: 'iframe', url: `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0` };
+    }
+    if (/facebook\.com|fb\.watch|fb\.com/i.test(clean)) {
+      return { type: 'iframe', url: `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(clean)}&show_text=0&width=560&autoplay=1` };
+    }
+    if (/\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(clean) || clean.startsWith('data:video/')) {
+      return { type: 'video', url: clean };
+    }
+    return { type: 'iframe', url: clean };
+  }
+
+  // Thumbnail Click to switch main gallery image / video
   document.querySelectorAll('.modal-thumb').forEach(thumb => {
     thumb.addEventListener('click', () => {
-      const mainImg = document.getElementById('modal-main-gallery-img');
-      if (mainImg) mainImg.src = thumb.dataset.src;
+      const viewport = document.getElementById('modal-gallery-media-viewport');
+      if (!viewport) return;
+      const type = thumb.dataset.type || 'image';
+      const src = thumb.dataset.src;
+
+      if (type === 'image') {
+        viewport.innerHTML = `
+          <img src="${src}" alt="${property.title}" class="gallery-main-img" id="modal-main-gallery-img" style="width:100%; height:100%; object-fit:cover;" />
+          <div style="position: absolute; bottom: 16px; left: 16px; display: flex; gap: 8px;">
+            <span class="badge badge-dark">
+              <i class="ri-image-line"></i> ${images.length} High-Res Photos
+            </span>
+            <span class="badge badge-orange">${property.tag || property.categoryLabel}</span>
+          </div>
+          <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px;">
+            <button class="card-favorite-btn ${saved ? 'saved' : ''}" id="modal-save-fav-btn" title="Bookmark Property">
+              <i class="${saved ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
+            </button>
+            <button class="card-favorite-btn" id="modal-share-btn" title="Share Property">
+              <i class="ri-share-line"></i>
+            </button>
+          </div>
+        `;
+      } else {
+        const vInfo = getEmbedUrl(src);
+        viewport.innerHTML = `
+          <div style="width:100%; height:100%; background:#000; display:flex; align-items:center; justify-content:center;">
+            ${vInfo.type === 'video' ? `
+              <video src="${vInfo.url}" controls autoplay style="width:100%; height:100%; object-fit:contain;"></video>
+            ` : `
+              <iframe src="${vInfo.url}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="width:100%; height:100%; border:0;"></iframe>
+            `}
+          </div>
+          <div style="position: absolute; top: 16px; left: 16px;">
+            <span class="badge badge-orange"><i class="ri-play-circle-fill"></i> Property Video Tour</span>
+          </div>
+        `;
+      }
     });
   });
 

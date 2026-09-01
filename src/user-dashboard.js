@@ -706,7 +706,7 @@ export function renderUserDashboard() {
       if (imgUrl && !rawImages.includes(imgUrl)) rawImages.unshift(imgUrl);
       const images = [...new Set(rawImages.filter(Boolean))];
       if (images.length === 0) {
-        images.push('https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80');
+        images.push('/default-property.jpg');
       }
 
       const val = type.toLowerCase().trim();
@@ -1028,7 +1028,7 @@ function renderUserPropertyPreviewModal(prop) {
 
   const rawImgs = Array.isArray(prop.images) ? prop.images.filter(Boolean) : [];
   const uniqueImgs = [...new Set(rawImgs)];
-  const images = uniqueImgs.length > 0 ? uniqueImgs : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'];
+  const images = uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
   const status = prop.status || prop.availability || 'Available';
 
   const allMediaItems = [];
@@ -1042,6 +1042,9 @@ function renderUserPropertyPreviewModal(prop) {
         videoEmbedSrc = `https://www.youtube.com/embed/${match[1]}?autoplay=0`;
         isEmbeddableVideo = true;
       }
+    } else if (prop.videoUrl.includes('facebook.com') || prop.videoUrl.includes('fb.watch') || prop.videoUrl.includes('fb.com')) {
+      videoEmbedSrc = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(prop.videoUrl)}&show_text=0&width=560&autoplay=0`;
+      isEmbeddableVideo = true;
     }
     allMediaItems.push({
       type: 'video',

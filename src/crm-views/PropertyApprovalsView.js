@@ -78,7 +78,7 @@ export function renderPropertyApprovalsView() {
 }
 
 function renderPendingPropertyCard(p) {
-  const defaultImg = (p.images && p.images[0]) || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
+  const defaultImg = (p.images && p.images[0]) || '/default-property.jpg';
   
   return `
     <div class="pending-prop-card" style="background: #FAF8F5; border: 1px solid #E7E0D8; border-radius: 16px; padding: 24px; display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start;">
@@ -271,7 +271,7 @@ function openSubmissionPreviewModal(prop) {
   let activeMediaIndex = 0;
   const rawImgs = Array.isArray(prop.images) ? prop.images.filter(Boolean) : [];
   const uniqueImgs = [...new Set(rawImgs)];
-  const images = uniqueImgs.length > 0 ? uniqueImgs : ['https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'];
+  const images = uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
   const status = prop.status || prop.availability || 'Pending Approval';
 
   const overlay = document.createElement('div');
