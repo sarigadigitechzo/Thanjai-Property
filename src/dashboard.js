@@ -18,6 +18,7 @@ import { renderReportsView, initReportsView } from './crm-views/ReportsView.js';
 import { renderStatCounterView } from './crm-views/StatCounterView.js';
 import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.js';
 import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsersView.js';
+import { renderPopupsView, initPopupsView } from './crm-views/PopupsView.js';
 import { renderHowToUseView, initHowToUseListeners } from './crm-views/HowToUseView.js';
 import { showToast, installGlobalPopupShield } from './utils/toast.js';
 
@@ -28,6 +29,7 @@ import { initBlogStore } from './utils/blogStore.js';
 import { initSiteImagesStore } from './utils/siteImagesStore.js';
 import { initAdminUsersStore } from './utils/adminUsersStore.js';
 import { initUsersStore } from './utils/userAuthStore.js';
+import { initPopupsStore } from './utils/popupsStore.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([
@@ -35,7 +37,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     initBlogStore(),
     initSiteImagesStore(),
     initAdminUsersStore(),
-    initUsersStore()
+    initUsersStore(),
+    initPopupsStore()
   ]);
   
   const contentArea = document.getElementById('os-content');
@@ -323,6 +326,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       case 'images':
         html = renderWebsiteImagesView();
         afterRender = initWebsiteImagesListeners;
+        break;
+      case 'popups':
+        html = renderPopupsView();
+        afterRender = initPopupsView;
         break;
       case 'audit':
         html = renderAuditLogView();

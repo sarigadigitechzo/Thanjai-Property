@@ -18,6 +18,8 @@ import { renderPropertyDetailModal, initPropertyDetailModalListeners } from './c
 import { renderPostPropertyModal, initPostPropertyModalListeners } from './components/PostPropertyModal.js';
 import { renderScheduleVisitModal, initScheduleVisitModalListeners } from './components/ScheduleVisitModal.js';
 import { initBuildingCursor } from './components/BuildingCursor.js';
+import { initPromotionalPopups } from './components/PromotionalPopupModal.js';
+import { initPopupsStore } from './utils/popupsStore.js';
 
 // Views for Pages 2, 3, 4, 5
 import { renderOurStoryView, initOurStoryListeners } from './views/OurStoryView.js';
@@ -434,13 +436,17 @@ async function initApp() {
   // Await the API data fetches to prevent flashing of old cached data
   await Promise.all([
     initPropertiesStore().catch(() => {}),
-    initBlogStore().catch(() => {})
+    initBlogStore().catch(() => {}),
+    initPopupsStore().catch(() => {})
   ]);
   
   initSiteImagesStore();
   
   // Initialize Luxury Architectural Building Cursor
   initBuildingCursor();
+
+  // Initialize Promotional & Seasonal Popups Queue Engine
+  initPromotionalPopups();
 
   // Set up mobile navigation
   MobileBottomNav.init();

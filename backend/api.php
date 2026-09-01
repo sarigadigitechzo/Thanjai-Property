@@ -218,6 +218,25 @@ function renCol($conn, $t, $o, $n, $d) {
   `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )");
 
+@$conn->query("CREATE TABLE IF NOT EXISTS `popups` (
+  `id` varchar(255) PRIMARY KEY,
+  `title` varchar(255) DEFAULT NULL,
+  `subtitle` longtext DEFAULT NULL,
+  `type` varchar(100) DEFAULT 'festival',
+  `badge` varchar(100) DEFAULT 'FESTIVE OFFER',
+  `image` longtext DEFAULT NULL,
+  `highlights` longtext DEFAULT NULL,
+  `ctaText` varchar(255) DEFAULT 'Claim Offer on WhatsApp',
+  `ctaType` varchar(50) DEFAULT 'whatsapp',
+  `ctaValue` varchar(255) DEFAULT NULL,
+  `startDate` varchar(50) DEFAULT NULL,
+  `endDate` varchar(50) DEFAULT NULL,
+  `delaySeconds` int DEFAULT 3,
+  `frequency` varchar(50) DEFAULT 'once_session',
+  `status` varchar(50) DEFAULT 'Active',
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
 // Safely patch columns
 addCol($conn, 'leads', 'source', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'requirement', 'varchar(255) DEFAULT NULL');
@@ -1532,6 +1551,108 @@ elseif ($resource === 'site_visits') {
         $stmt->bind_param("s", $id);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Deleted successfully"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        }
+    }
+}
+
+elseif ($resource === 'popups') {
+    if ($method === 'GET') {
+        if ($id) {
+            $stmt = $conn->prepare("SELECT * FROM popups WHERE id = ?");
+            $stmt->bind_param("s", $id);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            echo json_encode($res->fetch_assoc());
+        } else {
+            $result = $conn->query("SELECT * FROM popups ORDER BY createdAt DESC");
+            $rows = [];
+            while($row = $result->fetch_assoc()) { $rows[] = $row; }
+            echo json_encode($rows);
+        }
+    } 
+    elseif ($method === 'POST') {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data) {
+            http_response_code(400);
+            echo json_encode(["error" => "Invalid JSON payload"]);
+            exit;
+        }
+
+        $popId = !empty($data['id']) ? $data['id'] : 'POP-' . round(microtime(true) * 1000);
+        $title = $data['title'] ?? '';
+        $subtitle = $data['subtitle'] ?? '';
+        $type = $data['type'] ?? 'festival';
+        $badge = $data['badge'] ?? 'FESTIVE OFFER';
+        $image = $data['image'] ?? '';
+        $highlights = is_array($data['highlights'] ?? null) ? json_encode($data['highlights']) : ($data['highlights'] ?? '[]');
+        $ctaText = $data['ctaText'] ?? 'Claim Offer on WhatsApp';
+        $ctaType = $data['ctaType'] ?? 'whatsapp';
+        $ctaValue = $data['ctaValue'] ?? '';
+        $startDate = $data['startDate'] ?? '';
+        $endDate = $data['endDate'] ?? '';
+        $delaySeconds = intval($data['delaySeconds'] ?? 3);
+        $frequency = $data['frequency'] ?? 'once_session';
+        $status = $data['status'] ?? 'Active';
+
+        try {
+            $check = $conn->prepare("SELECT id FROM popups WHERE id = ?");
+            $check->bind_param("s", $popId);
+            $check->execute();
+            $exists = $check->get_result()->fetch_assoc();
+
+            if ($exists) {
+                $stmt = $conn->prepare("UPDATE popups SET title=?, subtitle=?, type=?, badge=?, image=?, highlights=?, ctaText=?, ctaType=?, ctaValue=?, startDate=?, endDate=?, delaySeconds=?, frequency=?, status=? WHERE id=?");
+                $stmt->bind_param("sssssssssssisss", $title, $subtitle, $type, $badge, $image, $highlights, $ctaText, $ctaType, $ctaValue, $startDate, $endDate, $delaySeconds, $frequency, $status, $popId);
+            } else {
+                $stmt = $conn->prepare("INSERT INTO popups (id, title, subtitle, type, badge, image, highlights, ctaText, ctaType, ctaValue, startDate, endDate, delaySeconds, frequency, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->bind_param("ssssssssssssiss", $popId, $title, $subtitle, $type, $badge, $image, $highlights, $ctaText, $ctaType, $ctaValue, $startDate, $endDate, $delaySeconds, $frequency, $status);
+            }
+
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Popup saved successfully", "id" => $popId]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => "Database error: " . $stmt->error]);
+            }
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(["error" => "Exception: " . $e->getMessage()]);
+        }
+    }
+    elseif ($method === 'PUT' && $id) {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $title = $data['title'] ?? '';
+        $subtitle = $data['subtitle'] ?? '';
+        $type = $data['type'] ?? 'festival';
+        $badge = $data['badge'] ?? 'FESTIVE OFFER';
+        $image = $data['image'] ?? '';
+        $highlights = is_array($data['highlights'] ?? null) ? json_encode($data['highlights']) : ($data['highlights'] ?? '[]');
+        $ctaText = $data['ctaText'] ?? 'Claim Offer on WhatsApp';
+        $ctaType = $data['ctaType'] ?? 'whatsapp';
+        $ctaValue = $data['ctaValue'] ?? '';
+        $startDate = $data['startDate'] ?? '';
+        $endDate = $data['endDate'] ?? '';
+        $delaySeconds = intval($data['delaySeconds'] ?? 3);
+        $frequency = $data['frequency'] ?? 'once_session';
+        $status = $data['status'] ?? 'Active';
+
+        $stmt = $conn->prepare("UPDATE popups SET title=?, subtitle=?, type=?, badge=?, image=?, highlights=?, ctaText=?, ctaType=?, ctaValue=?, startDate=?, endDate=?, delaySeconds=?, frequency=?, status=? WHERE id=?");
+        $stmt->bind_param("sssssssssssisss", $title, $subtitle, $type, $badge, $image, $highlights, $ctaText, $ctaType, $ctaValue, $startDate, $endDate, $delaySeconds, $frequency, $status, $id);
+        if ($stmt->execute()) {
+            echo json_encode(["message" => "Popup updated successfully"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        }
+    }
+    elseif ($method === 'DELETE' && $id) {
+        $stmt = $conn->prepare("DELETE FROM popups WHERE id=?");
+        $stmt->bind_param("s", $id);
+        if ($stmt->execute()) {
+            echo json_encode(["message" => "Popup deleted successfully"]);
         } else {
             http_response_code(500);
             echo json_encode(["error" => "Database error: " . $stmt->error]);

@@ -25,7 +25,7 @@ export const DEFAULT_ADMIN_USERS = [
     role: 'Super Admin',
     roleCode: 'superadmin',
     status: 'Active',
-    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff'],
+    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff', 'popups'],
     lastLogin: 'Active Now',
     createdAt: '2026-01-01T00:00:00.000Z'
   },
@@ -38,7 +38,7 @@ export const DEFAULT_ADMIN_USERS = [
     role: 'Super Admin',
     roleCode: 'superadmin',
     status: 'Active',
-    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff'],
+    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff', 'popups'],
     lastLogin: 'Active Now',
     createdAt: '2026-01-01T00:00:00.000Z'
   },
@@ -51,7 +51,7 @@ export const DEFAULT_ADMIN_USERS = [
     role: 'Super Admin',
     roleCode: 'superadmin',
     status: 'Active',
-    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff'],
+    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff', 'popups'],
     lastLogin: 'Active Now',
     createdAt: '2026-01-01T00:00:00.000Z'
   },
