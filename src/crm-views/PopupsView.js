@@ -229,14 +229,18 @@ export function renderPopupsView() {
             </div>
 
             <div class="form-group">
-              <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Banner Poster Image</label>
+              <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span>Banner Poster Image</span>
+                <span style="font-size: 0.74rem; font-weight: 600; color: #eb5e28; background: #fff7ed; padding: 2px 8px; border-radius: 6px; border: 1px solid #ffedd5;">📐 Best Size: 800 × 450 px (16:9)</span>
+              </label>
               <div style="display: flex; gap: 8px;">
-                <input type="text" id="popup-input-image" class="popup-text-input" placeholder="Paste image URL or upload below..." style="flex: 1;" />
+                <input type="text" id="popup-input-image" class="popup-text-input" placeholder="Paste image URL or click upload button..." style="flex: 1;" />
                 <label style="padding: 0 16px; height: 42px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.84rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; color: #334155; white-space: nowrap;">
-                  <i class="ri-upload-2-line"></i> Upload
+                  <i class="ri-upload-2-line"></i> Upload Image
                   <input type="file" id="popup-image-file-input" accept="image/*" style="display: none;" />
                 </label>
               </div>
+              <small style="font-size: 0.76rem; color: #64748b; margin-top: 4px; display: block;">Recommended dimensions: <strong>800 × 450 pixels</strong> (or 800 × 500 px). Supports JPG, PNG, and WebP without cropping or cutting off.</small>
             </div>
 
             <div class="form-group">

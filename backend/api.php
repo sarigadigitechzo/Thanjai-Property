@@ -298,6 +298,20 @@ addCol($conn, 'partners', 'notes', 'longtext DEFAULT NULL');
 
 addCol($conn, 'portal_users', 'password', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'portal_users', 'temporaryPassword', 'varchar(255) DEFAULT NULL');
+
+addCol($conn, 'popups', 'frequency', "varchar(50) DEFAULT 'once_session'");
+addCol($conn, 'popups', 'highlights', "longtext DEFAULT NULL");
+addCol($conn, 'popups', 'image', "longtext DEFAULT NULL");
+addCol($conn, 'popups', 'subtitle', "longtext DEFAULT NULL");
+addCol($conn, 'popups', 'ctaValue', "varchar(255) DEFAULT NULL");
+addCol($conn, 'popups', 'ctaType', "varchar(50) DEFAULT 'whatsapp'");
+addCol($conn, 'popups', 'ctaText', "varchar(255) DEFAULT 'Claim Offer on WhatsApp'");
+addCol($conn, 'popups', 'type', "varchar(100) DEFAULT 'Festival & Seasonal'");
+addCol($conn, 'popups', 'badge', "varchar(100) DEFAULT '🎉 FESTIVE OFFER'");
+addCol($conn, 'popups', 'startDate', "varchar(50) DEFAULT NULL");
+addCol($conn, 'popups', 'endDate', "varchar(50) DEFAULT NULL");
+addCol($conn, 'popups', 'delaySeconds', "int DEFAULT 3");
+addCol($conn, 'popups', 'status', "varchar(50) DEFAULT 'Active'");
 addCol($conn, 'portal_users', 'isTemporaryPassword', 'tinyint(1) DEFAULT 0');
 addCol($conn, 'portal_users', 'passwordUpdatedAt', 'varchar(100) DEFAULT NULL');
 addCol($conn, 'portal_users', 'role', 'varchar(100) DEFAULT "Individual Owner"');
