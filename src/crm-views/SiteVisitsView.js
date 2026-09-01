@@ -1,4 +1,23 @@
+import { getAdminUsers } from '../utils/adminUsersStore.js';
+import { fetchFromAPI } from '../utils/api.js';
+import { showToast, showAlertModal } from '../utils/toast.js';
+import { addAuditLog } from '../utils/siteImagesStore.js';
+
 export function renderSiteVisitsView() {
+  const adminStaff = getAdminUsers().filter(u => u.status === 'Active' || !u.status);
+  let adminOptions = '';
+  if (adminStaff.length > 0) {
+    adminStaff.forEach(u => {
+      adminOptions += `<option value="${u.fullName} (${u.role || 'Staff'})">${u.fullName} (${u.role || 'Staff'})</option>`;
+    });
+  } else {
+    adminOptions = `
+      <option value="Vijayaraghavan (Super Admin)">Vijayaraghavan (Super Admin)</option>
+      <option value="Aishwarya R. (Super Admin)">Aishwarya R. (Super Admin)</option>
+      <option value="Sales Manager">Sales Manager</option>
+    `;
+  }
+
   return `
     <div class="view-enter">
       <div class="view-header-flex">
@@ -7,7 +26,7 @@ export function renderSiteVisitsView() {
           <p class="view-subtitle">Coordinate property tours and client meetings.</p>
         </div>
         <div class="header-actions-right">
-          <button class="os-btn-primary"><i class="ri-add-line"></i> Schedule Visit</button>
+          <button class="os-btn-primary" id="btn-open-schedule-visit"><i class="ri-add-line"></i> Schedule Visit</button>
         </div>
       </div>
 
@@ -35,7 +54,7 @@ export function renderSiteVisitsView() {
 
     <!-- Modals -->
     <div class="os-modal-overlay" id="site-visits-schedule-modal">
-      <div class="os-modal-card" style="max-width: 450px;">
+      <div class="os-modal-card" style="max-width: 480px;">
         <div class="os-modal-header">
           <h2>Schedule site visit</h2>
           <button class="os-modal-close" id="close-sv-modal"><i class="ri-close-line"></i></button>
@@ -43,31 +62,33 @@ export function renderSiteVisitsView() {
         <div class="os-modal-body">
           <div class="form-group" style="margin-bottom: 16px;">
             <label>Client name / Lead *</label>
-            <input type="text" id="sv-client-name" class="os-input" placeholder="Search leads..." style="width: 100%;" />
+            <input type="text" id="sv-client-name" class="os-input" placeholder="Search or enter client name..." style="width: 100%;" required />
           </div>
           <div class="form-group" style="margin-bottom: 16px;">
             <label>Property *</label>
-            <input type="text" id="sv-property" class="os-input" placeholder="e.g. Premium Villa, Anna Nagar" style="width: 100%;" />
+            <input type="text" id="sv-property" class="os-input" placeholder="e.g. Premium Villa, Anna Nagar" style="width: 100%;" required />
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom: 16px;">
             <label>Visit date & time *</label>
-            <input type="datetime-local" id="sv-datetime" class="os-input" style="width: 100%;" />
+            <input type="datetime-local" id="sv-datetime" class="os-input" style="width: 100%;" required />
           </div>
-          <p style="font-size: 0.85rem; color: var(--os-gray-500); margin-top: 16px;">A confirmation WhatsApp will be sent to the client.</p>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>Assign to Admin Staff *</label>
+            <select id="sv-assigned-to" class="os-input" style="width: 100%; background: #ffffff; cursor: pointer; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;">
+              ${adminOptions}
+            </select>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--os-gray-500); margin-top: 12px;">The assigned admin staff will receive the visit reminder in their dashboard schedule.</p>
         </div>
         <div class="os-modal-footer">
           <button class="os-btn-secondary" id="cancel-sv-modal">Cancel</button>
-          <button class="os-btn-primary" id="confirm-sv-modal" style="background: #fdba74; border-color: #fdba74; color: #fff;">Confirm & send</button>
+          <button class="os-btn-primary" id="confirm-sv-modal" style="background: #eb5e28; border-color: #eb5e28; color: #fff;">Confirm & Schedule</button>
         </div>
       </div>
     </div>
     </div>
   `;
 }
-
-import { fetchFromAPI } from '../utils/api.js';
-import { showToast, showAlertModal } from '../utils/toast.js';
-import { addAuditLog } from '../utils/siteImagesStore.js';
 
 export async function initSiteVisitsView() {
   // --- Storage & Dynamic Rendering ---
@@ -83,10 +104,17 @@ export async function initSiteVisitsView() {
         const h12 = hours % 12 || 12;
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
-        // Use notes to store extra data if possible, or fallback to leadId
         let clientName = v.leadId;
         let property = v.propertyId;
-        try { if(v.notes) { const n = JSON.parse(v.notes); clientName = n.clientName || clientName; property = n.property || property; } } catch(e){}
+        let assignedTo = v.assignedTo || 'Vijayaraghavan';
+        try { 
+          if(v.notes) { 
+            const n = JSON.parse(v.notes); 
+            clientName = n.clientName || clientName; 
+            property = n.property || property; 
+            assignedTo = n.assignedTo || assignedTo;
+          } 
+        } catch(e){}
 
         return {
           id: v.id,
@@ -96,8 +124,9 @@ export async function initSiteVisitsView() {
           mins: mins,
           ampm: ampm,
           clientName: clientName,
-          phone: '', // missing
+          phone: 'Site Visit',
           property: property,
+          assignedTo: assignedTo,
           status: v.status
         };
       });
@@ -216,21 +245,26 @@ export async function initSiteVisitsView() {
       // sort by AM/PM then hour (rough)
       dayVisits.forEach(v => {
         html += `
-          <div class="visit-card hover-lift">
+          <div class="visit-card hover-lift" style="border-left: 4px solid #eb5e28;">
             <div class="v-time">
               <div class="v-hour">${v.hours}:${v.mins}</div>
               <div class="v-ampm">${v.ampm}</div>
             </div>
             <div class="v-details">
               <div class="v-client">
-                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(v.clientName)}&background=random" class="v-avatar" />
+                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(v.clientName)}&background=eb5e28&color=fff" class="v-avatar" />
                 <div>
                   <div class="v-name">${v.clientName}</div>
-                  <div class="v-phone">${v.phone}</div>
+                  <div class="v-phone">${v.phone || 'Site Visit'}</div>
                 </div>
               </div>
               <div class="v-prop">
                 <i class="ri-building-4-line"></i> ${v.property}
+              </div>
+              <div style="margin-top: 6px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
+                <span style="background: #FFF5EB; color: #eb5e28; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #FEEBC8;">
+                  <i class="ri-user-star-line"></i> Assigned to: ${v.assignedTo || 'Vijayaraghavan (Super Admin)'}
+                </span>
               </div>
             </div>
             <div class="v-actions">
@@ -277,7 +311,7 @@ export async function initSiteVisitsView() {
   renderAgenda(selectedDay.toString());
 
   // Schedule Visit Modal Logic
-  const scheduleBtn = document.querySelector('.view-header-flex .os-btn-primary');
+  const scheduleBtn = document.getElementById('btn-open-schedule-visit') || document.querySelector('.view-header-flex .os-btn-primary');
   const svModal = document.getElementById('site-visits-schedule-modal');
   const closeSvBtn = document.getElementById('close-sv-modal');
   const cancelSvBtn = document.getElementById('cancel-sv-modal');
@@ -298,6 +332,7 @@ export async function initSiteVisitsView() {
       const clientName = document.getElementById('sv-client-name').value.trim();
       const property = document.getElementById('sv-property').value.trim();
       const datetime = document.getElementById('sv-datetime').value;
+      const assignedTo = document.getElementById('sv-assigned-to')?.value || 'Vijayaraghavan (Super Admin)';
 
       if (!clientName || !datetime) {
         showAlertModal({
@@ -322,8 +357,8 @@ export async function initSiteVisitsView() {
         propertyId: property || 'TBD',
         visitDate: datetime.replace('T', ' ') + ':00',
         status: 'Scheduled',
-        assignedTo: 'Aishwarya R.',
-        notes: JSON.stringify({ clientName, property }) // Store mock fields in notes
+        assignedTo: assignedTo,
+        notes: JSON.stringify({ clientName, property, assignedTo })
       };
 
       fetchFromAPI('/site_visits', {
@@ -342,18 +377,19 @@ export async function initSiteVisitsView() {
         mins: mins,
         ampm: ampm,
         clientName: clientName,
-        phone: 'New Visit',
+        phone: 'Site Visit',
         property: property || 'TBD',
+        assignedTo: assignedTo,
         isNew: true
       });
 
       addAuditLog({
         action: `Scheduled Site Visit (${clientName})`,
         module: 'Site Visits',
-        details: `Scheduled property tour for ${clientName} at ${property || 'Property'} on ${day} ${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()} at ${hours}:${mins} ${ampm}.`
+        details: `Scheduled property tour for ${clientName} at ${property || 'Property'} assigned to ${assignedTo} on ${day} ${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()} at ${hours}:${mins} ${ampm}.`
       });
 
-      showToast(`Site visit scheduled for ${clientName}!`, 'ri-checkbox-circle-fill');
+      showToast(`Site visit scheduled & assigned to ${assignedTo}!`, 'ri-checkbox-circle-fill');
 
       // clear inputs
       document.getElementById('sv-client-name').value = '';

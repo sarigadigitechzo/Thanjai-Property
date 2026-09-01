@@ -255,6 +255,7 @@ addCol($conn, 'admin_staff', 'roleCode', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'status', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'lastLogin', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'admin_staff', 'allowedModules', 'longtext DEFAULT NULL');
+addCol($conn, 'site_visits', 'assignedTo', 'varchar(255) DEFAULT NULL');
 
 addCol($conn, 'properties', 'adType', "varchar(50) DEFAULT 'free'");
 addCol($conn, 'properties', 'userId', 'varchar(255) DEFAULT NULL');
