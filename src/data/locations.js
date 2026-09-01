@@ -252,13 +252,20 @@ export const LOCATIONS = rawLocations.map(loc => ({
     try {
       const properties = getProperties();
       return properties.filter(p => {
-        const d = (p.district || '').toLowerCase();
-        const l = (p.location || '').toLowerCase();
-        const address = (p.address || p.area || '').toLowerCase();
-        const title = (p.title || '').toLowerCase();
-        const target = loc.name.toLowerCase();
-        const altTarget = loc.id.replace(/_/g, ' ');
-        return l.includes(target) || d.includes(target) || address.includes(target) || title.includes(target) || l.includes(altTarget);
+        const r = (p.road || '').toLowerCase().trim();
+        const d = (p.district || '').toLowerCase().trim();
+        const l = (p.location || '').toLowerCase().trim();
+        const area = (p.area || p.address || '').toLowerCase().trim();
+        const taluk = (p.taluk || '').toLowerCase().trim();
+        const title = (p.title || '').toLowerCase().trim();
+        const target = loc.name.toLowerCase().trim();
+        const altTarget = loc.id.replace(/_/g, ' ').toLowerCase().trim();
+
+        if (r && (r === target || r === altTarget || r.includes(target) || target.includes(r))) {
+          return true;
+        }
+
+        return l.includes(target) || d.includes(target) || area.includes(target) || taluk.includes(target) || title.includes(target) || l.includes(altTarget);
       });
     } catch (e) {
       return [];

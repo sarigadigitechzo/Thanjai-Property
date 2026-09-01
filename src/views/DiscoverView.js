@@ -449,6 +449,20 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                 </div>
               ` : ''}
 
+              ${property.road && property.road !== 'Other / Outside Road' ? `
+                <div>
+                  <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Road Corridor</span>
+                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-road-map-line" style="color: #eb5e28;"></i> ${property.road}</strong>
+                </div>
+              ` : ''}
+
+              ${property.taluk ? `
+                <div>
+                  <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Taluk</span>
+                  <strong style="font-size: 1.05rem; color: #1A202C;"><i class="ri-government-line" style="color: #eb5e28;"></i> ${property.taluk}</strong>
+                </div>
+              ` : ''}
+
               ${property.bedrooms ? `
                 <div>
                   <span style="font-size: 0.75rem; color: #718096; text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">Bedrooms</span>

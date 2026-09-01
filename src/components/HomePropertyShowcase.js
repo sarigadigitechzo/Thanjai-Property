@@ -47,10 +47,6 @@ export function renderHomePropertyShowcase(properties, onSelectProperty, onNavig
                   ${prop.categoryLabel}
                 </span>
 
-                <div style="position: absolute; top: 18px; right: 18px; background: rgba(0,0,0,0.75); color: #ffffff; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 12px; backdrop-filter: blur(4px); letter-spacing: 0.05em;">
-                  ID: ${prop.id}
-                </div>
-
                 <div style="position: absolute; bottom: 18px; left: 18px; right: 18px; color: #ffffff;">
                   <div style="font-family: var(--font-serif); font-size: 1.5rem; font-weight: 700; color: #ffffff;">
                     ${prop.priceFormatted}

@@ -18,6 +18,12 @@ export function renderPropertyDetailModal(property) {
   if (!specsList.some(s => s.label.toLowerCase() === 'facing') && property.facing) {
     specsList.push({ label: 'Facing', value: property.facing });
   }
+  if (property.road && property.road !== 'Other / Outside Road') {
+    specsList.push({ label: 'Road Corridor', value: property.road });
+  }
+  if (property.taluk) {
+    specsList.push({ label: 'Taluk', value: property.taluk });
+  }
   if (property.furnishing && property.furnishing !== 'Not specified') {
     specsList.push({ label: 'Furnishing', value: property.furnishing });
   }

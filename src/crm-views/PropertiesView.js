@@ -734,16 +734,47 @@ function renderFullPagePropertyForm(prop) {
                 </select>
               </div>
 
-              <!-- Location -->
+              <!-- Area / Locality -->
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Location *</label>
-                <input type="text" id="form-prop-location" required value="${isEdit ? prop?.location || '' : ''}" placeholder="e.g. Anna Nagar, Chennai" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Area / Locality *</label>
+                <input type="text" id="form-prop-area" required value="${isEdit ? prop?.area || prop?.location || '' : ''}" placeholder="e.g. Sundaram Nagar, Medical College Area" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+              </div>
+
+              <!-- Road / Location Hub (11 Road Dropdown) -->
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Road / Prime Corridor *</label>
+                <select id="form-prop-road" required style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
+                  <option value="Medical College Road" ${isEdit && (prop?.road === 'Medical College Road' || prop?.location?.includes('Medical College Road')) ? 'selected' : ''}>Medical College Road</option>
+                  <option value="Trichy Road" ${isEdit && (prop?.road === 'Trichy Road' || prop?.location?.includes('Trichy Road')) ? 'selected' : ''}>Trichy Road</option>
+                  <option value="Pudukkottai Road" ${isEdit && (prop?.road === 'Pudukkottai Road' || prop?.location?.includes('Pudukkottai Road')) ? 'selected' : ''}>Pudukkottai Road</option>
+                  <option value="Madhakottai Road" ${isEdit && (prop?.road === 'Madhakottai Road' || prop?.location?.includes('Madhakottai Road')) ? 'selected' : ''}>Madhakottai Road</option>
+                  <option value="Nanjikottai Road" ${isEdit && (prop?.road === 'Nanjikottai Road' || prop?.location?.includes('Nanjikottai Road')) ? 'selected' : ''}>Nanjikottai Road</option>
+                  <option value="Villar Road" ${isEdit && (prop?.road === 'Villar Road' || prop?.location?.includes('Villar Road')) ? 'selected' : ''}>Villar Road</option>
+                  <option value="Pattukottai Bypass" ${isEdit && (prop?.road === 'Pattukottai Bypass' || prop?.location?.includes('Pattukottai Bypass')) ? 'selected' : ''}>Pattukottai Bypass</option>
+                  <option value="Mariyamman Kovil Road" ${isEdit && (prop?.road === 'Mariyamman Kovil Road' || prop?.location?.includes('Mariyamman Kovil Road')) ? 'selected' : ''}>Mariyamman Kovil Road</option>
+                  <option value="Srinivasapuram" ${isEdit && (prop?.road === 'Srinivasapuram' || prop?.location?.includes('Srinivasapuram')) ? 'selected' : ''}>Srinivasapuram</option>
+                  <option value="Reddipalayam Road" ${isEdit && (prop?.road === 'Reddipalayam Road' || prop?.location?.includes('Reddipalayam Road')) ? 'selected' : ''}>Reddipalayam Road</option>
+                  <option value="Kumbakonam Bypass" ${isEdit && (prop?.road === 'Kumbakonam Bypass' || prop?.location?.includes('Kumbakonam Bypass')) ? 'selected' : ''}>Kumbakonam Bypass</option>
+                  <option value="Other / Outside Road" ${isEdit && (prop?.road === 'Other / Outside Road' || !prop?.road) ? 'selected' : ''}>Other / Outside Road</option>
+                </select>
+              </div>
+
+              <!-- Taluk -->
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Taluk *</label>
+                <input type="text" id="form-prop-taluk" required value="${isEdit ? prop?.taluk || 'Thanjavur' : 'Thanjavur'}" placeholder="e.g. Thanjavur, Kumbakonam, Pattukkottai" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+              </div>
+
+              <!-- District -->
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">District *</label>
+                <input type="text" id="form-prop-district" required value="${isEdit ? prop?.district || 'Thanjavur' : 'Thanjavur'}" placeholder="e.g. Thanjavur, Trichy, Madurai" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
               <!-- Facing -->
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Facing</label>
-                <input type="text" id="form-prop-facing" value="${isEdit ? prop?.facing || prop?.address || '' : ''}" placeholder="e.g. North, East, South-East, North-Facing" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <input type="text" id="form-prop-facing" value="${isEdit ? prop?.facing || prop?.address || '' : ''}" placeholder="e.g. East, North, North-East, South" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
               <!-- Area (sqft) -->
@@ -1674,8 +1705,11 @@ function initPropertyFormListeners() {
     const type = document.getElementById('form-prop-type')?.value;
     const category = document.getElementById('form-prop-category')?.value;
     const price = document.getElementById('form-prop-price')?.value;
-    const location = document.getElementById('form-prop-location')?.value.trim();
-    const facing = document.getElementById('form-prop-facing')?.value.trim();
+    const area = document.getElementById('form-prop-area')?.value.trim() || '';
+    const road = document.getElementById('form-prop-road')?.value || '';
+    const taluk = document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur';
+    const district = document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur';
+    const facing = document.getElementById('form-prop-facing')?.value.trim() || '';
     const size = document.getElementById('form-prop-size')?.value.trim();
     const bedrooms = document.getElementById('form-prop-bedrooms')?.value;
     const bathrooms = document.getElementById('form-prop-bathrooms')?.value;
@@ -1709,22 +1743,9 @@ function initPropertyFormListeners() {
 
     const featuresArray = featuresStr ? featuresStr.split(',').map(f => f.trim()).filter(Boolean) : [];
 
-    const loc = location || '';
-    let parsedDistrict = 'Thanjavur';
-    const knownDistricts = ['Thanjavur', 'Trichy', 'Tiruchirappalli', 'Madurai', 'Chennai', 'Coimbatore', 'Kumbakonam', 'Pudukkottai', 'Tiruvarur', 'Nagapattinam', 'Salem', 'Dindigul', 'Karur', 'Perambalur', 'Ariyalur', 'Mayiladuthurai'];
-    
-    if (loc.includes(',')) {
-      const parts = loc.split(',').map(p => p.trim());
-      const matched = knownDistricts.find(d => parts.some(p => p.toLowerCase() === d.toLowerCase()));
-      if (matched) {
-        parsedDistrict = matched;
-      } else {
-        parsedDistrict = parts[parts.length - 1] || 'Thanjavur';
-      }
-    } else {
-      const matched = knownDistricts.find(d => loc.toLowerCase().includes(d.toLowerCase()));
-      parsedDistrict = matched || 'Thanjavur';
-    }
+    const roadPart = road && road !== 'Other / Outside Road' ? road : '';
+    const locParts = [area, roadPart, taluk, district].filter(Boolean);
+    const combinedLocation = locParts.length > 0 ? [...new Set(locParts)].join(', ') : (area || district || 'Thanjavur');
 
     const val = (type || '').toLowerCase();
     const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room'];
@@ -1735,9 +1756,12 @@ function initPropertyFormListeners() {
       type: type || 'Villa',
       category: category || 'Sale',
       price: parseFloat(price) || 0,
-      location: location || 'Thanjavur',
-      district: parsedDistrict,
-      facing: facing || '',
+      location: combinedLocation,
+      area: area,
+      road: road,
+      taluk: taluk,
+      district: district,
+      facing: facing,
       size: size ? formatPropertySize(size) : '',
       bedrooms: (isRes && bedrooms) ? parseInt(bedrooms, 10) : null,
       bathrooms: (isRes && bathrooms) ? parseInt(bathrooms, 10) : null,

@@ -685,9 +685,11 @@ export function renderUserDashboard() {
       const title = document.getElementById('user-prop-title').value;
       const type = document.getElementById('user-prop-type').value;
       const categoryRaw = document.getElementById('user-prop-category').value;
-      const district = document.getElementById('user-prop-district').value;
-      const location = document.getElementById('user-prop-location').value;
-      const address = document.getElementById('user-prop-address').value;
+      const area = document.getElementById('user-prop-area')?.value.trim() || '';
+      const road = document.getElementById('user-prop-road')?.value || '';
+      const taluk = document.getElementById('user-prop-taluk')?.value.trim() || 'Thanjavur';
+      const district = document.getElementById('user-prop-district')?.value.trim() || 'Thanjavur';
+      const facing = document.getElementById('user-prop-facing')?.value.trim() || '';
       const size = document.getElementById('user-prop-size').value;
       const bedrooms = parseInt(document.getElementById('user-prop-bedrooms')?.value || 0);
       const bathrooms = parseInt(document.getElementById('user-prop-bathrooms')?.value || 0);
@@ -699,6 +701,10 @@ export function renderUserDashboard() {
       const latitude = document.getElementById('user-prop-latitude')?.value || '10.786999';
       const longitude = document.getElementById('user-prop-longitude')?.value || '79.137827';
       const desc = document.getElementById('user-prop-desc').value;
+
+      const roadPart = road && road !== 'Other / Outside Road' ? road : '';
+      const locParts = [area, roadPart, taluk, district].filter(Boolean);
+      const location = locParts.length > 0 ? [...new Set(locParts)].join(', ') : (area || district || 'Thanjavur');
 
       const features = Array.from(document.querySelectorAll('.user-feature-chk:checked')).map(c => c.value);
 
@@ -731,8 +737,12 @@ export function renderUserDashboard() {
         category: categoryRaw === 'Rent' ? 'Rent' : 'Sale',
         categoryRaw,
         district,
+        taluk,
+        road,
+        area,
         location,
-        address,
+        facing,
+        address: facing || area,
         size,
         bedrooms: isRes ? bedrooms : null,
         bathrooms: isRes ? bathrooms : null,
@@ -1374,18 +1384,41 @@ function renderPostPropertyFormHtml(propToEdit = null, adType = 'free') {
             </div>
 
             <div>
-              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">City / District *</label>
-              <input type="text" id="user-prop-district" required value="${propToEdit?.district || ''}" placeholder="e.g. Thanjavur" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Area / Locality *</label>
+              <input type="text" id="user-prop-area" required value="${propToEdit?.area || propToEdit?.location || ''}" placeholder="e.g. Sundaram Nagar, Medical College Area" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
             </div>
 
             <div>
-              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Locality / Landmark *</label>
-              <input type="text" id="user-prop-location" required value="${propToEdit?.location || ''}" placeholder="e.g. Medical College Road" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Road / Prime Corridor *</label>
+              <select id="user-prop-road" required style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; background: #fff; box-sizing: border-box;">
+                <option value="Medical College Road" ${propToEdit?.road === 'Medical College Road' || propToEdit?.location?.includes('Medical College Road') ? 'selected' : ''}>Medical College Road</option>
+                <option value="Trichy Road" ${propToEdit?.road === 'Trichy Road' || propToEdit?.location?.includes('Trichy Road') ? 'selected' : ''}>Trichy Road</option>
+                <option value="Pudukkottai Road" ${propToEdit?.road === 'Pudukkottai Road' || propToEdit?.location?.includes('Pudukkottai Road') ? 'selected' : ''}>Pudukkottai Road</option>
+                <option value="Madhakottai Road" ${propToEdit?.road === 'Madhakottai Road' || propToEdit?.location?.includes('Madhakottai Road') ? 'selected' : ''}>Madhakottai Road</option>
+                <option value="Nanjikottai Road" ${propToEdit?.road === 'Nanjikottai Road' || propToEdit?.location?.includes('Nanjikottai Road') ? 'selected' : ''}>Nanjikottai Road</option>
+                <option value="Villar Road" ${propToEdit?.road === 'Villar Road' || propToEdit?.location?.includes('Villar Road') ? 'selected' : ''}>Villar Road</option>
+                <option value="Pattukottai Bypass" ${propToEdit?.road === 'Pattukottai Bypass' || propToEdit?.location?.includes('Pattukottai Bypass') ? 'selected' : ''}>Pattukottai Bypass</option>
+                <option value="Mariyamman Kovil Road" ${propToEdit?.road === 'Mariyamman Kovil Road' || propToEdit?.location?.includes('Mariyamman Kovil Road') ? 'selected' : ''}>Mariyamman Kovil Road</option>
+                <option value="Srinivasapuram" ${propToEdit?.road === 'Srinivasapuram' || propToEdit?.location?.includes('Srinivasapuram') ? 'selected' : ''}>Srinivasapuram</option>
+                <option value="Reddipalayam Road" ${propToEdit?.road === 'Reddipalayam Road' || propToEdit?.location?.includes('Reddipalayam Road') ? 'selected' : ''}>Reddipalayam Road</option>
+                <option value="Kumbakonam Bypass" ${propToEdit?.road === 'Kumbakonam Bypass' || propToEdit?.location?.includes('Kumbakonam Bypass') ? 'selected' : ''}>Kumbakonam Bypass</option>
+                <option value="Other / Outside Road" ${propToEdit?.road === 'Other / Outside Road' || !propToEdit?.road ? 'selected' : ''}>Other / Outside Road</option>
+              </select>
             </div>
 
             <div>
-              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Street Address</label>
-              <input type="text" id="user-prop-address" value="${propToEdit?.address || ''}" placeholder="e.g. Plot No 42, 2nd Cross Street" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Taluk *</label>
+              <input type="text" id="user-prop-taluk" required value="${propToEdit?.taluk || 'Thanjavur'}" placeholder="e.g. Thanjavur, Kumbakonam" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+            </div>
+
+            <div>
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">District *</label>
+              <input type="text" id="user-prop-district" required value="${propToEdit?.district || 'Thanjavur'}" placeholder="e.g. Thanjavur" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+            </div>
+
+            <div>
+              <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Facing</label>
+              <input type="text" id="user-prop-facing" value="${propToEdit?.facing || propToEdit?.address || ''}" placeholder="e.g. East, North, North-East" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
             </div>
           </div>
         </div>

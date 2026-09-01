@@ -218,6 +218,7 @@ export function formatLocationDisplay(location, district) {
   const combined = [];
   for (const part of [...locParts, ...distParts]) {
     const lower = part.toLowerCase();
+    if (lower === 'tamil nadu' || lower === 'tamilnadu' || lower === 'india' || lower === 'tn') continue;
     if (!combined.some(c => c.toLowerCase() === lower)) {
       combined.push(part);
     }
@@ -225,29 +226,6 @@ export function formatLocationDisplay(location, district) {
   
   if (combined.length === 0) return 'Thanjavur, Tamil Nadu';
   return `${combined.join(', ')}, Tamil Nadu`;
-}
-
-export function parsePropertyVideos(videoUrl) {
-  if (!videoUrl) return [];
-  if (Array.isArray(videoUrl)) return videoUrl.map(v => typeof v === 'string' ? v.trim() : '').filter(Boolean);
-  if (typeof videoUrl === 'string') {
-    const trimmed = videoUrl.trim();
-    if (!trimmed) return [];
-    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed)) return parsed.map(v => typeof v === 'string' ? v.trim() : '').filter(Boolean);
-      } catch (e) {}
-    }
-    if (trimmed.includes('||||')) {
-      return trimmed.split('||||').map(s => s.trim()).filter(Boolean);
-    }
-    if (trimmed.includes('\n')) {
-      return trimmed.split('\n').map(s => s.trim()).filter(Boolean);
-    }
-    return [trimmed];
-  }
-  return [];
 }
 
 export function addProperty(data) {
@@ -284,14 +262,17 @@ export function addProperty(data) {
     price: numPrice,
     priceFormatted: formattedPrice,
     location: data.location || 'Thanjavur',
+    area: data.area || '',
+    road: data.road || '',
+    taluk: data.taluk || '',
     district: data.district || data.location?.split(',')[1]?.trim() || data.location?.split(',')[0]?.trim() || 'Thanjavur',
     address: data.address || '',
+    facing: data.facing || '',
     size: data.size ? formatPropertySize(data.size) : '',
     bedrooms: data.bedrooms ? parseInt(data.bedrooms, 10) : null,
     bathrooms: data.bathrooms ? parseInt(data.bathrooms, 10) : null,
     floor: data.floor || null,
     furnishing: data.furnishing && data.furnishing !== 'Not specified' ? data.furnishing : '',
-    facing: data.facing || '',
     approval: data.approval || '',
     status: availability,
     availability: availability,
@@ -483,9 +464,12 @@ function normalizePropertyRecord(p) {
     price: numPrice,
     priceFormatted: formattedPrice,
     location: loc,
+    area: p.area || (loc ? loc.split(',')[0]?.trim() : ''),
+    road: p.road || '',
+    taluk: p.taluk || '',
     district: dist || 'Thanjavur',
     address: p.address || '',
-    facing: p.facing || '',
+    facing: p.facing || p.address || '',
     size: p.size ? formatPropertySize(p.size) : '',
     bedrooms: p.bedrooms ? parseInt(p.bedrooms, 10) : null,
     bathrooms: p.bathrooms ? parseInt(p.bathrooms, 10) : null,
