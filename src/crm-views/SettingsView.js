@@ -427,33 +427,50 @@ export function renderSettingsView() {
           <div class="settings-section-header">
             <div>
               <h2 class="settings-section-title">Meta Lead Ads webhook</h2>
-              <p class="settings-section-desc">Auto-creates a lead whenever someone submits a Facebook/Instagram Lead Ads form. Webhook URL: <span class="settings-code-key">/api/leads/webhook/meta</span></p>
+              <p class="settings-section-desc">Auto-creates a lead in your CRM pipeline whenever someone submits a Facebook or Instagram Lead Ads form.</p>
+            </div>
+          </div>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 2px;">Meta Callback / Webhook URL</span>
+              <code style="font-family: monospace; font-size: 0.88rem; font-weight: 700; color: #0f172a;" id="display-meta-webhook-url">https://thanjaiproperty.com/backend/api.php?resource=meta_lead_webhook</code>
+            </div>
+            <button class="settings-btn-view" id="copy-meta-webhook-btn" style="padding: 6px 14px; font-size: 0.8rem; font-weight: 700; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer;">
+              <i class="ri-file-copy-line" style="color: #eb5e28;"></i> Copy Webhook URL
+            </button>
+          </div>
+
+          <div class="settings-grid-2">
+            <div class="settings-form-group">
+              <label class="settings-label">Verify Token <span style="color: #64748b; font-size: 0.75rem;">(Paste this in Meta Business Suite)</span></label>
+              <input type="text" id="setting-meta-verify-token" class="settings-input" placeholder="thanjai_meta_lead_2026" />
+            </div>
+            <div class="settings-form-group">
+              <label class="settings-label">App Secret <span style="color: #64748b; font-size: 0.75rem;">(From Meta Developer App)</span></label>
+              <input type="password" id="setting-meta-app-secret" class="settings-input" placeholder="••••••••••••••••" />
             </div>
           </div>
 
           <div class="settings-grid-2">
             <div class="settings-form-group">
-              <label class="settings-label">Verify Token</label>
-              <input type="text" class="settings-input" />
-            </div>
-            <div class="settings-form-group">
-              <label class="settings-label">App Secret</label>
-              <input type="password" class="settings-input" />
-            </div>
-          </div>
-
-          <div class="settings-grid-2">
-            <div class="settings-form-group">
-              <label class="settings-label">Page Access Token</label>
-              <input type="password" class="settings-input" />
+              <label class="settings-label">Page Access Token <span style="color: #64748b; font-size: 0.75rem;">(For Graph API lead retrieval)</span></label>
+              <input type="password" id="setting-meta-access-token" class="settings-input" placeholder="EAA..." />
             </div>
             <div class="settings-form-group">
               <label class="settings-label">Graph API URL</label>
-              <input type="text" class="settings-input" value="https://graph.facebook.com/v19.0" />
+              <input type="text" id="setting-meta-graph-url" class="settings-input" value="https://graph.facebook.com/v19.0" />
             </div>
           </div>
 
-          <button class="settings-btn-save-small" style="margin-top: 16px;">Save</button>
+          <div style="display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap;">
+            <button class="settings-btn-save-small" id="btn-save-meta-settings" style="background: #eb5e28; color: #fff; border: none; padding: 9px 20px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+              <i class="ri-save-line"></i> Save Meta Settings
+            </button>
+            <button class="settings-btn-view" id="btn-test-meta-lead" style="padding: 9px 18px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; border-radius: 8px; font-weight: 700; cursor: pointer;">
+              <i class="ri-flashlight-line" style="color: #3b82f6;"></i> Send Test Meta Lead
+            </button>
+          </div>
         </div>
 
         <!-- 4. Public website property sync -->
@@ -461,27 +478,29 @@ export function renderSettingsView() {
           <div class="settings-section-header">
             <div>
               <h2 class="settings-section-title">Public website property sync</h2>
-              <p class="settings-section-desc">Pushes property changes to your website's API, and lets your website push properties back in via <span class="settings-code-key">/api/integrations/website/properties</span>.</p>
+              <p class="settings-section-desc">Pushes property changes to your website's API, and lets your website push properties back in via <span class="settings-code-key">/backend/api.php?resource=property_sync</span>.</p>
             </div>
           </div>
 
           <div class="settings-grid-2">
             <div class="settings-form-group">
               <label class="settings-label">Website API URL</label>
-              <input type="text" class="settings-input" value="https://yoursite.com/api" />
+              <input type="text" id="setting-website-api-url" class="settings-input" value="https://thanjaiproperty.com/backend/api.php" />
             </div>
             <div class="settings-form-group">
               <label class="settings-label">Website API Key</label>
-              <input type="password" class="settings-input" />
+              <input type="password" id="setting-website-api-key" class="settings-input" placeholder="API Key..." />
             </div>
           </div>
 
           <div class="settings-form-group" style="max-width: 400px; margin-bottom: 16px;">
             <label class="settings-label">Inbound Webhook Secret</label>
-            <input type="password" class="settings-input" />
+            <input type="password" id="setting-inbound-secret" class="settings-input" placeholder="Secret key..." />
           </div>
 
-          <button class="settings-btn-save-small">Save</button>
+          <button class="settings-btn-save-small" id="btn-save-property-sync" style="background: #eb5e28; color: #fff; border: none; padding: 9px 20px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+            <i class="ri-save-line"></i> Save Property Sync
+          </button>
         </div>
 
         <!-- 5. Lead capture webhooks -->
@@ -489,16 +508,55 @@ export function renderSettingsView() {
           <div class="settings-section-header">
             <div>
               <h2 class="settings-section-title">Lead capture webhooks</h2>
-              <p class="settings-section-desc">Shared secret for the generic website-form and WhatsApp click-to-chat lead webhooks: <span class="settings-code-key">/api/leads/webhook/website</span> and <span class="settings-code-key">/api/leads/webhook/whatsapp-click</span></p>
+              <p class="settings-section-desc">Inbound webhooks for generic website contact forms, WhatsApp click-to-chat triggers, and third-party portals (99acres, MagicBricks, Zapier).</p>
+            </div>
+          </div>
+
+          <div style="display: grid; gap: 10px; margin-bottom: 20px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <span style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; display: block;">1. Generic Inbound Lead Webhook</span>
+                <code style="font-family: monospace; font-size: 0.85rem; font-weight: 700; color: #0f172a;" id="display-generic-lead-url">https://thanjaiproperty.com/backend/api.php?resource=lead_capture_webhook</code>
+              </div>
+              <button class="settings-btn-view copy-lead-url-btn" data-url="https://thanjaiproperty.com/backend/api.php?resource=lead_capture_webhook" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">
+                <i class="ri-file-copy-line" style="color: #eb5e28;"></i> Copy
+              </button>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <span style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; display: block;">2. Website Inquiry Form Webhook</span>
+                <code style="font-family: monospace; font-size: 0.85rem; font-weight: 700; color: #0f172a;" id="display-webform-lead-url">https://thanjaiproperty.com/backend/api.php?resource=lead_capture_webhook&source=Website+Form</code>
+              </div>
+              <button class="settings-btn-view copy-lead-url-btn" data-url="https://thanjaiproperty.com/backend/api.php?resource=lead_capture_webhook&source=Website+Form" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">
+                <i class="ri-file-copy-line" style="color: #eb5e28;"></i> Copy
+              </button>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div>
+                <span style="font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; display: block;">3. WhatsApp Click-to-Chat Lead Webhook</span>
+                <code style="font-family: monospace; font-size: 0.85rem; font-weight: 700; color: #0f172a;" id="display-whatsapp-lead-url">https://thanjaiproperty.com/backend/api.php?resource=lead_capture_webhook&source=WhatsApp+Click</code>
+              </div>
+              <button class="settings-btn-view copy-lead-url-btn" data-url="https://thanjaiproperty.com/backend/api.php?resource=lead_capture_webhook&source=WhatsApp+Click" style="padding: 5px 12px; font-size: 0.78rem; font-weight: 700; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">
+                <i class="ri-file-copy-line" style="color: #eb5e28;"></i> Copy
+              </button>
             </div>
           </div>
 
           <div class="settings-form-group" style="max-width: 400px; margin-bottom: 16px;">
-            <label class="settings-label">Webhook Secret</label>
-            <input type="password" class="settings-input" />
+            <label class="settings-label">Optional Webhook Secret</label>
+            <input type="password" id="setting-lead-capture-secret" class="settings-input" placeholder="Secret key (optional)..." />
           </div>
 
-          <button class="settings-btn-save-small">Save</button>
+          <div style="display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap;">
+            <button class="settings-btn-save-small" id="btn-save-lead-capture-secret" style="background: #eb5e28; color: #fff; border: none; padding: 9px 20px; border-radius: 8px; font-weight: 700; cursor: pointer;">
+              <i class="ri-save-line"></i> Save Webhook Secret
+            </button>
+            <button class="settings-btn-view" id="btn-test-lead-capture" style="padding: 9px 18px; border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; border-radius: 8px; font-weight: 700; cursor: pointer;">
+              <i class="ri-send-plane-fill" style="color: #10b981;"></i> Send Test Webhook Lead
+            </button>
+          </div>
         </div>
 
       </div>
@@ -741,6 +799,195 @@ export function initSettingsView() {
       }).catch(() => {
         showToast('Template text copied!', 'ri-checkbox-circle-fill');
       });
+    }
+  });
+
+  // --- Webhooks & Property Sync Integration Handlers ---
+  const metaVerifyTokenInput = document.getElementById('setting-meta-verify-token');
+  const metaAppSecretInput = document.getElementById('setting-meta-app-secret');
+  const metaAccessTokenInput = document.getElementById('setting-meta-access-token');
+  const metaGraphUrlInput = document.getElementById('setting-meta-graph-url');
+
+  const websiteApiUrlInput = document.getElementById('setting-website-api-url');
+  const websiteApiKeyInput = document.getElementById('setting-website-api-key');
+  const inboundSecretInput = document.getElementById('setting-inbound-secret');
+
+  const leadCaptureSecretInput = document.getElementById('setting-lead-capture-secret');
+
+  // Load from database / localStorage
+  fetchFromAPI('/settings').then(data => {
+    if (data && typeof data === 'object') {
+      if (data.meta_lead_settings) {
+        try {
+          const meta = JSON.parse(data.meta_lead_settings);
+          if (meta.verifyToken && metaVerifyTokenInput) metaVerifyTokenInput.value = meta.verifyToken;
+          if (meta.appSecret && metaAppSecretInput) metaAppSecretInput.value = meta.appSecret;
+          if (meta.pageAccessToken && metaAccessTokenInput) metaAccessTokenInput.value = meta.pageAccessToken;
+          if (meta.graphApiUrl && metaGraphUrlInput) metaGraphUrlInput.value = meta.graphApiUrl;
+        } catch(e) {}
+      }
+      if (data.property_sync_settings) {
+        try {
+          const ps = JSON.parse(data.property_sync_settings);
+          if (ps.websiteUrl && websiteApiUrlInput) websiteApiUrlInput.value = ps.websiteUrl;
+          if (ps.apiKey && websiteApiKeyInput) websiteApiKeyInput.value = ps.apiKey;
+          if (ps.inboundSecret && inboundSecretInput) inboundSecretInput.value = ps.inboundSecret;
+        } catch(e) {}
+      }
+      if (data.lead_capture_settings) {
+        try {
+          const cap = JSON.parse(data.lead_capture_settings);
+          if (cap.webhookSecret && leadCaptureSecretInput) leadCaptureSecretInput.value = cap.webhookSecret;
+        } catch(e) {}
+      }
+    }
+  }).catch(() => {});
+
+  // Copy buttons
+  document.getElementById('copy-meta-webhook-btn')?.addEventListener('click', () => {
+    const url = 'https://thanjaiproperty.com/backend/api.php?resource=meta_lead_webhook';
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Meta Webhook URL copied to clipboard!', 'ri-file-copy-line');
+    });
+  });
+
+  document.querySelectorAll('.copy-lead-url-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const url = btn.dataset.url;
+      if (url) {
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('Webhook URL copied to clipboard!', 'ri-file-copy-line');
+        });
+      }
+    });
+  });
+
+  // Save Meta Lead Settings
+  document.getElementById('btn-save-meta-settings')?.addEventListener('click', async () => {
+    const verifyToken = metaVerifyTokenInput?.value.trim() || 'thanjai_meta_lead_2026';
+    const appSecret = metaAppSecretInput?.value.trim() || '';
+    const pageAccessToken = metaAccessTokenInput?.value.trim() || '';
+    const graphApiUrl = metaGraphUrlInput?.value.trim() || 'https://graph.facebook.com/v19.0';
+
+    const payload = { verifyToken, appSecret, pageAccessToken, graphApiUrl };
+    localStorage.setItem('thanjai_meta_lead_settings', JSON.stringify(payload));
+
+    try {
+      await fetchFromAPI('/settings', {
+        method: 'POST',
+        body: JSON.stringify({
+          key: 'meta_lead_settings',
+          value: JSON.stringify(payload)
+        })
+      });
+      showToast('Meta Lead Ads Webhook settings saved successfully!', 'ri-checkbox-circle-fill');
+    } catch (e) {
+      showToast('Saved to local storage!', 'ri-information-line');
+    }
+  });
+
+  // Test Meta Lead Webhook Simulator
+  document.getElementById('btn-test-meta-lead')?.addEventListener('click', async () => {
+    const testNames = ['Karthik Raja', 'Meenakshi Sundaram', 'Saravanan M', 'Priya Dharshini'];
+    const randomName = testNames[Math.floor(Math.random() * testNames.length)];
+    const randomPhone = '98' + Math.floor(10000000 + Math.random() * 90000000);
+
+    const testPayload = {
+      name: randomName + ' (Meta Lead)',
+      phone: randomPhone,
+      email: 'meta.lead.' + Math.floor(Math.random() * 1000) + '@example.com',
+      location: 'Medical College Road, Thanjavur',
+      requirement: 'Residential Plot / Luxury Villa',
+      budget: '₹ 45 - 65 Lakhs',
+      source: 'Meta Lead Ads',
+      notes: 'Test lead generated from Meta Lead Ads settings simulator'
+    };
+
+    try {
+      showToast('Sending test lead to Meta webhook...', 'ri-loader-4-line');
+      await fetchFromAPI('/meta_lead_webhook', {
+        method: 'POST',
+        body: JSON.stringify(testPayload)
+      });
+      showToast(`Success! Meta lead "${testPayload.name}" captured in CRM pipeline!`, 'ri-checkbox-circle-fill');
+    } catch (err) {
+      console.error(err);
+      showToast('Error sending test lead: ' + err.message, 'ri-error-warning-fill');
+    }
+  });
+
+  // Save Property Sync Settings
+  document.getElementById('btn-save-property-sync')?.addEventListener('click', async () => {
+    const websiteUrl = websiteApiUrlInput?.value.trim() || 'https://thanjaiproperty.com/backend/api.php';
+    const apiKey = websiteApiKeyInput?.value.trim() || '';
+    const inboundSecret = inboundSecretInput?.value.trim() || '';
+
+    const payload = { websiteUrl, apiKey, inboundSecret };
+    localStorage.setItem('thanjai_property_sync_settings', JSON.stringify(payload));
+
+    try {
+      await fetchFromAPI('/settings', {
+        method: 'POST',
+        body: JSON.stringify({
+          key: 'property_sync_settings',
+          value: JSON.stringify(payload)
+        })
+      });
+      showToast('Public Property Sync settings saved!', 'ri-checkbox-circle-fill');
+    } catch (e) {
+      showToast('Saved to local storage!', 'ri-information-line');
+    }
+  });
+
+  // Save Lead Capture Settings
+  document.getElementById('btn-save-lead-capture-secret')?.addEventListener('click', async () => {
+    const webhookSecret = leadCaptureSecretInput?.value.trim() || '';
+    const payload = { webhookSecret };
+    localStorage.setItem('thanjai_lead_capture_settings', JSON.stringify(payload));
+
+    try {
+      await fetchFromAPI('/settings', {
+        method: 'POST',
+        body: JSON.stringify({
+          key: 'lead_capture_settings',
+          value: JSON.stringify(payload)
+        })
+      });
+      showToast('Lead capture webhook secret saved!', 'ri-checkbox-circle-fill');
+    } catch (e) {
+      showToast('Saved to local storage!', 'ri-information-line');
+    }
+  });
+
+  // Test Lead Capture Webhook Simulator
+  document.getElementById('btn-test-lead-capture')?.addEventListener('click', async () => {
+    const testNames = ['Dinesh Kumar', 'Anandhi R', 'Vigneshwaran S', 'Swetha M'];
+    const randomName = testNames[Math.floor(Math.random() * testNames.length)];
+    const randomPhone = '94' + Math.floor(10000000 + Math.random() * 90000000);
+    const configuredSecret = leadCaptureSecretInput?.value.trim() || '';
+
+    const testPayload = {
+      name: randomName + ' (Website Form)',
+      phone: randomPhone,
+      email: 'website.client.' + Math.floor(Math.random() * 1000) + '@example.com',
+      location: 'Trichy Road, Thanjavur',
+      propertyType: 'Independent House / Plot',
+      budget: '₹ 80 Lakhs',
+      source: 'Website Lead Form',
+      message: 'Client requested verified Patta DTCP project brochure from website form',
+      secret: configuredSecret
+    };
+
+    try {
+      showToast('Sending test lead to Lead Capture Webhook...', 'ri-loader-4-line');
+      await fetchFromAPI('/lead_capture_webhook', {
+        method: 'POST',
+        body: JSON.stringify(testPayload)
+      });
+      showToast(`Success! Inbound lead "${testPayload.name}" captured into CRM pipeline!`, 'ri-checkbox-circle-fill');
+    } catch (err) {
+      console.error(err);
+      showToast('Error capturing lead: ' + err.message, 'ri-error-warning-fill');
     }
   });
 }

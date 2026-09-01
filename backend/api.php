@@ -1181,6 +1181,313 @@ elseif ($resource === 'settings') {
     }
 }
 
+// -------------------------------------------------------------
+// META LEAD ADS WEBHOOK HANDLER
+// -------------------------------------------------------------
+elseif ($resource === 'meta_lead_webhook' || $resource === 'meta_webhook' || $resource === 'meta_leads' || ($resource === 'leads' && ($id === 'webhook_meta' || $id === 'meta'))) {
+    // 1. Verification Handshake (GET from Meta)
+    if ($method === 'GET') {
+        $mode = $_GET['hub_mode'] ?? $_GET['hub.mode'] ?? '';
+        $token = $_GET['hub_verify_token'] ?? $_GET['hub.verify_token'] ?? '';
+        $challenge = $_GET['hub_challenge'] ?? $_GET['hub.challenge'] ?? '';
+
+        // Retrieve configured verify token from settings table
+        $savedToken = 'thanjai_meta_lead_2026';
+        $setRes = $conn->query("SELECT setting_value FROM settings WHERE setting_key='meta_lead_settings'");
+        if ($setRes && $setRow = $setRes->fetch_assoc()) {
+            $metaConfig = json_decode($setRow['setting_value'], true);
+            if (!empty($metaConfig['verifyToken'])) {
+                $savedToken = $metaConfig['verifyToken'];
+            }
+        }
+
+        if ($mode === 'subscribe' && $token === $savedToken) {
+            header('Content-Type: text/plain');
+            echo $challenge;
+            exit;
+        } else if (empty($mode)) {
+            // General status check
+            echo json_encode([
+                "status" => "active",
+                "service" => "Meta Lead Ads Webhook Receiver",
+                "verify_mode" => "GET hub_verify_token supported",
+                "post_mode" => "POST lead notifications supported"
+            ]);
+            exit;
+        } else {
+            http_response_code(403);
+            echo "Verification token mismatch";
+            exit;
+        }
+    }
+
+    // 2. Incoming Lead Notification (POST from Meta)
+    elseif ($method === 'POST') {
+        $raw = file_get_contents("php://input");
+        $data = json_decode($raw, true) ?: [];
+
+        // Log raw delivery for inspection
+        $safe_raw = $conn->real_escape_string($raw);
+        $safe_ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        @$conn->query("CREATE TABLE IF NOT EXISTS `webhook_raw_log` (`id` int AUTO_INCREMENT PRIMARY KEY, `method` varchar(10), `headers` text, `body` longtext, `ip` varchar(50), `createdAt` datetime DEFAULT CURRENT_TIMESTAMP)");
+        @$conn->query("INSERT INTO `webhook_raw_log` (`method`, `headers`, `body`, `ip`) VALUES ('META_LEAD', 'Meta Lead Ads Webhook', '$safe_raw', '$safe_ip')");
+
+        // Load Meta configuration from settings
+        $metaConfig = [];
+        $setRes = $conn->query("SELECT setting_value FROM settings WHERE setting_key='meta_lead_settings'");
+        if ($setRes && $setRow = $setRes->fetch_assoc()) {
+            $metaConfig = json_decode($setRow['setting_value'], true) ?: [];
+        }
+        $pageAccessToken = $metaConfig['pageAccessToken'] ?? '';
+        $graphApiUrl = rtrim($metaConfig['graphApiUrl'] ?? 'https://graph.facebook.com/v19.0', '/');
+
+        $leadName = 'Meta Lead';
+        $leadPhone = '';
+        $leadEmail = '';
+        $leadCity = 'Thanjavur';
+        $leadReq = 'Property Buyer';
+        $leadBudget = 'Contact';
+        $leadNotes = 'Received via Facebook / Instagram Lead Ads form';
+        $formId = '';
+        $adId = '';
+
+        // Check if payload has Meta standard entry structure
+        $leadgenId = null;
+        if (!empty($data['entry']) && is_array($data['entry'])) {
+            foreach ($data['entry'] as $entry) {
+                if (!empty($entry['changes']) && is_array($entry['changes'])) {
+                    foreach ($entry['changes'] as $change) {
+                        if (!empty($change['value']['leadgen_id'])) {
+                            $leadgenId = $change['value']['leadgen_id'];
+                            $formId = $change['value']['form_id'] ?? '';
+                            $adId = $change['value']['ad_id'] ?? '';
+                            break 2;
+                        }
+                    }
+                }
+            }
+        }
+
+        // If leadgen_id exists and pageAccessToken is available, query Graph API
+        if ($leadgenId && $pageAccessToken) {
+            $graphUrl = "$graphApiUrl/$leadgenId?access_token=" . urlencode($pageAccessToken);
+            $ch = curl_init($graphUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            $graphRes = curl_exec($ch);
+            curl_close($ch);
+
+            if ($graphRes) {
+                $leadDetails = json_decode($graphRes, true);
+                if (!empty($leadDetails['field_data']) && is_array($leadDetails['field_data'])) {
+                    foreach ($leadDetails['field_data'] as $field) {
+                        $fName = strtolower($field['name'] ?? '');
+                        $fVal = is_array($field['values']) ? ($field['values'][0] ?? '') : '';
+                        if (strpos($fName, 'name') !== false || strpos($fName, 'full_name') !== false) {
+                            $leadName = $fVal ?: $leadName;
+                        } elseif (strpos($fName, 'phone') !== false || strpos($fName, 'mobile') !== false) {
+                            $leadPhone = $fVal;
+                        } elseif (strpos($fName, 'email') !== false) {
+                            $leadEmail = $fVal;
+                        } elseif (strpos($fName, 'city') !== false || strpos($fName, 'location') !== false) {
+                            $leadCity = $fVal ?: $leadCity;
+                        } elseif (strpos($fName, 'type') !== false || strpos($fName, 'requirement') !== false || strpos($fName, 'property') !== false) {
+                            $leadReq = $fVal ?: $leadReq;
+                        } elseif (strpos($fName, 'budget') !== false || strpos($fName, 'price') !== false) {
+                            $leadBudget = $fVal ?: $leadBudget;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Direct payload parameters fallback (e.g. from simulator or test payload)
+        if (!empty($data['name']) || !empty($data['full_name'])) {
+            $leadName = $data['name'] ?? $data['full_name'];
+        }
+        if (!empty($data['phone']) || !empty($data['phone_number']) || !empty($data['mobile'])) {
+            $leadPhone = $data['phone'] ?? ($data['phone_number'] ?? $data['mobile']);
+        }
+        if (!empty($data['email'])) {
+            $leadEmail = $data['email'];
+        }
+        if (!empty($data['location']) || !empty($data['city'])) {
+            $leadCity = $data['location'] ?? $data['city'];
+        }
+        if (!empty($data['requirement']) || !empty($data['propertyType'])) {
+            $leadReq = $data['requirement'] ?? $data['propertyType'];
+        }
+        if (!empty($data['budget'])) {
+            $leadBudget = $data['budget'];
+        }
+        if (!empty($data['notes']) || !empty($data['message'])) {
+            $leadNotes = $data['notes'] ?? $data['message'];
+        }
+
+        // Sanitize phone
+        $leadPhone = preg_replace('/[^0-9+]/', '', $leadPhone);
+        if (empty($leadPhone)) {
+            $leadPhone = 'Protected by Desk';
+        }
+
+        $newId = 'LEAD-META-' . time() . '-' . rand(100, 999);
+        $timelineJson = json_encode([
+            [
+                "date" => date('d M Y, h:i A'),
+                "text" => "Lead captured via Meta Lead Ads campaign (Facebook / Instagram)",
+                "actor" => "Meta Webhook"
+            ]
+        ]);
+        $notesJson = json_encode([
+            [
+                "date" => date('d M Y, h:i A'),
+                "text" => $leadNotes . ($formId ? " (Form ID: $formId)" : ""),
+                "actor" => "Meta Webhook"
+            ]
+        ]);
+
+        $status = 'New';
+        $source = 'Meta Lead Ads';
+        $followup = date('d M Y');
+        $assignedTo = 'Unassigned';
+
+        $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, whatsapp, email, source, status, budget, requirement, location, timeline, assignedTo, notes, followup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt) {
+            $stmt->bind_param("ssssssssssssss", $newId, $leadName, $leadPhone, $leadPhone, $leadEmail, $source, $status, $leadBudget, $leadReq, $leadCity, $timelineJson, $assignedTo, $notesJson, $followup);
+            if ($stmt->execute()) {
+                @$conn->query("INSERT INTO audit_logs (id, action, target, user, details) VALUES ('AUDIT-".time()."', 'CREATE_LEAD', '$newId', 'Meta Webhook', 'New lead $leadName captured from Facebook/Instagram Lead Ads')");
+                
+                echo json_encode([
+                    "status" => "success",
+                    "message" => "Meta lead captured into CRM pipeline",
+                    "leadId" => $newId,
+                    "name" => $leadName,
+                    "phone" => $leadPhone
+                ]);
+                exit;
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => "Failed to insert lead: " . $stmt->error]);
+                exit;
+            }
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Prepare error: " . $conn->error]);
+            exit;
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// GENERIC LEAD CAPTURE WEBHOOK HANDLER (Website, WhatsApp Click, Portals)
+// -------------------------------------------------------------
+elseif ($resource === 'lead_capture_webhook' || $resource === 'capture_lead' || $resource === 'lead_capture' || ($resource === 'leads' && ($id === 'webhook_website' || $id === 'webhook_whatsapp_click' || $id === 'webhook_generic'))) {
+    if ($method === 'GET') {
+        echo json_encode([
+            "status" => "active",
+            "service" => "Generic Lead Capture Webhook Receiver",
+            "instructions" => "Send a POST request with JSON payload containing: name, phone, email, location, propertyType, budget, source, message, secret"
+        ]);
+        exit;
+    }
+    elseif ($method === 'POST') {
+        $raw = file_get_contents("php://input");
+        $data = json_decode($raw, true) ?: [];
+
+        // Validate optional Webhook Secret
+        $setRes = $conn->query("SELECT setting_value FROM settings WHERE setting_key='lead_capture_settings'");
+        if ($setRes && $setRow = $setRes->fetch_assoc()) {
+            $capConfig = json_decode($setRow['setting_value'], true) ?: [];
+            $configuredSecret = $capConfig['webhookSecret'] ?? '';
+            if (!empty($configuredSecret)) {
+                $providedSecret = $data['secret'] ?? ($_GET['secret'] ?? ($_SERVER['HTTP_X_WEBHOOK_SECRET'] ?? ''));
+                if ($providedSecret !== $configuredSecret) {
+                    http_response_code(403);
+                    echo json_encode(["error" => "Invalid or missing Webhook Secret"]);
+                    exit;
+                }
+            }
+        }
+
+        $leadName = $data['name'] ?? ($data['fullName'] ?? 'Website Inquiry');
+        $leadPhone = $data['phone'] ?? ($data['mobile'] ?? ($data['phoneNumber'] ?? ''));
+        $leadEmail = $data['email'] ?? '';
+        $leadCity = $data['location'] ?? ($data['city'] ?? ($data['area'] ?? 'Thanjavur'));
+        $leadReq = $data['propertyType'] ?? ($data['requirement'] ?? ($data['type'] ?? 'Property Requirement'));
+        $leadBudget = $data['budget'] ?? 'Contact';
+        $leadSource = $_GET['source'] ?? ($data['source'] ?? 'Website Lead Form');
+        $leadMsg = $data['message'] ?? ($data['notes'] ?? 'Lead captured via inbound webhook');
+
+        $leadPhone = preg_replace('/[^0-9+]/', '', $leadPhone);
+        if (empty($leadPhone)) {
+            $leadPhone = 'Protected by Desk';
+        }
+
+        $newId = 'LEAD-WEB-' . time() . '-' . rand(100, 999);
+        $timelineJson = json_encode([
+            [
+                "date" => date('d M Y, h:i A'),
+                "text" => "Inbound lead received via $leadSource webhook",
+                "actor" => "Lead Capture Webhook"
+            ]
+        ]);
+        $notesJson = json_encode([
+            [
+                "date" => date('d M Y, h:i A'),
+                "text" => $leadMsg,
+                "actor" => "Lead Capture Webhook"
+            ]
+        ]);
+
+        $status = 'New';
+        $followup = date('d M Y');
+        $assignedTo = 'Unassigned';
+
+        $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, whatsapp, email, source, status, budget, requirement, location, timeline, assignedTo, notes, followup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt) {
+            $stmt->bind_param("ssssssssssssss", $newId, $leadName, $leadPhone, $leadPhone, $leadEmail, $leadSource, $status, $leadBudget, $leadReq, $leadCity, $timelineJson, $assignedTo, $notesJson, $followup);
+            if ($stmt->execute()) {
+                @$conn->query("INSERT INTO audit_logs (id, action, target, user, details) VALUES ('AUDIT-".time()."', 'CREATE_LEAD', '$newId', 'Lead Capture Webhook', 'Inbound lead $leadName received from $leadSource')");
+                
+                echo json_encode([
+                    "status" => "success",
+                    "message" => "Lead captured into CRM pipeline successfully",
+                    "leadId" => $newId,
+                    "source" => $leadSource
+                ]);
+                exit;
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => "Failed to save lead: " . $stmt->error]);
+                exit;
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// PUBLIC WEBSITE PROPERTY SYNC HANDLER
+// -------------------------------------------------------------
+elseif ($resource === 'property_sync' || $resource === 'website_property_sync' || ($resource === 'integrations' && $id === 'website')) {
+    if ($method === 'GET') {
+        $result = $conn->query("SELECT id, title, type, category, categoryLabel, price, priceFormatted, location, district, road, area, size, images, status FROM properties ORDER BY createdAt DESC");
+        $rows = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $row['images'] = json_decode($row['images'] ?? '[]', true);
+                $rows[] = $row;
+            }
+        }
+        echo json_encode([
+            "status" => "success",
+            "total" => count($rows),
+            "properties" => $rows
+        ]);
+        exit;
+    }
+}
+
 elseif ($resource === 'site_visits') {
     if ($method === 'GET') {
         $result = $conn->query("SELECT * FROM site_visits");
