@@ -591,34 +591,69 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                 const pTitle = String(p.title || '').trim().toLowerCase();
                 return pId !== currId && pTitle !== currTitle;
               });
-              
-              // Find matches by same road corridor, same taluk, same district, or same category/type
-              const roadMatches = property.road && property.road !== 'Other / Outside Road'
-                ? otherProps.filter(p => p.road === property.road)
-                : [];
 
-              const talukMatches = property.taluk
-                ? otherProps.filter(p => p.taluk && p.taluk.toLowerCase() === property.taluk.toLowerCase() && !roadMatches.some(rm => rm.id === p.id))
-                : [];
+              // Extract search words from current property title, description, category, and location
+              const stopWords = new Set(['for', 'sale', 'in', 'near', 'the', 'a', 'an', 'and', 'at', 'with', 'to', 'of', 'on', 'is', 'new', 'tp']);
+              const currWords = (property.title + ' ' + (property.description || '') + ' ' + (property.category || '') + ' ' + (property.type || '') + ' ' + (property.road || '') + ' ' + (property.taluk || '') + ' ' + (property.area || ''))
+                .toLowerCase()
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .split(/\s+/)
+                .filter(w => w.length > 2 && !stopWords.has(w));
+              const currWordSet = new Set(currWords);
 
-              const catMatches = otherProps.filter(p => 
-                (p.category === property.category || p.type === property.type) && 
-                !roadMatches.some(rm => rm.id === p.id) && 
-                !talukMatches.some(tm => tm.id === p.id)
-              );
+              // Calculate relevance score for each candidate property
+              const scoredProps = otherProps.map(p => {
+                let score = 0;
+                const pTitleLower = (p.title || '').toLowerCase();
+                const pDescLower = (p.description || '').toLowerCase();
+                const pCombined = (pTitleLower + ' ' + pDescLower + ' ' + (p.category || '') + ' ' + (p.type || '') + ' ' + (p.road || '') + ' ' + (p.taluk || '') + ' ' + (p.area || '')).toLowerCase();
 
-              const districtMatches = otherProps.filter(p => 
-                p.district === property.district && 
-                !roadMatches.some(rm => rm.id === p.id) && 
-                !talukMatches.some(tm => tm.id === p.id) &&
-                !catMatches.some(cm => cm.id === p.id)
-              );
+                // 1. Same Road Corridor match
+                if (property.road && property.road !== 'Other / Outside Road' && p.road && p.road === property.road) {
+                  score += 35;
+                }
 
-              const candidates = [...roadMatches, ...talukMatches, ...catMatches, ...districtMatches, ...otherProps];
+                // 2. Same Category / Property Type match
+                if (property.category && p.category && property.category.toLowerCase() === p.category.toLowerCase()) {
+                  score += 30;
+                }
+                if (property.type && p.type && property.type.toLowerCase() === p.type.toLowerCase()) {
+                  score += 25;
+                }
+
+                // 3. Keyword matches in Title & Description
+                currWordSet.forEach(w => {
+                  if (pTitleLower.includes(w)) {
+                    score += 15;
+                  } else if (pCombined.includes(w)) {
+                    score += 8;
+                  }
+                });
+
+                // 4. Same Taluk / Locality match
+                if (property.taluk && p.taluk && property.taluk.toLowerCase() === p.taluk.toLowerCase()) {
+                  score += 20;
+                }
+                if (property.area && p.area && (property.area.toLowerCase().includes(p.area.toLowerCase()) || p.area.toLowerCase().includes(property.area.toLowerCase()))) {
+                  score += 20;
+                }
+
+                // 5. Same District match
+                if (property.district && p.district && property.district.toLowerCase() === p.district.toLowerCase()) {
+                  score += 10;
+                }
+
+                return { property: p, score };
+              });
+
+              // Sort by highest relevance score
+              scoredProps.sort((a, b) => b.score - a.score);
+
+              // Deduplicate and take top 6 properties
               const seenKeys = new Set();
               const relatedList = [];
-              for (const p of candidates) {
-                if (!p) continue;
+              for (const item of scoredProps) {
+                const p = item.property;
                 const pId = String(p.id || '').trim().toLowerCase();
                 const pTitle = String(p.title || '').trim().toLowerCase();
                 if (pId === currId || pTitle === currTitle) continue;
@@ -627,7 +662,7 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                   seenKeys.add(pTitle);
                   relatedList.push(p);
                 }
-                if (relatedList.length >= 3) break;
+                if (relatedList.length >= 6) break;
               }
 
               if (relatedList.length === 0) return '';

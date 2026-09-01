@@ -62,7 +62,7 @@ export function renderPartnersView() {
     </div>
 
     <!-- ADD / EDIT PARTNER MODAL -->
-    <div class="os-modal-overlay" id="add-partner-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="os-modal-overlay" id="add-partner-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
       <div style="max-width: 600px; width: 92%; background: #ffffff; border-radius: 16px; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #EDF2F7; padding-bottom: 16px; margin-bottom: 20px;">
           <h3 id="partner-modal-title" style="font-size: 1.3rem; font-weight: 800; color: #1A202C; margin: 0;">Register New Partner</h3>
@@ -72,9 +72,23 @@ export function renderPartnersView() {
         <input type="hidden" id="ap-edit-id" value="" />
 
         <div style="display: flex; flex-direction: column; gap: 16px;">
-          <div>
-            <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #4A5568; margin-bottom: 6px;">Company / Agency Name <span style="color: #e53e3e;">*</span></label>
-            <input type="text" id="ap-company" placeholder="e.g. Royal Realtors / Digitechzo" style="width: 100%; padding: 10px 14px; border: 1px solid #CBD5E0; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box;" required />
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #4A5568; margin-bottom: 6px;">Company / Agency Name <span style="color: #e53e3e;">*</span></label>
+              <input type="text" id="ap-company" placeholder="e.g. Royal Realtors / Digitechzo" style="width: 100%; padding: 10px 14px; border: 1px solid #CBD5E0; border-radius: 8px; font-size: 0.9rem; box-sizing: border-box;" required />
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #4A5568; margin-bottom: 6px;">Partner Type / Role <span style="color: #e53e3e;">*</span></label>
+              <select id="ap-type" style="width: 100%; padding: 10px 14px; border: 1px solid #CBD5E0; border-radius: 8px; font-size: 0.9rem; background: #fff; box-sizing: border-box;">
+                <option value="Real Estate Broker">Real Estate Broker</option>
+                <option value="Channel Partner">Channel Partner</option>
+                <option value="Property Consultant / Advisor">Property Consultant / Advisor</option>
+                <option value="Land Developer / Builder">Land Developer / Builder</option>
+                <option value="Individual Agent">Individual Agent</option>
+                <option value="Investor Network">Investor Network</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
@@ -127,7 +141,7 @@ export function renderPartnersView() {
     </div>
 
     <!-- SHARE LEADS MODAL (WITH MULTI-SELECT CRM LEADS SUPPORT) -->
-    <div class="os-modal-overlay" id="share-lead-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="os-modal-overlay" id="share-lead-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
       <div style="max-width: 680px; width: 94%; background: #ffffff; border-radius: 16px; padding: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-height: 90vh; display: flex; flex-direction: column;">
         
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #EDF2F7; padding-bottom: 14px; margin-bottom: 16px;">
@@ -281,6 +295,7 @@ export async function initPartnersView() {
       const isActive = String(p.id) === String(activePartnerId);
       const leadCount = (allSharedLeads[p.id] || []).length;
       const statusBadge = (p.status || 'Active').toLowerCase() === 'active';
+      const partnerRole = p.type || p.role || 'Channel Partner';
 
       html += `
         <div class="pn-partner-card" data-id="${p.id}" style="
@@ -289,15 +304,19 @@ export async function initPartnersView() {
           border: ${isActive ? '2px solid #eb5e28' : '1px solid #E2E8F0'};
           box-shadow: ${isActive ? '0 4px 12px rgba(235,94,40,0.15)' : 'none'};
         ">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
             <div style="font-weight: 800; font-size: 1rem; color: #1A202C;">${p.company || p.name}</div>
             <span style="font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; background: ${statusBadge ? '#E6FFFA' : '#FFF5F5'}; color: ${statusBadge ? '#234E52' : '#9B2C2C'};">
               ${(p.status || 'Active').toUpperCase()}
             </span>
           </div>
 
+          <div style="font-size: 0.75rem; font-weight: 700; color: #eb5e28; margin-bottom: 4px;">
+            <i class="ri-user-star-line"></i> ${partnerRole}
+          </div>
+
           <div style="font-size: 0.8rem; color: #718096; margin-bottom: 10px;">
-            ${p.contact || p.contactPerson || 'Direct'} • ${p.city || 'Thanjavur'} • <strong style="color: #eb5e28;">${leadCount} leads</strong>
+            ${p.contact || p.contactPerson || 'Direct'} • ${p.city || 'Thanjavur'} • <strong style="color: #4A5568;">${leadCount} leads shared</strong>
           </div>
 
           <div style="display: flex; gap: 8px;">
@@ -379,13 +398,14 @@ export async function initPartnersView() {
     if (!partner) return;
 
     contentTitle.textContent = partner.company || partner.name || 'Partner Details';
-    if (contentSubtitle) contentSubtitle.textContent = `Channel partner in ${partner.city || 'Thanjavur'} • Contact: ${partner.contact || partner.contactPerson || 'Direct'}`;
+    if (contentSubtitle) contentSubtitle.textContent = `${partner.type || 'Channel Partner'} in ${partner.city || 'Thanjavur'} • Contact: ${partner.contact || partner.contactPerson || 'Direct'}`;
     if (btnShareLead) btnShareLead.style.display = 'inline-flex';
 
     if (partnerInfoCard) {
       partnerInfoCard.style.display = 'block';
       partnerInfoCard.innerHTML = `
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; font-size: 0.88rem;">
+          <div><span style="color: #718096; font-weight: 700;">Partner Type:</span> <strong style="color: #eb5e28;">${partner.type || 'Channel Partner'}</strong></div>
           <div><span style="color: #718096; font-weight: 700;">Contact Person:</span> <strong style="color: #1A202C;">${partner.contact || partner.contactPerson || '—'}</strong></div>
           <div><span style="color: #718096; font-weight: 700;">Official Phone:</span> <strong style="color: #1A202C;">${partner.phone || '—'}</strong></div>
           <div><span style="color: #718096; font-weight: 700;">WhatsApp:</span> <strong style="color: #25D366;">${partner.whatsapp || partner.phone || '—'}</strong></div>
@@ -454,6 +474,8 @@ export async function initPartnersView() {
   const openAddPartnerModal = () => {
     document.getElementById('ap-edit-id').value = '';
     document.getElementById('ap-company').value = '';
+    const typeEl = document.getElementById('ap-type');
+    if (typeEl) typeEl.value = 'Real Estate Broker';
     document.getElementById('ap-contact').value = '';
     document.getElementById('ap-phone').value = '';
     document.getElementById('ap-whatsapp').value = '';
@@ -463,7 +485,10 @@ export async function initPartnersView() {
     document.getElementById('ap-notes').value = '';
     document.getElementById('partner-modal-title').textContent = 'Register New Partner';
     document.getElementById('save-partner-modal').textContent = 'Save Partner';
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+      modal.style.cssText = 'display: flex !important; position: fixed !important; inset: 0 !important; z-index: 999999 !important; opacity: 1 !important; visibility: visible !important;';
+      modal.classList.add('show');
+    }
   };
 
   const openEditPartnerModal = (partnerId) => {
@@ -472,6 +497,8 @@ export async function initPartnersView() {
 
     document.getElementById('ap-edit-id').value = p.id;
     document.getElementById('ap-company').value = p.company || p.name || '';
+    const typeEl = document.getElementById('ap-type');
+    if (typeEl) typeEl.value = p.type || 'Real Estate Broker';
     document.getElementById('ap-contact').value = p.contact || p.contactPerson || '';
     document.getElementById('ap-phone').value = p.phone || '';
     document.getElementById('ap-whatsapp').value = p.whatsapp || p.phone || '';
@@ -481,11 +508,17 @@ export async function initPartnersView() {
     document.getElementById('ap-notes').value = p.notes || '';
     document.getElementById('partner-modal-title').textContent = 'Edit Partner Details';
     document.getElementById('save-partner-modal').textContent = 'Update Partner';
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+      modal.style.cssText = 'display: flex !important; position: fixed !important; inset: 0 !important; z-index: 999999 !important; opacity: 1 !important; visibility: visible !important;';
+      modal.classList.add('show');
+    }
   };
 
   const closePartnerModal = () => {
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
+      modal.classList.remove('show');
+    }
   };
 
   document.getElementById('btn-add-partner')?.addEventListener('click', openAddPartnerModal);
@@ -498,6 +531,7 @@ export async function initPartnersView() {
   document.getElementById('save-partner-modal')?.addEventListener('click', async () => {
     const editId = document.getElementById('ap-edit-id')?.value.trim();
     const company = document.getElementById('ap-company')?.value.trim();
+    const type = document.getElementById('ap-type')?.value || 'Real Estate Broker';
     const contact = document.getElementById('ap-contact')?.value.trim();
     const phone = document.getElementById('ap-phone')?.value.trim();
     const whatsapp = document.getElementById('ap-whatsapp')?.value.trim();
@@ -518,7 +552,7 @@ export async function initPartnersView() {
           ...partners[idx],
           name: company,
           company: company,
-          type: contact,
+          type: type,
           contact: contact,
           contactPerson: contact,
           phone: phone,
@@ -539,7 +573,7 @@ export async function initPartnersView() {
         id: newId,
         name: company,
         company: company,
-        type: contact,
+        type: type,
         contact: contact,
         contactPerson: contact,
         phone: phone,
@@ -589,14 +623,21 @@ export async function initPartnersView() {
     // Default to Tab 1
     switchShareTab('crm');
     renderCrmLeadsCheckboxes('');
-    document.getElementById('sl-bulk-notes').value = '';
+    const bulkNotesEl = document.getElementById('sl-bulk-notes');
+    if (bulkNotesEl) bulkNotesEl.value = '';
     if (searchCrmInput) searchCrmInput.value = '';
 
-    if (shareModal) shareModal.style.display = 'flex';
+    if (shareModal) {
+      shareModal.style.cssText = 'display: flex !important; position: fixed !important; inset: 0 !important; z-index: 999999 !important; opacity: 1 !important; visibility: visible !important;';
+      shareModal.classList.add('show');
+    }
   };
 
   const closeShareModal = () => {
-    if (shareModal) shareModal.style.display = 'none';
+    if (shareModal) {
+      shareModal.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
+      shareModal.classList.remove('show');
+    }
   };
 
   const switchShareTab = (tab) => {
