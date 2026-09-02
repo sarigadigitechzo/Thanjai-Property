@@ -345,7 +345,15 @@ function mapLeadFromAPI(l) {
     assignedTo: l.assignedTo || l.assignTo || 'Unassigned',
     status: l.status || 'New Lead',
     followup: l.followup || '—',
-    createdAt: l.createdAt ? new Date(l.createdAt).getTime() : Date.now(),
+    createdAt: (() => {
+      const rawD = l.createdAt || l.created_at || l.created || l.date || l.timestamp;
+      if (!rawD) return Date.now();
+      if (typeof rawD === 'number') return rawD;
+      const parsedNum = Number(rawD);
+      if (!isNaN(parsedNum) && parsedNum > 1000000) return parsedNum;
+      const parsedD = new Date(String(rawD)).getTime();
+      return !isNaN(parsedD) ? parsedD : Date.now();
+    })(),
     timeline: l.timeline
       ? (typeof l.timeline === 'string' && l.timeline.startsWith('[') ? (tryParseJSON(l.timeline) || []) : (Array.isArray(l.timeline) ? l.timeline : []))
       : []
