@@ -58,6 +58,11 @@ export default defineConfig({
         userDashboard: resolve(import.meta.dirname, 'user-dashboard.html'),
         user_dashboard: resolve(import.meta.dirname, 'user-dashboard.html'),
       },
+      output: {
+        entryFileNames: `assets/[name]-${Date.now()}.js`,
+        chunkFileNames: `assets/[name]-${Date.now()}.js`,
+        assetFileNames: `assets/[name]-${Date.now()}.[ext]`
+      }
     },
   },
 })

@@ -6,6 +6,7 @@ let activeSearch = '';
 let activeTypeFilter = 'all';
 let activeCategoryFilter = 'all';
 let activeStatusFilter = 'all';
+let activeAdTypeFilter = 'all';
 let activeMaxPriceFilter = 'all';
 
 let currentViewMode = 'list'; // 'list' or 'form'
@@ -79,6 +80,7 @@ export function renderPropertiesView() {
     }
 
     const filtered = filterPropertiesList(allProperties);
+    const allLeads = (JSON.parse(localStorage.getItem('thanjai_leads')) || []);
 
   return `
     <div class="view-enter properties-view-container" style="padding-bottom: 40px; position: relative;">
@@ -138,43 +140,35 @@ export function renderPropertiesView() {
         background: #ffffff; border-radius: 16px; padding: 14px 18px; border: 1px solid #e2e8f0;
         box-shadow: 0 2px 8px rgba(0,0,0,0.03); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
       ">
-        <div style="position: relative; flex: 1; min-width: 240px;">
-          <i class="ri-search-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #a0aec0; font-size: 1rem;"></i>
-          <input type="text" id="props-search-input" value="${activeSearch}" placeholder="Search title / location..." style="
-            width: 100%; padding: 8px 12px 8px 36px; border-radius: 8px; border: 1px solid #cbd5e0; font-size: 0.88rem; outline: none;
-          " />
+        <!-- Search Input -->
+        <div style="position: relative; flex: 1; min-width: 220px;">
+          <i class="ri-search-line" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #a0aec0;"></i>
+          <input type="text" id="props-search-input" placeholder="Search title, location..." value="${activeSearch}" style="width: 100%; padding: 8px 14px 8px 38px; border-radius: 8px; border: 1px solid #cbd5e0; font-size: 0.88rem; outline: none;" />
         </div>
 
-        <select id="props-type-filter" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; font-size: 0.88rem; color: #4a5568;">
-          <option value="all" ${activeTypeFilter === 'all' ? 'selected' : ''}>All types</option>
-          <option value="Apartment" ${activeTypeFilter === 'Apartment' ? 'selected' : ''}>Apartment</option>
-          <option value="Villa" ${activeTypeFilter === 'Villa' ? 'selected' : ''}>Villa</option>
-          <option value="Townhouse" ${activeTypeFilter === 'Townhouse' ? 'selected' : ''}>Townhouse</option>
-          <option value="Penthouse" ${activeTypeFilter === 'Penthouse' ? 'selected' : ''}>Penthouse</option>
-          <option value="Studio" ${activeTypeFilter === 'Studio' ? 'selected' : ''}>Studio</option>
-          <option value="Plot" ${activeTypeFilter === 'Plot' ? 'selected' : ''}>Plot</option>
-          <option value="Office" ${activeTypeFilter === 'Office' ? 'selected' : ''}>Office</option>
-          <option value="Retail" ${activeTypeFilter === 'Retail' ? 'selected' : ''}>Retail</option>
-          <option value="Warehouse" ${activeTypeFilter === 'Warehouse' ? 'selected' : ''}>Warehouse</option>
-          <option value="Other" ${activeTypeFilter === 'Other' ? 'selected' : ''}>Other</option>
-        </select>
-
+        <!-- Filter Dropdowns -->
         <select id="props-category-filter" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; font-size: 0.88rem; color: #4a5568;">
-          <option value="all" ${activeCategoryFilter === 'all' ? 'selected' : ''}>All categories</option>
-          <option value="Sale" ${activeCategoryFilter === 'Sale' ? 'selected' : ''}>Sale</option>
-          <option value="Rent" ${activeCategoryFilter === 'Rent' ? 'selected' : ''}>Rent</option>
-          <option value="Lease" ${activeCategoryFilter === 'Lease' ? 'selected' : ''}>Lease</option>
-          <option value="Commercial" ${activeCategoryFilter === 'Commercial' ? 'selected' : ''}>Commercial</option>
-          <option value="Residential" ${activeCategoryFilter === 'Residential' ? 'selected' : ''}>Residential</option>
+          <option value="all" ${activeCategoryFilter === 'all' ? 'selected' : ''}>All Categories</option>
+          <option value="villas" ${activeCategoryFilter === 'villas' ? 'selected' : ''}>Villas</option>
+          <option value="houses" ${activeCategoryFilter === 'houses' ? 'selected' : ''}>Houses</option>
+          <option value="apartments" ${activeCategoryFilter === 'apartments' ? 'selected' : ''}>Apartments</option>
+          <option value="plots" ${activeCategoryFilter === 'plots' ? 'selected' : ''}>Plots</option>
+          <option value="agricultural" ${activeCategoryFilter === 'agricultural' ? 'selected' : ''}>Agricultural</option>
+          <option value="commercial" ${activeCategoryFilter === 'commercial' ? 'selected' : ''}>Commercial</option>
         </select>
 
         <select id="props-status-filter" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; font-size: 0.88rem; color: #4a5568;">
-          <option value="all" ${activeStatusFilter === 'all' ? 'selected' : ''}>All statuses</option>
-          <option value="Available" ${activeStatusFilter === 'Available' ? 'selected' : ''}>Available</option>
-          <option value="Booked" ${activeStatusFilter === 'Booked' ? 'selected' : ''}>Booked</option>
-          <option value="Sold" ${activeStatusFilter === 'Sold' ? 'selected' : ''}>Sold</option>
-          <option value="Rented" ${activeStatusFilter === 'Rented' ? 'selected' : ''}>Rented</option>
-          <option value="Inactive" ${activeStatusFilter === 'Inactive' ? 'selected' : ''}>Inactive</option>
+          <option value="all" ${activeStatusFilter === 'all' ? 'selected' : ''}>All Statuses</option>
+          <option value="available" ${activeStatusFilter === 'available' ? 'selected' : ''}>Available</option>
+          <option value="booked" ${activeStatusFilter === 'booked' ? 'selected' : ''}>Booked</option>
+          <option value="sold" ${activeStatusFilter === 'sold' ? 'selected' : ''}>Sold</option>
+          <option value="rented" ${activeStatusFilter === 'rented' ? 'selected' : ''}>Rented</option>
+        </select>
+
+        <select id="props-adtype-filter" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; font-size: 0.88rem; color: #4a5568;">
+          <option value="all" ${activeAdTypeFilter === 'all' ? 'selected' : ''}>All Ad Types</option>
+          <option value="free" ${activeAdTypeFilter === 'free' ? 'selected' : ''}>🛡️ Free Ads</option>
+          <option value="paid" ${activeAdTypeFilter === 'paid' ? 'selected' : ''}>👑 Paid Owner Ads</option>
         </select>
 
         <select id="props-maxprice-filter" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; font-size: 0.88rem; color: #4a5568;">
@@ -202,7 +196,7 @@ export function renderPropertiesView() {
         <div style="
           display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;
         ">
-          ${filtered.map(p => renderPropertyCard(p)).join('')}
+          ${filtered.map(p => renderPropertyCard(p, allLeads)).join('')}
         </div>
       `}
 
@@ -219,7 +213,44 @@ export function renderPropertiesView() {
   }
 }
 
-function renderPropertyCard(prop) {
+function computePropertyInquiriesCount(prop, allLeads = []) {
+  if (!prop) return 0;
+  const propIdStr = String(prop.id || '').trim().toLowerCase();
+  const propDigits = propIdStr.replace(/\D/g, '');
+  const propTitle = String(prop.title || '').trim().toLowerCase();
+
+  let matchedCount = 0;
+  allLeads.forEach(l => {
+    if (!l) return;
+    const lPropId = String(l.propertyId || l.propertyMatch || '').trim().toLowerCase();
+    const lPropDigits = lPropId.replace(/\D/g, '');
+    const lTimeline = typeof l.timeline === 'string' ? l.timeline.toLowerCase() : JSON.stringify(l.timeline || []).toLowerCase();
+    const lNotes = typeof l.notes === 'string' ? l.notes.toLowerCase() : JSON.stringify(l.notes || []).toLowerCase();
+
+    let isMatch = false;
+
+    if (lPropId) {
+      if (lPropId === propIdStr || (propDigits.length >= 3 && lPropDigits && propDigits === lPropDigits)) {
+        isMatch = true;
+      }
+    }
+
+    if (!isMatch) {
+      if ((propIdStr.length >= 3 && (lTimeline.includes(propIdStr) || lNotes.includes(propIdStr))) ||
+          (propTitle.length >= 5 && (lTimeline.includes(propTitle) || lNotes.includes(propTitle)))) {
+        isMatch = true;
+      }
+    }
+
+    if (isMatch) {
+      matchedCount++;
+    }
+  });
+
+  return Math.max(matchedCount, parseInt(prop.inquiriesCount || 0, 10));
+}
+
+function renderPropertyCard(prop, allLeads = []) {
   if (!prop) return '';
   const status = prop.status || prop.availability || 'Available';
   const approvalStatus = prop.approvalStatus || (status === 'Pending Approval' ? 'Pending Approval' : 'Approved');
@@ -307,7 +338,7 @@ function renderPropertyCard(prop) {
             ${prop.priceFormatted || `₹ ${prop.price}`}
           </div>
           <span style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px;" title="Total Customer Inquiries for this property">
-            <i class="ri-mail-unread-line"></i> ${prop.inquiriesCount || 0} Inquiries
+            <i class="ri-mail-unread-line"></i> ${computePropertyInquiriesCount(prop, allLeads)} Inquiries
           </span>
         </div>
 
@@ -1171,15 +1202,31 @@ function filterPropertiesList(list) {
 
     // 3. Category Filter
     if (activeCategoryFilter && activeCategoryFilter !== 'all') {
-      const pCatRaw = (prop.categoryRaw || prop.category || '').toLowerCase();
+      const pCatRaw = (prop.categoryRaw || '').toLowerCase();
+      const pCat = (prop.category || '').toLowerCase();
+      const pType = (prop.type || '').toLowerCase();
       const pPurpose = (prop.purpose || '').toLowerCase();
       const targetCat = activeCategoryFilter.toLowerCase();
 
-      if (targetCat === 'sale' && pCatRaw !== 'sale' && pPurpose !== 'buy') return false;
-      if (targetCat === 'rent' && pCatRaw !== 'rent' && pPurpose !== 'rent') return false;
-      if (targetCat === 'lease' && pCatRaw !== 'lease') return false;
-      if (targetCat === 'commercial' && pCatRaw !== 'commercial') return false;
-      if (targetCat === 'residential' && pCatRaw !== 'residential') return false;
+      if (targetCat === 'villas' || targetCat === 'villa') {
+        if (!pCat.includes('villa') && !pType.includes('villa')) return false;
+      } else if (targetCat === 'houses' || targetCat === 'house') {
+        if (!pCat.includes('house') && !pType.includes('house') && !pType.includes('townhouse')) return false;
+      } else if (targetCat === 'apartments' || targetCat === 'apartment') {
+        if (!pCat.includes('apartment') && !pType.includes('apartment') && !pType.includes('penthouse') && !pType.includes('studio')) return false;
+      } else if (targetCat === 'plots' || targetCat === 'plot') {
+        if (!pCat.includes('plot') && !pType.includes('plot') && !pType.includes('land')) return false;
+      } else if (targetCat === 'agricultural') {
+        if (!pCat.includes('agricultural') && !pType.includes('farm') && !pType.includes('land')) return false;
+      } else if (targetCat === 'commercial') {
+        if (!pCat.includes('commercial') && !pCatRaw.includes('commercial') && !pType.includes('office') && !pType.includes('retail') && !pType.includes('warehouse')) return false;
+      } else if (targetCat === 'sale') {
+        if (pCatRaw !== 'sale' && pPurpose !== 'buy') return false;
+      } else if (targetCat === 'rent') {
+        if (pCatRaw !== 'rent' && pPurpose !== 'rent') return false;
+      } else if (targetCat === 'lease') {
+        if (pCatRaw !== 'lease') return false;
+      }
     }
 
     // 4. Status Filter
@@ -1188,7 +1235,14 @@ function filterPropertiesList(list) {
       if (currentStatus !== activeStatusFilter.toLowerCase()) return false;
     }
 
-    // 5. Max Price Filter
+    // 5. Ad Type Filter
+    if (activeAdTypeFilter && activeAdTypeFilter !== 'all') {
+      const isPaid = (prop.adType === 'paid');
+      if (activeAdTypeFilter === 'paid' && !isPaid) return false;
+      if (activeAdTypeFilter === 'free' && isPaid) return false;
+    }
+
+    // 6. Max Price Filter
     if (activeMaxPriceFilter && activeMaxPriceFilter !== 'all') {
       const maxP = parseFloat(activeMaxPriceFilter);
       const propP = prop.price || 0;
