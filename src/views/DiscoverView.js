@@ -1,4 +1,5 @@
 import { getProperties, getPublicProperties, formatPropertySize, formatLocationDisplay } from '../utils/propertiesStore.js';
+import { openPropertyModalById, openPropertyInquiryFormModal } from '../components/PropertyDetailModal.js';
 
 function formatSizeDisplay(size) {
   return formatPropertySize(size);
@@ -810,15 +811,17 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
     });
   }
 
+  const selectedProp = discoverState.selectedPropertyId ? getPublicProperties().find(p => p.id === discoverState.selectedPropertyId) : null;
+
   const enquireBtn = document.getElementById('detail-enquire-btn');
-  if (enquireBtn) {
-    enquireBtn.addEventListener('click', () => {
-      onNavigateToContact();
+  if (enquireBtn && selectedProp) {
+    enquireBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openPropertyInquiryFormModal(selectedProp);
     });
   }
 
   // Detail Hero Carousel Prev/Next & Thumbnails
-  const selectedProp = discoverState.selectedPropertyId ? getPublicProperties().find(p => p.id === discoverState.selectedPropertyId) : null;
   const propImages = selectedProp && Array.isArray(selectedProp.images) ? selectedProp.images.filter(Boolean) : [];
   const propVideos = selectedProp ? extractAllVideos(selectedProp.videoUrl || selectedProp.videos) : [];
   const totalMediaCount = Math.max(1, propImages.length + propVideos.length);

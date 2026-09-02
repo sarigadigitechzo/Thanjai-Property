@@ -301,9 +301,14 @@ function renderPropertyCard(prop) {
           <span>${prop.adType === 'paid' ? 'Direct Owner' : 'Listing Desk'}: ${prop.adType === 'paid' ? (prop.ownerName || 'Verified Owner') : 'Thanjai Property'} ${prop.adType === 'paid' ? (prop.ownerPhone ? `(${prop.ownerPhone})` : '') : '(8489996852)'}</span>
         </div>
 
-        <!-- Bold Price -->
-        <div style="font-size: 1.35rem; font-weight: 800; color: var(--color-orange, #eb5e28); margin-bottom: 8px;">
-          ${prop.priceFormatted || `₹ ${prop.price}`}
+        <!-- Bold Price & Inquiry Count Badge -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+          <div style="font-size: 1.35rem; font-weight: 800; color: var(--color-orange, #eb5e28);">
+            ${prop.priceFormatted || `₹ ${prop.price}`}
+          </div>
+          <span style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px;" title="Total Customer Inquiries for this property">
+            <i class="ri-mail-unread-line"></i> ${prop.inquiriesCount || 0} Inquiries
+          </span>
         </div>
 
         <!-- Specs Line -->

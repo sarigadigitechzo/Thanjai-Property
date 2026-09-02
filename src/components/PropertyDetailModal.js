@@ -2,7 +2,7 @@ import { isFavorite, toggleFavorite } from '../utils/favorites.js';
 import { showToast } from '../utils/toast.js';
 import { fetchFromAPI } from '../utils/api.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
-import { formatPropertySize, formatLocationDisplay } from '../utils/propertiesStore.js';
+import { formatPropertySize, formatLocationDisplay, getPropertyById, incrementPropertyInquiryCount } from '../utils/propertiesStore.js';
 
 export function renderPropertyDetailModal(property) {
   if (!property) return '';
@@ -54,10 +54,10 @@ export function renderPropertyDetailModal(property) {
   allVideos = allVideos.map(v => typeof v === 'string' ? v.trim() : '').filter(Boolean);
 
   return `
-    <div class="modal-overlay active" id="property-details-modal-overlay">
-      <div class="property-modal-card">
+    <div class="modal-overlay active" id="property-details-modal-overlay" style="position: fixed; inset: 0; z-index: 9999999; background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 1; visibility: visible; transition: all 0.3s ease;">
+      <div class="property-modal-card" style="background: #ffffff; width: 100%; max-width: 1140px; max-height: 92vh; border-radius: 20px; overflow-y: auto; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); font-family: 'Manrope', 'Plus Jakarta Sans', sans-serif;">
         <!-- Close Button -->
-        <button class="modal-close-btn" id="close-prop-modal-btn" title="Close Modal">
+        <button class="modal-close-btn" id="close-prop-modal-btn" title="Close Modal" style="position: absolute; top: 16px; right: 16px; z-index: 100; background: #ffffff; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #1a202c; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
           <i class="ri-close-line"></i>
         </button>
 
@@ -378,7 +378,7 @@ export function initPropertyDetailModalListeners(property, onClose) {
       location: property.location || property.district || 'Thanjavur',
       budget: property.priceFormatted || String(property.price),
       stage: 'New Lead',
-      source: 'Website Property Inquiry',
+      source: 'Property Inquiry',
       date: new Date().toISOString().split('T')[0],
       assignedTo: 'Unassigned',
       priority: 'High',
@@ -398,6 +398,11 @@ export function initPropertyDetailModalListeners(property, onClose) {
         }
       ]
     };
+
+    // Increment property inquiry counter in CRM
+    try {
+      incrementPropertyInquiryCount(property.id);
+    } catch(err) {}
 
     // 1. Save to localStorage
     try {
@@ -465,3 +470,219 @@ export function initPropertyDetailModalListeners(property, onClose) {
     setTimeout(onClose, 300);
   });
 }
+
+export function openPropertyInquiryFormModal(property) {
+  if (!property) return;
+
+  let modalContainer = document.getElementById('global-inquiry-form-modal-container');
+  if (!modalContainer) {
+    modalContainer = document.createElement('div');
+    modalContainer.id = 'global-inquiry-form-modal-container';
+    document.body.appendChild(modalContainer);
+  }
+
+  modalContainer.innerHTML = `
+    <div class="modal-overlay active" id="direct-prop-inquiry-modal-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 99999; padding: 20px;">
+      <div style="width: 100%; max-width: 500px; padding: 36px; border-radius: 20px; background: #ffffff; box-shadow: 0 20px 40px rgba(0,0,0,0.25); position: relative; animation: pageFadeIn 0.3s ease;">
+        <button id="close-direct-inquiry-modal-btn" style="position: absolute; top: 18px; right: 18px; background: #f1f5f9; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #475569; cursor: pointer;">
+          <i class="ri-close-line"></i>
+        </button>
+
+        <div style="margin-bottom: 20px;">
+          <span style="font-size: 0.75rem; font-weight: 800; color: #ea580c; text-transform: uppercase; letter-spacing: 0.08em; background: #fff7ed; padding: 4px 10px; border-radius: 8px; border: 1px solid #ffedd5;">PROPERTY INQUIRY FORM</span>
+          <h2 class="font-serif" style="font-size: 1.5rem; color: #1e293b; margin-top: 10px; margin-bottom: 4px;">
+            Inquire About Property
+          </h2>
+          <p style="font-size: 0.9rem; color: #ea580c; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 6px;">
+            <i class="ri-building-line"></i> ${property.title} (ID: ${property.id})
+          </p>
+        </div>
+
+        <form id="direct-property-inquiry-form">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div>
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 6px;"><i class="ri-user-line" style="color: #ea580c;"></i> Full Name *</label>
+              <input type="text" id="dpi-name" required placeholder="Enter your name" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; outline: none;" />
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 6px;"><i class="ri-phone-line" style="color: #ea580c;"></i> Mobile Number *</label>
+              <input type="tel" id="dpi-phone" required placeholder="10-digit mobile number" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; outline: none;" />
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 6px;"><i class="ri-mail-line" style="color: #ea580c;"></i> Email Address (Optional)</label>
+              <input type="email" id="dpi-email" placeholder="name@example.com" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; outline: none;" />
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 6px;"><i class="ri-chat-3-line" style="color: #ea580c;"></i> Requirement / Question (Optional)</label>
+              <textarea id="dpi-message" rows="3" placeholder="Tell us your preferences..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; outline: none; resize: vertical;"></textarea>
+            </div>
+
+            <button type="submit" id="dpi-submit-btn" style="padding: 14px; font-size: 1rem; font-weight: 800; width: 100%; margin-top: 6px; background: #ea580c; color: #ffffff; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(234,88,12,0.3);">
+              <i class="ri-send-plane-fill"></i> SUBMIT PROPERTY INQUIRY
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  const closeBtn = document.getElementById('close-direct-inquiry-modal-btn');
+  const overlay = document.getElementById('direct-prop-inquiry-modal-overlay');
+  const form = document.getElementById('direct-property-inquiry-form');
+
+  const closeModal = () => {
+    if (modalContainer) modalContainer.innerHTML = '';
+  };
+
+  closeBtn?.addEventListener('click', closeModal);
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal();
+  });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('dpi-name')?.value.trim();
+    const phone = document.getElementById('dpi-phone')?.value.trim();
+    const email = document.getElementById('dpi-email')?.value.trim() || '';
+    const message = document.getElementById('dpi-message')?.value.trim() || '';
+    const submitBtn = document.getElementById('dpi-submit-btn');
+
+    if (!name || !phone) return;
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Submitting...';
+    }
+
+    const cleanDigits = phone.replace(/\D/g, '');
+    const formattedPhone = cleanDigits.length === 10 ? `+91${cleanDigits}` : `+${cleanDigits}`;
+    const leadId = `L-${Date.now()}`;
+    const inquiryMsg = `Property Inquiry for "${property.title}" (ID: ${property.id}) - Price: ${property.priceFormatted || '₹' + property.price}. Note: ${message || 'No additional note'}`;
+
+    const newLead = {
+      id: leadId,
+      name: name,
+      phone: formattedPhone,
+      mobile: formattedPhone,
+      email: email,
+      type: property.categoryLabel || property.type || 'Residential',
+      location: property.location || property.district || 'Thanjavur',
+      budget: property.priceFormatted || String(property.price),
+      stage: 'New Lead',
+      source: 'Property Inquiry',
+      date: new Date().toISOString().split('T')[0],
+      assignedTo: 'Unassigned',
+      priority: 'High',
+      propertyId: property.id,
+      propertyMatch: property.id,
+      timeline: [
+        {
+          type: 'whatsapp_incoming',
+          date: new Date().toISOString(),
+          message: `📩 ${inquiryMsg}`,
+          note: inquiryMsg
+        },
+        {
+          type: 'whatsapp',
+          date: new Date().toISOString(),
+          message: `🤖 Auto-sent WhatsApp Welcome Intro to ${name} (${formattedPhone})`,
+          note: 'Campaign: initial_contact_intro'
+        }
+      ]
+    };
+
+    // 1. Increment Property Inquiry Count (+1)
+    try {
+      incrementPropertyInquiryCount(property.id);
+    } catch(err) {}
+
+    // 2. Save Lead to localStorage
+    try {
+      const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      localLeads.unshift(newLead);
+      localStorage.setItem('thanjai_leads', JSON.stringify(localLeads));
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {}
+
+    // 3. Save Lead to MySQL backend
+    try {
+      await fetchFromAPI('/leads', {
+        method: 'POST',
+        body: JSON.stringify(newLead)
+      });
+    } catch (err) {}
+
+    // 4. Send WhatsApp Notification
+    try {
+      const propImgUrl = (property.images && property.images.length > 0 && property.images[0].startsWith('http'))
+        ? property.images[0]
+        : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+
+      await sendWhatsAppMessage({
+        campaignName: 'initial_contact_intro',
+        destination: formattedPhone,
+        userName: name,
+        leadId: leadId,
+        templateParams: [name, property.location || property.district || 'Thanjavur', property.title, '+91 84899 96852'],
+        media: { url: propImgUrl, filename: 'property.jpg' }
+      });
+    } catch (err) {}
+
+    showToast(`Inquiry received for Property ${property.id}! WhatsApp confirmation sent.`, 'ri-checkbox-circle-fill');
+    closeModal();
+  });
+}
+
+export function openPropertyModalById(propId) {
+  if (!propId) return;
+  let prop = getPropertyById(propId);
+
+  if (!prop) {
+    const allProps = getProperties();
+    prop = allProps.find(p => p.title && p.title.toLowerCase().includes(String(propId).toLowerCase())) || allProps[0];
+  }
+
+  if (!prop) {
+    prop = {
+      id: propId,
+      title: `Inquired Property Portfolio (${propId})`,
+      type: 'Residential Plot',
+      category: 'plots',
+      categoryLabel: 'Residential Property',
+      priceFormatted: 'Contact Advisory Desk',
+      location: 'Thanjavur',
+      district: 'Thanjavur',
+      description: `Customer submitted an inquiry for Property ID ${propId}. Connect directly with client for details.`,
+      features: ['Verified Listing Inquiry', 'Prime Location', 'Advisory Desk Assistance'],
+      images: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80']
+    };
+  }
+
+  let modalContainer = document.getElementById('global-property-modal-container');
+  if (!modalContainer) {
+    modalContainer = document.createElement('div');
+    modalContainer.id = 'global-property-modal-container';
+    document.body.appendChild(modalContainer);
+  }
+
+  modalContainer.innerHTML = renderPropertyDetailModal(prop);
+  initPropertyDetailModalListeners(prop, () => {
+    modalContainer.innerHTML = '';
+  });
+}
+
+// Global capture-phase click listener for Property ID badges across CRM
+document.addEventListener('click', (e) => {
+  const badge = e.target.closest('.prop-id-badge');
+  if (badge) {
+    e.stopPropagation();
+    e.preventDefault();
+    const propId = badge.getAttribute('data-propid');
+    if (propId) {
+      openPropertyModalById(propId);
+    }
+  }
+}, true);

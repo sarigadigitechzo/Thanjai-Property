@@ -105,8 +105,34 @@ export function initPipelineBoardView() {
 
     const priorityClass = (lead.priority || 'Medium').toLowerCase() === 'high' ? 'high' : '';
     const priorityText = lead.priority ? lead.priority.toUpperCase() : 'MEDIUM';
-    const sourceText = lead.source ? lead.source.toUpperCase() : 'MANUAL';
     
+    let propId = lead.propertyId || lead.propertyMatch || '';
+    if (!propId) {
+      const rawTimelineStr = typeof lead.timeline === 'string' ? lead.timeline : JSON.stringify(lead.timeline || []);
+      const rawNotesStr = typeof lead.notes === 'string' ? lead.notes : JSON.stringify(lead.notes || []);
+      const match = rawTimelineStr.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/i) || rawNotesStr.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/i);
+      if (match) propId = match[1].toUpperCase();
+    }
+
+    let rawSource = (lead.source || 'MANUAL').toUpperCase();
+    let sourceText = 'CONTACT ENQUIRY';
+    if (propId || rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
+      sourceText = 'PROPERTY INQUIRY';
+    } else {
+      sourceText = 'CONTACT ENQUIRY';
+    }
+
+    let propBadgeHtml = '';
+    if (propId) {
+      propBadgeHtml = `
+        <div style="margin-top: 8px;">
+          <span class="prop-id-badge" data-propid="${propId}" style="background: #ea580c; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.15);" title="Click to view Property ${propId}">
+            <i class="ri-building-fill"></i> Property ${propId}
+          </span>
+        </div>
+      `;
+    }
+
     let info = [];
     if (lead.type && lead.type !== 'Any') info.push(lead.type);
     if (lead.bedrooms) info.push(lead.bedrooms + 'BR');
@@ -135,6 +161,7 @@ export function initPipelineBoardView() {
           <div class="pipeline-card-assigned">${lead.assignTo || 'Unassigned'}</div>
           <div class="pipeline-card-source">${sourceText}</div>
         </div>
+        ${propBadgeHtml}
         <div class="pipeline-card-action">
           <div class="custom-dropdown-wrap" data-lead="${lead.id}">
             <div class="custom-dropdown-selected" tabindex="0">

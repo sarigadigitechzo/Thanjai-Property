@@ -182,7 +182,23 @@ ${(() => {
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">City / area</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${lead.city || lead.area || '—'}</td></tr>
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Budget</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${formatCurrency(lead.budgetMax)}</td></tr>
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Property type</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${lead.type || '—'}</td></tr>
-                <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Source</td><td style="padding: 8px 0; text-align: right; font-weight: 500;"><span style="border: 1px solid var(--os-gray-300); color: var(--os-gray-600); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase;">${lead.source || 'MANUAL'}</span></td></tr>
+                ${(() => {
+                  let rawS = (lead.source || 'MANUAL').toUpperCase();
+                  let displayS = rawS;
+                  if (rawS.includes('CONTACT') || rawS === 'WEBSITE FORM') displayS = 'CONTACT ENQUIRY';
+                  else if (rawS.includes('PROPERTY') || rawS.includes('VISIT')) displayS = 'PROPERTY INQUIRY';
+                  return `<tr><td style="padding: 8px 0; color: var(--os-gray-500);">Source</td><td style="padding: 8px 0; text-align: right; font-weight: 500;"><span style="border: 1px solid var(--os-gray-300); color: var(--os-gray-600); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase;">${displayS}</span></td></tr>`;
+                })()}
+                ${(lead.propertyId || lead.propertyMatch) ? `
+                  <tr>
+                    <td style="padding: 8px 0; color: var(--os-gray-500);">Property Inquired</td>
+                    <td style="padding: 8px 0; text-align: right;">
+                      <span class="prop-id-badge" data-propid="${lead.propertyId || lead.propertyMatch}" style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 3px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Click to view Property Details">
+                        <i class="ri-building-line"></i> ${lead.propertyId || lead.propertyMatch} (View Details)
+                      </span>
+                    </td>
+                  </tr>
+                ` : ''}
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Priority</td><td style="padding: 8px 0; text-align: right; font-weight: 500;"><span style="border: 1px solid #3b82f6; color: #3b82f6; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase;">MEDIUM</span></td></tr>
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Assigned to</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${lead.assignTo || 'Unassigned'}</td></tr>
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Created</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${formatLeadCreatedDate(lead)}</td></tr>

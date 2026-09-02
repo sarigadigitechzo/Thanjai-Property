@@ -247,6 +247,8 @@ addCol($conn, 'leads', 'notes', 'longtext DEFAULT NULL');
 addCol($conn, 'leads', 'location', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'budget', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'purpose', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'leads', 'propertyId', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'properties', 'inquiriesCount', 'int DEFAULT 0');
 
 @$conn->query("ALTER TABLE leads MODIFY COLUMN timeline LONGTEXT");
 @$conn->query("ALTER TABLE leads MODIFY COLUMN notes LONGTEXT");
@@ -482,7 +484,7 @@ elseif ($resource === 'leads') {
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, whatsapp, email, source, status, budget, requirement, location, timeline, assignedTo, notes, followup) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, whatsapp, email, source, status, budget, requirement, location, timeline, assignedTo, notes, followup, propertyId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         if (!$stmt) {
             http_response_code(500);
             echo json_encode(["error" => "Database prepare error: " . $conn->error]);
@@ -496,7 +498,8 @@ elseif ($resource === 'leads') {
         $location = $data['location'] ?? $data['area'] ?? $data['city'] ?? 'Thanjavur';
         $requirement = $data['requirement'] ?? $data['propertyType'] ?? $data['type'] ?? 'Residential Plot';
         $assignedTo = $data['assignedTo'] ?? $data['assignTo'] ?? 'Unassigned';
-        $stmt->bind_param("ssssssssssssss", $data['id'], $data['name'], $phone, $whatsapp, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup);
+        $propertyId = $data['propertyId'] ?? $data['propertyMatch'] ?? null;
+        $stmt->bind_param("sssssssssssssss", $data['id'], $data['name'], $phone, $whatsapp, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup, $propertyId);
         if ($stmt->execute()) {
             echo json_encode(["message" => "Lead created successfully"]);
         } else {
@@ -506,7 +509,7 @@ elseif ($resource === 'leads') {
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("UPDATE leads SET name=?, phone=?, whatsapp=?, email=?, source=?, status=?, budget=?, requirement=?, location=?, timeline=?, assignedTo=?, notes=?, followup=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE leads SET name=?, phone=?, whatsapp=?, email=?, source=?, status=?, budget=?, requirement=?, location=?, timeline=?, assignedTo=?, notes=?, followup=?, propertyId=? WHERE id=?");
         $phone = $data['phone'] ?? $data['mobile'] ?? '';
         $whatsapp = $data['whatsapp'] ?? $phone;
         $timeline = is_string($data['timeline'] ?? null) ? $data['timeline'] : json_encode($data['timeline'] ?? []);
@@ -515,7 +518,8 @@ elseif ($resource === 'leads') {
         $location = $data['location'] ?? $data['area'] ?? $data['city'] ?? 'Thanjavur';
         $requirement = $data['requirement'] ?? $data['propertyType'] ?? $data['type'] ?? 'Residential Plot';
         $assignedTo = $data['assignedTo'] ?? $data['assignTo'] ?? 'Unassigned';
-        $stmt->bind_param("ssssssssssssss", $data['name'], $phone, $whatsapp, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup, $id);
+        $propertyId = $data['propertyId'] ?? $data['propertyMatch'] ?? null;
+        $stmt->bind_param("sssssssssssssss", $data['name'], $phone, $whatsapp, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup, $propertyId, $id);
         $stmt->execute();
         echo json_encode(["message" => "Lead updated successfully"]);
     }
