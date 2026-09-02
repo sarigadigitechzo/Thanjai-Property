@@ -61,22 +61,28 @@ export function renderLeadDetailView(id) {
     }
   };
 
-  const getTimelineAuthor = (author) => {
-    if (!author) return 'System';
+  const getTimelineAuthor = (author, leadObj) => {
+    const defaultFallback = (leadObj && (leadObj.assignTo || leadObj.assignedTo) && (leadObj.assignTo !== 'Unassigned' && leadObj.assignedTo !== 'Unassigned'))
+      ? (leadObj.assignTo || leadObj.assignedTo)
+      : 'System';
+
+    if (!author || author === 'undefined' || author === 'null') return defaultFallback;
+
     if (typeof author === 'object') {
-      return author.name || author.fullName || author.email || 'System';
+      return author.name || author.fullName || author.email || defaultFallback;
     }
     if (typeof author === 'string') {
       const trimmed = author.trim();
+      if (trimmed === 'undefined' || trimmed === 'null' || !trimmed) return defaultFallback;
       if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
         try {
           const parsed = JSON.parse(trimmed);
-          return parsed.name || parsed.fullName || parsed.email || 'System';
+          return parsed.name || parsed.fullName || parsed.email || defaultFallback;
         } catch(e) {}
       }
       return trimmed;
     }
-    return 'System';
+    return defaultFallback;
   };
   
   const allStages = [
@@ -255,7 +261,7 @@ ${(() => {
                     <div class="timeline-item" style="position: relative; margin-bottom: 24px;">
                       <div style="position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: ${event.type === 'whatsapp' ? '#16a34a' : '#ea580c'}; border: 2px solid var(--os-white);"></div>
                       <div style="font-weight: 500; color: ${event.type === 'whatsapp' ? '#16a34a' : 'var(--os-dark)'}; font-size: 0.95rem; margin-bottom: 4px;">${event.message}</div>
-                      <div style="font-size: 0.8rem; color: var(--os-gray-400);">${getTimelineAuthor(event.author)} - ${new Date(event.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
+                      <div style="font-size: 0.8rem; color: var(--os-gray-400);">${getTimelineAuthor(event.author, lead)} - ${new Date(event.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
                     </div>
                   `).join('')}
                 </div>
@@ -270,7 +276,7 @@ ${(() => {
                 </div>
                 ${lead.timeline.filter(e => e.type === 'whatsapp').map(event => `
                   <div style="background: #dcf8c6; padding: 12px; border-radius: 8px; margin-bottom: 16px; position: relative;">
-                    <div style="font-size: 0.8rem; color: #16a34a; margin-bottom: 4px;">Sent by ${getTimelineAuthor(event.author)}</div>
+                    <div style="font-size: 0.8rem; color: #16a34a; margin-bottom: 4px;">Sent by ${getTimelineAuthor(event.author, lead)}</div>
                     <div style="font-size: 0.95rem; color: #1f2937; line-height: 1.4;">${event.message}</div>
                     <div style="text-align: right; font-size: 0.75rem; color: #6b7280; margin-top: 4px;">${new Date(event.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})} <span style="color: #16a34a; font-weight: bold; margin-left: 4px;">✓</span></div>
                   </div>
@@ -286,7 +292,7 @@ ${(() => {
                      return `
                      <div style="margin-bottom: 16px;">
                        <span style="color: var(--os-gray-500);">${parts[0] || ''} <i class="ri-arrow-right-line" style="vertical-align: middle;"></i></span> <span style="color: var(--os-dark); font-weight: 500;">${parts[1] || ''}</span>
-                       <span style="color: var(--os-gray-400); font-size: 0.85rem; margin-left: 8px;">${getTimelineAuthor(event.author)} · ${new Date(event.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
+                       <span style="color: var(--os-gray-400); font-size: 0.85rem; margin-left: 8px;">${getTimelineAuthor(event.author, lead)} · ${new Date(event.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</span>
                      </div>
                      `;
                   }).join('')}
