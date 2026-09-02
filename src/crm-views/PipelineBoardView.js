@@ -105,8 +105,27 @@ export function initPipelineBoardView() {
 
     const priorityClass = (lead.priority || 'Medium').toLowerCase() === 'high' ? 'high' : '';
     const priorityText = lead.priority ? lead.priority.toUpperCase() : 'MEDIUM';
-    const sourceText = lead.source ? lead.source.toUpperCase() : 'MANUAL';
     
+    let rawSource = (lead.source || 'MANUAL').toUpperCase();
+    let sourceText = rawSource;
+    if (rawSource.includes('CONTACT') || rawSource === 'WEBSITE FORM') {
+      sourceText = 'CONTACT ENQUIRY';
+    } else if (rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
+      sourceText = 'PROPERTY INQUIRY';
+    }
+
+    const propId = lead.propertyId || lead.propertyMatch;
+    let propBadgeHtml = '';
+    if (propId) {
+      propBadgeHtml = `
+        <div style="margin-top: 8px;">
+          <span class="prop-id-badge" data-propid="${propId}" style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Click to view Property Details">
+            <i class="ri-building-line"></i> ${propId}
+          </span>
+        </div>
+      `;
+    }
+
     let info = [];
     if (lead.type && lead.type !== 'Any') info.push(lead.type);
     if (lead.bedrooms) info.push(lead.bedrooms + 'BR');
@@ -135,6 +154,7 @@ export function initPipelineBoardView() {
           <div class="pipeline-card-assigned">${lead.assignTo || 'Unassigned'}</div>
           <div class="pipeline-card-source">${sourceText}</div>
         </div>
+        ${propBadgeHtml}
         <div class="pipeline-card-action">
           <div class="custom-dropdown-wrap" data-lead="${lead.id}">
             <div class="custom-dropdown-selected" tabindex="0">

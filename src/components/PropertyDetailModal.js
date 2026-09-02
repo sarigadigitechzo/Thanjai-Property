@@ -2,7 +2,7 @@ import { isFavorite, toggleFavorite } from '../utils/favorites.js';
 import { showToast } from '../utils/toast.js';
 import { fetchFromAPI } from '../utils/api.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
-import { formatPropertySize, formatLocationDisplay } from '../utils/propertiesStore.js';
+import { formatPropertySize, formatLocationDisplay, getPropertyById } from '../utils/propertiesStore.js';
 
 export function renderPropertyDetailModal(property) {
   if (!property) return '';
@@ -378,7 +378,7 @@ export function initPropertyDetailModalListeners(property, onClose) {
       location: property.location || property.district || 'Thanjavur',
       budget: property.priceFormatted || String(property.price),
       stage: 'New Lead',
-      source: 'Website Property Inquiry',
+      source: 'Property Inquiry',
       date: new Date().toISOString().split('T')[0],
       assignedTo: 'Unassigned',
       priority: 'High',
@@ -465,3 +465,37 @@ export function initPropertyDetailModalListeners(property, onClose) {
     setTimeout(onClose, 300);
   });
 }
+
+export function openPropertyModalById(propId) {
+  if (!propId) return;
+  const prop = getPropertyById(propId);
+  if (!prop) {
+    showToast(`Property ${propId} not found in current portfolio.`, 'ri-error-warning-line');
+    return;
+  }
+
+  let modalContainer = document.getElementById('global-property-modal-container');
+  if (!modalContainer) {
+    modalContainer = document.createElement('div');
+    modalContainer.id = 'global-property-modal-container';
+    document.body.appendChild(modalContainer);
+  }
+
+  modalContainer.innerHTML = renderPropertyDetailModal(prop);
+  initPropertyDetailModalListeners(prop, () => {
+    modalContainer.innerHTML = '';
+  });
+}
+
+// Global click listener for Property ID badges across CRM
+document.addEventListener('click', (e) => {
+  const badge = e.target.closest('.prop-id-badge');
+  if (badge) {
+    e.stopPropagation();
+    e.preventDefault();
+    const propId = badge.getAttribute('data-propid');
+    if (propId) {
+      openPropertyModalById(propId);
+    }
+  }
+});

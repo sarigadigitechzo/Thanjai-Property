@@ -111,7 +111,7 @@ export function initScheduleVisitModalListeners(onClose) {
       location: 'Thanjavur',
       budget: 'Site Tour Requested',
       stage: 'Site Visit Scheduled',
-      source: 'Site Visit Booking',
+      source: 'Property Inquiry',
       date: new Date().toISOString().split('T')[0],
       assignedTo: 'Unassigned',
       priority: 'High',

@@ -504,7 +504,25 @@ function renderTable() {
     else if (statusTxt.includes('NEGOTIATION')) statusColor = 'badge-orange';
     else if (statusTxt.includes('CONVERTED')) statusColor = 'badge-cyan';
     
-    let sourceTxt = lead.source ? lead.source.toUpperCase() : 'MANUAL';
+    let rawSource = (lead.source || 'MANUAL').toUpperCase();
+    let sourceTxt = rawSource;
+    if (rawSource.includes('CONTACT') || rawSource === 'WEBSITE FORM') {
+      sourceTxt = 'CONTACT ENQUIRY';
+    } else if (rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
+      sourceTxt = 'PROPERTY INQUIRY';
+    }
+
+    const propId = lead.propertyId || lead.propertyMatch;
+    let propBadgeHtml = '';
+    if (propId) {
+      propBadgeHtml = `
+        <div style="margin-top: 2px;">
+          <span class="prop-id-badge" data-propid="${propId}" style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Click to view Property Details">
+            <i class="ri-building-line"></i> ${propId}
+          </span>
+        </div>
+      `;
+    }
 
     let assignedHtml = `<td style="color: var(--os-gray-400);">—</td>`;
     if (lead.assignTo && lead.assignTo !== 'Unassigned') {
@@ -535,6 +553,7 @@ function renderTable() {
         <td>
           <div class="action-view" style="font-weight: 600; color: var(--os-luxury-orange); cursor: pointer;">${lead.name}</div>
           <div style="font-size: 0.85rem; color: var(--os-gray-400);">${lead.mobile || lead.phone || '—'}</div>
+          ${propBadgeHtml}
           <div style="font-size: 0.78rem; color: #ea580c; font-weight: 600; margin-top: 2px; display: inline-flex; align-items: center; gap: 4px;" title="Enquiry Date">
             <i class="ri-calendar-event-line" style="font-size: 0.75rem;"></i> ${createdDateStr}
           </div>
