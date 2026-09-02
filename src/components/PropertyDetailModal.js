@@ -2,7 +2,7 @@ import { isFavorite, toggleFavorite } from '../utils/favorites.js';
 import { showToast } from '../utils/toast.js';
 import { fetchFromAPI } from '../utils/api.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
-import { formatPropertySize, formatLocationDisplay, getPropertyById } from '../utils/propertiesStore.js';
+import { formatPropertySize, formatLocationDisplay, getPropertyById, incrementPropertyInquiryCount } from '../utils/propertiesStore.js';
 
 export function renderPropertyDetailModal(property) {
   if (!property) return '';
@@ -398,6 +398,11 @@ export function initPropertyDetailModalListeners(property, onClose) {
         }
       ]
     };
+
+    // Increment property inquiry counter in CRM
+    try {
+      incrementPropertyInquiryCount(property.id);
+    } catch(err) {}
 
     // 1. Save to localStorage
     try {

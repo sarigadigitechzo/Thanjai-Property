@@ -1,5 +1,6 @@
 import { showToast } from '../utils/toast.js';
 import { fetchFromAPI } from '../utils/api.js';
+import { incrementPropertyInquiryCount } from '../utils/propertiesStore.js';
 
 export function renderScheduleVisitModal(detail = {}) {
   const propertyTitle = detail.propertyTitle || 'Luxury Property Visit';
@@ -131,6 +132,10 @@ export function initScheduleVisitModalListeners(onClose) {
         }
       ]
     };
+
+    if (propId) {
+      try { incrementPropertyInquiryCount(propId); } catch(e) {}
+    }
 
     try {
       const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];

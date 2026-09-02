@@ -248,6 +248,7 @@ addCol($conn, 'leads', 'location', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'budget', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'purpose', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'propertyId', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'properties', 'inquiriesCount', 'int DEFAULT 0');
 
 @$conn->query("ALTER TABLE leads MODIFY COLUMN timeline LONGTEXT");
 @$conn->query("ALTER TABLE leads MODIFY COLUMN notes LONGTEXT");

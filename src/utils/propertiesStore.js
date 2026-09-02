@@ -203,7 +203,24 @@ export function rejectSubmission(id, reason = 'Did not meet Patta title guidelin
 
 export function getPropertyById(id) {
   const props = getProperties();
-  return props.find(p => p.id === id) || null;
+  return props.find(p => String(p.id).trim().toLowerCase() === String(id).trim().toLowerCase()) || null;
+}
+
+export function incrementPropertyInquiryCount(id) {
+  if (!id) return;
+  const props = getProperties();
+  const idx = props.findIndex(p => String(p.id).trim().toLowerCase() === String(id).trim().toLowerCase());
+  if (idx !== -1) {
+    props[idx].inquiriesCount = (parseInt(props[idx].inquiriesCount || 0, 10)) + 1;
+    saveProperties(props);
+    try {
+      fetchFromAPI(`/properties/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(props[idx])
+      });
+    } catch (e) {}
+    window.dispatchEvent(new CustomEvent('propertiesUpdated', { detail: { action: 'inquiry_increment', id } }));
+  }
 }
 
 export function formatPropertySize(size) {
@@ -471,6 +488,7 @@ function normalizePropertyRecord(p) {
     status: status,
     availability: status,
     purpose: purpose,
+    inquiriesCount: parseInt(p.inquiriesCount || 0, 10),
     userId: p.userId || null,
     userEmail: p.userEmail || null,
     price: numPrice,
