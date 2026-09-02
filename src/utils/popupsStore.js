@@ -63,6 +63,16 @@ export async function initPopupsStore() {
       localStorage.setItem(POPUPS_STORAGE_KEY, JSON.stringify(popupsCache));
       window.dispatchEvent(new CustomEvent('popupsUpdated'));
       return popupsCache;
+    } else if (data && Array.isArray(data) && data.length === 0) {
+      // Table exists in MySQL but is empty! Seed initial default popups to database!
+      for (const p of DEFAULT_POPUPS) {
+        try {
+          await fetchFromAPI('/popups', {
+            method: 'POST',
+            body: JSON.stringify(p)
+          });
+        } catch (e) {}
+      }
     }
   } catch (error) {
     console.warn('API error fetching popups, fallback to local storage', error);
