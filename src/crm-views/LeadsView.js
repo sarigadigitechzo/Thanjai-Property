@@ -522,17 +522,17 @@ function renderTable() {
     const propId = lead.propertyId || lead.propertyMatch;
     let rawSource = (lead.source || 'MANUAL').toUpperCase();
     let sourceTxt = 'CONTACT ENQUIRY';
-    if (propId || (lead.type && lead.type !== 'General Enquiry' && lead.type !== 'Any' && lead.type !== '—') || rawSource.includes('PROPERTY') || rawSource.includes('VISIT') || rawSource.includes('BRIEF')) {
+    if (propId || rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
       sourceTxt = 'PROPERTY INQUIRY';
-    } else if (rawSource.includes('CONTACT') || rawSource === 'WEBSITE FORM') {
+    } else {
       sourceTxt = 'CONTACT ENQUIRY';
     }
     let propBadgeHtml = '';
     if (propId) {
       propBadgeHtml = `
-        <div style="margin-top: 2px;">
-          <span class="prop-id-badge" data-propid="${propId}" style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 6px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Click to view Property Details">
-            <i class="ri-building-line"></i> ${propId}
+        <div style="margin-top: 4px;">
+          <span class="prop-id-badge" data-propid="${propId}" style="background: #ea580c; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);" title="Click to view Property ${propId}">
+            <i class="ri-building-fill"></i> Property ${propId}
           </span>
         </div>
       `;

@@ -116,9 +116,9 @@ export function initPipelineBoardView() {
 
     let rawSource = (lead.source || 'MANUAL').toUpperCase();
     let sourceText = 'CONTACT ENQUIRY';
-    if (propId || (lead.type && lead.type !== 'General Enquiry' && lead.type !== 'Any' && lead.type !== '—') || rawSource.includes('PROPERTY') || rawSource.includes('VISIT') || rawSource.includes('BRIEF')) {
+    if (propId || rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
       sourceText = 'PROPERTY INQUIRY';
-    } else if (rawSource.includes('CONTACT') || rawSource === 'WEBSITE FORM') {
+    } else {
       sourceText = 'CONTACT ENQUIRY';
     }
 
@@ -126,8 +126,8 @@ export function initPipelineBoardView() {
     if (propId) {
       propBadgeHtml = `
         <div style="margin-top: 8px;">
-          <span class="prop-id-badge" data-propid="${propId}" style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Click to view Property Details">
-            <i class="ri-building-line"></i> ${propId}
+          <span class="prop-id-badge" data-propid="${propId}" style="background: #ea580c; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.15);" title="Click to view Property ${propId}">
+            <i class="ri-building-fill"></i> Property ${propId}
           </span>
         </div>
       `;

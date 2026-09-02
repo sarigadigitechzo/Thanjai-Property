@@ -547,7 +547,7 @@ export function initContactSectionListeners() {
       type: reqType,
       location: reqLocation,
       budget: reqBudget,
-      source: 'Property Inquiry',
+      source: 'Contact Enquiry',
       date: new Date().toISOString().split('T')[0],
       stage: 'New Lead',
       assignedTo: 'Unassigned',
