@@ -58,6 +58,8 @@ function renCol($conn, $t, $o, $n, $d) {
   `address` text DEFAULT NULL,
   `facing` varchar(100) DEFAULT NULL,
   `size` varchar(100) DEFAULT NULL,
+  `builtUpArea` varchar(100) DEFAULT NULL,
+  `posterRole` varchar(100) DEFAULT 'Individual Owner',
   `bedrooms` varchar(50) DEFAULT NULL,
   `bathrooms` varchar(50) DEFAULT NULL,
   `floor` varchar(50) DEFAULT NULL,
@@ -249,6 +251,8 @@ addCol($conn, 'leads', 'budget', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'purpose', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'propertyId', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'properties', 'inquiriesCount', 'int DEFAULT 0');
+addCol($conn, 'properties', 'builtUpArea', 'varchar(100) DEFAULT NULL');
+addCol($conn, 'properties', 'posterRole', 'varchar(100) DEFAULT "Individual Owner"');
 
 @$conn->query("ALTER TABLE leads MODIFY COLUMN timeline LONGTEXT");
 @$conn->query("ALTER TABLE leads MODIFY COLUMN notes LONGTEXT");
@@ -398,7 +402,7 @@ if ($resource === 'properties') {
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("INSERT INTO properties (id, title, type, category, categoryRaw, categoryLabel, purpose, price, priceFormatted, location, district, address, size, bedrooms, bathrooms, furnishing, status, availability, latitude, longitude, videoUrl, ownerName, ownerPhone, listedBy, adType, userId, userEmail, actualOwnerName, actualOwnerPhone, images, description, features, approval, facing, area, taluk, road, inquiryPhone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO properties (id, title, type, category, categoryRaw, categoryLabel, purpose, price, priceFormatted, location, district, address, size, builtUpArea, posterRole, bedrooms, bathrooms, furnishing, status, availability, latitude, longitude, videoUrl, ownerName, ownerPhone, listedBy, adType, userId, userEmail, actualOwnerName, actualOwnerPhone, images, description, features, approval, facing, area, taluk, road, inquiryPhone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $images = json_encode($data['images'] ?? []);
         $features = json_encode($data['features'] ?? []);
         $adType = $data['adType'] ?? 'free';
@@ -413,14 +417,16 @@ if ($resource === 'properties') {
         $road = $data['road'] ?? '';
         $inquiryPhone = $data['inquiryPhone'] ?? '8489996852';
         $approval = isset($data['approval']) ? strval($data['approval']) : '';
+        $builtUpArea = $data['builtUpArea'] ?? '';
+        $posterRole = $data['posterRole'] ?? $data['userRole'] ?? 'Individual Owner';
         $bedrooms = isset($data['bedrooms']) && $data['bedrooms'] !== null ? strval($data['bedrooms']) : null;
         $bathrooms = isset($data['bathrooms']) && $data['bathrooms'] !== null ? strval($data['bathrooms']) : null;
         $price = floatval($data['price'] ?? 0);
 
-        $stmt->bind_param("sssssssdssssssssssssssssssssssssssssss", 
+        $stmt->bind_param("sssssssdssssssssssssssssssssssssssssssss", 
             $data['id'], $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], 
             $data['purpose'], $price, $data['priceFormatted'], $data['location'], $data['district'], $address, 
-            $data['size'], $bedrooms, $bathrooms, $data['furnishing'], $data['status'], $data['availability'], 
+            $data['size'], $builtUpArea, $posterRole, $bedrooms, $bathrooms, $data['furnishing'], $data['status'], $data['availability'], 
             $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], 
             $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, 
             $data['description'], $features, $approval, $facing, $area, $taluk, $road, $inquiryPhone
@@ -434,7 +440,7 @@ if ($resource === 'properties') {
     }
     elseif ($method === 'PUT' && $id) {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("UPDATE properties SET title=?, type=?, category=?, categoryRaw=?, categoryLabel=?, purpose=?, price=?, priceFormatted=?, location=?, district=?, address=?, size=?, bedrooms=?, bathrooms=?, furnishing=?, status=?, availability=?, latitude=?, longitude=?, videoUrl=?, ownerName=?, ownerPhone=?, listedBy=?, adType=?, userId=?, userEmail=?, actualOwnerName=?, actualOwnerPhone=?, images=?, description=?, features=?, approval=?, facing=?, area=?, taluk=?, road=?, inquiryPhone=? WHERE id=?");
+        $stmt = $conn->prepare("UPDATE properties SET title=?, type=?, category=?, categoryRaw=?, categoryLabel=?, purpose=?, price=?, priceFormatted=?, location=?, district=?, address=?, size=?, builtUpArea=?, posterRole=?, bedrooms=?, bathrooms=?, furnishing=?, status=?, availability=?, latitude=?, longitude=?, videoUrl=?, ownerName=?, ownerPhone=?, listedBy=?, adType=?, userId=?, userEmail=?, actualOwnerName=?, actualOwnerPhone=?, images=?, description=?, features=?, approval=?, facing=?, area=?, taluk=?, road=?, inquiryPhone=? WHERE id=?");
         $images = json_encode($data['images'] ?? []);
         $features = json_encode($data['features'] ?? []);
         $adType = $data['adType'] ?? 'free';
@@ -449,14 +455,16 @@ if ($resource === 'properties') {
         $road = $data['road'] ?? '';
         $inquiryPhone = $data['inquiryPhone'] ?? '8489996852';
         $approval = isset($data['approval']) ? strval($data['approval']) : '';
+        $builtUpArea = $data['builtUpArea'] ?? '';
+        $posterRole = $data['posterRole'] ?? $data['userRole'] ?? 'Individual Owner';
         $bedrooms = isset($data['bedrooms']) && $data['bedrooms'] !== null ? strval($data['bedrooms']) : null;
         $bathrooms = isset($data['bathrooms']) && $data['bathrooms'] !== null ? strval($data['bathrooms']) : null;
         $price = floatval($data['price'] ?? 0);
 
-        $stmt->bind_param("sssssssdsssssssssssssssssssssssssssssss", 
+        $stmt->bind_param("sssssssdsssssssssssssssssssssssssssssssss", 
             $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], 
             $data['purpose'], $price, $data['priceFormatted'], $data['location'], $data['district'], $address, 
-            $data['size'], $bedrooms, $bathrooms, $data['furnishing'], $data['status'], $data['availability'], 
+            $data['size'], $builtUpArea, $posterRole, $bedrooms, $bathrooms, $data['furnishing'], $data['status'], $data['availability'], 
             $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], 
             $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, 
             $data['description'], $features, $approval, $facing, $area, $taluk, $road, $inquiryPhone, $id

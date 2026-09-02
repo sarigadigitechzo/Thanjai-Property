@@ -65,7 +65,7 @@ export function renderHomePropertyShowcase(properties, onSelectProperty, onNavig
                 </div>
 
                 <div style="display: flex; gap: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.85rem; color: #555; margin-top: auto; flex-wrap: wrap;">
-                  ${prop.size ? `<span><i class="ri-ruler-2-line"></i> ${formatSizeDisplay(prop.size)}</span>` : ''}
+                  ${prop.builtUpArea ? `<span><i class="ri-home-4-line"></i> ${formatSizeDisplay(prop.builtUpArea)} Built-up</span>` : (prop.size ? `<span><i class="ri-ruler-2-line"></i> ${formatSizeDisplay(prop.size)}</span>` : '')}
                   ${prop.facing ? `<span><i class="ri-compass-3-line"></i> ${prop.facing}</span>` : ''}
                   ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : (prop.approval ? `<span><i class="ri-shield-check-line"></i> ${prop.approval}</span>` : '')}
                 </div>

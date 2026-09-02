@@ -691,11 +691,12 @@ export function renderUserDashboard() {
       const district = document.getElementById('user-prop-district')?.value.trim() || 'Thanjavur';
       const facing = document.getElementById('user-prop-facing')?.value.trim() || '';
       const size = document.getElementById('user-prop-size').value;
+      const builtUpArea = document.getElementById('user-prop-builtup-size')?.value.trim() || '';
       const bedrooms = parseInt(document.getElementById('user-prop-bedrooms')?.value || 0);
       const bathrooms = parseInt(document.getElementById('user-prop-bathrooms')?.value || 0);
       const floor = document.getElementById('user-prop-floor')?.value.trim();
       const furnishing = document.getElementById('user-prop-furnishing')?.value;
-      const price = parseFloat(document.getElementById('user-prop-price').value);
+      const price = parseFloat(document.getElementById('user-prop-price').value) || 0;
       const imgUrl = document.getElementById('user-prop-img-url').value;
       const videoUrl = document.getElementById('user-prop-videolink').value || userUploadedVideoUrl;
       const latitude = document.getElementById('user-prop-latitude')?.value || '10.786999';
@@ -744,6 +745,8 @@ export function renderUserDashboard() {
         facing,
         address: facing || area,
         size,
+        builtUpArea: isRes && builtUpArea ? builtUpArea : (builtUpArea || ''),
+        posterRole: user.role || 'Individual Owner',
         bedrooms: isRes ? bedrooms : null,
         bathrooms: isRes ? bathrooms : null,
         floor: floor || null,
@@ -1455,6 +1458,11 @@ function renderPostPropertyFormHtml(propToEdit = null, adType = 'free') {
               <div>
                 <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Bathrooms</label>
                 <input type="number" id="user-prop-bathrooms" value="${propToEdit?.bathrooms || ''}" placeholder="e.g. 3" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
+              </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Built-up Area (Sq.Ft)</label>
+                <input type="text" id="user-prop-builtup-size" value="${propToEdit?.builtUpArea || ''}" placeholder="e.g. 1850 or 1,850 Sq.Ft" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #CBD5E0; box-sizing: border-box;" />
               </div>
 
               <div>

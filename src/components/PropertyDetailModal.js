@@ -13,7 +13,10 @@ export function renderPropertyDetailModal(property) {
   // Assemble dynamic technical specs
   const specsList = Array.isArray(property.specs) && property.specs.length > 0 ? [...property.specs] : [];
   if (!specsList.some(s => s.label.toLowerCase() === 'area') && formattedSize) {
-    specsList.unshift({ label: 'Area', value: formattedSize });
+    specsList.unshift({ label: 'Plot / Land Area', value: formattedSize });
+  }
+  if (property.builtUpArea) {
+    specsList.push({ label: 'Built-up Area', value: property.builtUpArea });
   }
   if (!specsList.some(s => s.label.toLowerCase() === 'facing') && (property.facing || property.address)) {
     specsList.push({ label: 'Facing', value: property.facing || property.address });
@@ -130,7 +133,13 @@ export function renderPropertyDetailModal(property) {
               ${formattedSize ? `
                 <div class="fact-block">
                   <div class="fact-value">${formattedSize}</div>
-                  <div class="fact-label">TOTAL AREA</div>
+                  <div class="fact-label">PLOT AREA</div>
+                </div>
+              ` : ''}
+              ${property.builtUpArea ? `
+                <div class="fact-block">
+                  <div class="fact-value" style="color: var(--color-orange);">${property.builtUpArea}</div>
+                  <div class="fact-label">BUILT-UP AREA</div>
                 </div>
               ` : ''}
               ${(property.facing || property.address) ? `

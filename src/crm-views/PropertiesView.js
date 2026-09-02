@@ -587,9 +587,15 @@ function renderAdminPropertyPreviewModal(prop) {
               <div style="font-size: 0.95rem; font-weight: 700; color: #38A169;">${prop.approval || 'Verified Patta Title'}</div>
             </div>
             <div>
-              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">AREA SIZE</span>
+              <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">LAND / PLOT AREA</span>
               <div style="font-size: 0.95rem; font-weight: 700; color: #1a202c;">${prop.size || 'N/A'}</div>
             </div>
+            ${prop.builtUpArea ? `
+              <div>
+                <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">BUILT-UP AREA</span>
+                <div style="font-size: 0.95rem; font-weight: 700; color: #eb5e28;">${prop.builtUpArea}</div>
+              </div>
+            ` : ''}
             ${prop.bedrooms ? `
               <div>
                 <span style="font-size: 0.75rem; font-weight: 800; color: #718096; display: block;">BEDROOMS / BATHROOMS</span>
@@ -613,6 +619,7 @@ function renderAdminPropertyPreviewModal(prop) {
             <h4 style="font-size: 0.85rem; font-weight: 800; color: #4A5568; text-transform: uppercase; margin-bottom: 12px;">OWNER & CONTACT DETAILS</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; font-size: 0.9rem;">
               <div><strong>Listing Plan:</strong> <span style="font-weight: 700; color: ${prop.adType === 'paid' ? '#3182CE' : '#C05621'};">${prop.adType === 'paid' ? '👑 Paid Ad' : '🛡️ Free Ad'}</span></div>
+              <div><strong>Poster Source:</strong> <span style="background: #edf2f7; color: #2d3748; font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 0.82rem;">${prop.posterRole || 'Individual Owner'}</span></div>
               <div><strong>Owner / Company Name:</strong> ${prop.ownerName || 'Thanjai Property Owner'}</div>
               <div><strong>Owner Direct Phone (Private):</strong> ${prop.ownerPhone || 'N/A'}</div>
               <div><strong>Inquiry / Advisory Phone (Public):</strong> ${prop.inquiryPhone || '8489996852'}</div>
@@ -835,6 +842,11 @@ function renderFullPagePropertyForm(prop) {
               </div>
 
               <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Built-up Area (Sq.Ft)</label>
+                <input type="text" id="form-prop-builtup-size" value="${isEdit ? prop?.builtUpArea || '' : ''}" placeholder="e.g. 1850 or 1,850 Sq.Ft" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+              </div>
+
+              <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Floor Number (Optional)</label>
                 <input type="text" id="form-prop-floor" value="${isEdit ? prop?.floor || '' : ''}" placeholder="e.g. 2nd Floor (Optional)" style="width: 100%; padding: 10px 14px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
@@ -897,6 +909,16 @@ function renderFullPagePropertyForm(prop) {
                 <select id="form-prop-ad-type" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; background: #fff;">
                   <option value="free" ${isEdit && prop?.adType === 'paid' ? '' : 'selected'}>🛡️ Free Ad (Thanjai Property Desk +91 84899 96852)</option>
                   <option value="paid" ${isEdit && prop?.adType === 'paid' ? 'selected' : ''}>👑 Paid Ad (Direct Advisory Call & WhatsApp)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Poster Role / User Source</label>
+                <select id="form-prop-poster-role" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; background: #fff;">
+                  <option value="Individual Owner" ${!isEdit || prop?.posterRole === 'Individual Owner' ? 'selected' : ''}>Individual Owner</option>
+                  <option value="Builder / Developer" ${isEdit && prop?.posterRole === 'Builder / Developer' ? 'selected' : ''}>Builder / Developer</option>
+                  <option value="Agent / Broker" ${isEdit && prop?.posterRole === 'Agent / Broker' ? 'selected' : ''}>Agent / Broker</option>
+                  <option value="Admin / Official Staff" ${isEdit && prop?.posterRole === 'Admin / Official Staff' ? 'selected' : ''}>Admin / Official Staff</option>
                 </select>
               </div>
 
@@ -1738,17 +1760,33 @@ function initPropertyFormListeners() {
     const title = document.getElementById('form-prop-title')?.value.trim();
     const type = document.getElementById('form-prop-type')?.value;
     const category = document.getElementById('form-prop-category')?.value;
-    const price = document.getElementById('form-prop-price')?.value;
+    const rawPrice = document.getElementById('form-prop-price-num')?.value || document.getElementById('form-prop-price')?.value;
+    const numPrice = parseFloat(rawPrice) || 0;
+    
+    let priceFormatted = '';
+    if (numPrice >= 10000000) {
+      priceFormatted = `₹ ${(numPrice / 10000000).toFixed(2)} Crore`;
+    } else if (numPrice >= 100000) {
+      priceFormatted = `₹ ${(numPrice / 100000).toFixed(2)} Lakhs`;
+    } else if (numPrice > 0) {
+      priceFormatted = `₹ ${numPrice.toLocaleString('en-IN')}`;
+    } else {
+      priceFormatted = 'Price on Request';
+    }
+
     const area = document.getElementById('form-prop-area')?.value.trim() || '';
     const road = document.getElementById('form-prop-road')?.value || '';
     const taluk = document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur';
     const district = document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur';
     const facing = document.getElementById('form-prop-facing')?.value.trim() || '';
     const size = document.getElementById('form-prop-size')?.value.trim();
+    const builtUpArea = document.getElementById('form-prop-builtup-size')?.value.trim() || '';
+    const posterRole = document.getElementById('form-prop-poster-role')?.value || 'Individual Owner';
     const bedrooms = document.getElementById('form-prop-bedrooms')?.value;
     const bathrooms = document.getElementById('form-prop-bathrooms')?.value;
+    const floor = document.getElementById('form-prop-floor')?.value.trim() || '';
     const furnishing = document.getElementById('form-prop-furnishing')?.value;
-    const status = document.getElementById('form-prop-status')?.value;
+    const status = document.getElementById('form-prop-availability')?.value || document.getElementById('form-prop-status')?.value || 'Available';
     const approval = document.getElementById('form-prop-approval')?.value.trim();
     const featuresStr = document.getElementById('form-prop-features')?.value.trim();
     const description = document.getElementById('form-prop-desc')?.value.trim();
@@ -1789,7 +1827,9 @@ function initPropertyFormListeners() {
       title: title || 'Untitled Property',
       type: type || 'Villa',
       category: category || 'Sale',
-      price: parseFloat(price) || 0,
+      categoryRaw: category || 'Sale',
+      price: numPrice,
+      priceFormatted: priceFormatted,
       location: combinedLocation,
       area: area,
       road: road,
@@ -1797,11 +1837,14 @@ function initPropertyFormListeners() {
       district: district,
       facing: facing,
       size: size ? formatPropertySize(size) : '',
+      builtUpArea: (isRes && builtUpArea) ? formatPropertySize(builtUpArea) : (builtUpArea ? formatPropertySize(builtUpArea) : ''),
+      posterRole: posterRole,
       bedrooms: (isRes && bedrooms) ? parseInt(bedrooms, 10) : null,
       bathrooms: (isRes && bathrooms) ? parseInt(bathrooms, 10) : null,
+      floor: (isRes && floor) ? floor : null,
       furnishing: isRes ? (furnishing || 'Not specified') : 'Not specified',
-      status: status || 'Available',
-      availability: status || 'Available',
+      status: status,
+      availability: status,
       approval: approval || '',
       latitude: latitude,
       longitude: longitude,
