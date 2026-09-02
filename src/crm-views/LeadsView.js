@@ -507,11 +507,29 @@ function renderTable() {
        </td>`;
     }
 
+    let createdDateStr = '—';
+    const rawCd = lead.createdAt || lead.created_at || lead.created || lead.date;
+    if (rawCd) {
+      try {
+        const cd = typeof rawCd === 'number' ? new Date(rawCd) : (isNaN(Number(rawCd)) ? new Date(String(rawCd)) : new Date(Number(rawCd)));
+        if (!isNaN(cd.getTime())) {
+          createdDateStr = cd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        } else {
+          createdDateStr = String(rawCd);
+        }
+      } catch(e) {
+        createdDateStr = String(rawCd);
+      }
+    }
+
     return `
       <tr data-id="${lead.id}">
         <td>
           <div class="action-view" style="font-weight: 600; color: var(--os-luxury-orange); cursor: pointer;">${lead.name}</div>
           <div style="font-size: 0.85rem; color: var(--os-gray-400);">${lead.mobile || lead.phone || '—'}</div>
+          <div style="font-size: 0.78rem; color: #ea580c; font-weight: 600; margin-top: 2px; display: inline-flex; align-items: center; gap: 4px;" title="Enquiry Date">
+            <i class="ri-calendar-event-line" style="font-size: 0.75rem;"></i> ${createdDateStr}
+          </div>
         </td>
         <td>
           ${requirementHtml}
@@ -528,7 +546,7 @@ function renderTable() {
             <i class="ri-delete-bin-line action-delete"></i>
           </div>
         </td>
-      </tr>
+        </tr>
     `;
   }).join('');
 }
