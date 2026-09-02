@@ -143,7 +143,7 @@ export function renderPopupsView() {
               <i class="ri-calendar-event-line"></i>
             </div>
           </div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #d97706; margin-top: 10px;">${scheduledCount}</div>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #d97706; margin-top: 10px;" id="kpi-scheduled-popups">${scheduledCount}</div>
           <span style="font-size: 0.78rem; color: #64748b;">Starts on scheduled dates</span>
         </div>
 
@@ -154,7 +154,7 @@ export function renderPopupsView() {
               <i class="ri-pause-circle-line"></i>
             </div>
           </div>
-          <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-top: 10px;">${pausedCount}</div>
+          <div style="font-size: 1.8rem; font-weight: 800; color: #0f172a; margin-top: 10px;" id="kpi-paused-popups">${pausedCount}</div>
           <span style="font-size: 0.78rem; color: #64748b;">Drafts or past campaigns</span>
         </div>
       </div>
@@ -381,6 +381,28 @@ export function initPopupsView() {
     if (!container) return;
     const popups = getPopups();
     const query = (searchInput?.value || '').toLowerCase().trim();
+
+    // Dynamically calculate and update KPI numbers
+    const liveCount = popups.filter(p => getPopupScheduleState(p).state === 'live').length;
+    const scheduledCount = popups.filter(p => getPopupScheduleState(p).state === 'scheduled').length;
+    const pausedCount = popups.filter(p => getPopupScheduleState(p).state === 'paused' || getPopupScheduleState(p).state === 'expired').length;
+
+    const totalEl = document.getElementById('kpi-total-popups');
+    const activeEl = document.getElementById('kpi-active-popups');
+    const scheduledEl = document.getElementById('kpi-scheduled-popups');
+    const pausedEl = document.getElementById('kpi-paused-popups');
+    if (totalEl) totalEl.textContent = popups.length;
+    if (activeEl) activeEl.textContent = liveCount;
+    if (scheduledEl) scheduledEl.textContent = scheduledCount;
+    if (pausedEl) pausedEl.textContent = pausedCount;
+
+    // Update filter tab labels
+    const tabAll = document.querySelector('#popup-filter-tabs [data-filter="all"]');
+    const tabLive = document.querySelector('#popup-filter-tabs [data-filter="live"]');
+    const tabScheduled = document.querySelector('#popup-filter-tabs [data-filter="scheduled"]');
+    if (tabAll) tabAll.textContent = `All Popups (${popups.length})`;
+    if (tabLive) tabLive.textContent = `Live Now (${liveCount})`;
+    if (tabScheduled) tabScheduled.textContent = `Scheduled (${scheduledCount})`;
 
     let filtered = popups.filter(p => {
       const stateObj = getPopupScheduleState(p);
@@ -756,6 +778,12 @@ export function initPopupsView() {
     renderGrid();
   });
 
-  // Initial render
+  // Listen for updates across views
+  window.addEventListener('popupsUpdated', renderGrid);
+
+  // Initial render with fresh database sync
   renderGrid();
+  initPopupsStore().then(() => {
+    renderGrid();
+  });
 }

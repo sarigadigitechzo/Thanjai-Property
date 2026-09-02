@@ -3,59 +3,14 @@ import { addAuditLog } from './siteImagesStore.js';
 
 const POPUPS_STORAGE_KEY = 'thanjai_popups_store';
 
-export const DEFAULT_POPUPS = [
-  {
-    id: 'POP-1001',
-    title: '🌾 Grand Festive Property Mela 2026',
-    subtitle: 'Special limited-time booking discount on DTCP & RERA approved residential plots in Thanjavur & Trichy Road.',
-    type: 'festival',
-    badge: '🎉 FESTIVE OFFER',
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-    highlights: [
-      'Spot Patta Transfer & 0% Brokerage',
-      'Ready for immediate villa construction with 40ft tar road',
-      'Special ₹50,000 spot booking cashback voucher'
-    ],
-    ctaText: 'Claim Festive Offer on WhatsApp',
-    ctaType: 'whatsapp',
-    ctaValue: '+91 84899 96852',
-    startDate: '',
-    endDate: '',
-    delaySeconds: 3,
-    frequency: 'once_session',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'POP-1002',
-    title: '🔥 New Project Launch: Prime Corridor Plots',
-    subtitle: 'Exclusive gated township plots near Medical College Road & Bypass with luxury amenities.',
-    type: 'ad_offer',
-    badge: '⚡ NEW LAUNCH DEAL',
-    image: 'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80',
-    highlights: [
-      'Gated Community with 24/7 Security & Solar Lighting',
-      'Bank Loan approved up to 80% with low interest rates',
-      'Free Site Visit with Cab Pickup & Drop'
-    ],
-    ctaText: 'Book Free Site Visit',
-    ctaType: 'site_visit',
-    ctaValue: '',
-    startDate: '',
-    endDate: '',
-    delaySeconds: 3,
-    frequency: 'once_session',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  }
-];
+export const DEFAULT_POPUPS = [];
 
 let popupsCache = null;
 
 export async function initPopupsStore() {
   try {
     const data = await fetchFromAPI('/popups');
-    if (data && Array.isArray(data) && data.length > 0) {
+    if (data && Array.isArray(data)) {
       popupsCache = data.map(p => ({
         ...p,
         highlights: typeof p.highlights === 'string' ? JSON.parse(p.highlights || '[]') : (p.highlights || [])
@@ -63,19 +18,9 @@ export async function initPopupsStore() {
       localStorage.setItem(POPUPS_STORAGE_KEY, JSON.stringify(popupsCache));
       window.dispatchEvent(new CustomEvent('popupsUpdated'));
       return popupsCache;
-    } else if (data && Array.isArray(data) && data.length === 0) {
-      // Table exists in MySQL but is empty! Seed initial default popups to database!
-      for (const p of DEFAULT_POPUPS) {
-        try {
-          await fetchFromAPI('/popups', {
-            method: 'POST',
-            body: JSON.stringify(p)
-          });
-        } catch (e) {}
-      }
     }
   } catch (error) {
-    console.warn('API error fetching popups, fallback to local storage', error);
+    console.warn('API error fetching popups, fallback to local cache', error);
   }
 
   const local = localStorage.getItem(POPUPS_STORAGE_KEY);
@@ -86,13 +31,13 @@ export async function initPopupsStore() {
     } catch (e) {}
   }
 
-  popupsCache = [...DEFAULT_POPUPS];
+  popupsCache = [];
   localStorage.setItem(POPUPS_STORAGE_KEY, JSON.stringify(popupsCache));
   return popupsCache;
 }
 
 export function getPopups() {
-  if (popupsCache && popupsCache.length > 0) return popupsCache;
+  if (Array.isArray(popupsCache)) return popupsCache;
   const local = localStorage.getItem(POPUPS_STORAGE_KEY);
   if (local) {
     try {
@@ -100,8 +45,7 @@ export function getPopups() {
       return popupsCache;
     } catch (e) {}
   }
-  popupsCache = [...DEFAULT_POPUPS];
-  localStorage.setItem(POPUPS_STORAGE_KEY, JSON.stringify(popupsCache));
+  popupsCache = [];
   return popupsCache;
 }
 
