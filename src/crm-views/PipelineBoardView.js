@@ -115,13 +115,11 @@ export function initPipelineBoardView() {
     }
 
     let rawSource = (lead.source || 'MANUAL').toUpperCase();
-    let sourceText = rawSource;
-    if (propId) {
+    let sourceText = 'CONTACT ENQUIRY';
+    if (propId || (lead.type && lead.type !== 'General Enquiry' && lead.type !== 'Any' && lead.type !== '—') || rawSource.includes('PROPERTY') || rawSource.includes('VISIT') || rawSource.includes('BRIEF')) {
       sourceText = 'PROPERTY INQUIRY';
     } else if (rawSource.includes('CONTACT') || rawSource === 'WEBSITE FORM') {
       sourceText = 'CONTACT ENQUIRY';
-    } else if (rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
-      sourceText = 'PROPERTY INQUIRY';
     }
 
     let propBadgeHtml = '';

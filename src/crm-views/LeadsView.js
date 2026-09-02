@@ -519,15 +519,14 @@ function renderTable() {
     else if (statusTxt.includes('NEGOTIATION')) statusColor = 'badge-orange';
     else if (statusTxt.includes('CONVERTED')) statusColor = 'badge-cyan';
     
-    let rawSource = (lead.source || 'MANUAL').toUpperCase();
-    let sourceTxt = rawSource;
-    if (rawSource.includes('CONTACT') || rawSource === 'WEBSITE FORM') {
-      sourceTxt = 'CONTACT ENQUIRY';
-    } else if (rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
-      sourceTxt = 'PROPERTY INQUIRY';
-    }
-
     const propId = lead.propertyId || lead.propertyMatch;
+    let rawSource = (lead.source || 'MANUAL').toUpperCase();
+    let sourceTxt = 'CONTACT ENQUIRY';
+    if (propId || (lead.type && lead.type !== 'General Enquiry' && lead.type !== 'Any' && lead.type !== '—') || rawSource.includes('PROPERTY') || rawSource.includes('VISIT') || rawSource.includes('BRIEF')) {
+      sourceTxt = 'PROPERTY INQUIRY';
+    } else if (rawSource.includes('CONTACT') || rawSource === 'WEBSITE FORM') {
+      sourceTxt = 'CONTACT ENQUIRY';
+    }
     let propBadgeHtml = '';
     if (propId) {
       propBadgeHtml = `
