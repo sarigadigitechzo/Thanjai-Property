@@ -1,3 +1,5 @@
+import { getPropertyById } from '../utils/propertiesStore.js';
+
 export function renderPipelineBoardView() {
   return `
     <div class="view-enter" style="height: 100%; display: flex; flex-direction: column;">
@@ -44,11 +46,34 @@ function saveLeads(leads) {
   localStorage.setItem('thanjai_leads', JSON.stringify(leads));
 }
 
-function formatCurrency(val) {
+function formatCurrency(val, propId = null) {
+  if (propId) {
+    const prop = getPropertyById(propId);
+    if (prop) {
+      if (prop.priceFormatted) return prop.priceFormatted;
+      if (prop.price) val = prop.price;
+    }
+  }
+
   if (!val) return '—';
-  let num = parseInt(val.replace(/[^0-9]/g, ''));
-  if (isNaN(num)) return '—';
-  return '₹' + num.toLocaleString('en-IN');
+  const str = String(val).trim();
+  if (str.includes('Lakh') || str.includes('Crore') || str.includes('Cr') || str.includes('L')) {
+    return str.startsWith('₹') ? str : `₹ ${str}`;
+  }
+
+  let num = parseFloat(str.replace(/[^0-9.]/g, ''));
+  if (isNaN(num) || num <= 0) return typeof val === 'string' && val.trim() ? val : '—';
+
+  if (num > 0 && num < 100) {
+    return '₹ ' + num.toFixed(2).replace(/\.00$/, '') + ' Lakhs';
+  }
+  if (num >= 10000000) {
+    return '₹ ' + (num / 10000000).toFixed(2).replace(/\.00$/, '') + ' Crore';
+  }
+  if (num >= 100000) {
+    return '₹ ' + (num / 100000).toFixed(2).replace(/\.00$/, '') + ' Lakhs';
+  }
+  return '₹ ' + num.toLocaleString('en-IN');
 }
 
 export function initPipelineBoardView() {
@@ -96,16 +121,6 @@ export function initPipelineBoardView() {
   }
 
   function generateCardHTML(lead) {
-    let budgetStr = '—';
-    if (lead.budgetMax) {
-      budgetStr = formatCurrency(lead.budgetMax);
-    } else if (lead.budgetMin) {
-      budgetStr = `Min ${formatCurrency(lead.budgetMin)}`;
-    }
-
-    const priorityClass = (lead.priority || 'Medium').toLowerCase() === 'high' ? 'high' : '';
-    const priorityText = lead.priority ? lead.priority.toUpperCase() : 'MEDIUM';
-    
     let propId = lead.propertyId || lead.propertyMatch || '';
     if (!propId) {
       const rawTimelineStr = typeof lead.timeline === 'string' ? lead.timeline : JSON.stringify(lead.timeline || []);
@@ -113,6 +128,18 @@ export function initPipelineBoardView() {
       const match = rawTimelineStr.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/i) || rawNotesStr.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/i);
       if (match) propId = match[1].toUpperCase();
     }
+
+    let budgetStr = '—';
+    if (lead.budgetMax || lead.budget) {
+      budgetStr = formatCurrency(lead.budgetMax || lead.budget, propId);
+    } else if (lead.budgetMin) {
+      budgetStr = `Min ${formatCurrency(lead.budgetMin, propId)}`;
+    } else if (propId) {
+      budgetStr = formatCurrency(null, propId);
+    }
+
+    const priorityClass = (lead.priority || 'Medium').toLowerCase() === 'high' ? 'high' : '';
+    const priorityText = lead.priority ? lead.priority.toUpperCase() : 'MEDIUM';
 
     let rawSource = (lead.source || 'MANUAL').toUpperCase();
     let sourceText = 'CONTACT ENQUIRY';

@@ -417,6 +417,9 @@ function formatCurrency(val) {
   }
   let num = parseFloat(String(val).replace(/[^0-9.]/g, ''));
   if (isNaN(num) || num <= 0) return typeof val === 'string' && val.trim() ? val : '—';
+  if (num > 0 && num < 100) {
+    return '₹ ' + num.toFixed(2).replace(/\.00$/, '') + ' Lakhs';
+  }
   if (num >= 10000000) {
     return '₹ ' + (num / 10000000).toFixed(2).replace(/\.00$/, '') + ' Crore';
   }
