@@ -1,4 +1,5 @@
 import { getActiveFrontEndPopups } from '../utils/popupsStore.js';
+import { fetchFromAPI } from '../utils/api.js';
 
 let activeQueue = [];
 let currentQueueIndex = 0;
@@ -255,6 +256,9 @@ function showPopupAtIndex(index) {
 }
 
 function handleCTAClick(p) {
+  // Automatically record this engagement into the CRM Pipeline
+  recordPopupLeadInCRM(p);
+
   if (p.ctaType === 'whatsapp') {
     const phone = (p.ctaValue || '+918489996852').replace(/[^0-9]/g, '');
     const text = encodeURIComponent(`Hello Thanjai Property, I am interested in your offer: "${p.title}". Please share complete project details and price.`);
@@ -277,6 +281,50 @@ function handleCTAClick(p) {
     } else {
       window.open(url, '_blank');
     }
+  }
+}
+
+async function recordPopupLeadInCRM(p) {
+  try {
+    const leadId = `L-POP-${Date.now()}`;
+    const newLead = {
+      id: leadId,
+      name: `Website Visitor (${p.badge || 'Offer'})`,
+      phone: p.ctaType === 'whatsapp' ? 'WhatsApp Lead' : (p.ctaType === 'call' ? 'Phone Inquiry' : 'Website Lead'),
+      mobile: '',
+      email: '',
+      type: p.type || 'Promotional Offer',
+      location: 'Thanjavur',
+      budget: 'Campaign Inquiry',
+      stage: 'New',
+      source: `Website Popup (${p.title})`,
+      date: new Date().toISOString().split('T')[0],
+      assignedTo: 'Unassigned',
+      priority: 'High',
+      notes: `Engaged with popup: "${p.title}" | CTA Action: ${p.ctaText}`,
+      timeline: [
+        {
+          type: 'popup_click',
+          date: new Date().toISOString(),
+          message: `🎯 User clicked CTA "${p.ctaText}" on popup offer "${p.title}"`,
+          note: `Campaign Type: ${p.type}`
+        }
+      ]
+    };
+
+    // Save to local storage
+    const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+    localLeads.unshift(newLead);
+    localStorage.setItem('thanjai_leads', JSON.stringify(localLeads));
+    window.dispatchEvent(new Event('storage'));
+
+    // Sync to MySQL API
+    await fetchFromAPI('/leads', {
+      method: 'POST',
+      body: JSON.stringify(newLead)
+    });
+  } catch (e) {
+    console.warn('Could not record popup lead in CRM:', e);
   }
 }
 
