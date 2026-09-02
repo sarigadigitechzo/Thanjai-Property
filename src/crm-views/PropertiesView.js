@@ -6,6 +6,7 @@ let activeSearch = '';
 let activeTypeFilter = 'all';
 let activeCategoryFilter = 'all';
 let activeStatusFilter = 'all';
+let activeAdTypeFilter = 'all';
 let activeMaxPriceFilter = 'all';
 
 let currentViewMode = 'list'; // 'list' or 'form'
@@ -1179,15 +1180,31 @@ function filterPropertiesList(list) {
 
     // 3. Category Filter
     if (activeCategoryFilter && activeCategoryFilter !== 'all') {
-      const pCatRaw = (prop.categoryRaw || prop.category || '').toLowerCase();
+      const pCatRaw = (prop.categoryRaw || '').toLowerCase();
+      const pCat = (prop.category || '').toLowerCase();
+      const pType = (prop.type || '').toLowerCase();
       const pPurpose = (prop.purpose || '').toLowerCase();
       const targetCat = activeCategoryFilter.toLowerCase();
 
-      if (targetCat === 'sale' && pCatRaw !== 'sale' && pPurpose !== 'buy') return false;
-      if (targetCat === 'rent' && pCatRaw !== 'rent' && pPurpose !== 'rent') return false;
-      if (targetCat === 'lease' && pCatRaw !== 'lease') return false;
-      if (targetCat === 'commercial' && pCatRaw !== 'commercial') return false;
-      if (targetCat === 'residential' && pCatRaw !== 'residential') return false;
+      if (targetCat === 'villas' || targetCat === 'villa') {
+        if (!pCat.includes('villa') && !pType.includes('villa')) return false;
+      } else if (targetCat === 'houses' || targetCat === 'house') {
+        if (!pCat.includes('house') && !pType.includes('house') && !pType.includes('townhouse')) return false;
+      } else if (targetCat === 'apartments' || targetCat === 'apartment') {
+        if (!pCat.includes('apartment') && !pType.includes('apartment') && !pType.includes('penthouse') && !pType.includes('studio')) return false;
+      } else if (targetCat === 'plots' || targetCat === 'plot') {
+        if (!pCat.includes('plot') && !pType.includes('plot') && !pType.includes('land')) return false;
+      } else if (targetCat === 'agricultural') {
+        if (!pCat.includes('agricultural') && !pType.includes('farm') && !pType.includes('land')) return false;
+      } else if (targetCat === 'commercial') {
+        if (!pCat.includes('commercial') && !pCatRaw.includes('commercial') && !pType.includes('office') && !pType.includes('retail') && !pType.includes('warehouse')) return false;
+      } else if (targetCat === 'sale') {
+        if (pCatRaw !== 'sale' && pPurpose !== 'buy') return false;
+      } else if (targetCat === 'rent') {
+        if (pCatRaw !== 'rent' && pPurpose !== 'rent') return false;
+      } else if (targetCat === 'lease') {
+        if (pCatRaw !== 'lease') return false;
+      }
     }
 
     // 4. Status Filter
@@ -1196,7 +1213,14 @@ function filterPropertiesList(list) {
       if (currentStatus !== activeStatusFilter.toLowerCase()) return false;
     }
 
-    // 5. Max Price Filter
+    // 5. Ad Type Filter
+    if (activeAdTypeFilter && activeAdTypeFilter !== 'all') {
+      const isPaid = (prop.adType === 'paid');
+      if (activeAdTypeFilter === 'paid' && !isPaid) return false;
+      if (activeAdTypeFilter === 'free' && isPaid) return false;
+    }
+
+    // 6. Max Price Filter
     if (activeMaxPriceFilter && activeMaxPriceFilter !== 'all') {
       const maxP = parseFloat(activeMaxPriceFilter);
       const propP = prop.price || 0;
