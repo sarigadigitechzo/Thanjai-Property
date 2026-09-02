@@ -1,5 +1,5 @@
 import { getProperties, getPublicProperties, formatPropertySize, formatLocationDisplay } from '../utils/propertiesStore.js';
-import { openPropertyModalById } from '../components/PropertyDetailModal.js';
+import { openPropertyModalById, openPropertyInquiryFormModal } from '../components/PropertyDetailModal.js';
 
 function formatSizeDisplay(size) {
   return formatPropertySize(size);
@@ -817,7 +817,7 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
   if (enquireBtn && selectedProp) {
     enquireBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      openPropertyModalById(selectedProp.id);
+      openPropertyInquiryFormModal(selectedProp);
     });
   }
 
