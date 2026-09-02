@@ -106,15 +106,24 @@ export function initPipelineBoardView() {
     const priorityClass = (lead.priority || 'Medium').toLowerCase() === 'high' ? 'high' : '';
     const priorityText = lead.priority ? lead.priority.toUpperCase() : 'MEDIUM';
     
+    let propId = lead.propertyId || lead.propertyMatch || '';
+    if (!propId) {
+      const rawTimelineStr = typeof lead.timeline === 'string' ? lead.timeline : JSON.stringify(lead.timeline || []);
+      const rawNotesStr = typeof lead.notes === 'string' ? lead.notes : JSON.stringify(lead.notes || []);
+      const match = rawTimelineStr.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/i) || rawNotesStr.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/i);
+      if (match) propId = match[1].toUpperCase();
+    }
+
     let rawSource = (lead.source || 'MANUAL').toUpperCase();
     let sourceText = rawSource;
-    if (rawSource.includes('CONTACT') || rawSource === 'WEBSITE FORM') {
+    if (propId) {
+      sourceText = 'PROPERTY INQUIRY';
+    } else if (rawSource.includes('CONTACT') || rawSource === 'WEBSITE FORM') {
       sourceText = 'CONTACT ENQUIRY';
     } else if (rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
       sourceText = 'PROPERTY INQUIRY';
     }
 
-    const propId = lead.propertyId || lead.propertyMatch;
     let propBadgeHtml = '';
     if (propId) {
       propBadgeHtml = `

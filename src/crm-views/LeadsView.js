@@ -321,11 +321,24 @@ function mapLeadFromAPI(l) {
   let loc = l.location || l.city || 'Thanjavur';
   const locParts = loc.split(',').map(s => s.trim());
 
+  let extractedPropId = l.propertyId || l.propertyMatch || '';
+  if (!extractedPropId) {
+    const rawTimelineStr = typeof l.timeline === 'string' ? l.timeline : JSON.stringify(l.timeline || []);
+    const rawNotesStr = typeof l.notes === 'string' ? l.notes : JSON.stringify(l.notes || []);
+    const match = rawTimelineStr.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/i) || rawNotesStr.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/i);
+    if (match) extractedPropId = match[1].toUpperCase();
+  }
+
+  let detectedSource = l.source || 'Contact Enquiry';
+  if (extractedPropId) {
+    detectedSource = 'Property Inquiry';
+  }
+
   return {
     id: l.id,
     name: l.name || 'Unnamed Lead',
-    mobile: mobile,
     phone: mobile,
+    mobile: mobile,
     whatsapp: l.whatsapp || mobile,
     email: l.email || '',
     country: l.country || (locParts.length >= 3 ? locParts[locParts.length - 1] : 'India'),
@@ -340,11 +353,13 @@ function mapLeadFromAPI(l) {
     type: type,
     propertyType: type,
     requirement: type,
-    source: l.source || 'MANUAL',
+    source: detectedSource,
     assignTo: l.assignedTo || l.assignTo || 'Unassigned',
     assignedTo: l.assignedTo || l.assignTo || 'Unassigned',
     status: l.status || 'New Lead',
     followup: l.followup || '—',
+    propertyId: extractedPropId,
+    propertyMatch: extractedPropId,
     createdAt: (() => {
       const rawD = l.createdAt || l.created_at || l.created || l.date || l.timestamp;
       if (!rawD) return Date.now();
