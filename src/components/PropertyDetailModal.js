@@ -54,10 +54,10 @@ export function renderPropertyDetailModal(property) {
   allVideos = allVideos.map(v => typeof v === 'string' ? v.trim() : '').filter(Boolean);
 
   return `
-    <div class="modal-overlay active" id="property-details-modal-overlay">
-      <div class="property-modal-card">
+    <div class="modal-overlay active" id="property-details-modal-overlay" style="position: fixed; inset: 0; z-index: 9999999; background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 1; visibility: visible; transition: all 0.3s ease;">
+      <div class="property-modal-card" style="background: #ffffff; width: 100%; max-width: 1140px; max-height: 92vh; border-radius: 20px; overflow-y: auto; position: relative; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); font-family: 'Manrope', 'Plus Jakarta Sans', sans-serif;">
         <!-- Close Button -->
-        <button class="modal-close-btn" id="close-prop-modal-btn" title="Close Modal">
+        <button class="modal-close-btn" id="close-prop-modal-btn" title="Close Modal" style="position: absolute; top: 16px; right: 16px; z-index: 100; background: #ffffff; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #1a202c; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
           <i class="ri-close-line"></i>
         </button>
 
