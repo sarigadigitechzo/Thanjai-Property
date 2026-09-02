@@ -36,7 +36,7 @@ document.addEventListener('click', (e) => {
       openPropertyModalById(propId);
     }
   }
-});
+}, true);
 
 import { initPropertiesStore } from './utils/propertiesStore.js';
 import { initBlogStore } from './utils/blogStore.js';
