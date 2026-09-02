@@ -214,10 +214,10 @@ export function renderPropertiesView() {
 }
 
 function computePropertyInquiriesCount(prop, allLeads = []) {
-  if (!prop) return 0;
-  const propIdStr = String(prop.id || '').trim().toLowerCase();
+  if (!prop || !prop.id) return 0;
+  const propIdStr = String(prop.id).trim().toLowerCase();
   const propDigits = propIdStr.replace(/\D/g, '');
-  const propTitle = String(prop.title || '').trim().toLowerCase();
+  if (!propIdStr) return 0;
 
   let matchedCount = 0;
   allLeads.forEach(l => {
@@ -229,15 +229,16 @@ function computePropertyInquiriesCount(prop, allLeads = []) {
 
     let isMatch = false;
 
+    // 1. Direct Property ID match
     if (lPropId) {
       if (lPropId === propIdStr || (propDigits.length >= 3 && lPropDigits && propDigits === lPropDigits)) {
         isMatch = true;
       }
     }
 
-    if (!isMatch) {
-      if ((propIdStr.length >= 3 && (lTimeline.includes(propIdStr) || lNotes.includes(propIdStr))) ||
-          (propTitle.length >= 5 && (lTimeline.includes(propTitle) || lNotes.includes(propTitle)))) {
+    // 2. Strict ID match in timeline/notes by ID string (e.g. "id: tp-2005" or "(tp-2005)")
+    if (!isMatch && propIdStr.length >= 3) {
+      if (lTimeline.includes(`id: ${propIdStr}`) || lTimeline.includes(`(${propIdStr})`) || lNotes.includes(`id: ${propIdStr}`) || lNotes.includes(`(${propIdStr})`)) {
         isMatch = true;
       }
     }
