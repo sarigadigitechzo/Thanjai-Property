@@ -202,8 +202,20 @@ export function rejectSubmission(id, reason = 'Did not meet Patta title guidelin
 }
 
 export function getPropertyById(id) {
+  if (!id) return null;
+  const cleanId = String(id).trim().toLowerCase();
+  const rawDigits = cleanId.replace(/\D/g, '');
   const props = getProperties();
-  return props.find(p => String(p.id).trim().toLowerCase() === String(id).trim().toLowerCase()) || null;
+  return props.find(p => {
+    if (!p) return false;
+    const pId = String(p.id || '').trim().toLowerCase();
+    const pDigits = pId.replace(/\D/g, '');
+    const pTitle = String(p.title || '').trim().toLowerCase();
+    if (pId === cleanId) return true;
+    if (rawDigits.length >= 3 && pDigits && rawDigits === pDigits) return true;
+    if (cleanId.length >= 3 && pTitle.includes(cleanId)) return true;
+    return false;
+  }) || null;
 }
 
 export function incrementPropertyInquiryCount(id) {

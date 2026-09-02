@@ -21,8 +21,22 @@ import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsers
 import { renderPopupsView, initPopupsView } from './crm-views/PopupsView.js';
 import { renderHowToUseView, initHowToUseListeners } from './crm-views/HowToUseView.js';
 import { showToast, installGlobalPopupShield } from './utils/toast.js';
+import { openPropertyModalById } from './components/PropertyDetailModal.js';
 
 installGlobalPopupShield();
+
+// Global click listener for Property ID badges across Admin OS Dashboard
+document.addEventListener('click', (e) => {
+  const badge = e.target.closest('.prop-id-badge');
+  if (badge) {
+    e.stopPropagation();
+    e.preventDefault();
+    const propId = badge.getAttribute('data-propid');
+    if (propId) {
+      openPropertyModalById(propId);
+    }
+  }
+});
 
 import { initPropertiesStore } from './utils/propertiesStore.js';
 import { initBlogStore } from './utils/blogStore.js';
