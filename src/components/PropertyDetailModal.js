@@ -61,107 +61,107 @@ export function renderPropertyDetailModal(property) {
           <i class="ri-close-line"></i>
         </button>
 
-        <!-- Cinematic Gallery -->
-        <div class="modal-gallery-container">
-          <div class="gallery-main-img-wrap" id="modal-gallery-media-viewport" style="position: relative;">
-            <img src="${images[0]}" alt="${property.title}" class="gallery-main-img" id="modal-main-gallery-img" />
-            <div style="position: absolute; bottom: 16px; left: 16px; display: flex; gap: 8px;">
-              <span class="badge badge-dark">
+        <!-- Cinematic Gallery (Compact 256px height) -->
+        <div class="modal-gallery-container" style="display: grid; grid-template-columns: 1fr 140px; gap: 12px; padding: 24px 24px 0 24px; max-height: 280px; box-sizing: border-box;">
+          <div class="gallery-main-img-wrap" id="modal-gallery-media-viewport" style="position: relative; height: 256px; border-radius: 12px; overflow: hidden; background: #000;">
+            <img src="${images[0]}" alt="${property.title}" class="gallery-main-img" id="modal-main-gallery-img" style="width: 100%; height: 100%; object-fit: cover; display: block;" />
+            <div style="position: absolute; bottom: 12px; left: 12px; display: flex; gap: 6px; z-index: 5;">
+              <span style="background: rgba(0,0,0,0.75); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">
                 <i class="ri-image-line"></i> ${images.length} High-Res Photos
               </span>
-              <span class="badge badge-orange">${property.tag || property.categoryLabel}</span>
+              <span style="background: #ea580c; color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">${property.tag || property.categoryLabel || 'Property'}</span>
             </div>
 
-            <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px;">
-              <button class="card-favorite-btn ${saved ? 'saved' : ''}" id="modal-save-fav-btn" title="Bookmark Property">
+            <div style="position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; z-index: 5;">
+              <button class="card-favorite-btn ${saved ? 'saved' : ''}" id="modal-save-fav-btn" title="Bookmark Property" style="width: 32px; height: 32px; border-radius: 50%; background: #ffffff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #eb5e28; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
                 <i class="${saved ? 'ri-heart-fill' : 'ri-heart-line'}"></i>
               </button>
-              <button class="card-favorite-btn" id="modal-share-btn" title="Share Property">
+              <button class="card-favorite-btn" id="modal-share-btn" title="Share Property" style="width: 32px; height: 32px; border-radius: 50%; background: #ffffff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #1a202c; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
                 <i class="ri-share-line"></i>
               </button>
             </div>
           </div>
 
-          <div class="gallery-thumbs-col">
+          <div class="gallery-thumbs-col" style="display: flex; flex-direction: column; gap: 8px; max-height: 256px; overflow-y: auto;">
             ${images.slice(0, 4).map((img, i) => `
-              <img src="${img}" alt="Thumbnail ${i+1}" class="gallery-thumb-img modal-thumb" data-type="image" data-src="${img}" />
+              <img src="${img}" alt="Thumbnail ${i+1}" class="gallery-thumb-img modal-thumb" data-type="image" data-src="${img}" style="width: 100%; height: 58px; object-fit: cover; border-radius: 8px; cursor: pointer; display: block;" />
             `).join('')}
             ${allVideos.map((vUrl, vIdx) => `
-              <div class="gallery-thumb-img modal-thumb" data-type="video" data-src="${vUrl}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: #1a202c; color: #fff; cursor: pointer; border-radius: 8px;">
-                <i class="ri-play-circle-fill" style="color: #eb5e28; font-size: 1.4rem;"></i>
-                <span style="font-size: 0.6rem; font-weight: 800;">VIDEO ${allVideos.length > 1 ? (vIdx + 1) : ''}</span>
+              <div class="gallery-thumb-img modal-thumb" data-type="video" data-src="${vUrl}" style="width: 100%; height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #1a202c; color: #fff; cursor: pointer; border-radius: 8px;">
+                <i class="ri-play-circle-fill" style="color: #eb5e28; font-size: 1.2rem;"></i>
+                <span style="font-size: 0.58rem; font-weight: 800;">VIDEO ${allVideos.length > 1 ? (vIdx + 1) : ''}</span>
               </div>
             `).join('')}
           </div>
         </div>
 
         <!-- Modal Content Layout -->
-        <div style="padding: 30px;">
+        <div style="padding: 24px 28px 28px 28px;">
           <!-- Title & Price Header -->
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
             <div>
-              <div style="font-size: 0.8125rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-orange, #eb5e28); margin-bottom: 4px;">
+              <div style="font-size: 0.8125rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #ea580c; margin-bottom: 4px;">
                 PROPERTY ID: ${property.id} • ${property.categoryLabel || property.type || 'Property'}
               </div>
-              <h2 class="font-serif" style="font-size: 2.25rem; color: var(--color-brown, #2A1808); line-height: 1.2; margin: 0;">
+              <h2 class="font-serif" style="font-size: 1.85rem; color: #1e293b; line-height: 1.25; margin: 0; font-weight: 800;">
                 ${property.title}
               </h2>
-              <div style="display: flex; align-items: center; gap: 8px; font-size: 0.95rem; color: #718096; margin-top: 8px;">
-                <a href="${property.latitude && property.longitude ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.latitude)},${encodeURIComponent(property.longitude)}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([property.location, property.district, 'Tamil Nadu'].filter(Boolean).join(', '))}`}" target="_blank" rel="noopener noreferrer" style="color: #718096; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: color 0.2s ease;" onmouseover="this.style.color='#eb5e28'" onmouseout="this.style.color='#718096'" title="Open Location on Google Maps">
-                  <i class="ri-map-pin-2-line" style="color: #eb5e28;"></i>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 0.925rem; color: #64748b; margin-top: 6px;">
+                <a href="${property.latitude && property.longitude ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.latitude)},${encodeURIComponent(property.longitude)}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([property.location, property.district, 'Tamil Nadu'].filter(Boolean).join(', '))}`}" target="_blank" rel="noopener noreferrer" style="color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: color 0.2s ease;" onmouseover="this.style.color='#ea580c'" onmouseout="this.style.color='#64748b'" title="Open Location on Google Maps">
+                  <i class="ri-map-pin-2-line" style="color: #ea580c;"></i>
                   <span>${formatLocationDisplay(property.location, property.district)}</span>
-                  <i class="ri-external-link-line" style="font-size: 0.85rem; color: #a0aec0;"></i>
+                  <i class="ri-external-link-line" style="font-size: 0.825rem; color: #94a3b8;"></i>
                 </a>
               </div>
             </div>
 
             <div style="text-align: right;">
-              <div class="font-serif" style="font-size: 2.5rem; color: var(--color-orange, #eb5e28); font-weight: 800;">
+              <div class="font-serif" style="font-size: 2.2rem; color: #ea580c; font-weight: 800;">
                 ${property.priceFormatted || `₹ ${property.price}`}
               </div>
-              ${property.priceSqft ? `<div style="font-size: 0.85rem; color: #718096; font-weight: 600;">${property.priceSqft}</div>` : ''}
+              ${property.priceSqft ? `<div style="font-size: 0.825rem; color: #64748b; font-weight: 600;">${property.priceSqft}</div>` : ''}
             </div>
           </div>
 
           <!-- Editorial Property Facts Grid -->
-          <div class="facts-editorial-grid" style="margin-bottom: 30px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px;">
             ${formattedSize ? `
-              <div class="fact-block">
-                <div class="fact-value">${formattedSize}</div>
-                <div class="fact-label">TOTAL AREA</div>
+              <div style="background: #fff7ed; border: 1px solid #ffedd5; padding: 12px 14px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 1.1rem; font-weight: 800; color: #ea580c;">${formattedSize}</div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: #9a3412; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;">TOTAL AREA</div>
               </div>
             ` : ''}
             ${(property.facing || property.address) ? `
-              <div class="fact-block">
-                <div class="fact-value">${property.facing || property.address}</div>
-                <div class="fact-label">FACING / LOCATION</div>
+              <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 14px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 1.1rem; font-weight: 800; color: #1e293b;">${property.facing || property.address}</div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;">FACING / LOCATION</div>
               </div>
             ` : ''}
             ${property.approval ? `
-              <div class="fact-block">
-                <div class="fact-value">${property.approval}</div>
-                <div class="fact-label">APPROVAL</div>
+              <div style="background: #f0fdf4; border: 1px solid #dcfce7; padding: 12px 14px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 1.1rem; font-weight: 800; color: #166534;">${property.approval}</div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: #15803d; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;">APPROVAL</div>
               </div>
             ` : ''}
             ${property.bedrooms ? `
-              <div class="fact-block">
-                <div class="fact-value">${property.bedrooms} BHK</div>
-                <div class="fact-label">BEDROOMS</div>
+              <div style="background: #eff6ff; border: 1px solid #dbeafe; padding: 12px 14px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 1.1rem; font-weight: 800; color: #1e40af;">${property.bedrooms} BHK</div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: #1d4ed8; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;">BEDROOMS</div>
               </div>
             ` : ''}
             ${property.bathrooms ? `
-              <div class="fact-block">
-                <div class="fact-value">${property.bathrooms}</div>
-                <div class="fact-label">BATHROOMS</div>
+              <div style="background: #faf5ff; border: 1px solid #f3e8ff; padding: 12px 14px; border-radius: 12px; text-align: center;">
+                <div style="font-size: 1.1rem; font-weight: 800; color: #6b21a8;">${property.bathrooms}</div>
+                <div style="font-size: 0.7rem; font-weight: 800; color: #7e22ce; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;">BATHROOMS</div>
               </div>
             ` : ''}
           </div>
 
           <!-- Description / Overview -->
           ${property.description ? `
-            <div style="margin-bottom: 32px;">
-              <h3 class="font-serif" style="font-size: 1.4rem; color: var(--color-brown, #2A1808); margin-bottom: 12px; border-bottom: 2px solid #fff7ed; padding-bottom: 8px;">Property Overview</h3>
-              <p style="color: #4a5568; font-size: 1rem; line-height: 1.7; white-space: pre-line; margin: 0;">
+            <div style="margin-bottom: 24px;">
+              <h3 class="font-serif" style="font-size: 1.3rem; color: #1e293b; margin-bottom: 10px; border-bottom: 2px solid #ffedd5; padding-bottom: 6px; font-weight: 800;">Property Overview</h3>
+              <p style="color: #475569; font-size: 0.95rem; line-height: 1.65; white-space: pre-line; margin: 0;">
                 ${property.description}
               </p>
             </div>
@@ -169,13 +169,13 @@ export function renderPropertyDetailModal(property) {
 
           <!-- Key Technical Specifications Grid -->
           ${specsList.length > 0 ? `
-            <div style="margin-bottom: 24px;">
-              <h3 class="font-serif" style="font-size: 1.4rem; color: var(--color-brown, #2A1808); margin-bottom: 16px; border-bottom: 2px solid #fff7ed; padding-bottom: 8px;">Key Technical Specifications</h3>
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; background: #faf8f5; padding: 24px; border-radius: 16px; border: 1px solid #e7e0d8;">
+            <div style="margin-bottom: 12px;">
+              <h3 class="font-serif" style="font-size: 1.3rem; color: #1e293b; margin-bottom: 14px; border-bottom: 2px solid #ffedd5; padding-bottom: 6px; font-weight: 800;">Key Technical Specifications</h3>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; background: #f8fafc; padding: 20px; border-radius: 14px; border: 1px solid #e2e8f0;">
                 ${specsList.map(s => `
                   <div style="display: flex; flex-direction: column;">
-                    <span style="font-size: 0.75rem; font-weight: 800; color: #718096; text-transform: uppercase; letter-spacing: 0.05em;">${s.label}</span>
-                    <span style="font-size: 1rem; font-weight: 700; color: #2d3748; margin-top: 2px;">${s.value}</span>
+                    <span style="font-size: 0.725rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">${s.label}</span>
+                    <span style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-top: 2px;">${s.value}</span>
                   </div>
                 `).join('')}
               </div>
