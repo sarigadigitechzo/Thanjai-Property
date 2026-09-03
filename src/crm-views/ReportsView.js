@@ -77,36 +77,17 @@ export function renderReportsView(fromDateStr, toDateStr) {
 
   const formattedPipeline = '₹' + pipelineValue.toLocaleString('en-IN');
 
-  const chartData = [
-    { label: 'Jan', total: 60, converted: 22 },
-    { label: 'Feb', total: 75, converted: 28 },
-    { label: 'Mar', total: 85, converted: 35 },
-    { label: 'Apr', total: 70, converted: 25 },
-    { label: 'May', total: 90, converted: 40 },
-    { label: 'Jun', total: 110, converted: 45 },
-    { label: 'Jul', total: 95, converted: 38 },
-    { label: 'Aug', total: 125, converted: 55 },
-    { label: 'Sep', total: 40, converted: 12 },
-    { label: 'Oct', total: 45, converted: 15 },
-    { label: 'Nov', total: 55, converted: 18 },
-    { label: 'Dec', total: 42, converted: 10 },
-  ];
-  const maxTotal = 150;
-  const chartHTML = chartData.map((data, index) => {
-    const totalHeight = (data.total / maxTotal) * 100;
-    const convertedHeight = (data.converted / maxTotal) * 100;
-    const delay = index * 0.05;
-    return `
-      <div class="os-bar-group">
-        <div class="os-bar-tooltip">${data.total} Leads, ${data.converted} Converted</div>
-        <div class="os-bars">
-          <div class="os-bar total" style="height: ${totalHeight}%; animation-delay: ${delay}s;"></div>
-          <div class="os-bar converted" style="height: ${convertedHeight}%; animation-delay: ${delay}s;"></div>
-        </div>
-        <span class="os-bar-label">${data.label}</span>
+  const allMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const chartHTML = allMonths.map(m => `
+    <div class="os-bar-group">
+      <div class="os-bar-tooltip">0 Leads, 0 Converted</div>
+      <div class="os-bars">
+        <div class="os-bar total" style="height: 5%;"></div>
+        <div class="os-bar converted" style="height: 2%;"></div>
       </div>
-    `;
-  }).join('');
+      <span class="os-bar-label">${m}</span>
+    </div>
+  `).join('');
 
   const partnerHTML = loadingPartnerRowHTML;
 
@@ -327,6 +308,9 @@ export function initReportsView() {
   if (fromInput) fromInput.addEventListener('change', reloadReports);
   if (toInput) toInput.addEventListener('change', reloadReports);
 
+  const fromVal = fromInput ? fromInput.value : '';
+  const toVal = toInput ? toInput.value : '';
+
   // 1. Fetch Live MySQL Database Partners Network
   fetch('/api.php/partners')
     .then(res => res.json())
@@ -353,8 +337,12 @@ export function initReportsView() {
       }
     }).catch(e => {});
 
-  // 2. Fetch Live MySQL Database Reports API
-  fetch('/api.php/leads?reports=1')
+  // 2. Fetch Live MySQL Database Reports API with Date Filter parameters
+  let reportsUrl = '/api.php/leads?reports=1';
+  if (fromVal) reportsUrl += `&from=${encodeURIComponent(fromVal)}`;
+  if (toVal) reportsUrl += `&to=${encodeURIComponent(toVal)}`;
+
+  fetch(reportsUrl)
     .then(res => res.json())
     .then(rep => {
       if (!rep) return;
@@ -391,15 +379,12 @@ export function initReportsView() {
           }
         });
 
-        // Merge local counts into staffList
         Object.entries(localStaffCounts).forEach(([staffName, count]) => {
           const existing = staffList.find(s => s.staff.toLowerCase().includes(staffName.toLowerCase()) || staffName.toLowerCase().includes(s.staff.toLowerCase()));
           if (existing) {
             if (count > existing.total) {
               const diff = count - existing.total;
               existing.total = count;
-
-              // Reduce Unassigned by difference
               const unassignedObj = staffList.find(s => s.staff === 'Unassigned');
               if (unassignedObj && unassignedObj.total >= diff) {
                 unassignedObj.total -= diff;
@@ -415,7 +400,6 @@ export function initReportsView() {
         });
       } catch (err) {}
 
-      // Re-sort staffList by total DESC
       staffList.sort((a, b) => b.total - a.total);
 
       const staffTbody = document.getElementById('reports-staff-tbody');
@@ -452,8 +436,8 @@ export function initReportsView() {
             </div>
           `;
           const barsHtml = rep.monthly.map((m, idx) => {
-            const totalH = Math.max(5, Math.round((m.total / maxVal) * 100));
-            const convH = Math.max(2, Math.round((m.converted / maxVal) * 100));
+            const totalH = m.total > 0 ? Math.max(8, Math.round((m.total / maxVal) * 100)) : 5;
+            const convH = m.converted > 0 ? Math.max(5, Math.round((m.converted / maxVal) * 100)) : 2;
             return `
               <div class="os-bar-group">
                 <div class="os-bar-tooltip">${m.total.toLocaleString()} Leads, ${m.converted} Converted</div>
@@ -479,37 +463,42 @@ export function initReportsView() {
 
   if (downloadBtn) {
     downloadBtn.addEventListener('click', () => {
-      let allLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const fromVal = fromInput ? fromInput.value : '';
-      const toVal = toInput ? toInput.value : '';
-      const fromDate = fromVal ? new Date(fromVal) : new Date('2026-01-01');
-      const toDateEnd = toVal ? new Date(toVal) : new Date();
-      toDateEnd.setHours(23, 59, 59, 999);
+      // Fetch 100% Live DB Leads and download CSV directly
+      fetch('/api.php/leads')
+        .then(res => res.json())
+        .then(allLeads => {
+          if (!Array.isArray(allLeads)) allLeads = [];
+          const fromDate = fromVal ? new Date(fromVal + 'T00:00:00') : new Date('2026-01-01');
+          const toDateEnd = toVal ? new Date(toVal + 'T23:59:59') : new Date();
 
-      const filtered = allLeads.filter(l => {
-         const leadTime = l.createdAt ? new Date(l.createdAt) : new Date('2026-01-01T00:00:00');
-         return leadTime >= fromDate && leadTime <= toDateEnd;
-      });
+          const filtered = allLeads.filter(l => {
+             const leadTime = l.createdAt ? new Date(l.createdAt) : new Date('2026-01-01T00:00:00');
+             return leadTime >= fromDate && leadTime <= toDateEnd;
+          });
 
-      let csvContent = "data:text/csv;charset=utf-8,";
-      csvContent += "ID,Date,Name,Mobile,Type,Budget,Source,Status,Assigned To\n";
+          let csvContent = "data:text/csv;charset=utf-8,";
+          csvContent += "ID,Date,Name,Mobile,Type,Budget,Source,Status,Assigned To\n";
 
-      filtered.forEach(l => {
-        const dateStr = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-IN') : '01/01/2026';
-        const name = `"${l.name || ''}"`;
-        const mobile = `"${l.mobile || ''}"`;
-        const budget = `"${l.budgetMax || l.budgetMin || ''}"`;
-        
-        csvContent += `${l.id},${dateStr},${name},${mobile},${l.type || ''},${budget},${l.source || ''},${l.status || ''},${l.assignTo || ''}\n`;
-      });
+          filtered.forEach(l => {
+            const dateStr = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-IN') : '01/01/2026';
+            const name = `"${l.name || ''}"`;
+            const mobile = `"${l.phone || l.mobile || ''}"`;
+            const budget = `"${l.budget || l.budgetMax || ''}"`;
+            const staff = `"${l.assignedTo || l.assignTo || 'Unassigned'}"`;
+            
+            csvContent += `${l.id},${dateStr},${name},${mobile},${l.requirement || l.type || ''},${budget},${l.source || ''},${l.status || ''},${staff}\n`;
+          });
 
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Thanjai_CRM_Report_${fromVal}_to_${toVal}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+          const encodedUri = encodeURI(csvContent);
+          const link = document.createElement("a");
+          link.setAttribute("href", encodedUri);
+          link.setAttribute("download", `Thanjai_CRM_Report_${fromVal || 'All'}_to_${toVal || 'Today'}.csv`);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }).catch(err => {
+          alert('Downloading CSV...');
+        });
     });
   }
 }

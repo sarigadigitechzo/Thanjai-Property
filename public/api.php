@@ -545,13 +545,24 @@ elseif ($resource === 'leads') {
         }
 
         if (isset($_GET['reports'])) {
+            $fromParam = isset($_GET['from']) ? trim($_GET['from']) : '';
+            $toParam = isset($_GET['to']) ? trim($_GET['to']) : '';
+            
+            $whereClause = "WHERE 1=1";
+            if ($fromParam) {
+                $whereClause .= " AND (createdAt >= '$fromParam 00:00:00' OR createdAt LIKE '$fromParam%')";
+            }
+            if ($toParam) {
+                $whereClause .= " AND (createdAt <= '$toParam 23:59:59' OR createdAt LIKE '$toParam%')";
+            }
+
             // 1. Sources Breakdown
-            $resSrc = $conn->query("SELECT IF(source IS NULL OR source='', 'Manual', source) as src, COUNT(*) as cnt FROM leads GROUP BY src ORDER BY cnt DESC");
+            $resSrc = $conn->query("SELECT IF(source IS NULL OR source='', 'Manual', source) as src, COUNT(*) as cnt FROM leads $whereClause GROUP BY src ORDER BY cnt DESC");
             $sources = [];
             if ($resSrc) { while ($r = $resSrc->fetch_assoc()) { $sources[] = ["source" => $r['src'], "count" => intval($r['cnt'])]; } }
 
             // 2. Statuses Breakdown
-            $resSt = $conn->query("SELECT IF(status IS NULL OR status='', 'New', status) as st, COUNT(*) as cnt FROM leads GROUP BY st ORDER BY cnt DESC");
+            $resSt = $conn->query("SELECT IF(status IS NULL OR status='', 'New', status) as st, COUNT(*) as cnt FROM leads $whereClause GROUP BY st ORDER BY cnt DESC");
             $statuses = [];
             if ($resSt) { while ($r = $resSt->fetch_assoc()) { $statuses[] = ["status" => $r['st'], "count" => intval($r['cnt'])]; } }
 
@@ -571,6 +582,7 @@ elseif ($resource === 'leads') {
                   COUNT(*) as total, 
                   SUM(IF(status LIKE '%convert%' OR status LIKE '%register%' OR status LIKE '%negotiation%', 1, 0)) as converted 
                 FROM leads 
+                $whereClause
                 GROUP BY staff 
                 ORDER BY total DESC
             ");
@@ -596,7 +608,11 @@ elseif ($resource === 'leads') {
             usort($staffList, function($a, $b) { return $b['total'] - $a['total']; });
 
             // 4. Monthly Trend (Guaranteed 12-Month Array Jan to Dec)
-            $resMonthly = $conn->query("SELECT DATE_FORMAT(createdAt, '%b') as mName, MONTH(createdAt) as mNum, COUNT(*) as total, SUM(IF(status LIKE '%convert%' OR status LIKE '%register%' OR status LIKE '%negotiation%', 1, 0)) as converted FROM leads WHERE createdAt IS NOT NULL AND createdAt != '' GROUP BY mNum, mName ORDER BY mNum ASC");
+            $whereMonthly = "WHERE createdAt IS NOT NULL AND createdAt != ''";
+            if ($fromParam) $whereMonthly .= " AND (createdAt >= '$fromParam 00:00:00' OR createdAt LIKE '$fromParam%')";
+            if ($toParam) $whereMonthly .= " AND (createdAt <= '$toParam 23:59:59' OR createdAt LIKE '$toParam%')";
+
+            $resMonthly = $conn->query("SELECT DATE_FORMAT(createdAt, '%b') as mName, MONTH(createdAt) as mNum, COUNT(*) as total, SUM(IF(status LIKE '%convert%' OR status LIKE '%register%' OR status LIKE '%negotiation%', 1, 0)) as converted FROM leads $whereMonthly GROUP BY mNum, mName ORDER BY mNum ASC");
             $dbMonthly = [];
             if ($resMonthly) {
                 while ($r = $resMonthly->fetch_assoc()) {
@@ -614,10 +630,10 @@ elseif ($resource === 'leads') {
             }
 
             // 5. Buyer Metrics
-            $resRepeat = $conn->query("SELECT COUNT(*) as cnt FROM (SELECT phone FROM leads WHERE phone IS NOT NULL AND phone != '' GROUP BY phone HAVING COUNT(*) > 1) t");
+            $resRepeat = $conn->query("SELECT COUNT(*) as cnt FROM (SELECT phone FROM leads $whereClause AND phone IS NOT NULL AND phone != '' GROUP BY phone HAVING COUNT(*) > 1) t");
             $repeatInquirers = ($resRepeat && $r = $resRepeat->fetch_assoc()) ? intval($r['cnt']) : 0;
 
-            $resConvTotal = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%convert%' OR status LIKE '%register%' OR status LIKE '%negotiation%'");
+            $resConvTotal = $conn->query("SELECT COUNT(*) as cnt FROM leads $whereClause AND (status LIKE '%convert%' OR status LIKE '%register%' OR status LIKE '%negotiation%')");
             $convertedTotal = ($resConvTotal && $r = $resConvTotal->fetch_assoc()) ? intval($r['cnt']) : 0;
 
             echo json_encode([
