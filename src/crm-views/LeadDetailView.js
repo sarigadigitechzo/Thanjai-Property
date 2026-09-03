@@ -1978,7 +1978,11 @@ export function initLeadDetailView(id) {
                  date: new Date().toISOString()
                });
                saveAndSyncLeads(leads, id);
-               window.dispatchEvent(new HashChangeEvent('hashchange'));
+               const content = document.getElementById('os-content');
+               if (content) {
+                 content.innerHTML = renderLeadDetailView(id);
+                 initLeadDetailView(id);
+               }
              }
           } else if (select.classList.contains('ld-stage-selector')) {
              let rawStatus = option.textContent.trim();
@@ -1996,7 +2000,11 @@ export function initLeadDetailView(id) {
                  date: new Date().toISOString()
                });
                saveAndSyncLeads(leads, id);
-               window.dispatchEvent(new HashChangeEvent('hashchange'));
+               const content = document.getElementById('os-content');
+               if (content) {
+                 content.innerHTML = renderLeadDetailView(id);
+                 initLeadDetailView(id);
+               }
              }
           }
         }
