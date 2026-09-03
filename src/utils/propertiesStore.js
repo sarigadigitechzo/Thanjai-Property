@@ -132,13 +132,42 @@ export async function initPropertiesStore() {
   return propertiesCache;
 }
 
+function getPropertyPriority(p) {
+  if (!p) return 9999;
+  
+  const idStr = String(p.id || '').toUpperCase();
+  const titleLower = String(p.title || '').toLowerCase();
+  const priceNum = parseFloat(p.price || 0);
+
+  // Newly created properties by user (+ Add property) get priority 0 (Prepended at Position 1 in front of all)
+  if (p.isNewUserAdded || (idStr.startsWith('TP-') && !idStr.startsWith('TPC-') && !idStr.startsWith('PP'))) {
+    return 0;
+  }
+
+  // Designated Top 6 Properties sequence (Positions 1 through 6)
+  if (titleLower.includes('ashok nagar') || titleLower.includes('barath college')) return 1;
+  if (titleLower.includes('philomina nagar') || titleLower.includes('nanjikkottai road house')) return 2;
+  if (titleLower.includes('appu garden') || titleLower.includes('reddippalayam road appu')) return 3;
+  if (titleLower.includes('old house for sale in thanjavur') || (titleLower.includes('old house') && priceNum > 10000000)) return 4;
+  if (titleLower.includes('nirmala nagar')) return 5;
+  if ((titleLower.includes('ecr') || priceNum === 5500000 || (p.size && p.size.includes('3 Acre'))) && titleLower.includes('plot in thanjavur')) return 6;
+
+  return 100;
+}
+
 // Synchronous getter for UI components
 export function getProperties() {
   if (!propertiesCache || propertiesCache.length === 0) {
     propertiesCache = loadPropertiesFromStorage();
   }
-  // Ensure newest created properties are always listed FIRST (1st place)
   return [...propertiesCache].sort((a, b) => {
+    const prioA = getPropertyPriority(a);
+    const prioB = getPropertyPriority(b);
+
+    if (prioA !== prioB) {
+      return prioA - prioB;
+    }
+
     const timeA = a && a.createdAt ? new Date(a.createdAt).getTime() : 0;
     const timeB = b && b.createdAt ? new Date(b.createdAt).getTime() : 0;
     return timeB - timeA;
@@ -343,7 +372,8 @@ export function addProperty(data) {
     description: data.description || '',
     features: Array.isArray(data.features) ? data.features : [],
     listedBy: data.listedBy || 'Thanjai Property',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    isNewUserAdded: true
   };
 
   const newProp = normalizePropertyRecord(rawProp);
