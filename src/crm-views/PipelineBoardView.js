@@ -82,7 +82,30 @@ export function initPipelineBoardView() {
   const board = document.getElementById('pipeline-board');
   if (!board) return;
 
-  const leads = getLeads();
+  let leads = getLeads();
+
+  // Async load fresh leads from live PHP API backend while preserving local status updates
+  try {
+    fetchFromAPI('/leads').then(apiLeads => {
+      if (apiLeads && Array.isArray(apiLeads) && apiLeads.length > 0) {
+        const localLeads = getLeads();
+        apiLeads.forEach(apiL => {
+          const matchingLocal = localLeads.find(locL => 
+            (locL.id && String(locL.id) === String(apiL.id)) ||
+            (locL.phone && String(locL.phone).replace(/\D/g, '') === String(apiL.phone).replace(/\D/g, '')) ||
+            (locL.name && String(locL.name).trim().toLowerCase() === String(apiL.name).trim().toLowerCase())
+          );
+          if (matchingLocal && matchingLocal.status) {
+            apiL.status = matchingLocal.status;
+          }
+        });
+        saveLeads(apiLeads);
+        leads.length = 0;
+        leads.push(...apiLeads);
+        renderBoard();
+      }
+    }).catch(e => {});
+  } catch (err) {}
 
   // Normalize old statuses to new pipeline stages if needed
   leads.forEach(lead => {

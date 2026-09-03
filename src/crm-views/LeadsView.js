@@ -384,7 +384,19 @@ export async function initLeadsView() {
   try {
     const data = await fetchFromAPI('/leads');
     if (data && Array.isArray(data)) {
-      cachedLeads = data.map(mapLeadFromAPI);
+      const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const mapped = data.map(mapLeadFromAPI);
+      mapped.forEach(apiL => {
+        const matchingLocal = localLeads.find(locL => 
+          (locL.id && String(locL.id) === String(apiL.id)) ||
+          (locL.phone && String(locL.phone).replace(/\D/g, '') === String(apiL.phone).replace(/\D/g, '')) ||
+          (locL.name && String(locL.name).trim().toLowerCase() === String(apiL.name).trim().toLowerCase())
+        );
+        if (matchingLocal && matchingLocal.status) {
+          apiL.status = matchingLocal.status;
+        }
+      });
+      cachedLeads = mapped;
       saveLeads(cachedLeads);
     }
   } catch (err) {
