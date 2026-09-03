@@ -393,7 +393,11 @@ export function initDashboardListeners() {
       e.preventDefault();
       const route = card.dataset.route;
       if (route) {
-        window.location.hash = route;
+        if (typeof window.navigateToView === 'function') {
+          window.navigateToView(route.replace(/^#/, ''));
+        } else {
+          window.location.hash = route;
+        }
       }
     });
   });

@@ -424,12 +424,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function navigateTo(viewName, queryParam = null) {
+    if (!viewName) viewName = 'dashboard';
+    sessionStorage.setItem('thanjai_active_view', viewName);
+    
+    // Clean up address bar so no #hash is exposed in URL
+    if (window.location.hash) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+
+    if (viewName.startsWith('lead/')) {
+      const id = viewName.split('/')[1];
+      loadView('lead-detail', id);
+      setActiveNav('leads');
+      return;
+    }
+
+    loadView(viewName, queryParam);
+    setActiveNav(viewName);
+  }
+
+  window.navigateToView = navigateTo;
+
   function handleHashChange() {
     let rawHash = window.location.hash.slice(1);
     if (!rawHash) {
       rawHash = sessionStorage.getItem('thanjai_active_view') || 'dashboard';
-    } else {
-      sessionStorage.setItem('thanjai_active_view', rawHash);
     }
 
     const cleanHash = rawHash.split('?')[0];
@@ -440,15 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
       queryParam = params.get('prop') || params.get('search') || null;
     }
     
-    if (cleanHash.startsWith('lead/')) {
-      const id = cleanHash.split('/')[1];
-      loadView('lead-detail', id);
-      setActiveNav('leads');
-      return;
-    }
-
-    loadView(cleanHash, queryParam);
-    setActiveNav(cleanHash);
+    navigateTo(cleanHash, queryParam);
 
     // Restore saved scroll position if refreshed on same page
     const savedY = sessionStorage.getItem('thanjai_scroll_y');
@@ -459,13 +471,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Intercept Sidebar Nav Clicks to update route hash
+  // Intercept Sidebar Nav Clicks to update view cleanly without hash
   navItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
       const view = item.dataset.view;
       if (view) {
-        window.location.hash = '#' + view;
+        navigateTo(view);
       }
     });
   });
@@ -507,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshPropertiesView();
       } else if (currentView !== 'leads') {
         // If user starts typing a Property ID or query from another view, switch to Properties Inventory
-        window.location.hash = '#properties';
+        navigateTo('properties');
       }
     });
   });
@@ -520,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (aiBtn) {
     aiBtn.addEventListener('click', () => {
-      window.location.hash = '#ai';
+      navigateTo('ai');
     });
   }
 
@@ -543,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileSettingsBtn = document.getElementById('profile-settings-btn');
   if (profileSettingsBtn) {
     profileSettingsBtn.addEventListener('click', () => {
-      window.location.hash = '#settings';
+      navigateTo('settings');
       if (profileMenu) profileMenu.classList.remove('show');
     });
   }
