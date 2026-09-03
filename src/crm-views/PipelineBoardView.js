@@ -379,14 +379,42 @@ export function initPipelineBoardView() {
     });
   }
 
-  const WA_STAGE_TEMPLATES = {
-    'Initial Contact': (name, req, loc) => `Hello ${name}! Thank you for contacting Thanjai Property. We received your inquiry for ${req || 'Property'} in ${loc || 'Thanjavur'}. Our property specialist will guide you shortly.`,
-    'Follow Up Pending': (name, req, loc) => `Hello ${name}! Following up regarding your property requirement (${req || 'Property'}) in ${loc || 'Thanjavur'}. Let us know if you would like updated listings or site visits!`,
-    'Site Visit Scheduled': (name, req, loc) => `Hello ${name}! Your site visit for ${req || 'Property'} in ${loc || 'Thanjavur'} has been scheduled. Our executive will reach out to coordinate the visit time.`,
-    'Site Visit Completed': (name, req, loc) => `Hello ${name}! Thank you for attending the site visit for ${req || 'Property'} in ${loc || 'Thanjavur'}. Please let us know your feedback or if you need more options.`,
-    'Negotiation': (name, req, loc) => `Hello ${name}! We are actively working to finalize the best deal for your preferred property in ${loc || 'Thanjavur'}. We will update you on the price agreement shortly.`,
-    'Bank Loan': (name, req, loc) => `Hello ${name}! Our banking desk is processing the home loan & document verification for your property selection in ${loc || 'Thanjavur'}.`,
-    'Registration': (name, req, loc) => `Congratulations ${name}! Your property registration process for ${req || 'Property'} in ${loc || 'Thanjavur'} is being prepared by Thanjai Property.`
+  const WA_STAGE_CONFIGS = {
+    'Initial Contact': (name, req, loc) => ({
+      campaignName: 'general_property_update',
+      params: [name, req || 'Property Requirement', 'Thank you for contacting Thanjai Property! Our property specialist will guide you shortly.'],
+      messageText: `Hello ${name}! Thank you for contacting Thanjai Property. We received your inquiry for ${req || 'Property'} in ${loc || 'Thanjavur'}. Our property specialist will guide you shortly.`
+    }),
+    'Follow Up Pending': (name, req, loc) => ({
+      campaignName: 'property_follow_up',
+      params: [name, req || 'Property', loc || 'Thanjavur'],
+      messageText: `Hello ${name}! Following up regarding your property requirement (${req || 'Property'}) in ${loc || 'Thanjavur'}.`
+    }),
+    'Site Visit Scheduled': (name, req, loc) => ({
+      campaignName: 'site_visit_confirmation',
+      params: [name, req || 'Property', 'Tomorrow 10:30 AM', loc || 'Thanjavur', 'https://maps.google.com/?q=Thanjavur'],
+      messageText: `Hello ${name}! Your site visit for ${req || 'Property'} in ${loc || 'Thanjavur'} has been confirmed.`
+    }),
+    'Site Visit Completed': (name, req, loc) => ({
+      campaignName: 'site_visit_feedback',
+      params: [name, req || 'Property'],
+      messageText: `Hello ${name}! Thank you for visiting ${req || 'Property'} with us today.`
+    }),
+    'Negotiation': (name, req, loc) => ({
+      campaignName: 'negotiation_check_in',
+      params: [name, req || 'Property', 'This Week'],
+      messageText: `Hello ${name}! The owner of ${req || 'Property'} responded positively. We look forward to finalizing the agreement.`
+    }),
+    'Bank Loan': (name, req, loc) => ({
+      campaignName: 'bank_loan_assistance',
+      params: [name, req || 'Property'],
+      messageText: `Hello ${name}! Need bank loan assistance for ${req || 'Property'}? Our banking desk is processing your request.`
+    }),
+    'Registration': (name, req, loc) => ({
+      campaignName: 'registration_testimonial_referral',
+      params: [name, req || 'Property', 'https://g.page/r/thanjai-property/review'],
+      messageText: `Hearty Congratulations ${name}! Congratulations on the successful registration of your ${req || 'Property'}.`
+    })
   };
 
   function updateLeadStatus(leadIdStr, newStatus) {
@@ -408,26 +436,30 @@ export function initPipelineBoardView() {
       });
 
       // Automated WhatsApp message dispatch for 7 marked stages
-      const templateFn = WA_STAGE_TEMPLATES[newStatus];
+      const stageConfigFn = WA_STAGE_CONFIGS[newStatus];
       const destPhone = leadObj.whatsapp || leadObj.mobile || leadObj.phone;
-      if (templateFn && destPhone) {
-        const msgText = templateFn(leadObj.name || 'Client', leadObj.requirement || leadObj.propertyType, leadObj.location || leadObj.city);
+      if (stageConfigFn && destPhone) {
+        const clientName = leadObj.name || 'Client';
+        const clientReq = leadObj.requirement || leadObj.propertyType || 'Property';
+        const clientLoc = leadObj.location || leadObj.city || 'Thanjavur';
+        const stageConfig = stageConfigFn(clientName, clientReq, clientLoc);
         
         sendWhatsAppMessage({
-          campaignName: 'stage_update_auto',
+          campaignName: stageConfig.campaignName,
           destination: destPhone,
-          userName: leadObj.name || 'Client',
-          messageText: msgText,
+          userName: clientName,
+          templateParams: stageConfig.params,
+          messageText: stageConfig.messageText,
           leadId: leadObj.id
         }).then(sent => {
-          showToast(`Automated WhatsApp sent to ${leadObj.name} for ${newStatus}`, 'success');
+          showToast(`Automated WhatsApp sent to ${clientName} (${stageConfig.campaignName})`, 'success');
         }).catch(err => {
           showToast(`Stage updated to ${newStatus}`, 'info');
         });
 
         leadObj.timeline.unshift({
           type: 'whatsapp',
-          message: `Automated WhatsApp sent to ${leadObj.name} (${destPhone}): "${msgText}"`,
+          message: `Automated WhatsApp sent to ${clientName} (${destPhone}): [${stageConfig.campaignName}]`,
           author: 'System Auto Dispatch',
           date: new Date().toISOString()
         });
