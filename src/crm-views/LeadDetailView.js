@@ -123,8 +123,8 @@ export function renderLeadDetailView(id) {
       <div class="ld-header" style="margin-bottom: 24px;">
         <h1 style="font-size: 1.8rem; font-weight: 700; color: var(--os-dark); margin-bottom: 8px;">${lead.name}</h1>
         <div class="ld-badges" style="display: flex; gap: 12px; align-items: center;">
-          <span style="border: 1px solid #14b8a6; color: #14b8a6; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">${lead.status || 'Contacted'}</span>
-          <span style="color: var(--os-gray-500); font-size: 0.9rem;">Stage: Requirement Analysis</span>
+          <span style="border: 1px solid #14b8a6; color: #14b8a6; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">${lead.status || 'New Lead'}</span>
+          <span style="color: var(--os-gray-500); font-size: 0.9rem;">Stage: ${lead.status || 'New Lead'}</span>
         </div>
       </div>
 
@@ -2052,7 +2052,7 @@ async function saveAndSyncLeads(leads, changedLeadId = null) {
           timeline: typeof lead.timeline === 'string' ? lead.timeline : JSON.stringify(lead.timeline || []),
           followup: lead.followUpDate || lead.followup || ''
         };
-        await fetchFromAPI('/leads/' + changedLeadId, {
+        await fetchFromAPI('/leads?id=' + encodeURIComponent(changedLeadId), {
           method: 'PUT',
           body: JSON.stringify(payload)
         });
