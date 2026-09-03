@@ -1,4 +1,4 @@
-import { getPropertyById } from '../utils/propertiesStore.js';
+import { getPropertyById, getProperties } from '../utils/propertiesStore.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 import { showToast } from '../utils/toast.js';
 
@@ -379,111 +379,389 @@ export function initPipelineBoardView() {
     });
   }
 
-  const WA_STAGE_CONFIGS = {
-    'Initial Contact': (name, req, loc) => ({
-      campaignName: 'general_property_update',
-      params: [name, req || 'Property Requirement', 'Thank you for contacting Thanjai Property! Our property specialist will guide you shortly.'],
-      messageText: `Hello ${name}! Thank you for contacting Thanjai Property. We received your inquiry for ${req || 'Property'} in ${loc || 'Thanjavur'}. Our property specialist will guide you shortly.`
-    }),
-    'Follow Up Pending': (name, req, loc) => ({
-      campaignName: 'property_follow_up',
-      params: [name, req || 'Property', loc || 'Thanjavur'],
-      messageText: `Hello ${name}! Following up regarding your property requirement (${req || 'Property'}) in ${loc || 'Thanjavur'}.`
-    }),
-    'Site Visit Scheduled': (name, req, loc) => ({
-      campaignName: 'site_visit_confirmation',
-      params: [name, req || 'Property', 'Tomorrow 10:30 AM', loc || 'Thanjavur', 'https://maps.google.com/?q=Thanjavur'],
-      messageText: `Hello ${name}! Your site visit for ${req || 'Property'} in ${loc || 'Thanjavur'} has been confirmed.`
-    }),
-    'Site Visit Completed': (name, req, loc) => ({
-      campaignName: 'site_visit_feedback',
-      params: [name, req || 'Property'],
-      messageText: `Hello ${name}! Thank you for visiting ${req || 'Property'} with us today.`
-    }),
-    'Negotiation': (name, req, loc) => ({
-      campaignName: 'negotiation_check_in',
-      params: [name, req || 'Property', 'This Week'],
-      messageText: `Hello ${name}! The owner of ${req || 'Property'} responded positively. We look forward to finalizing the agreement.`
-    }),
-    'Bank Loan': (name, req, loc) => ({
-      campaignName: 'bank_loan_assistance',
-      params: [name, req || 'Property'],
-      messageText: `Hello ${name}! Need bank loan assistance for ${req || 'Property'}? Our banking desk is processing your request.`
-    }),
-    'Registration': (name, req, loc) => ({
-      campaignName: 'registration_testimonial_referral',
-      params: [name, req || 'Property', 'https://g.page/r/thanjai-property/review'],
-      messageText: `Hearty Congratulations ${name}! Congratulations on the successful registration of your ${req || 'Property'}.`
-    })
-  };
+  function openPipelineWhatsAppModal(leadObj, newStatus, onConfirm, onSkip, onCancel) {
+    // Remove existing modal if any
+    const existing = document.getElementById('pipeline-wa-modal-wrap');
+    if (existing) existing.remove();
+
+    const clientName = leadObj.name || 'Client';
+    let defaultProp = (leadObj.requirement && leadObj.requirement !== 'Any' && leadObj.requirement !== 'All') 
+      ? leadObj.requirement 
+      : (leadObj.propertyType || leadObj.propertyTitle || 'Thanjavur Property');
+    let defaultLoc = leadObj.location || leadObj.preferredLocation || leadObj.city || 'Medical College Road, Thanjavur';
+
+    const allProperties = (typeof getProperties === 'function' ? getProperties() : []) || [];
+    const propOptionsHtml = allProperties.map(p => `<option value="${p.title}">${p.title} (${p.location || 'Thanjavur'})</option>`).join('');
+
+    let fieldsHtml = '';
+    let getParamsFn = () => [];
+    let getPreviewFn = () => '';
+    let campaignName = 'general_property_update';
+
+    if (newStatus === 'Initial Contact') {
+      campaignName = 'general_property_update';
+      fieldsHtml = `
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
+          <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property / Requirement</label>
+          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" placeholder="Select or type property name..." />
+          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Custom Message Text</label>
+          <textarea id="pwa-msg" class="os-input" style="width: 100%; height: 75px; resize: vertical;">Thank you for contacting Thanjai Property! Our property specialist will guide you with verified options shortly.</textarea>
+        </div>
+      `;
+      getParamsFn = () => [
+        document.getElementById('pwa-name')?.value || clientName,
+        document.getElementById('pwa-prop')?.value || defaultProp,
+        document.getElementById('pwa-msg')?.value || 'Thank you for contacting Thanjai Property!'
+      ];
+      getPreviewFn = () => {
+        const p = getParamsFn();
+        return `Hello ${p[0]} 👋\n\nUpdate on your property file (${p[1]}):\n📌 ${p[2]}\n\nFeel free to reply if you have any questions!\n\nWarm regards,\n*Thanjai Property Team*`;
+      };
+    } else if (newStatus === 'Follow Up Pending') {
+      campaignName = 'property_follow_up';
+      fieldsHtml = `
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
+          <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Name</label>
+          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
+          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Location</label>
+          <input type="text" id="pwa-loc" value="${defaultLoc}" class="os-input" style="width: 100%;" />
+        </div>
+      `;
+      getParamsFn = () => [
+        document.getElementById('pwa-name')?.value || clientName,
+        document.getElementById('pwa-prop')?.value || defaultProp,
+        document.getElementById('pwa-loc')?.value || defaultLoc
+      ];
+      getPreviewFn = () => {
+        const p = getParamsFn();
+        return `Hello ${p[0]} 👋\n\nJust checking in about ${p[1]} in ${p[2]}. The owner is open to reasonable price discussions for genuine buyers.\n\nWould you like to sit together and finalize the deal?\n\nWarm regards,\n*Thanjai Property Team*`;
+      };
+    } else if (newStatus === 'Site Visit Scheduled') {
+      campaignName = 'site_visit_confirmation';
+      fieldsHtml = `
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
+          <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Title</label>
+          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
+          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Visit Date & Time</label>
+          <input type="text" id="pwa-time" value="Tomorrow at 10:30 AM" class="os-input" style="width: 100%;" />
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Location / Landmark</label>
+          <input type="text" id="pwa-loc" value="${defaultLoc}" class="os-input" style="width: 100%;" />
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Google Maps Link</label>
+          <input type="text" id="pwa-map" value="https://maps.google.com/?q=Thanjavur" class="os-input" style="width: 100%;" />
+        </div>
+      `;
+      getParamsFn = () => [
+        document.getElementById('pwa-name')?.value || clientName,
+        document.getElementById('pwa-prop')?.value || defaultProp,
+        document.getElementById('pwa-time')?.value || 'Tomorrow at 10:30 AM',
+        document.getElementById('pwa-loc')?.value || defaultLoc,
+        document.getElementById('pwa-map')?.value || 'https://maps.google.com/?q=Thanjavur'
+      ];
+      getPreviewFn = () => {
+        const p = getParamsFn();
+        return `Hello ${p[0]} 👋\n\nYour site visit for ${p[1]} is confirmed!\n\n📅 Date & Time: ${p[2]}\n📍 Location: ${p[3]}\n🗺️ Map: ${p[4]}\n\nOur executive will meet you at the site. Please reply OK to confirm.\n\nBest regards,\n*Thanjai Property Team*`;
+      };
+    } else if (newStatus === 'Site Visit Completed') {
+      campaignName = 'site_visit_feedback';
+      fieldsHtml = `
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
+          <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Visited</label>
+          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
+          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
+        </div>
+      `;
+      getParamsFn = () => [
+        document.getElementById('pwa-name')?.value || clientName,
+        document.getElementById('pwa-prop')?.value || defaultProp
+      ];
+      getPreviewFn = () => {
+        const p = getParamsFn();
+        return `Hello ${p[0]} 😊\n\nThank you for visiting ${p[1]} with us today!\n\nHow did you feel about the property and location?\n\nWarm regards,\n*Thanjai Property Team*`;
+      };
+    } else if (newStatus === 'Negotiation') {
+      campaignName = 'negotiation_check_in';
+      fieldsHtml = `
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
+          <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Name</label>
+          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
+          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Proposed Meeting Time</label>
+          <input type="text" id="pwa-time" value="This Week at Our Office" class="os-input" style="width: 100%;" />
+        </div>
+      `;
+      getParamsFn = () => [
+        document.getElementById('pwa-name')?.value || clientName,
+        document.getElementById('pwa-prop')?.value || defaultProp,
+        document.getElementById('pwa-time')?.value || 'This Week'
+      ];
+      getPreviewFn = () => {
+        const p = getParamsFn();
+        return `Hello ${p[0]} 🤝\n\nGood news! The owner of ${p[1]} responded positively to your offer.\n\nCan we meet at our office on ${p[2]} to finalize the agreement?\n\nBest regards,\n*Thanjai Property Team*`;
+      };
+    } else if (newStatus === 'Bank Loan') {
+      campaignName = 'bank_loan_assistance';
+      fieldsHtml = `
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
+          <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Name</label>
+          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
+          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
+        </div>
+      `;
+      getParamsFn = () => [
+        document.getElementById('pwa-name')?.value || clientName,
+        document.getElementById('pwa-prop')?.value || defaultProp
+      ];
+      getPreviewFn = () => {
+        const p = getParamsFn();
+        return `Hello ${p[0]} 🏛️\n\nNeed bank loan assistance for ${p[1]}?\n\nOur representative will contact you shortly to discuss the loan process further.\n\nBest regards,\n*Thanjai Property Team*`;
+      };
+    } else if (newStatus === 'Registration') {
+      campaignName = 'registration_testimonial_referral';
+      fieldsHtml = `
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
+          <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Registered</label>
+          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
+          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Google Review Link</label>
+          <input type="text" id="pwa-rev" value="https://g.page/r/thanjai-property/review" class="os-input" style="width: 100%;" />
+        </div>
+      `;
+      getParamsFn = () => [
+        document.getElementById('pwa-name')?.value || clientName,
+        document.getElementById('pwa-prop')?.value || defaultProp,
+        document.getElementById('pwa-rev')?.value || 'https://g.page/r/thanjai-property/review'
+      ];
+      getPreviewFn = () => {
+        const p = getParamsFn();
+        return `Hearty Congratulations, ${p[0]}! 🎉\n\nCongratulations on the successful registration of your ${p[1]}!\n\nReview Link: ${p[2]}\n\nBest regards,\n*Thanjai Property Team*`;
+      };
+    }
+
+    const modalWrap = document.createElement('div');
+    modalWrap.id = 'pipeline-wa-modal-wrap';
+    modalWrap.style.cssText = `
+      position: fixed; inset: 0; z-index: 10000; background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;
+    `;
+
+    modalWrap.innerHTML = `
+      <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 540px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; animation: popIn 0.25s ease-out; font-family: 'Manrope', sans-serif;">
+        <!-- Modal Header -->
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px 24px; color: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; background: rgba(37,211,102,0.15); border: 1px solid rgba(37,211,102,0.3); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #25d366; font-size: 1.2rem;">
+              <i class="ri-whatsapp-fill"></i>
+            </div>
+            <div>
+              <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: #ffffff;">WhatsApp Stage Trigger</h3>
+              <p style="margin: 2px 0 0; font-size: 0.78rem; color: #94a3b8;">Moving to: <strong style="color: #eb5e28;">${newStatus}</strong></p>
+            </div>
+          </div>
+          <button id="pwa-close-btn" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer;"><i class="ri-close-line"></i></button>
+        </div>
+
+        <!-- Modal Body -->
+        <div style="padding: 24px; max-height: 75vh; overflow-y: auto;">
+          <p style="margin: 0 0 16px; font-size: 0.85rem; color: #64748b;">
+            Verify and customize the parameters below before dispatching the automated WhatsApp message to <strong style="color: #0f172a;">${clientName}</strong>:
+          </p>
+
+          <div id="pwa-fields-container">${fieldsHtml}</div>
+
+          <!-- Live WhatsApp Preview Box -->
+          <div style="margin-top: 18px; background: #eef8f2; border: 1px solid #c6ebd4; border-radius: 12px; padding: 14px; position: relative;">
+            <div style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: #15803d; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i class="ri-eye-line"></i> Live Message Preview (SmartPing Template: <code>${campaignName}</code>)
+            </div>
+            <pre id="pwa-live-preview" style="margin: 0; font-family: inherit; font-size: 0.83rem; color: #1e293b; white-space: pre-wrap; line-height: 1.45;"></pre>
+          </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+          <button id="pwa-cancel-btn" class="os-btn-secondary" style="font-size: 0.85rem; padding: 9px 14px; border: 1px solid #cbd5e1; background: #ffffff; color: #64748b;">Cancel</button>
+          <button id="pwa-skip-btn" class="os-btn-secondary" style="font-size: 0.85rem; padding: 9px 14px; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 700;">Move Without WhatsApp</button>
+          <button id="pwa-confirm-btn" class="os-btn-primary" style="font-size: 0.85rem; padding: 9px 18px; background: #25d366; border-color: #25d366; color: #ffffff; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+            <i class="ri-send-plane-fill"></i> Send WhatsApp & Move
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modalWrap);
+
+    // Live preview updater
+    const updatePreview = () => {
+      const previewEl = document.getElementById('pwa-live-preview');
+      if (previewEl) previewEl.textContent = getPreviewFn();
+    };
+    updatePreview();
+
+    // Attach input listeners for instant live preview updates
+    modalWrap.querySelectorAll('input, textarea, select').forEach(input => {
+      input.addEventListener('input', updatePreview);
+      input.addEventListener('change', updatePreview);
+    });
+
+    // Close / Cancel action
+    const close = () => {
+      modalWrap.remove();
+    };
+
+    document.getElementById('pwa-close-btn')?.addEventListener('click', () => {
+      close();
+      if (onCancel) onCancel();
+    });
+    document.getElementById('pwa-cancel-btn')?.addEventListener('click', () => {
+      close();
+      if (onCancel) onCancel();
+    });
+
+    // Move without WhatsApp
+    document.getElementById('pwa-skip-btn')?.addEventListener('click', () => {
+      close();
+      if (onSkip) onSkip();
+    });
+
+    // Send WhatsApp & Move
+    document.getElementById('pwa-confirm-btn')?.addEventListener('click', () => {
+      const finalParams = getParamsFn();
+      const finalPreview = getPreviewFn();
+      close();
+      if (onConfirm) onConfirm(campaignName, finalParams, finalPreview);
+    });
+  }
 
   function updateLeadStatus(leadIdStr, newStatus) {
     const idx = leads.findIndex(l => String(l.id) === String(leadIdStr));
     if (idx !== -1) {
-      // Avoid unnecessary re-renders
       if (leads[idx].status === newStatus) return;
       
       const oldStatus = leads[idx].status || 'New Lead';
       const leadObj = leads[idx];
-      leadObj.status = newStatus;
-      
-      if (!leadObj.timeline) leadObj.timeline = [];
-      leadObj.timeline.unshift({
-        type: 'pipeline',
-        message: `Moved from ${oldStatus.toUpperCase().replace(/\s+/g, '_')} to ${newStatus.toUpperCase().replace(/\s+/g, '_')}`,
-        author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
-        date: new Date().toISOString()
-      });
-
-      // Automated WhatsApp message dispatch for 7 marked stages
-      const stageConfigFn = WA_STAGE_CONFIGS[newStatus];
       const destPhone = leadObj.whatsapp || leadObj.mobile || leadObj.phone;
-      if (stageConfigFn && destPhone) {
-        const clientName = leadObj.name || 'Client';
-        const clientReq = leadObj.requirement || leadObj.propertyType || 'Property';
-        const clientLoc = leadObj.location || leadObj.city || 'Thanjavur';
-        const stageConfig = stageConfigFn(clientName, clientReq, clientLoc);
-        
-        sendWhatsAppMessage({
-          campaignName: stageConfig.campaignName,
-          destination: destPhone,
-          userName: clientName,
-          templateParams: stageConfig.params,
-          messageText: stageConfig.messageText,
-          leadId: leadObj.id
-        }).then(sent => {
-          showToast(`Automated WhatsApp sent to ${clientName} (${stageConfig.campaignName})`, 'success');
-        }).catch(err => {
-          showToast(`Stage updated to ${newStatus}`, 'info');
-        });
 
+      // Check if this stage has a WhatsApp trigger
+      const hasWaTrigger = [
+        'Initial Contact',
+        'Follow Up Pending',
+        'Site Visit Scheduled',
+        'Site Visit Completed',
+        'Negotiation',
+        'Bank Loan',
+        'Registration'
+      ].includes(newStatus);
+
+      const commitMove = (sendWa = false, campaignName = '', params = [], msgText = '') => {
+        leadObj.status = newStatus;
+        if (!leadObj.timeline) leadObj.timeline = [];
+        
         leadObj.timeline.unshift({
-          type: 'whatsapp',
-          message: `Automated WhatsApp sent to ${clientName} (${destPhone}): [${stageConfig.campaignName}]`,
-          author: 'System Auto Dispatch',
+          type: 'pipeline',
+          message: `Moved from ${oldStatus.toUpperCase().replace(/\s+/g, '_')} to ${newStatus.toUpperCase().replace(/\s+/g, '_')}`,
+          author: localStorage.getItem('thanjai_active_user') || 'Admin Staff',
           date: new Date().toISOString()
         });
+
+        if (sendWa && destPhone) {
+          sendWhatsAppMessage({
+            campaignName: campaignName,
+            destination: destPhone,
+            userName: leadObj.name || 'Client',
+            templateParams: params,
+            messageText: msgText,
+            leadId: leadObj.id
+          }).then(sent => {
+            showToast(`Automated WhatsApp sent to ${leadObj.name || 'Client'} (${campaignName})`, 'success');
+          }).catch(err => {
+            showToast(`Stage updated to ${newStatus}`, 'info');
+          });
+
+          leadObj.timeline.unshift({
+            type: 'whatsapp',
+            message: `Automated WhatsApp sent to ${leadObj.name || 'Client'} (${destPhone}): [${campaignName}]`,
+            author: 'System Auto Dispatch',
+            date: new Date().toISOString()
+          });
+        } else {
+          showToast(`Lead moved to ${newStatus}`, 'info');
+        }
+
+        // INSTANTLY SYNC STATUS UPDATE TO LIVE MYSQL DATABASE
+        try {
+          fetchFromAPI('/leads?id=' + encodeURIComponent(leadObj.id), {
+            method: 'PUT',
+            body: JSON.stringify({
+              id: leadObj.id,
+              name: leadObj.name,
+              phone: leadObj.phone || leadObj.mobile,
+              status: newStatus,
+              assignedTo: leadObj.assignTo || leadObj.assignedTo,
+              timeline: leadObj.timeline
+            })
+          }).catch(err => console.warn('MySQL Lead status sync notice:', err));
+        } catch (err) {}
+
+        saveLeads(leads);
+        renderBoard();
+      };
+
+      if (hasWaTrigger && destPhone) {
+        openPipelineWhatsAppModal(
+          leadObj,
+          newStatus,
+          (campName, finalParams, finalPreview) => commitMove(true, campName, finalParams, finalPreview),
+          () => commitMove(false),
+          () => renderBoard() // Revert card if cancelled
+        );
       } else {
-        showToast(`Lead moved to ${newStatus}`, 'info');
+        commitMove(false);
       }
-
-      // INSTANTLY SYNC STATUS UPDATE TO LIVE CPANEL MYSQL DATABASE
-      try {
-        fetchFromAPI('/leads?id=' + encodeURIComponent(leadObj.id), {
-          method: 'PUT',
-          body: JSON.stringify({
-            id: leadObj.id,
-            name: leadObj.name,
-            phone: leadObj.phone || leadObj.mobile,
-            status: newStatus,
-            assignedTo: leadObj.assignTo || leadObj.assignedTo,
-            timeline: leadObj.timeline
-          })
-        }).catch(err => console.warn('MySQL Lead status sync notice:', err));
-      } catch (err) {}
-
-      saveLeads(leads);
-      renderBoard(); // Re-render everything to update counts and move cards
     }
   }
 
