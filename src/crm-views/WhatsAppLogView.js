@@ -434,15 +434,11 @@ export async function initWhatsAppLogView() {
 
       // 1. Dispatch via server-relay sendWhatsAppMessage
       await sendWhatsAppMessage({
-        campaignName: 'property_follow_up',
+        campaignName: 'general_property_update',
         destination: formattedPhone,
         userName: conv.name,
         messageText: text,
-        templateParams: [conv.name, 'Thanjavur', text],
-        media: {
-          url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-          filename: 'property.jpg'
-        }
+        templateParams: [conv.name, 'Thanjavur Property Inquiry', text]
       });
 
       const newMsg = {

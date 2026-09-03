@@ -1082,11 +1082,15 @@ elseif ($resource === 'send_whatsapp') {
         // Ensure all template params are string values
         $stringParams = array_values(array_map(function($p) { return (string)$p; }, $templateParams));
 
-        // Default media header to satisfy media template requirement
-        $mediaPayload = $customMedia ?: [
-            'url' => 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-            'filename' => 'thanjai-property.jpg'
-        ];
+        // Media is ONLY used for templates with image headers: initial_contact_intro, property_shortlist
+        $isMediaTemplate = ($campaignName === 'initial_contact_intro' || $campaignName === 'property_shortlist');
+        $mediaPayload = null;
+        if ($isMediaTemplate) {
+            $mediaPayload = $customMedia ?: [
+                'url' => 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+                'filename' => 'thanjai-property.jpg'
+            ];
+        }
 
         $isSuccess = false;
         $response = '';
@@ -1095,14 +1099,17 @@ elseif ($resource === 'send_whatsapp') {
 
         // 1. PRIMARY: SmartPing endpoint (this is what Thanjai Property uses)
         $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
-        $payload1 = json_encode([
+        $postData1 = [
             'apiKey' => $apiKey,
             'campaignName' => $campaignName,
             'destination' => $smartPingPhone,
             'userName' => (string)$userName,
-            'templateParams' => $stringParams,
-            'media' => $mediaPayload
-        ]);
+            'templateParams' => $stringParams
+        ];
+        if ($isMediaTemplate && $mediaPayload) {
+            $postData1['media'] = $mediaPayload;
+        }
+        $payload1 = json_encode($postData1);
 
         $ch = curl_init($smartPingUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -1123,14 +1130,17 @@ elseif ($resource === 'send_whatsapp') {
         // 2. FALLBACK: AiSensy endpoint if SmartPing did not succeed
         if (!$isSuccess) {
             $aiSensyUrl = 'https://backend.aisensy.com/campaign/t1/api/v2';
-            $payload2 = json_encode([
+            $postData2 = [
                 'apiKey' => $apiKey,
                 'campaignName' => $campaignName,
                 'destination' => $aiSensyPhone,
                 'userName' => (string)$userName,
-                'templateParams' => $stringParams,
-                'media' => $mediaPayload
-            ]);
+                'templateParams' => $stringParams
+            ];
+            if ($isMediaTemplate && $mediaPayload) {
+                $postData2['media'] = $mediaPayload;
+            }
+            $payload2 = json_encode($postData2);
 
             $ch2 = curl_init($aiSensyUrl);
             curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
