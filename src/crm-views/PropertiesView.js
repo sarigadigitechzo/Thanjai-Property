@@ -338,8 +338,8 @@ function renderPropertyCard(prop, allLeads = []) {
           <div style="font-size: 1.35rem; font-weight: 800; color: var(--color-orange, #eb5e28);">
             ${(prop.priceFormatted && prop.priceFormatted !== '0' && prop.priceFormatted !== '₹ 0') ? prop.priceFormatted : (prop.price > 0 ? (prop.price >= 10000000 ? `₹ ${(prop.price / 10000000).toFixed(2)} Crore` : (prop.price >= 100000 ? `₹ ${(prop.price / 100000).toFixed(2)} Lakhs` : `₹ ${prop.price.toLocaleString('en-IN')}`)) : 'Price on Request')}
           </div>
-          <span class="prop-inquiries-badge" data-propid="${prop.id}" style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: transform 0.15s ease;" title="Click to view inquiries for this property in CRM Pipeline">
-            <i class="ri-mail-unread-line"></i> ${computePropertyInquiriesCount(prop, allLeads)} Inquiries
+          <span class="prop-inquiries-badge" data-propid="${prop.id}" style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer !important; user-select: none; position: relative; z-index: 5;" title="Click to view inquiries for this property in CRM Pipeline">
+            <i class="ri-mail-unread-line" style="pointer-events: none;"></i> <span style="pointer-events: none;">${computePropertyInquiriesCount(prop, allLeads)} Inquiries</span>
           </span>
         </div>
 

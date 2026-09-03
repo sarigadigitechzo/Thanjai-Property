@@ -25,15 +25,26 @@ import { openPropertyModalById } from './components/PropertyDetailModal.js';
 
 installGlobalPopupShield();
 
-// Global click listener for Property ID badges across Admin OS Dashboard
+// Global click listener for Property ID badges & Inquiries badges across Admin OS Dashboard
 document.addEventListener('click', (e) => {
-  const badge = e.target.closest('.prop-id-badge');
-  if (badge) {
+  const propIdBadge = e.target.closest('.prop-id-badge');
+  if (propIdBadge) {
     e.stopPropagation();
     e.preventDefault();
-    const propId = badge.getAttribute('data-propid');
+    const propId = propIdBadge.getAttribute('data-propid');
     if (propId) {
       openPropertyModalById(propId);
+    }
+    return;
+  }
+
+  const inqBadge = e.target.closest('.prop-inquiries-badge');
+  if (inqBadge) {
+    e.stopPropagation();
+    e.preventDefault();
+    const propId = inqBadge.getAttribute('data-propid');
+    if (propId) {
+      window.location.hash = `#leads?prop=${encodeURIComponent(propId)}`;
     }
   }
 }, true);
