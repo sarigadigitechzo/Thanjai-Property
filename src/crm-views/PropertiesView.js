@@ -336,7 +336,7 @@ function renderPropertyCard(prop, allLeads = []) {
         <!-- Bold Price & Inquiry Count Badge -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
           <div style="font-size: 1.35rem; font-weight: 800; color: var(--color-orange, #eb5e28);">
-            ${prop.priceFormatted || `₹ ${prop.price}`}
+            ${(prop.priceFormatted && prop.priceFormatted !== '0' && prop.priceFormatted !== '₹ 0') ? prop.priceFormatted : (prop.price > 0 ? (prop.price >= 10000000 ? `₹ ${(prop.price / 10000000).toFixed(2)} Crore` : (prop.price >= 100000 ? `₹ ${(prop.price / 100000).toFixed(2)} Lakhs` : `₹ ${prop.price.toLocaleString('en-IN')}`)) : 'Price on Request')}
           </div>
           <span style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px;" title="Total Customer Inquiries for this property">
             <i class="ri-mail-unread-line"></i> ${computePropertyInquiriesCount(prop, allLeads)} Inquiries

@@ -481,8 +481,8 @@ function normalizePropertyRecord(p) {
   }
 
   const numPrice = typeof p.price === 'number' ? p.price : (parseFloat(p.price) || 0);
-  let formattedPrice = p.priceFormatted;
-  if (!formattedPrice || (numPrice > 0 && (formattedPrice === '₹ 0' || formattedPrice === 'Price on Request' || formattedPrice.trim() === '₹'))) {
+  let formattedPrice = (typeof p.priceFormatted === 'string') ? p.priceFormatted.trim() : (p.priceFormatted || '');
+  if (!formattedPrice || formattedPrice === '0' || formattedPrice === '₹ 0' || formattedPrice === '₹' || (numPrice > 0 && formattedPrice === 'Price on Request')) {
     if (numPrice >= 10000000) {
       formattedPrice = `₹ ${(numPrice / 10000000).toFixed(2)} Crore`;
     } else if (numPrice >= 100000) {
@@ -490,7 +490,7 @@ function normalizePropertyRecord(p) {
     } else if (numPrice > 0) {
       formattedPrice = `₹ ${numPrice.toLocaleString('en-IN')}`;
     } else {
-      formattedPrice = '₹ 0';
+      formattedPrice = 'Price on Request';
     }
   }
 
