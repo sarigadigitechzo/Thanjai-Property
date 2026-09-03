@@ -2,6 +2,7 @@ import { getAdminUsers } from '../utils/adminUsersStore.js';
 import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showAlertModal } from '../utils/toast.js';
 import { addAuditLog } from '../utils/siteImagesStore.js';
+import { getProperties } from '../utils/propertiesStore.js';
 
 export function renderSiteVisitsView() {
   const adminStaff = getAdminUsers().filter(u => u.status === 'Active' || !u.status);
@@ -15,6 +16,43 @@ export function renderSiteVisitsView() {
       <option value="Vijayaraghavan (Super Admin)">Vijayaraghavan (Super Admin)</option>
       <option value="Aishwarya R. (Super Admin)">Aishwarya R. (Super Admin)</option>
       <option value="Sales Manager">Sales Manager</option>
+    `;
+  }
+
+  // Generate initial client name options from local storage / cache
+  let localLeads = [];
+  try { localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || []; } catch(e) {}
+  let clientOptionsHtml = '<option value="">-- Select Client / Lead --</option>';
+  if (localLeads.length > 0) {
+    localLeads.forEach(l => {
+      const cName = l.name || l.title;
+      if (cName) {
+        clientOptionsHtml += `<option value="${cName}">${cName} (${l.phone || l.mobile || 'Lead'})</option>`;
+      }
+    });
+  } else {
+    clientOptionsHtml += `
+      <option value="Senthil Kumar">Senthil Kumar (+91 98424 12345)</option>
+      <option value="Kavitha R.">Kavitha R. (+91 97890 23456)</option>
+      <option value="Ramesh Raja">Ramesh Raja (+91 94431 34567)</option>
+      <option value="Priya Dharshini">Priya Dharshini (+91 96290 45678)</option>
+      <option value="Maheshwari">Maheshwari (+91 95000 56789)</option>
+    `;
+  }
+
+  // Generate initial property options from propertiesStore
+  const localProps = getProperties() || [];
+  let propertyOptionsHtml = '<option value="">-- Select Property --</option>';
+  if (localProps.length > 0) {
+    localProps.forEach(p => {
+      propertyOptionsHtml += `<option value="${p.title}">${p.title} (${p.location || p.district || 'Thanjavur'})</option>`;
+    });
+  } else {
+    propertyOptionsHtml += `
+      <option value="Plot in Thanjavur">Plot in Thanjavur (Thanjavur)</option>
+      <option value="Villa in Thanjavur">Villa in Thanjavur (Thanjavur)</option>
+      <option value="Apartment in Thoothukudi">Apartment in Thoothukudi (Thoothukudi)</option>
+      <option value="Agricultural Farmland">Agricultural Farmland (Kumbakonam)</option>
     `;
   }
 
@@ -62,11 +100,15 @@ export function renderSiteVisitsView() {
         <div class="os-modal-body">
           <div class="form-group" style="margin-bottom: 16px;">
             <label>Client name / Lead *</label>
-            <input type="text" id="sv-client-name" class="os-input" placeholder="Search or enter client name..." style="width: 100%;" required />
+            <select id="sv-client-name" class="os-input" style="width: 100%; background: #ffffff; cursor: pointer; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;" required>
+              ${clientOptionsHtml}
+            </select>
           </div>
           <div class="form-group" style="margin-bottom: 16px;">
             <label>Property *</label>
-            <input type="text" id="sv-property" class="os-input" placeholder="e.g. Premium Villa, Anna Nagar" style="width: 100%;" required />
+            <select id="sv-property" class="os-input" style="width: 100%; background: #ffffff; cursor: pointer; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;" required>
+              ${propertyOptionsHtml}
+            </select>
           </div>
           <div class="form-group" style="margin-bottom: 16px;">
             <label>Visit date & time *</label>
@@ -135,6 +177,36 @@ export async function initSiteVisitsView() {
     console.error('API Error:', error);
     visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
   }
+  // Populate dynamic DB Leads in Client dropdown
+  fetch('/api.php/leads')
+    .then(res => res.json())
+    .then(leads => {
+      const clientSelect = document.getElementById('sv-client-name');
+      if (clientSelect && Array.isArray(leads) && leads.length > 0) {
+        let opts = '<option value="">-- Select Client / Lead --</option>';
+        leads.slice(0, 200).forEach(l => {
+          const cName = l.name || l.title;
+          if (cName) {
+            opts += `<option value="${cName}">${cName} (${l.phone || l.mobile || 'DB Lead'})</option>`;
+          }
+        });
+        clientSelect.innerHTML = opts;
+      }
+    }).catch(e => {});
+
+  // Populate dynamic DB Properties in Property dropdown
+  fetch('/api.php/properties')
+    .then(res => res.json())
+    .then(props => {
+      const propSelect = document.getElementById('sv-property');
+      if (propSelect && Array.isArray(props) && props.length > 0) {
+        let opts = '<option value="">-- Select Property --</option>';
+        props.forEach(p => {
+          opts += `<option value="${p.title}">${p.title} (${p.location || p.district || 'Thanjavur'})</option>`;
+        });
+        propSelect.innerHTML = opts;
+      }
+    }).catch(e => {});
 
 
 
