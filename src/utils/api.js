@@ -24,10 +24,20 @@ export async function fetchFromAPI(endpoint, options = {}) {
     } else if (isGet) {
       url += `?t=${Date.now()}`;
     }
+    let body = options.body;
+    if (!isGet && !body) {
+      const { method: _m, headers: _h, ...payload } = options;
+      if (Object.keys(payload).length > 0) {
+        body = JSON.stringify(payload);
+      }
+    } else if (typeof body === 'object' && body !== null) {
+      body = JSON.stringify(body);
+    }
 
     const response = await fetch(url, {
       method,
       ...options,
+      body,
       headers: {
         'Content-Type': 'application/json',
         ...(options.headers || {})

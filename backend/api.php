@@ -1195,6 +1195,16 @@ elseif ($resource === 'send_whatsapp') {
         $safe_wa_msg   = $conn->real_escape_string($renderedMsg);
         $conn->query("INSERT INTO `whatsapp_messages` (`direction`, `customer_phone`, `customer_name`, `message`, `source`) VALUES ('outbound', '$safe_wa_phone', '$safe_wa_name', '$safe_wa_msg', 'crm_reply')");
 
+        $raw_log_body = json_encode([
+            'request' => ['destination' => $smartPingPhone, 'campaignName' => $campaignName, 'userName' => $userName, 'params' => $stringParams],
+            'response' => $resJson ?: $response,
+            'httpCode' => $httpCode,
+            'curlError' => $curlErr
+        ]);
+        $safe_log_body = $conn->real_escape_string($raw_log_body);
+        $conn->query("CREATE TABLE IF NOT EXISTS `webhook_raw_log` (`id` int AUTO_INCREMENT PRIMARY KEY, `method` varchar(20), `headers` text, `body` longtext, `ip` varchar(50), `createdAt` datetime DEFAULT CURRENT_TIMESTAMP)");
+        $conn->query("INSERT INTO `webhook_raw_log` (`method`, `headers`, `body`, `ip`) VALUES ('SMARTPING_SEND', 'HTTP $httpCode', '$safe_log_body', '127.0.0.1')");
+
         echo json_encode([
             'success' => $isSuccess,
             'campaignName' => $campaignName,
