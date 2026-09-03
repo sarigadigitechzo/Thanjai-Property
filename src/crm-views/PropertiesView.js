@@ -33,8 +33,8 @@ let leafletMarkerInstance = null;
 
 const TN_DISTRICTS_TALUKS = {
   'Thanjavur': ['Thanjavur', 'Kumbakonam', 'Pattukkottai', 'Orathanadu', 'Thiruvaiyaru', 'Papanasam', 'Budalur', 'Peravurani', 'Thiruvidaimarudur'],
-  'Madurai': ['Madurai North', 'Madurai South', 'Melur', 'Thirumangalam', 'Usilampatti', 'Vadipatti', 'Peraiyur', 'Thiruparankundram', 'Kalligudi'],
-  'Tiruchirappalli': ['Tiruchirappalli East', 'Tiruchirappalli West', 'Srirangam', 'Manapparai', 'Musiri', 'Thuraiyur', 'Lalgudi', 'Thottiyam', 'Marungapuri'],
+  'Tiruchirappalli (Trichy)': ['Tiruchirappalli East', 'Tiruchirappalli West', 'Srirangam', 'Manapparai', 'Musiri', 'Thuraiyur', 'Lalgudi', 'Thottiyam', 'Marungapuri', 'Manachanallur', 'Thiruverumbur'],
+  'Madurai': ['Madurai North', 'Madurai South', 'Madurai East', 'Madurai West', 'Melur', 'Thirumangalam', 'Usilampatti', 'Vadipatti', 'Peraiyur', 'Thiruparankundram', 'Kalligudi'],
   'Chennai': ['Alandur', 'Ambattur', 'Aminjikarai', 'Ayanavaram', 'Egmore', 'Guindy', 'Madhavaram', 'Madhuravoyal', 'Mambalam', 'Mylapore', 'Perambur', 'Purasawalkam', 'Sholinganallur', 'Thiruvottiyur', 'Tondiarpet', 'Velachery'],
   'Coimbatore': ['Coimbatore North', 'Coimbatore South', 'Pollachi', 'Mettupalayam', 'Sulur', 'Annur', 'Kinathukadavu', 'Madukkarai', 'Perur', 'Valparai', 'Anaimalai'],
   'Tiruvarur': ['Tiruvarur', 'Mannargudi', 'Nannilam', 'Thiruthuraipoondi', 'Kudavasal', 'Valangaiman', 'Needamangalam', 'Koothanallur'],
@@ -43,8 +43,8 @@ const TN_DISTRICTS_TALUKS = {
   'Pudukkottai': ['Pudukkottai', 'Aranthangi', 'Alangudi', 'Gandarvakottai', 'Illuppur', 'Kulathur', 'Manamelkudi', 'Ponnamaravathi', 'Thirumayam', 'Viralimalai', 'Avudaiyarkoil', 'Karambakudi'],
   'Dindigul': ['Dindigul East', 'Dindigul West', 'Palani', 'Kodaikanal', 'Natham', 'Nilakottai', 'Oddanchatram', 'Vedasandur', 'Athoor', 'Gujiliamparai'],
   'Salem': ['Salem', 'Attur', 'Edappadi', 'Gangavalli', 'Mettur', 'Omalur', 'Pethanaickenpalayam', 'Sankari', 'Valapady', 'Yercaud', 'Kadayampatti'],
-  'Erode': ['Erode', 'Bhavani', 'Gobichettipalayam', 'Perundurai', 'Sathyamangalam', 'Anthiyur', 'Kodumudi', 'Modakkurichi', 'Thalavadi'],
-  'Tiruppur': ['Tiruppur North', 'Tiruppur South', 'Avinashi', 'Dharapuram', 'Kangeyam', 'Madathukulam', 'Udumalaipettai', 'Uthukuli'],
+  'Erode': ['Erode', 'Bhavani', 'Gobichettipalayam', 'Perundurai', 'Sathyamangalam', 'Anthiyur', 'Kodumudi', 'Modakkurichi', 'Thalavadi', 'Nambiyur'],
+  'Tiruppur': ['Tiruppur North', 'Tiruppur South', 'Avinashi', 'Dharapuram', 'Kangeyam', 'Madathukulam', 'Udumalaipettai', 'Uthukuli', 'Kundadam'],
   'Tirunelveli': ['Tirunelveli', 'Palayamkottai', 'Ambasamudram', 'Cheranmahadevi', 'Manur', 'Nanguneri', 'Radhapuram', 'Tisayanvilai'],
   'Tenkasi': ['Tenkasi', 'Alangulam', 'Kadayanallur', 'Sankarankovil', 'Shenkottai', 'Sivagiri', 'Thiruvengadam', 'Veerakeralampudur'],
   'Kanyakumari': ['Agasteeswaram', 'Kalkulam', 'Killiyoor', 'Thiruvattar', 'Thovalai', 'Vilavancode'],
@@ -71,6 +71,29 @@ const TN_DISTRICTS_TALUKS = {
   'Krishnagiri': ['Krishnagiri', 'Anchetti', 'Bargur', 'Hosur', 'Pochampalli', 'Shoolagiri', 'Uthangarai', 'Denkanikottai'],
   'Nilgiris': ['Udhagamandalam (Ooty)', 'Coonoor', 'Gudalur', 'Kotagiri', 'Kundah', 'Pandalur']
 };
+
+function getTaluksForDistrict(districtName) {
+  if (!districtName) return TN_DISTRICTS_TALUKS['Thanjavur'];
+  const raw = String(districtName).trim();
+  if (TN_DISTRICTS_TALUKS[raw]) return TN_DISTRICTS_TALUKS[raw];
+
+  const clean = raw.toLowerCase();
+  if (clean === 'trichy' || clean.includes('trichy') || clean.includes('tiruchirappalli')) {
+    return TN_DISTRICTS_TALUKS['Tiruchirappalli (Trichy)'];
+  }
+  if (clean.includes('kumbakonam')) {
+    return ['Kumbakonam', 'Thanjavur', 'Papanasam', 'Thiruvidaimarudur', 'Pattukkottai', 'Orathanadu', 'Thiruvaiyaru', 'Budalur', 'Peravurani'];
+  }
+
+  for (const [dist, taluks] of Object.entries(TN_DISTRICTS_TALUKS)) {
+    const distClean = dist.toLowerCase();
+    if (distClean === clean || clean.includes(distClean) || distClean.includes(clean)) {
+      return taluks;
+    }
+  }
+
+  return ['Thanjavur', 'Kumbakonam', 'Pattukkottai', 'Orathanadu', 'Thiruvaiyaru'];
+}
 
 function compressImageFile(file, maxWidth = 1000, maxHeight = 800, quality = 0.75) {
   return new Promise((resolve) => {
@@ -774,11 +797,12 @@ function renderFullPagePropertyForm(prop) {
   const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room'];
   const isResidential = resKeywords.some(k => val.includes(k)) || currentType === 'Villa';
 
-  const activeDistrict = prop?.district || 'Thanjavur';
-  const talukList = TN_DISTRICTS_TALUKS[activeDistrict] || TN_DISTRICTS_TALUKS['Thanjavur'] || ['Thanjavur'];
+  let activeDistrict = prop?.district || 'Thanjavur';
+  if (activeDistrict.toLowerCase() === 'trichy') activeDistrict = 'Tiruchirappalli (Trichy)';
+  const talukList = getTaluksForDistrict(activeDistrict);
   const activeTaluk = prop?.taluk || talukList[0] || 'Thanjavur';
   const isCustomTaluk = !talukList.includes(activeTaluk);
-  const isCustomDistrict = !TN_DISTRICTS_TALUKS[activeDistrict];
+  const isCustomDistrict = !Object.keys(TN_DISTRICTS_TALUKS).includes(activeDistrict);
 
   const knownRoads = [
     'Medical College Road', 'Trichy Road', 'Pudukkottai Road', 'Madhakottai Road',
@@ -1802,7 +1826,7 @@ function initPropertyFormListeners() {
         distInput.style.display = 'none';
         distInput.value = selectedDist;
       }
-      const taluks = TN_DISTRICTS_TALUKS[selectedDist] || [selectedDist];
+      const taluks = getTaluksForDistrict(selectedDist);
       if (talukSelect) {
         talukSelect.innerHTML = taluks.map(t => `<option value="${t}">${t}</option>`).join('') + `<option value="__other__">Other Taluk...</option>`;
       }
