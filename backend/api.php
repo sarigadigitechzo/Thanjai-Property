@@ -106,6 +106,22 @@ function renCol($conn, $t, $o, $n, $d) {
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
 
+@$conn->query("CREATE TABLE IF NOT EXISTS `reviews` (
+  `id` varchar(255) PRIMARY KEY,
+  `name` varchar(255) NOT NULL,
+  `rating` int(11) DEFAULT 5,
+  `source` varchar(50) DEFAULT 'Google',
+  `propertyType` varchar(255) DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `reviewText` text NOT NULL,
+  `avatar` longtext DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'Approved',
+  `isFeatured` tinyint(1) DEFAULT 1,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
 
 
 @$conn->query("CREATE TABLE IF NOT EXISTS `whatsapp_logs` (
@@ -498,7 +514,74 @@ if ($resource === 'properties') {
         $stmt->execute();
         echo json_encode(["message" => "Property deleted successfully"]);
     }
-} 
+}
+elseif ($resource === 'reviews') {
+    if ($method === 'GET') {
+        $result = $conn->query("SELECT * FROM reviews ORDER BY createdAt DESC");
+        $rows = [];
+        if ($result) {
+            while($row = $result->fetch_assoc()) {
+                $row['rating'] = intval($row['rating'] ?? 5);
+                $row['isFeatured'] = intval($row['isFeatured'] ?? 1);
+                $rows[] = $row;
+            }
+        }
+        echo json_encode($rows);
+    }
+    elseif ($method === 'POST') {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $reviewId = $data['id'] ?? ('REV-' . time() . '-' . rand(100, 999));
+        $name = $data['name'] ?? 'Verified Client';
+        $rating = intval($data['rating'] ?? 5);
+        $source = $data['source'] ?? 'Google';
+        $propertyType = $data['propertyType'] ?? '';
+        $location = $data['location'] ?? 'Thanjavur';
+        $reviewText = $data['reviewText'] ?? '';
+        $avatar = $data['avatar'] ?? null;
+        $phone = $data['phone'] ?? null;
+        $email = $data['email'] ?? null;
+        $status = $data['status'] ?? 'Approved';
+        $isFeatured = isset($data['isFeatured']) ? intval($data['isFeatured']) : 1;
+
+        $stmt = $conn->prepare("INSERT INTO reviews (id, name, rating, source, propertyType, location, reviewText, avatar, phone, email, status, isFeatured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssissssssssi", $reviewId, $name, $rating, $source, $propertyType, $location, $reviewText, $avatar, $phone, $email, $status, $isFeatured);
+        if ($stmt->execute()) {
+            echo json_encode(["message" => "Review submitted successfully", "id" => $reviewId]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        }
+    }
+    elseif ($method === 'PUT' && $id) {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $name = $data['name'] ?? 'Verified Client';
+        $rating = intval($data['rating'] ?? 5);
+        $source = $data['source'] ?? 'Google';
+        $propertyType = $data['propertyType'] ?? '';
+        $location = $data['location'] ?? 'Thanjavur';
+        $reviewText = $data['reviewText'] ?? '';
+        $avatar = $data['avatar'] ?? null;
+        $phone = $data['phone'] ?? null;
+        $email = $data['email'] ?? null;
+        $status = $data['status'] ?? 'Approved';
+        $isFeatured = isset($data['isFeatured']) ? intval($data['isFeatured']) : 1;
+
+        $stmt = $conn->prepare("UPDATE reviews SET name=?, rating=?, source=?, propertyType=?, location=?, reviewText=?, avatar=?, phone=?, email=?, status=?, isFeatured=? WHERE id=?");
+        $stmt->bind_param("sissssssssis", $name, $rating, $source, $propertyType, $location, $reviewText, $avatar, $phone, $email, $status, $isFeatured, $id);
+        if ($stmt->execute()) {
+            echo json_encode(["message" => "Review updated successfully"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Database error: " . $stmt->error]);
+        }
+    }
+    elseif ($method === 'DELETE' && $id) {
+        $stmt = $conn->prepare("DELETE FROM reviews WHERE id=?");
+        $stmt->bind_param("s", $id);
+        $stmt->execute();
+        echo json_encode(["message" => "Review deleted successfully"]);
+    }
+}
 elseif ($resource === 'leads') {
     if ($method === 'GET') {
         if (isset($_GET['stats']) || isset($_GET['count_only'])) {

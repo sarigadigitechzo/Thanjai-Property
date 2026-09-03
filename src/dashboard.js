@@ -19,6 +19,7 @@ import { renderStatCounterView } from './crm-views/StatCounterView.js';
 import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.js';
 import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsersView.js';
 import { renderPopupsView, initPopupsView } from './crm-views/PopupsView.js';
+import { renderReviewsView, initReviewsListeners } from './crm-views/ReviewsView.js';
 import { renderHowToUseView, initHowToUseListeners } from './crm-views/HowToUseView.js';
 import { showToast, installGlobalPopupShield } from './utils/toast.js';
 import { openPropertyModalById } from './components/PropertyDetailModal.js';
@@ -343,6 +344,11 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'whatsapp':
         html = renderWhatsAppLogView();
         afterRender = initWhatsAppLogView;
+        break;
+      case 'reviews':
+      case 'testimonials':
+        html = renderReviewsView();
+        afterRender = initReviewsListeners;
         break;
       case 'blog-cms':
       case 'blogs':

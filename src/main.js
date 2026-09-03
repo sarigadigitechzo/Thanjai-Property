@@ -10,6 +10,8 @@ import { renderLocationExplorer, initLocationExplorerListeners } from './compone
 import { renderCategoryCarousel, initCategoryCarouselListeners } from './components/CategoryCarousel.js';
 import { renderLuxuryTransition, initLuxuryTransitionListeners } from './components/LuxuryTransition.js';
 import { renderBlogSection, initBlogSectionListeners } from './components/BlogSection.js';
+import { renderTestimonialsSection } from './components/TestimonialsSection.js';
+import { renderWriteReviewModal, initWriteReviewModalListeners } from './components/WriteReviewModal.js';
 import { renderPostPropertyCTA, initPostPropertyCTAListeners } from './components/PostPropertyCTA.js';
 import { renderHomeContactBanner, initHomeContactBannerListeners } from './components/HomeContactBanner.js';
 import { renderFooter } from './components/Footer.js';
@@ -239,6 +241,7 @@ function renderApp() {
           ${renderLocationExplorer()}
           ${renderCategoryCarousel()}
           ${renderLuxuryTransition()}
+          ${renderTestimonialsSection()}
           ${renderBlogSection(() => navigateToRoute('blog'), (postId) => openBlogArticle(postId))}
           ${renderHomeContactBanner(() => navigateToRoute('contact'))}
         </main>
@@ -259,6 +262,7 @@ function renderApp() {
       ${selectedModalProperty ? renderPropertyDetailModal(selectedModalProperty) : ''}
       ${appState.isPostModalOpen ? renderPostPropertyModal() : ''}
       ${appState.scheduleModalData ? renderScheduleVisitModal(appState.scheduleModalData) : ''}
+      ${renderWriteReviewModal()}
     </div>
   `;
 
@@ -349,6 +353,9 @@ function renderApp() {
   if (appState.scheduleModalData) {
     initScheduleVisitModalListeners(closeScheduleModal);
   }
+
+  // Mount Write Review Modal listener
+  initWriteReviewModalListeners();
 }
 
 // Handlers
@@ -488,8 +495,13 @@ window.addEventListener('siteImagesUpdated', () => {
 window.addEventListener('blogPostsUpdated', () => {
   renderApp();
 });
+window.addEventListener('reviewsUpdated', () => {
+  if (currentRoute === 'home') {
+    renderApp();
+  }
+});
 window.addEventListener('storage', (e) => {
-  if (e.key === 'thanjai_properties' || e.key === 'thanjai_blog_posts') {
+  if (e.key === 'thanjai_properties' || e.key === 'thanjai_blog_posts' || e.key === 'thanjai_reviews') {
     renderApp();
   }
 });

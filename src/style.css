@@ -5050,3 +5050,47 @@ a.contact-panel-row-value:hover {
     border-radius: 12px !important;
   }
 }
+
+/* AUTO-SCROLLING TESTIMONIALS MARQUEE */
+.testimonials-marquee-wrapper {
+  overflow: hidden;
+  user-select: none;
+  display: flex;
+}
+
+.testimonials-marquee-track {
+  display: flex;
+  gap: 24px;
+  width: max-content;
+  animation: marqueeScroll 45s linear infinite;
+}
+
+.testimonials-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08) !important;
+  border-color: #cbd5e1 !important;
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 768px) {
+  .testimonials-marquee-track {
+    animation-duration: 30s;
+  }
+  .testimonial-card {
+    width: 300px !important;
+    min-width: 300px !important;
+    padding: 20px !important;
+  }
+}
