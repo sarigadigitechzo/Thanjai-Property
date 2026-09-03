@@ -1,4 +1,6 @@
 import { getPropertyById } from '../utils/propertiesStore.js';
+import { sendWhatsAppMessage } from '../utils/whatsapp.js';
+import { showToast } from '../utils/toast.js';
 
 export function renderPipelineBoardView() {
   return `
@@ -350,6 +352,16 @@ export function initPipelineBoardView() {
     });
   }
 
+  const WA_STAGE_TEMPLATES = {
+    'Initial Contact': (name, req, loc) => `Hello ${name}! Thank you for contacting Thanjai Property. We received your inquiry for ${req || 'Property'} in ${loc || 'Thanjavur'}. Our property specialist will guide you shortly.`,
+    'Follow Up Pending': (name, req, loc) => `Hello ${name}! Following up regarding your property requirement (${req || 'Property'}) in ${loc || 'Thanjavur'}. Let us know if you would like updated listings or site visits!`,
+    'Site Visit Scheduled': (name, req, loc) => `Hello ${name}! Your site visit for ${req || 'Property'} in ${loc || 'Thanjavur'} has been scheduled. Our executive will reach out to coordinate the visit time.`,
+    'Site Visit Completed': (name, req, loc) => `Hello ${name}! Thank you for attending the site visit for ${req || 'Property'} in ${loc || 'Thanjavur'}. Please let us know your feedback or if you need more options.`,
+    'Negotiation': (name, req, loc) => `Hello ${name}! We are actively working to finalize the best deal for your preferred property in ${loc || 'Thanjavur'}. We will update you on the price agreement shortly.`,
+    'Bank Loan': (name, req, loc) => `Hello ${name}! Our banking desk is processing the home loan & document verification for your property selection in ${loc || 'Thanjavur'}.`,
+    'Registration': (name, req, loc) => `Congratulations ${name}! Your property registration process for ${req || 'Property'} in ${loc || 'Thanjavur'} is being prepared by Thanjai Property.`
+  };
+
   function updateLeadStatus(leadIdStr, newStatus) {
     const idx = leads.findIndex(l => String(l.id) === String(leadIdStr));
     if (idx !== -1) {
@@ -357,15 +369,44 @@ export function initPipelineBoardView() {
       if (leads[idx].status === newStatus) return;
       
       const oldStatus = leads[idx].status || 'New Lead';
-      leads[idx].status = newStatus;
+      const leadObj = leads[idx];
+      leadObj.status = newStatus;
       
-      if (!leads[idx].timeline) leads[idx].timeline = [];
-      leads[idx].timeline.unshift({
+      if (!leadObj.timeline) leadObj.timeline = [];
+      leadObj.timeline.unshift({
         type: 'pipeline',
         message: `Moved from ${oldStatus.toUpperCase().replace(/\s+/g, '_')} to ${newStatus.toUpperCase().replace(/\s+/g, '_')}`,
         author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
         date: new Date().toISOString()
       });
+
+      // Automated WhatsApp message dispatch for 7 marked stages
+      const templateFn = WA_STAGE_TEMPLATES[newStatus];
+      const destPhone = leadObj.whatsapp || leadObj.mobile || leadObj.phone;
+      if (templateFn && destPhone) {
+        const msgText = templateFn(leadObj.name || 'Client', leadObj.requirement || leadObj.propertyType, leadObj.location || leadObj.city);
+        
+        sendWhatsAppMessage({
+          campaignName: 'stage_update_auto',
+          destination: destPhone,
+          userName: leadObj.name || 'Client',
+          messageText: msgText,
+          leadId: leadObj.id
+        }).then(sent => {
+          showToast(`Automated WhatsApp sent to ${leadObj.name} for ${newStatus}`, 'success');
+        }).catch(err => {
+          showToast(`Stage updated to ${newStatus}`, 'info');
+        });
+
+        leadObj.timeline.unshift({
+          type: 'whatsapp',
+          message: `Automated WhatsApp sent to ${leadObj.name} (${destPhone}): "${msgText}"`,
+          author: 'System Auto Dispatch',
+          date: new Date().toISOString()
+        });
+      } else {
+        showToast(`Lead moved to ${newStatus}`, 'info');
+      }
 
       saveLeads(leads);
       renderBoard(); // Re-render everything to update counts and move cards
