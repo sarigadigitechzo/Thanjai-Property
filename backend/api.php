@@ -510,20 +510,48 @@ elseif ($resource === 'leads') {
             $resFup = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%follow%' OR status LIKE '%contact%' OR (followup IS NOT NULL AND followup != '—' AND followup != '')");
             if ($resFup && $r = $resFup->fetch_assoc()) { $followupCount = intval($r['cnt']); }
 
-            $convertedCount = 0;
-            $resConv = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%convert%' OR status LIKE '%negotiation%'");
-            if ($resConv && $r = $resConv->fetch_assoc()) { $convertedCount = intval($r['cnt']); }
+            $newPipelineCount = 0;
+            $resNewPipe = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%new%' OR status LIKE '%New%'");
+            if ($resNewPipe && $r = $resNewPipe->fetch_assoc()) { $newPipelineCount = intval($r['cnt']); }
+
+            $followupPipelineCount = 0;
+            $resFupPipe = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%contact%' OR status LIKE '%follow%' OR status LIKE '%shared%'");
+            if ($resFupPipe && $r = $resFupPipe->fetch_assoc()) { $followupPipelineCount = intval($r['cnt']); }
+
+            $siteVisitPipelineCount = 0;
+            $resSvPipe = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%interested%' OR status LIKE '%visit%' OR status LIKE '%site%'");
+            if ($resSvPipe && $r = $resSvPipe->fetch_assoc()) { $siteVisitPipelineCount = intval($r['cnt']); }
+
+            $registerPipelineCount = 0;
+            $resRegPipe = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%convert%' OR status LIKE '%negotiation%' OR status LIKE '%register%'");
+            if ($resRegPipe && $r = $resRegPipe->fetch_assoc()) { $registerPipelineCount = intval($r['cnt']); }
+
+            $convertedCount = $registerPipelineCount;
 
             $propertiesCount = 0;
             $resProps = $conn->query("SELECT COUNT(*) as cnt FROM properties");
             if ($resProps && $r = $resProps->fetch_assoc()) { $propertiesCount = intval($r['cnt']); }
+
+            // Source counts map
+            $sourcesMap = [];
+            $resSources = $conn->query("SELECT LOWER(source) as src, COUNT(*) as cnt FROM leads GROUP BY LOWER(source)");
+            if ($resSources) {
+                while ($row = $resSources->fetch_assoc()) {
+                    $sourcesMap[$row['src']] = intval($row['cnt']);
+                }
+            }
 
             echo json_encode([
                 "totalLeads" => $totalCount,
                 "newToday" => $todayCount,
                 "followupsDue" => $followupCount,
                 "convertedCount" => $convertedCount,
-                "propertiesCount" => $propertiesCount
+                "propertiesCount" => $propertiesCount,
+                "newPipelineCount" => $newPipelineCount,
+                "followupPipelineCount" => $followupPipelineCount,
+                "siteVisitPipelineCount" => $siteVisitPipelineCount,
+                "registerPipelineCount" => $registerPipelineCount,
+                "sources" => $sourcesMap
             ]);
             exit();
         }

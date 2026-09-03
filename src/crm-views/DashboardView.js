@@ -171,25 +171,25 @@ export function renderDashboardView() {
 
             <div class="pipeline-stages">
               <div class="pg-stage" style="flex: ${flexNew};" data-tooltip="New Leads • ${newPct}%">
-                <div class="pg-val count-up">${newCount}</div>
+                <div class="pg-val count-up" id="pg-val-new">${newCount}</div>
                 <div class="pg-node" style="border-color: var(--os-charcoal);"><div class="pg-inner" style="background: var(--os-charcoal);"></div></div>
                 <div class="pg-label">New</div>
               </div>
 
               <div class="pg-stage ${fupPct > 0 ? 'pulse-highest' : ''}" style="flex: ${flexFup};" data-tooltip="Follow Up Pending • ${fupPct}%">
-                <div class="pg-val count-up">${followUpCount}</div>
+                <div class="pg-val count-up" id="pg-val-fup">${followUpCount}</div>
                 <div class="pg-node" style="border-color: var(--os-deep-brown);"><div class="pg-inner" style="background: var(--os-deep-brown);"></div></div>
                 <div class="pg-label">Follow Up</div>
               </div>
 
               <div class="pg-stage" style="flex: ${flexSv};" data-tooltip="Site Visit Scheduled • ${svPct}%">
-                <div class="pg-val count-up">${siteVisitCount}</div>
+                <div class="pg-val count-up" id="pg-val-sv">${siteVisitCount}</div>
                 <div class="pg-node" style="border-color: var(--os-luxury-orange);"><div class="pg-inner" style="background: var(--os-luxury-orange);"></div></div>
                 <div class="pg-label">Site Visit</div>
               </div>
 
               <div class="pg-stage" style="flex: ${flexReg};" data-tooltip="Registration • ${regPct}%">
-                <div class="pg-val count-up">${regCount}</div>
+                <div class="pg-val count-up" id="pg-val-reg">${regCount}</div>
                 <div class="pg-node" style="border-color: var(--os-rich-red);"><div class="pg-inner" style="background: var(--os-rich-red);"></div></div>
                 <div class="pg-label">Register</div>
               </div>
@@ -424,6 +424,17 @@ export function initDashboardListeners() {
           const rate = Math.round((stats.convertedCount / stats.totalLeads) * 100);
           convEl.textContent = `${rate}%`;
         }
+
+        // Live Pipeline Distribution Chart Update
+        const pgNew = document.getElementById('pg-val-new');
+        const pgFup = document.getElementById('pg-val-fup');
+        const pgSv = document.getElementById('pg-val-sv');
+        const pgReg = document.getElementById('pg-val-reg');
+
+        if (pgNew && typeof stats.newPipelineCount === 'number') pgNew.textContent = stats.newPipelineCount.toLocaleString();
+        if (pgFup && typeof stats.followupPipelineCount === 'number') pgFup.textContent = stats.followupPipelineCount.toLocaleString();
+        if (pgSv && typeof stats.siteVisitPipelineCount === 'number') pgSv.textContent = stats.siteVisitPipelineCount.toLocaleString();
+        if (pgReg && typeof stats.registerPipelineCount === 'number') pgReg.textContent = stats.registerPipelineCount.toLocaleString();
       }
     }).catch(e => {});
 }
