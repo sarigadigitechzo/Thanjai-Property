@@ -397,7 +397,19 @@ if ($resource === 'properties') {
     if ($method === 'GET') {
         $result = $conn->query("SELECT * FROM properties ORDER BY createdAt DESC");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        if ($result) {
+            while($row = $result->fetch_assoc()) {
+                if (isset($row['images']) && is_string($row['images'])) {
+                    $decoded = json_decode($row['images'], true);
+                    $row['images'] = is_array($decoded) ? $decoded : ($row['images'] ? [$row['images']] : []);
+                }
+                if (isset($row['features']) && is_string($row['features'])) {
+                    $decodedF = json_decode($row['features'], true);
+                    $row['features'] = is_array($decodedF) ? $decodedF : [];
+                }
+                $rows[] = $row;
+            }
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
@@ -461,7 +473,7 @@ if ($resource === 'properties') {
         $bathrooms = isset($data['bathrooms']) && $data['bathrooms'] !== null ? strval($data['bathrooms']) : null;
         $price = floatval($data['price'] ?? 0);
 
-        $stmt->bind_param("sssssssdsssssssssssssssssssssssssssssssss", 
+        $stmt->bind_param("sssssssdssssssssssssssssssssssssssssssss", 
             $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], 
             $data['purpose'], $price, $data['priceFormatted'], $data['location'], $data['district'], $address, 
             $data['size'], $builtUpArea, $posterRole, $bedrooms, $bathrooms, $data['furnishing'], $data['status'], $data['availability'], 

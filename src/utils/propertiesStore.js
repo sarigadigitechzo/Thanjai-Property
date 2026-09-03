@@ -361,24 +361,25 @@ export function updateProperty(id, updatedFields) {
 
   const current = props[index];
   
-  if (updatedFields.price && parseFloat(updatedFields.price) !== current.price) {
-    const numPrice = parseFloat(updatedFields.price);
-    if (!updatedFields.priceFormatted) {
-      if (numPrice >= 10000000) {
-        updatedFields.priceFormatted = `₹ ${(numPrice / 10000000).toFixed(2)} Crore`;
-      } else if (numPrice >= 100000) {
-        updatedFields.priceFormatted = `₹ ${(numPrice / 100000).toFixed(2)} Lakhs`;
-      } else {
-        updatedFields.priceFormatted = `₹ ${numPrice.toLocaleString('en-IN')}`;
-      }
-    }
-  }
-
   const merged = {
     ...current,
     ...updatedFields,
     id: current.id
   };
+
+  if (updatedFields.price !== undefined) {
+    const numPrice = parseFloat(updatedFields.price) || 0;
+    merged.price = numPrice;
+    if (numPrice >= 10000000) {
+      merged.priceFormatted = `₹ ${(numPrice / 10000000).toFixed(2)} Crore`;
+    } else if (numPrice >= 100000) {
+      merged.priceFormatted = `₹ ${(numPrice / 100000).toFixed(2)} Lakhs`;
+    } else if (numPrice > 0) {
+      merged.priceFormatted = `₹ ${numPrice.toLocaleString('en-IN')}`;
+    } else {
+      merged.priceFormatted = '₹ 0';
+    }
+  }
 
   if (updatedFields.type) {
     merged.categoryLabel = getCategoryLabel(updatedFields.type);
@@ -481,13 +482,15 @@ function normalizePropertyRecord(p) {
 
   const numPrice = typeof p.price === 'number' ? p.price : (parseFloat(p.price) || 0);
   let formattedPrice = p.priceFormatted;
-  if (!formattedPrice) {
+  if (!formattedPrice || (numPrice > 0 && (formattedPrice === '₹ 0' || formattedPrice === 'Price on Request' || formattedPrice.trim() === '₹'))) {
     if (numPrice >= 10000000) {
       formattedPrice = `₹ ${(numPrice / 10000000).toFixed(2)} Crore`;
     } else if (numPrice >= 100000) {
       formattedPrice = `₹ ${(numPrice / 100000).toFixed(2)} Lakhs`;
-    } else {
+    } else if (numPrice > 0) {
       formattedPrice = `₹ ${numPrice.toLocaleString('en-IN')}`;
+    } else {
+      formattedPrice = '₹ 0';
     }
   }
 
