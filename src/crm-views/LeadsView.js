@@ -113,11 +113,42 @@ ${(() => {
         </label>
       </div>
 
+      <!-- Bulk Action Bar -->
+      <div id="bulk-action-bar" style="display: none; align-items: center; justify-content: space-between; background: #fff7ed; border: 1px solid #ffedd5; padding: 12px 20px; border-radius: var(--os-radius-lg); margin-bottom: 16px; box-shadow: var(--os-shadow-sm);">
+        <div style="font-weight: 600; color: #c2410c; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
+          <i class="ri-checkbox-multiple-line" style="font-size: 1.2rem;"></i>
+          <span id="bulk-selected-count">0 leads selected</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="os-custom-select" id="bulk-assign-dropdown" style="min-width: 180px; background: var(--os-white);">
+            <div class="select-value" style="font-size: 0.88rem;">Assign staff to selected...</div>
+            <i class="ri-arrow-down-s-line"></i>
+            <div class="select-dropdown">
+              <div class="select-option selected">Assign staff to selected...</div>
+${(() => {
+              const adminUsers = JSON.parse(localStorage.getItem('thanjai_admin_users')) || [];
+              let html = '';
+              if (adminUsers.length > 0) {
+                adminUsers.filter(u => u.status === 'Active').forEach(u => {
+                  html += `<div class="select-option" data-staff="${u.fullName}">Assign to ${u.fullName}</div>`;
+                });
+              } else {
+                html += `<div class="select-option" style="color:var(--os-gray-400);">No staff found</div>`;
+              }
+              return html;
+            })()}
+            </div>
+          </div>
+          <button id="clear-bulk-selection-btn" class="os-btn-secondary" style="padding: 8px 14px; font-size: 0.85rem; background: #ffffff;">Clear Selection</button>
+        </div>
+      </div>
+
       <!-- Table View -->
       <div class="os-table-container" style="background: var(--os-white); border: var(--os-border-thin); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft); overflow-x: auto;">
         <table class="os-table" style="width: 100%; border-collapse: collapse; min-width: 900px;">
           <thead>
             <tr>
+              <th style="width: 40px; text-align: center;"><input type="checkbox" id="select-all-leads" style="accent-color: var(--os-luxury-orange); cursor: pointer;" title="Select all visible leads" /></th>
               <th>LEAD</th>
               <th>REQUIREMENT</th>
               <th>BUDGET</th>
@@ -430,8 +461,12 @@ export async function initLeadsView() {
           (locL.phone && String(locL.phone).replace(/\D/g, '') === String(apiL.phone).replace(/\D/g, '')) ||
           (locL.name && String(locL.name).trim().toLowerCase() === String(apiL.name).trim().toLowerCase())
         );
-        if (matchingLocal && matchingLocal.status) {
-          apiL.status = matchingLocal.status;
+        if (matchingLocal) {
+          if (matchingLocal.status) apiL.status = matchingLocal.status;
+          if (matchingLocal.assignTo && matchingLocal.assignTo !== 'Unassigned') {
+            apiL.assignTo = matchingLocal.assignTo;
+            apiL.assignedTo = matchingLocal.assignTo;
+          }
         }
       });
       cachedLeads = mapped;
@@ -669,6 +704,9 @@ function renderTable() {
 
     return `
       <tr data-id="${lead.id}">
+        <td style="width: 40px; text-align: center;">
+          <input type="checkbox" class="lead-checkbox" data-id="${lead.id}" style="accent-color: var(--os-luxury-orange); cursor: pointer;" />
+        </td>
         <td>
           <div class="action-view" style="font-weight: 600; color: var(--os-luxury-orange); cursor: pointer;">${lead.name}</div>
           <div style="font-size: 0.85rem; color: var(--os-gray-400);">${lead.mobile || lead.phone || '—'}</div>
@@ -804,10 +842,114 @@ function bindLeadEvents() {
 
   // Attach search, due checkbox and pagination event listeners
   const searchInput = document.getElementById('filter-search');
-  if (searchInput) searchInput.addEventListener('input', () => { currentPage = 1; renderTable(); });
+  if (searchInput) searchInput.addEventListener('input', () => { currentPage = 1; renderTable(); updateBulkBarState(); });
 
   const dueCheckbox = document.getElementById('filter-due');
-  if (dueCheckbox) dueCheckbox.addEventListener('change', () => { currentPage = 1; renderTable(); });
+  if (dueCheckbox) dueCheckbox.addEventListener('change', () => { currentPage = 1; renderTable(); updateBulkBarState(); });
+
+  // --- Bulk Checkbox & Bulk Assign Logic ---
+  const bulkBar = document.getElementById('bulk-action-bar');
+  const bulkCountSpan = document.getElementById('bulk-selected-count');
+  const selectAllCb = document.getElementById('select-all-leads');
+  const clearBulkBtn = document.getElementById('clear-bulk-selection-btn');
+
+  function updateBulkBarState() {
+    const rowCbs = document.querySelectorAll('.lead-checkbox:checked');
+    if (!bulkBar) return;
+    if (rowCbs.length > 0) {
+      bulkBar.style.display = 'flex';
+      if (bulkCountSpan) bulkCountSpan.textContent = `${rowCbs.length} lead${rowCbs.length > 1 ? 's' : ''} selected`;
+    } else {
+      bulkBar.style.display = 'none';
+      if (selectAllCb) selectAllCb.checked = false;
+    }
+  }
+
+  const tableBody = document.getElementById('leads-table-body');
+  if (tableBody) {
+    tableBody.addEventListener('change', (e) => {
+      if (e.target.classList.contains('lead-checkbox')) {
+        updateBulkBarState();
+      }
+    });
+  }
+
+  if (selectAllCb) {
+    selectAllCb.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      const rowCbs = document.querySelectorAll('.lead-checkbox');
+      rowCbs.forEach(cb => cb.checked = isChecked);
+      updateBulkBarState();
+    });
+  }
+
+  if (clearBulkBtn) {
+    clearBulkBtn.addEventListener('click', () => {
+      const rowCbs = document.querySelectorAll('.lead-checkbox');
+      rowCbs.forEach(cb => cb.checked = false);
+      if (selectAllCb) selectAllCb.checked = false;
+      updateBulkBarState();
+    });
+  }
+
+  // Bulk Assign Dropdown Handler
+  const bulkAssignDropdown = document.getElementById('bulk-assign-dropdown');
+  if (bulkAssignDropdown) {
+    const opts = bulkAssignDropdown.querySelectorAll('.select-option');
+    opts.forEach(opt => {
+      opt.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const staffName = opt.dataset.staff || opt.textContent.replace('Assign to', '').trim();
+        if (!staffName || staffName.includes('Assign staff')) return;
+
+        const selectedCbs = document.querySelectorAll('.lead-checkbox:checked');
+        if (selectedCbs.length === 0) {
+          showToast('Please select at least one lead.', 'warning');
+          return;
+        }
+
+        const selectedIds = Array.from(selectedCbs).map(cb => cb.dataset.id);
+        let leads = getLeads();
+
+        selectedIds.forEach(leadId => {
+          const idx = leads.findIndex(l => String(l.id) === String(leadId));
+          if (idx !== -1) {
+            leads[idx].assignTo = staffName;
+            leads[idx].assignedTo = staffName;
+            if (!leads[idx].timeline) leads[idx].timeline = [];
+            leads[idx].timeline.unshift({
+              type: 'system',
+              message: `Bulk assigned to ${staffName}`,
+              author: localStorage.getItem('thanjai_active_user') || 'Aishwarya Raman',
+              date: new Date().toISOString()
+            });
+
+            // Async sync to live MySQL backend
+            fetchFromAPI('/leads?id=' + encodeURIComponent(leadId), {
+              method: 'PUT',
+              body: JSON.stringify({
+                id: leads[idx].id,
+                name: leads[idx].name,
+                phone: leads[idx].phone || leads[idx].mobile,
+                status: leads[idx].status,
+                assignedTo: staffName,
+                timeline: leads[idx].timeline
+              })
+            }).catch(() => {});
+          }
+        });
+
+        saveLeads(leads);
+        showToast(`Assigned ${selectedIds.length} lead${selectedIds.length > 1 ? 's' : ''} to ${staffName}!`, 'success');
+        
+        // Reset selection UI
+        bulkAssignDropdown.querySelector('.select-value').textContent = 'Assign staff to selected...';
+        bulkAssignDropdown.classList.remove('open');
+        renderTable();
+        updateBulkBarState();
+      });
+    });
+  }
 
   const prevBtn = document.getElementById('leads-prev-btn');
   const nextBtn = document.getElementById('leads-next-btn');

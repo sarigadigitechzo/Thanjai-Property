@@ -95,8 +95,12 @@ export function initPipelineBoardView() {
             (locL.phone && String(locL.phone).replace(/\D/g, '') === String(apiL.phone).replace(/\D/g, '')) ||
             (locL.name && String(locL.name).trim().toLowerCase() === String(apiL.name).trim().toLowerCase())
           );
-          if (matchingLocal && matchingLocal.status) {
-            apiL.status = matchingLocal.status;
+          if (matchingLocal) {
+            if (matchingLocal.status) apiL.status = matchingLocal.status;
+            if (matchingLocal.assignTo && matchingLocal.assignTo !== 'Unassigned') {
+              apiL.assignTo = matchingLocal.assignTo;
+              apiL.assignedTo = matchingLocal.assignTo;
+            }
           }
         });
         saveLeads(apiLeads);
