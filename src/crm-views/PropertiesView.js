@@ -946,14 +946,7 @@ function renderFullPagePropertyForm(prop) {
 
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Poster Role / User Source</label>
-                <input type="text" list="poster-role-options" id="form-prop-poster-role" value="${isEdit ? (prop?.posterRole || prop?.userRole || 'Individual Owner') : 'Individual Owner'}" placeholder="e.g. Individual Owner, Agent, Builder, Partner, Staff..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; background: #fff;" />
-                <datalist id="poster-role-options">
-                  <option value="Individual Owner">
-                  <option value="Builder / Developer">
-                  <option value="Agent / Broker">
-                  <option value="Partner / Specialist">
-                  <option value="Admin / Official Staff">
-                </datalist>
+                <input type="text" id="form-prop-poster-role" value="${isEdit ? (prop?.posterRole || prop?.userRole || 'Individual Owner') : 'Individual Owner'}" placeholder="e.g. Individual Owner, Agent, Builder, Partner, Staff..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
               <div>
