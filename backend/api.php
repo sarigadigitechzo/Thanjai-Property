@@ -515,21 +515,20 @@ elseif ($resource === 'leads') {
             echo json_encode(["error" => "Database error: " . $stmt->error]);
         }
     }
-    elseif ($method === 'PUT' && $id) {
+    elseif ($method === 'PUT') {
         $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("UPDATE leads SET name=?, phone=?, whatsapp=?, email=?, source=?, status=?, budget=?, requirement=?, location=?, timeline=?, assignedTo=?, notes=?, followup=?, propertyId=? WHERE id=?");
+        $targetId = $id ?: ($data['id'] ?? '');
+        $status = $data['status'] ?? 'New Lead';
         $phone = $data['phone'] ?? $data['mobile'] ?? '';
-        $whatsapp = $data['whatsapp'] ?? $phone;
-        $timeline = is_string($data['timeline'] ?? null) ? $data['timeline'] : json_encode($data['timeline'] ?? []);
-        $notes = is_string($data['notes'] ?? null) ? $data['notes'] : json_encode($data['notes'] ?? []);
-        $followup = $data['followup'] ?? '—';
-        $location = $data['location'] ?? $data['area'] ?? $data['city'] ?? 'Thanjavur';
-        $requirement = $data['requirement'] ?? $data['propertyType'] ?? $data['type'] ?? 'Residential Plot';
+        $name = $data['name'] ?? '';
         $assignedTo = $data['assignedTo'] ?? $data['assignTo'] ?? 'Unassigned';
-        $propertyId = $data['propertyId'] ?? $data['propertyMatch'] ?? null;
-        $stmt->bind_param("sssssssssssssss", $data['name'], $phone, $whatsapp, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup, $propertyId, $id);
+        $timeline = is_string($data['timeline'] ?? null) ? $data['timeline'] : json_encode($data['timeline'] ?? []);
+        
+        $stmt = $conn->prepare("UPDATE leads SET status=?, assignedTo=?, timeline=? WHERE id=? OR (phone=? AND phone != '') OR (name=? AND name != '')");
+        $stmt->bind_param("ssssss", $status, $assignedTo, $timeline, $targetId, $phone, $name);
         $stmt->execute();
-        echo json_encode(["message" => "Lead updated successfully"]);
+        echo json_encode(["message" => "Lead status updated in database successfully"]);
+        exit();
     }
     elseif ($method === 'DELETE' && $id) {
         $stmt = $conn->prepare("DELETE FROM leads WHERE id=?");

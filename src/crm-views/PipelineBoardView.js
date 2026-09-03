@@ -408,6 +408,21 @@ export function initPipelineBoardView() {
         showToast(`Lead moved to ${newStatus}`, 'info');
       }
 
+      // INSTANTLY SYNC STATUS UPDATE TO LIVE CPANEL MYSQL DATABASE
+      try {
+        fetchFromAPI('/leads?id=' + encodeURIComponent(leadObj.id), {
+          method: 'PUT',
+          body: JSON.stringify({
+            id: leadObj.id,
+            name: leadObj.name,
+            phone: leadObj.phone || leadObj.mobile,
+            status: newStatus,
+            assignedTo: leadObj.assignTo || leadObj.assignedTo,
+            timeline: leadObj.timeline
+          })
+        }).catch(err => console.warn('MySQL Lead status sync notice:', err));
+      } catch (err) {}
+
       saveLeads(leads);
       renderBoard(); // Re-render everything to update counts and move cards
     }
