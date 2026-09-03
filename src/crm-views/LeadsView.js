@@ -446,7 +446,7 @@ function tryParseJSON(str) {
 }
 
 // Data Store Initializer
-export async function initLeadsView() {
+export async function initLeadsView(searchQuery = null) {
   try {
     const data = await fetchFromAPI('/leads');
     if (data && Array.isArray(data)) {
@@ -476,6 +476,23 @@ export async function initLeadsView() {
   
   // Call init logic that binds events
   bindLeadEvents();
+
+  // Check passed searchQuery parameter or URL hash for property query parameter
+  let targetQuery = searchQuery;
+  if (!targetQuery) {
+    const rawHash = window.location.hash || '';
+    if (rawHash.includes('?')) {
+      const qParts = rawHash.split('?')[1] || '';
+      const params = new URLSearchParams(qParts);
+      targetQuery = params.get('prop') || params.get('search') || '';
+    }
+  }
+
+  if (targetQuery) {
+    const searchEl = document.getElementById('filter-search');
+    if (searchEl) searchEl.value = targetQuery;
+  }
+
   renderTable();
 }
 
@@ -541,8 +558,24 @@ function renderTable() {
     leads = leads.filter(lead => {
       // Search
       if (q) {
-        const str = `${lead.name || ''} ${lead.mobile || ''} ${lead.email || ''} ${lead.type || ''} ${lead.area || ''} ${lead.source || ''} ${lead.status || ''} ${lead.assignTo || ''}`.toLowerCase();
-        if (!str.includes(q)) return false;
+        const qClean = q.trim().toLowerCase();
+        const isPropSearch = /^tp-?\d+/i.test(qClean);
+
+        if (isPropSearch) {
+          const targetPropId = qClean.replace(/[^a-z0-9]/g, '');
+          const leadPropId = String(lead.propertyId || lead.propertyMatch || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          const notesStr = typeof lead.notes === 'string' ? lead.notes.toLowerCase() : JSON.stringify(lead.notes || []).toLowerCase();
+          const timelineStr = typeof lead.timeline === 'string' ? lead.timeline.toLowerCase() : JSON.stringify(lead.timeline || []).toLowerCase();
+
+          const matchesProp = (leadPropId && leadPropId === targetPropId) ||
+                              notesStr.includes(qClean) ||
+                              timelineStr.includes(qClean);
+                              
+          if (!matchesProp) return false;
+        } else {
+          const str = `${lead.name || ''} ${lead.mobile || ''} ${lead.phone || ''} ${lead.email || ''} ${lead.type || ''} ${lead.area || ''} ${lead.location || ''} ${lead.source || ''} ${lead.status || ''} ${lead.assignTo || ''}`.toLowerCase();
+          if (!str.includes(qClean)) return false;
+        }
       }
       // Dropdowns
       if (fStatus !== 'All statuses' && lead.status !== fStatus) return false;

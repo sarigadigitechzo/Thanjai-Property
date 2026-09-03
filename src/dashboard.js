@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
         contentArea.innerHTML = html;
       }
       if (viewName === 'leads') {
-        initLeadsView();
+        initLeadsView(param);
       }
       if (afterRender) {
         setTimeout(afterRender, 0); // ensure DOM is painted
@@ -420,18 +420,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleHashChange() {
-    const hash = window.location.hash.slice(1) || 'dashboard';
+    const rawHash = window.location.hash.slice(1) || 'dashboard';
+    const cleanHash = rawHash.split('?')[0];
+    let queryParam = null;
+    if (rawHash.includes('?')) {
+      const qParts = rawHash.split('?')[1] || '';
+      const params = new URLSearchParams(qParts);
+      queryParam = params.get('prop') || params.get('search') || null;
+    }
     
-    if (hash.startsWith('lead/')) {
-      const id = hash.split('/')[1];
+    if (cleanHash.startsWith('lead/')) {
+      const id = cleanHash.split('/')[1];
       loadView('lead-detail', id);
       setActiveNav('leads');
       keepUrlClean();
       return;
     }
 
-    loadView(hash);
-    setActiveNav(hash);
+    loadView(cleanHash, queryParam);
+    setActiveNav(cleanHash);
     keepUrlClean();
   }
 
