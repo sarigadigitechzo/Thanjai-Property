@@ -224,7 +224,7 @@ export function renderDashboardView() {
                 <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-rich-red)" stroke-width="12" stroke-dasharray="12.6 251.2" stroke-dashoffset="-238.6" data-tooltip="Referral: 1 (5%)" data-source="referral"></circle>
               </svg>
               <div class="donut-center-info">
-                <span class="dc-total count-up">18</span>
+                <span class="dc-total count-up" id="source-doughnut-total">18</span>
                 <span class="dc-lbl">Total Leads</span>
               </div>
             </div>
@@ -236,44 +236,44 @@ export function renderDashboardView() {
             <div class="source-glass-card hover-lift" data-source="manual">
               <div class="sgc-header">
                 <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-deep-brown);"></span> Manual Entry</div>
-                <div class="sgc-badge"><span class="count-up">11</span> Leads</div>
+                <div class="sgc-badge"><span class="count-up" id="src-manual-badge">11</span> Leads</div>
               </div>
-              <div class="sgc-perc count-up">61%</div>
+              <div class="sgc-perc count-up" id="src-manual-perc">61%</div>
               <div class="sgc-track">
-                <div class="sgc-fill" style="width: 61%; background: var(--os-deep-brown);"></div>
+                <div class="sgc-fill" id="src-manual-fill" style="width: 61%; background: var(--os-deep-brown);"></div>
               </div>
             </div>
 
             <div class="source-glass-card hover-lift" data-source="whatsapp">
               <div class="sgc-header">
                 <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-luxury-orange);"></span> WhatsApp</div>
-                <div class="sgc-badge"><span class="count-up">3</span> Leads</div>
+                <div class="sgc-badge"><span class="count-up" id="src-wa-badge">3</span> Leads</div>
               </div>
-              <div class="sgc-perc count-up">17%</div>
+              <div class="sgc-perc count-up" id="src-wa-perc">17%</div>
               <div class="sgc-track">
-                <div class="sgc-fill" style="width: 17%; background: var(--os-luxury-orange);"></div>
+                <div class="sgc-fill" id="src-wa-fill" style="width: 17%; background: var(--os-luxury-orange);"></div>
               </div>
             </div>
 
             <div class="source-glass-card hover-lift" data-source="website">
               <div class="sgc-header">
                 <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-gold);"></span> Website Form</div>
-                <div class="sgc-badge"><span class="count-up">3</span> Leads</div>
+                <div class="sgc-badge"><span class="count-up" id="src-web-badge">3</span> Leads</div>
               </div>
-              <div class="sgc-perc count-up">17%</div>
+              <div class="sgc-perc count-up" id="src-web-perc">17%</div>
               <div class="sgc-track">
-                <div class="sgc-fill" style="width: 17%; background: var(--os-gold);"></div>
+                <div class="sgc-fill" id="src-web-fill" style="width: 17%; background: var(--os-gold);"></div>
               </div>
             </div>
 
             <div class="source-glass-card hover-lift" data-source="referral">
               <div class="sgc-header">
                 <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-rich-red);"></span> Referral</div>
-                <div class="sgc-badge"><span class="count-up">1</span> Leads</div>
+                <div class="sgc-badge"><span class="count-up" id="src-ref-badge">1</span> Leads</div>
               </div>
-              <div class="sgc-perc count-up">5%</div>
+              <div class="sgc-perc count-up" id="src-ref-perc">5%</div>
               <div class="sgc-track">
-                <div class="sgc-fill" style="width: 5%; background: var(--os-rich-red);"></div>
+                <div class="sgc-fill" id="src-ref-fill" style="width: 5%; background: var(--os-rich-red);"></div>
               </div>
             </div>
 
@@ -284,7 +284,7 @@ export function renderDashboardView() {
       <!-- Registered Portal Users & Client Logins Table -->
       <div class="os-chart-card" style="margin-top: 32px;">
         <div class="os-chart-header" style="display: flex; justify-content: space-between; align-items: center;">
-          <span><i class="ri-user-shared-line"></i> Registered Portal Users & Active Logins (${users.length})</span>
+          <span><i class="ri-user-shared-line"></i> Registered Portal Users & Active Logins (<span id="portal-users-header-count">${users.length}</span>)</span>
           <span style="font-size: 0.78rem; background: rgba(235,94,40,0.15); color: #eb5e28; padding: 4px 12px; border-radius: 20px; font-weight: 800;">
             Client Portal Synchronized
           </span>
@@ -303,7 +303,7 @@ export function renderDashboardView() {
                 <th style="padding: 12px 16px;">OTP Verification</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="portal-users-tbody">
               ${users.map(u => `
                 <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
                   <td style="padding: 12px 16px; font-weight: 700; color: var(--os-luxury-orange);">${u.id}</td>
@@ -435,6 +435,63 @@ export function initDashboardListeners() {
         if (pgFup && typeof stats.followupPipelineCount === 'number') pgFup.textContent = stats.followupPipelineCount.toLocaleString();
         if (pgSv && typeof stats.siteVisitPipelineCount === 'number') pgSv.textContent = stats.siteVisitPipelineCount.toLocaleString();
         if (pgReg && typeof stats.registerPipelineCount === 'number') pgReg.textContent = stats.registerPipelineCount.toLocaleString();
+
+        // Live Leads by Source Breakdown Update
+        if (stats.sources && typeof stats.totalLeads === 'number' && stats.totalLeads > 0) {
+          const total = stats.totalLeads;
+          const s = stats.sources;
+          let manual = 0, wa = 0, web = 0, ref = 0;
+
+          Object.keys(s).forEach(k => {
+            const val = s[k] || 0;
+            if (k.includes('manual') || k.includes('walk') || !k) manual += val;
+            else if (k.includes('whatsapp') || k.includes('wa')) wa += val;
+            else if (k.includes('website') || k.includes('form') || k.includes('site')) web += val;
+            else ref += val;
+          });
+
+          const totalCenterEl = document.getElementById('source-doughnut-total');
+          if (totalCenterEl) totalCenterEl.textContent = total.toLocaleString();
+
+          const setSrcCard = (badgeId, percId, fillId, val) => {
+            const b = document.getElementById(badgeId);
+            const p = document.getElementById(percId);
+            const f = document.getElementById(fillId);
+            const pct = Math.round((val / total) * 100);
+            if (b) b.textContent = val.toLocaleString();
+            if (p) p.textContent = `${pct}%`;
+            if (f) f.style.width = `${pct}%`;
+          };
+
+          setSrcCard('src-manual-badge', 'src-manual-perc', 'src-manual-fill', manual);
+          setSrcCard('src-wa-badge', 'src-wa-perc', 'src-wa-fill', wa);
+          setSrcCard('src-web-badge', 'src-web-perc', 'src-web-fill', web);
+          setSrcCard('src-ref-badge', 'src-ref-perc', 'src-ref-fill', ref);
+        }
+      }
+    }).catch(e => {});
+
+  // Fetch Live MySQL Registered Portal Users
+  fetch('/api.php/portal_users')
+    .then(res => res.json())
+    .then(users => {
+      if (Array.isArray(users) && users.length > 0) {
+        const countBadge = document.getElementById('portal-users-header-count');
+        const tbody = document.getElementById('portal-users-tbody');
+        if (countBadge) countBadge.textContent = users.length;
+        if (tbody) {
+          tbody.innerHTML = users.map(u => `
+            <tr style="border-bottom: 1px solid rgba(0,0,0,0.04);">
+              <td style="padding: 12px 16px; font-weight: 700; color: var(--os-luxury-orange);">${u.id || 'USR-100'}</td>
+              <td style="padding: 12px 16px; font-weight: 700;">${u.fullName || u.name || 'User'}</td>
+              <td style="padding: 12px 16px;">${u.email || 'N/A'}</td>
+              <td style="padding: 12px 16px;">${u.phone || u.mobile || 'N/A'}</td>
+              <td style="padding: 12px 16px;"><span class="os-badge" style="background: rgba(49,130,206,0.12); color: #3182ce; font-weight: 700; padding: 2px 8px; border-radius: 6px;">${u.role || 'Individual Owner'}</span></td>
+              <td style="padding: 12px 16px; font-weight: 700;">${u.propertiesCount || 0}</td>
+              <td style="padding: 12px 16px;"><span style="color: #38a169; font-weight: 800;"><i class="ri-checkbox-circle-fill"></i> ${u.status || 'Active'}</span></td>
+            </tr>
+          `).join('');
+        }
       }
     }).catch(e => {});
 }
