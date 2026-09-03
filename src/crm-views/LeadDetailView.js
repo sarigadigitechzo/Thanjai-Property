@@ -115,7 +115,7 @@ export function renderLeadDetailView(id) {
   return `
     <div class="lead-detail-page">
       <div class="ld-back-nav" style="margin-bottom: 24px;">
-        <a href="#leads" style="color: var(--os-gray-500); text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
+        <a href="javascript:void(0)" onclick="if(window.navigateToView) window.navigateToView('leads');" style="color: var(--os-gray-500); text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 8px;">
           <i class="ri-arrow-left-line"></i> Back to leads
         </a>
       </div>

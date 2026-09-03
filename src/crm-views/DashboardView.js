@@ -71,7 +71,7 @@ export function renderDashboardView() {
       <!-- 8 KPI Grid (2x4) Matching Reference Design -->
       <div class="kpi-grid">
         <!-- 1. TOTAL LEADS -->
-        <div class="kpi-card clickable-kpi" data-route="#leads" title="Open CRM Pipeline">
+        <div class="kpi-card clickable-kpi" data-route="leads" title="Open CRM Pipeline">
           <div class="kpi-header">
             <span class="kpi-title">TOTAL LEADS</span>
             <div class="kpi-icon" style="background: #ebf8ff; color: #3182ce;"><i class="ri-user-line"></i></div>
@@ -81,7 +81,7 @@ export function renderDashboardView() {
         </div>
 
         <!-- 2. NEW TODAY -->
-        <div class="kpi-card clickable-kpi" data-route="#leads" title="Open CRM Pipeline">
+        <div class="kpi-card clickable-kpi" data-route="leads" title="Open CRM Pipeline">
           <div class="kpi-header">
             <span class="kpi-title">NEW TODAY</span>
             <div class="kpi-icon" style="background: #e6fffa; color: #319795;"><i class="ri-sparkling-fill"></i></div>
@@ -91,7 +91,7 @@ export function renderDashboardView() {
         </div>
 
         <!-- 3. FOLLOW-UPS DUE -->
-        <div class="kpi-card clickable-kpi" data-route="#visits" title="Open Site Visits & Appointments">
+        <div class="kpi-card clickable-kpi" data-route="visits" title="Open Site Visits & Appointments">
           <div class="kpi-header">
             <span class="kpi-title">FOLLOW-UPS DUE</span>
             <div class="kpi-icon" style="background: #feebc8; color: #dd6b20;"><i class="ri-calendar-event-line"></i></div>
@@ -101,7 +101,7 @@ export function renderDashboardView() {
         </div>
 
         <!-- 4. CONVERSION RATE -->
-        <div class="kpi-card clickable-kpi" data-route="#reports" title="Open Reports & Analytics">
+        <div class="kpi-card clickable-kpi" data-route="reports" title="Open Reports & Analytics">
           <div class="kpi-header">
             <span class="kpi-title">CONVERSION RATE</span>
             <div class="kpi-icon" style="background: #faf5ff; color: #805ad5;"><i class="ri-pie-chart-line"></i></div>
@@ -111,7 +111,7 @@ export function renderDashboardView() {
         </div>
 
         <!-- 5. PROPERTIES AVAILABLE -->
-        <div class="kpi-card clickable-kpi" data-route="#properties" title="Open Properties Inventory">
+        <div class="kpi-card clickable-kpi" data-route="properties" title="Open Properties Inventory">
           <div class="kpi-header">
             <span class="kpi-title">PROPERTIES AVAILABLE</span>
             <div class="kpi-icon" style="background: #e6fffa; color: #00a3c4;"><i class="ri-building-line"></i></div>
@@ -121,7 +121,7 @@ export function renderDashboardView() {
         </div>
 
         <!-- 6. SHARED TODAY -->
-        <div class="kpi-card clickable-kpi" data-route="#whatsapp" title="Open WhatsApp Log">
+        <div class="kpi-card clickable-kpi" data-route="whatsapp" title="Open WhatsApp Log">
           <div class="kpi-header">
             <span class="kpi-title">SHARED TODAY</span>
             <div class="kpi-icon" style="background: #ebf8ff; color: #4299e1;"><i class="ri-send-plane-line"></i></div>
@@ -131,7 +131,7 @@ export function renderDashboardView() {
         </div>
 
         <!-- 7. WHATSAPP SENT TODAY -->
-        <div class="kpi-card clickable-kpi" data-route="#whatsapp" title="Open WhatsApp Log">
+        <div class="kpi-card clickable-kpi" data-route="whatsapp" title="Open WhatsApp Log">
           <div class="kpi-header">
             <span class="kpi-title">WHATSAPP SENT TODAY</span>
             <div class="kpi-icon" style="background: #f0fff4; color: #38a169;"><i class="ri-whatsapp-line"></i></div>
@@ -141,7 +141,7 @@ export function renderDashboardView() {
         </div>
 
         <!-- 8. PARTNER-SHARED LEADS -->
-        <div class="kpi-card clickable-kpi" data-route="#partners" title="Open Partner Network">
+        <div class="kpi-card clickable-kpi" data-route="partners" title="Open Partner Network">
           <div class="kpi-header">
             <span class="kpi-title">PARTNER-SHARED LEADS</span>
             <div class="kpi-icon" style="background: #fff5f5; color: #d53f8c;"><i class="ri-briefcase-4-line"></i></div>

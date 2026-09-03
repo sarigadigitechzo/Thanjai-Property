@@ -25,7 +25,7 @@ export function renderHowToUseView() {
 
       <!-- Quick Nav Grid -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 24px;">
-        <a href="#guide-pipeline" class="howto-quick-card" style="text-decoration: none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
+        <a href="javascript:void(0)" onclick="document.getElementById('guide-pipeline')?.scrollIntoView({behavior:'smooth'});" class="howto-quick-card" style="text-decoration: none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
           <div style="width: 38px; height: 38px; border-radius: 10px; background: #fff7ed; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;"><i class="ri-kanban-view"></i></div>
           <div>
             <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">1. CRM Pipeline</div>
@@ -33,7 +33,7 @@ export function renderHowToUseView() {
           </div>
         </a>
 
-        <a href="#guide-properties" class="howto-quick-card" style="text-decoration: none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
+        <a href="javascript:void(0)" onclick="document.getElementById('guide-properties')?.scrollIntoView({behavior:'smooth'});" class="howto-quick-card" style="text-decoration: none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
           <div style="width: 38px; height: 38px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;"><i class="ri-building-4-line"></i></div>
           <div>
             <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">2. Property Inventory</div>
@@ -41,7 +41,7 @@ export function renderHowToUseView() {
           </div>
         </a>
 
-        <a href="#guide-whatsapp" class="howto-quick-card" style="text-decoration: none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
+        <a href="javascript:void(0)" onclick="document.getElementById('guide-whatsapp')?.scrollIntoView({behavior:'smooth'});" class="howto-quick-card" style="text-decoration: none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
           <div style="width: 38px; height: 38px; border-radius: 10px; background: #f0fdf4; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;"><i class="ri-whatsapp-line"></i></div>
           <div>
             <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">3. WhatsApp Log</div>
@@ -49,7 +49,7 @@ export function renderHowToUseView() {
           </div>
         </a>
 
-        <a href="#guide-visits" class="howto-quick-card" style="text-decoration: none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
+        <a href="javascript:void(0)" onclick="document.getElementById('guide-visits')?.scrollIntoView({behavior:'smooth'});" class="howto-quick-card" style="text-decoration: none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
           <div style="width: 38px; height: 38px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;"><i class="ri-calendar-check-line"></i></div>
           <div>
             <div style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">4. Site Visits</div>

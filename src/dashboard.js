@@ -428,8 +428,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!viewName) viewName = 'dashboard';
     sessionStorage.setItem('thanjai_active_view', viewName);
     
-    if (window.location.hash.slice(1).split('?')[0] !== viewName) {
-      window.location.hash = queryParam ? `${viewName}?prop=${queryParam}` : viewName;
+    // Clean URL: Keep address bar completely clean without #hash suffix
+    if (window.location.hash) {
+      history.replaceState(null, '', window.location.pathname + (window.location.search || ''));
     }
 
     if (viewName.startsWith('lead/')) {
