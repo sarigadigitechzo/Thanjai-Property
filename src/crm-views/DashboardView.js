@@ -4,6 +4,7 @@ import { getRegisteredUsers } from '../utils/userAuthStore.js';
 export function renderDashboardView() {
   const activePropertiesCount = getProperties().length;
   const users = getRegisteredUsers();
+  const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
   const storedTotal = parseInt(localStorage.getItem('thanjai_total_leads_count') || '12450', 10);
   const totalLeads = Math.max(leads.length, storedTotal || 0);
   
