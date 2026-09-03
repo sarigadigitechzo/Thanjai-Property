@@ -555,8 +555,27 @@ elseif ($resource === 'leads') {
             $statuses = [];
             if ($resSt) { while ($r = $resSt->fetch_assoc()) { $statuses[] = ["status" => $r['st'], "count" => intval($r['cnt'])]; } }
 
-            // 3. Staff Performance (Coalescing assignedTo, assignTo, assigned_to columns)
-            $resStaff = $conn->query("SELECT TRIM(COALESCE(NULLIF(TRIM(assignedTo), ''), NULLIF(TRIM(assignTo), ''), NULLIF(TRIM(assigned_to), ''), 'Unassigned')) as staff, COUNT(*) as total, SUM(IF(status LIKE '%convert%' OR status LIKE '%register%' OR status LIKE '%negotiation%', 1, 0)) as converted FROM leads GROUP BY staff ORDER BY total DESC");
+            // 3. Staff Performance (Case-insensitive multi-column pattern matching)
+            $resStaff = $conn->query("
+                SELECT 
+                  CASE 
+                    WHEN assignedTo LIKE '%Maheshwari%' OR assignTo LIKE '%Maheshwari%' OR assigned_to LIKE '%Maheshwari%' OR notes LIKE '%Maheshwari%' THEN 'Maheshwari'
+                    WHEN assignedTo LIKE '%Kavitha%' OR assignTo LIKE '%Kavitha%' OR assigned_to LIKE '%Kavitha%' OR notes LIKE '%Kavitha%' THEN 'Kavitha'
+                    WHEN assignedTo LIKE '%Arun%' OR assignTo LIKE '%Arun%' OR assigned_to LIKE '%Arun%' OR notes LIKE '%Arun%' THEN 'Arun'
+                    WHEN assignedTo LIKE '%Priya%' OR assignTo LIKE '%Priya%' OR assigned_to LIKE '%Priya%' OR notes LIKE '%Priya%' THEN 'Priya'
+                    WHEN assignedTo LIKE '%Vijay%' OR assignTo LIKE '%Vijay%' OR assigned_to LIKE '%Vijay%' OR notes LIKE '%Vijay%' THEN 'Vijayaraghavan'
+                    WHEN TRIM(COALESCE(NULLIF(TRIM(assignedTo), ''), NULLIF(TRIM(assignTo), ''), NULLIF(TRIM(assigned_to), ''))) IS NOT NULL 
+                         AND TRIM(COALESCE(NULLIF(TRIM(assignedTo), ''), NULLIF(TRIM(assignTo), ''), NULLIF(TRIM(assigned_to), ''))) != '' 
+                         AND TRIM(COALESCE(NULLIF(TRIM(assignedTo), ''), NULLIF(TRIM(assignTo), ''), NULLIF(TRIM(assigned_to), ''))) != 'Unassigned'
+                    THEN TRIM(COALESCE(NULLIF(TRIM(assignedTo), ''), NULLIF(TRIM(assignTo), ''), NULLIF(TRIM(assigned_to), '')))
+                    ELSE 'Unassigned'
+                  END as staff, 
+                  COUNT(*) as total, 
+                  SUM(IF(status LIKE '%convert%' OR status LIKE '%register%' OR status LIKE '%negotiation%', 1, 0)) as converted 
+                FROM leads 
+                GROUP BY staff 
+                ORDER BY total DESC
+            ");
             $staffList = [];
             if ($resStaff) { while ($r = $resStaff->fetch_assoc()) { $staffList[] = ["staff" => $r['staff'], "total" => intval($r['total']), "converted" => intval($r['converted'])]; } }
 
