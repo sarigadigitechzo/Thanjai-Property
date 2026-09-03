@@ -408,10 +408,14 @@ export function initDashboardListeners() {
         const todayEl = document.getElementById('kpi-new-today');
         const dueEl = document.getElementById('kpi-followups-due');
         const convEl = document.getElementById('kpi-conversion-rate');
+        const propEl = document.getElementById('kpi-properties-available');
 
         if (totalEl) totalEl.textContent = stats.totalLeads.toLocaleString();
         if (todayEl) todayEl.textContent = stats.newToday.toLocaleString();
         if (dueEl) dueEl.textContent = stats.followupsDue.toLocaleString();
+        if (propEl && typeof stats.propertiesCount === 'number' && stats.propertiesCount > 0) {
+          propEl.textContent = stats.propertiesCount.toLocaleString();
+        }
         if (convEl && stats.totalLeads > 0) {
           const rate = Math.round((stats.convertedCount / stats.totalLeads) * 100);
           convEl.textContent = `${rate}%`;

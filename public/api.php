@@ -491,7 +491,7 @@ elseif ($resource === 'leads') {
             if ($resTotal && $r = $resTotal->fetch_assoc()) { $totalCount = intval($r['cnt']); }
 
             $todayCount = 0;
-            $resToday = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE DATE(createdAt) = CURDATE() OR DATE(created_at) = CURDATE() OR createdAt LIKE CONCAT('%', DATE_FORMAT(NOW(), '%d %b %Y'), '%') OR createdAt LIKE CONCAT('%', DATE_FORMAT(NOW(), '%d Sept %Y'), '%')");
+            $resToday = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE createdAt LIKE CONCAT(CURDATE(), '%') OR createdAt LIKE CONCAT(DATE_FORMAT(NOW(), '%Y-%m-%d'), '%') OR createdAt LIKE CONCAT(DATE_FORMAT(NOW(), '%d %b %Y'), '%') OR createdAt LIKE CONCAT(DATE_FORMAT(NOW(), '%d Sept %Y'), '%') OR createdAt LIKE CONCAT(DATE_FORMAT(NOW(), '%d/%m/%Y'), '%')");
             if ($resToday && $r = $resToday->fetch_assoc()) { $todayCount = intval($r['cnt']); }
 
             $followupCount = 0;
@@ -502,11 +502,16 @@ elseif ($resource === 'leads') {
             $resConv = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%convert%' OR status LIKE '%negotiation%'");
             if ($resConv && $r = $resConv->fetch_assoc()) { $convertedCount = intval($r['cnt']); }
 
+            $propertiesCount = 0;
+            $resProps = $conn->query("SELECT COUNT(*) as cnt FROM properties");
+            if ($resProps && $r = $resProps->fetch_assoc()) { $propertiesCount = intval($r['cnt']); }
+
             echo json_encode([
                 "totalLeads" => $totalCount,
                 "newToday" => $todayCount,
                 "followupsDue" => $followupCount,
-                "convertedCount" => $convertedCount
+                "convertedCount" => $convertedCount,
+                "propertiesCount" => $propertiesCount
             ]);
             exit();
         }
