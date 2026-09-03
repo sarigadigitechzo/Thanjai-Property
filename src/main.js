@@ -241,7 +241,6 @@ function renderApp() {
           ${renderLocationExplorer()}
           ${renderCategoryCarousel()}
           ${renderLuxuryTransition()}
-          ${renderTestimonialsSection()}
           ${renderBlogSection(() => navigateToRoute('blog'), (postId) => openBlogArticle(postId))}
           ${renderHomeContactBanner(() => navigateToRoute('contact'))}
         </main>

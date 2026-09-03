@@ -119,11 +119,11 @@ export function renderReviewsView() {
                       width: 44px; height: 44px; border-radius: 50%; background: #4285F4; color: #fff;
                       display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
                     ">
-                      ${rev.name.charAt(0).toUpperCase()}
+                      ${(rev.name || rev.author_name || 'U').trim().charAt(0).toUpperCase()}
                     </div>
                   `}
                   <div>
-                    <div style="font-weight: 700; color: #1a202c; font-size: 0.96rem;">${rev.name}</div>
+                    <div style="font-weight: 700; color: #1a202c; font-size: 0.96rem;">${rev.name || rev.author_name}</div>
                     <div style="font-size: 0.78rem; color: #718096;">${rev.location || 'Thanjavur'}</div>
                   </div>
                 </div>

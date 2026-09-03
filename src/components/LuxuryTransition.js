@@ -1,3 +1,5 @@
+import { renderTestimonialsSection } from './TestimonialsSection.js';
+
 export function renderLuxuryTransition() {
   return `
     <!-- Dark Luxury Statement & Metrics -->
@@ -38,6 +40,9 @@ export function renderLuxuryTransition() {
         </div>
       </div>
     </section>
+
+    <!-- Google Verified Customer Reviews (Marquee Carousel) -->
+    ${renderTestimonialsSection()}
 
     <!-- Trust Pillars Section -->
     <section class="trust-section" id="trust-section">

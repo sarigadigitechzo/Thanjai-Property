@@ -3,56 +3,59 @@ import { getApprovedReviews, getGoogleSummary, addReview } from '../utils/review
 import { showToast } from '../utils/toast.js';
 
 function renderReviewCards(reviewsList) {
-  return reviewsList.map(rev => `
-    <div class="testimonial-card">
-      <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <div style="color: #f59e0b; font-size: 1.05rem; display: flex; gap: 3px;">
-            ${Array.from({ length: rev.rating || 5 }).map(() => '<i class="ri-star-fill"></i>').join('')}
+  return reviewsList.map(rev => {
+    const firstLetter = (rev.name || rev.author_name || 'U').trim().charAt(0).toUpperCase();
+    const displayName = rev.name || rev.author_name || 'Verified Client';
+    const reviewQuote = rev.reviewText || rev.review_text || '';
+
+    return `
+      <div class="testimonial-card">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="color: #f59e0b; font-size: 1.05rem; display: flex; gap: 3px;">
+              ${Array.from({ length: rev.rating || 5 }).map(() => '<i class="ri-star-fill"></i>').join('')}
+            </div>
+            <span style="
+              display: inline-flex; align-items: center; gap: 6px;
+              background: #f0fdf4; color: #166534; font-size: 0.76rem; font-weight: 800;
+              padding: 4px 10px; border-radius: 12px; border: 1px solid #bbf7d0;
+            ">
+              <svg width="13" height="13" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+              Google Review
+            </span>
           </div>
-          <span style="
-            display: inline-flex; align-items: center; gap: 6px;
-            background: #f0fdf4; color: #166534; font-size: 0.76rem; font-weight: 800;
-            padding: 4px 10px; border-radius: 12px; border: 1px solid #bbf7d0;
+
+          <p style="
+            color: #334155; font-size: 0.94rem; line-height: 1.6; margin: 0;
+            font-weight: 500; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
           ">
-            <svg width="13" height="13" viewBox="0 0 48 48">
-              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-            </svg>
-            Google Review
-          </span>
+            "${reviewQuote}"
+          </p>
         </div>
 
-        <p style="
-          color: #334155; font-size: 0.94rem; line-height: 1.6; margin: 0;
-          font-weight: 500; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
-        ">
-          "${rev.reviewText || rev.review_text}"
-        </p>
-      </div>
-
-      <div style="display: flex; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; margin-top: 10px;">
-        <div style="
-          width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
-          background: ${rev.avatar_color || '#eb5e28'}; color: #ffffff;
-          display: flex; align-items: center; justify-content: center;
-          font-weight: 800; font-size: 0.95rem;
-        ">
-          ${(rev.name || rev.author_name || 'U').substring(0, 2).toUpperCase()}
-        </div>
-        <div style="flex: 1; overflow: hidden;">
-          <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            ${rev.name || rev.author_name}
-          </h4>
-          <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
-            ${rev.propertyType || rev.author_role || rev.location || 'Verified Buyer'} • <span style="color: #94a3b8;">${rev.time_ago || 'Recent'}</span>
+        <div style="display: flex; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; margin-top: 10px;">
+          <div style="
+            width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
+            background: ${rev.avatar_color || '#eb5e28'}; color: #ffffff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 1.05rem;
+          ">
+            ${firstLetter}
+          </div>
+          <div style="flex: 1; overflow: hidden;">
+            <h4 style="margin: 0; font-size: 0.98rem; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              ${displayName}
+            </h4>
           </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 export function renderTestimonialsSection() {
@@ -124,15 +127,6 @@ export function renderTestimonialsSection() {
             </button>
           </div>
         </div>
-
-        <!-- Google Tags Pills (From Real Google Profile) -->
-        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
-          ${summary.categories.map(cat => `
-            <span style="background: #ffffff; border: 1px solid #e2e8f0; color: #475569; padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
-              <i class="ri-check-line" style="color: #10b981;"></i> ${cat.label} <span style="background: #f1f5f9; color: #64748b; padding: 1px 6px; border-radius: 10px; font-size: 0.75rem;">${cat.count}</span>
-            </span>
-          `).join('')}
-        </div>
       </div>
 
       <!-- AUTO-SCROLLING MARQUEE TRACK (100% SEAMLESS INFINITE TICKER) -->
@@ -147,14 +141,14 @@ export function renderTestimonialsSection() {
         </div>
       </div>
 
-      <!-- INLINE USER SUBMISSION MODAL -->
+      <!-- INLINE USER SUBMISSION MODAL (CLEAN 1-5 STARS, NAME & COMMENTS) -->
       <div id="site-review-modal-overlay" style="
         display: none; position: fixed; inset: 0; z-index: 9999999;
         background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px);
         align-items: center; justify-content: center; padding: 20px;
       ">
         <div style="
-          background: #ffffff; width: 100%; max-width: 520px; border-radius: 20px;
+          background: #ffffff; width: 100%; max-width: 480px; border-radius: 22px;
           padding: 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); position: relative;
         ">
           <button id="close-site-review-modal-btn" style="
@@ -164,45 +158,41 @@ export function renderTestimonialsSection() {
           "><i class="ri-close-line"></i></button>
 
           <h3 style="font-family: var(--font-serif, 'DM Serif Display', serif); font-size: 1.5rem; color: #1e293b; margin-bottom: 6px;">
-            Share Your Experience
+            Write Your Feedback
           </h3>
-          <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 20px;">
-            Your feedback helps us continuously improve our real estate advisory across Thanjavur & Tamil Nadu.
+          <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 22px;">
+            Share your experience with Thanjai Property.
           </p>
 
-          <form id="site-review-form" style="display: flex; flex-direction: column; gap: 16px;">
-            <div>
-              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Your Name *</label>
-              <input type="text" id="rev-name-input" required placeholder="e.g. Vicky Selvam" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem;" />
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div>
-                <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Property Type / Role</label>
-                <input type="text" id="rev-role-input" placeholder="e.g. House Buyer" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem;" />
+          <form id="site-review-form" style="display: flex; flex-direction: column; gap: 18px;">
+            
+            <!-- 1 to 5 Clickable Stars Rating -->
+            <div style="background: #fafaf9; padding: 14px 18px; border-radius: 14px; border: 1px solid #e2e8f0; text-align: center;">
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Select Rating (1 to 5 Stars) *</label>
+              <div id="site-form-stars-picker" style="display: inline-flex; gap: 8px; font-size: 1.9rem; color: #cbd5e1; cursor: pointer;">
+                <i class="ri-star-fill site-star-item" data-value="1" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill site-star-item" data-value="2" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill site-star-item" data-value="3" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill site-star-item" data-value="4" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill site-star-item" data-value="5" style="color: #f59e0b;"></i>
               </div>
-              <div>
-                <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Rating</label>
-                <select id="rev-rating-input" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; background: #fff;">
-                  <option value="5">★★★★★ (5 Stars)</option>
-                  <option value="4">★★★★☆ (4 Stars)</option>
-                  <option value="3">★★★☆☆ (3 Stars)</option>
-                </select>
-              </div>
+              <input type="hidden" id="rev-rating-input" value="5" />
             </div>
 
+            <!-- Name Input -->
             <div>
-              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Location / Area in Thanjavur</label>
-              <input type="text" id="rev-location-input" placeholder="e.g. Medical College Road, Thanjavur" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem;" />
+              <label style="display: block; font-size: 0.84rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Your Name *</label>
+              <input type="text" id="rev-name-input" required placeholder="e.g. Vicky Selvam" style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem;" />
             </div>
 
+            <!-- Review / Comments Textarea -->
             <div>
-              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Your Review *</label>
-              <textarea id="rev-text-input" required rows="3" placeholder="Tell us about your experience with Thanjai Property..." style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; resize: vertical;"></textarea>
+              <label style="display: block; font-size: 0.84rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Your Comments & Review *</label>
+              <textarea id="rev-text-input" required rows="4" placeholder="Tell us about your experience with Thanjai Property..." style="width: 100%; padding: 11px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; resize: vertical;"></textarea>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="padding: 12px; font-size: 0.95rem; border-radius: 10px; margin-top: 6px; background: var(--color-orange, #eb5e28); color: #fff; border: none; font-weight: 700; cursor: pointer;">
-              <span>Submit Verified Review</span>
+            <button type="submit" class="btn btn-primary" style="padding: 13px; font-size: 0.95rem; border-radius: 10px; margin-top: 4px; background: var(--color-orange, #eb5e28); color: #fff; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(235,94,40,0.25);">
+              <span>Submit Feedback</span>
             </button>
           </form>
         </div>
@@ -218,9 +208,35 @@ export function initTestimonialsListeners() {
   const closeModalBtn = document.getElementById('close-site-review-modal-btn');
   const reviewForm = document.getElementById('site-review-form');
 
+  const starsPicker = document.getElementById('site-form-stars-picker');
+  const ratingInput = document.getElementById('rev-rating-input');
+
+  // Star selector helper
+  function setStarRating(val) {
+    if (ratingInput) ratingInput.value = val;
+    if (starsPicker) {
+      starsPicker.querySelectorAll('.site-star-item').forEach(star => {
+        const starVal = parseInt(star.dataset.value, 10);
+        if (starVal <= val) {
+          star.style.color = '#f59e0b';
+        } else {
+          star.style.color = '#cbd5e1';
+        }
+      });
+    }
+  }
+
+  starsPicker?.querySelectorAll('.site-star-item').forEach(star => {
+    star.addEventListener('click', () => {
+      const val = parseInt(star.dataset.value, 10) || 5;
+      setStarRating(val);
+    });
+  });
+
   if (openModalBtn && modalOverlay) {
     openModalBtn.addEventListener('click', (e) => {
       e.preventDefault();
+      setStarRating(5);
       modalOverlay.style.display = 'flex';
     });
   }
@@ -243,9 +259,7 @@ export function initTestimonialsListeners() {
     reviewForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const author_name = document.getElementById('rev-name-input')?.value.trim();
-      const author_role = document.getElementById('rev-role-input')?.value.trim() || 'Verified Client';
       const rating = parseInt(document.getElementById('rev-rating-input')?.value || '5', 10);
-      const location = document.getElementById('rev-location-input')?.value.trim() || 'Thanjavur';
       const review_text = document.getElementById('rev-text-input')?.value.trim();
 
       if (!author_name || !review_text) {
@@ -256,20 +270,19 @@ export function initTestimonialsListeners() {
       await addReview({
         name: author_name,
         author_name,
-        propertyType: author_role,
-        author_role,
         rating,
-        location,
         reviewText: review_text,
-        review_text,
-        source: 'Google / Website',
+        review_text: review_text,
+        source: 'Website',
         verified_google: true,
+        status: 'Approved',
         time_ago: 'Just now'
       });
 
-      showToast('Thank you! Your verified review has been published.', 'ri-checkbox-circle-fill');
+      showToast('Thank you! Your feedback has been published.', 'ri-checkbox-circle-fill');
       if (modalOverlay) modalOverlay.style.display = 'none';
       reviewForm.reset();
+      setStarRating(5);
     });
   }
 }
