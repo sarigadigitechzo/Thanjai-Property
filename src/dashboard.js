@@ -45,15 +45,16 @@ import { initAdminUsersStore } from './utils/adminUsersStore.js';
 import { initUsersStore } from './utils/userAuthStore.js';
 import { initPopupsStore } from './utils/popupsStore.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-  await Promise.all([
+document.addEventListener('DOMContentLoaded', () => {
+  // Sync remote stores in background without blocking instant UI rendering
+  Promise.all([
     initPropertiesStore(),
     initBlogStore(),
     initSiteImagesStore(),
     initAdminUsersStore(),
     initUsersStore(),
     initPopupsStore()
-  ]);
+  ]).catch(err => console.warn('Background store sync notice:', err));
   
   const contentArea = document.getElementById('os-content');
   const navItems = document.querySelectorAll('.nav-item');
