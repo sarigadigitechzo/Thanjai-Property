@@ -22,37 +22,39 @@ export function renderSiteVisitsView() {
   // Generate initial client name options from local storage / cache
   let localLeads = [];
   try { localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || []; } catch(e) {}
-  let clientOptionsHtml = '<option value="">-- Select Client / Lead --</option>';
+  let clientOptionsHtml = '';
   if (localLeads.length > 0) {
-    localLeads.forEach(l => {
+    localLeads.forEach((l, idx) => {
       const cName = l.name || l.title;
+      const lId = l.id || `LEAD-${1000 + idx}`;
       if (cName) {
-        clientOptionsHtml += `<option value="${cName}">${cName} (${l.phone || l.mobile || 'Lead'})</option>`;
+        clientOptionsHtml += `<option value="[ID: ${lId}] ${cName} (${l.phone || l.mobile || 'CRM Lead'})"></option>`;
       }
     });
   } else {
     clientOptionsHtml += `
-      <option value="Senthil Kumar">Senthil Kumar (+91 98424 12345)</option>
-      <option value="Kavitha R.">Kavitha R. (+91 97890 23456)</option>
-      <option value="Ramesh Raja">Ramesh Raja (+91 94431 34567)</option>
-      <option value="Priya Dharshini">Priya Dharshini (+91 96290 45678)</option>
-      <option value="Maheshwari">Maheshwari (+91 95000 56789)</option>
+      <option value="[ID: LEAD-1001] Senthil Kumar (+91 98424 12345)"></option>
+      <option value="[ID: LEAD-1002] Kavitha R. (+91 97890 23456)"></option>
+      <option value="[ID: LEAD-1003] Ramesh Raja (+91 94431 34567)"></option>
+      <option value="[ID: LEAD-1004] Priya Dharshini (+91 96290 45678)"></option>
+      <option value="[ID: LEAD-1005] Maheshwari (+91 95000 56789)"></option>
     `;
   }
 
   // Generate initial property options from propertiesStore
   const localProps = getProperties() || [];
-  let propertyOptionsHtml = '<option value="">-- Select Property --</option>';
+  let propertyOptionsHtml = '';
   if (localProps.length > 0) {
     localProps.forEach(p => {
-      propertyOptionsHtml += `<option value="${p.title}">${p.title} (${p.location || p.district || 'Thanjavur'})</option>`;
+      const pId = p.id || 'TP-2001';
+      propertyOptionsHtml += `<option value="[ID: ${pId}] ${p.title} (${p.location || p.district || 'Thanjavur'})"></option>`;
     });
   } else {
     propertyOptionsHtml += `
-      <option value="Plot in Thanjavur">Plot in Thanjavur (Thanjavur)</option>
-      <option value="Villa in Thanjavur">Villa in Thanjavur (Thanjavur)</option>
-      <option value="Apartment in Thoothukudi">Apartment in Thoothukudi (Thoothukudi)</option>
-      <option value="Agricultural Farmland">Agricultural Farmland (Kumbakonam)</option>
+      <option value="[ID: TP-2001] Plot in Thanjavur (Thanjavur)"></option>
+      <option value="[ID: TP-2002] Villa in Thanjavur (Thanjavur)"></option>
+      <option value="[ID: TP-2003] Apartment in Thoothukudi (Thoothukudi)"></option>
+      <option value="[ID: TP-2004] Agricultural Farmland (Kumbakonam)"></option>
     `;
   }
 
@@ -91,24 +93,26 @@ export function renderSiteVisitsView() {
     </div>
 
     <!-- Modals -->
-    <div class="os-modal-overlay" id="site-visits-schedule-modal">
-      <div class="os-modal-card" style="max-width: 480px;">
+    <div class="os-modal-overlay" id="site-visits-schedule-modal" style="overflow-y: auto;">
+      <div class="os-modal-card" style="max-width: 480px; margin: 40px auto;">
         <div class="os-modal-header">
           <h2>Schedule site visit</h2>
           <button class="os-modal-close" id="close-sv-modal"><i class="ri-close-line"></i></button>
         </div>
         <div class="os-modal-body">
-          <div class="form-group" style="margin-bottom: 16px;">
+          <div class="form-group" style="margin-bottom: 16px; position: relative;">
             <label>Client name / Lead *</label>
-            <select id="sv-client-name" class="os-input" style="width: 100%; background: #ffffff; cursor: pointer; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;" required>
+            <input type="text" id="sv-client-name" list="client-datalist" class="os-input" placeholder="Type or select client name / ID..." style="width: 100%; background: #ffffff; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;" required />
+            <datalist id="client-datalist">
               ${clientOptionsHtml}
-            </select>
+            </datalist>
           </div>
-          <div class="form-group" style="margin-bottom: 16px;">
+          <div class="form-group" style="margin-bottom: 16px; position: relative;">
             <label>Property *</label>
-            <select id="sv-property" class="os-input" style="width: 100%; background: #ffffff; cursor: pointer; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;" required>
+            <input type="text" id="sv-property" list="property-datalist" class="os-input" placeholder="Type or select property title / ID..." style="width: 100%; background: #ffffff; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;" required />
+            <datalist id="property-datalist">
               ${propertyOptionsHtml}
-            </select>
+            </datalist>
           </div>
           <div class="form-group" style="margin-bottom: 16px;">
             <label>Visit date & time *</label>
@@ -177,34 +181,36 @@ export async function initSiteVisitsView() {
     console.error('API Error:', error);
     visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
   }
-  // Populate dynamic DB Leads in Client dropdown
+  // Populate dynamic DB Leads in Client datalist
   fetch('/api.php/leads')
     .then(res => res.json())
     .then(leads => {
-      const clientSelect = document.getElementById('sv-client-name');
-      if (clientSelect && Array.isArray(leads) && leads.length > 0) {
-        let opts = '<option value="">-- Select Client / Lead --</option>';
-        leads.slice(0, 200).forEach(l => {
+      const clientDatalist = document.getElementById('client-datalist');
+      if (clientDatalist && Array.isArray(leads) && leads.length > 0) {
+        let opts = '';
+        leads.slice(0, 250).forEach((l, idx) => {
           const cName = l.name || l.title;
+          const lId = l.id || `LEAD-${1000 + idx}`;
           if (cName) {
-            opts += `<option value="${cName}">${cName} (${l.phone || l.mobile || 'DB Lead'})</option>`;
+            opts += `<option value="[ID: ${lId}] ${cName} (${l.phone || l.mobile || 'DB Lead'})"></option>`;
           }
         });
-        clientSelect.innerHTML = opts;
+        clientDatalist.innerHTML = opts;
       }
     }).catch(e => {});
 
-  // Populate dynamic DB Properties in Property dropdown
+  // Populate dynamic DB Properties in Property datalist
   fetch('/api.php/properties')
     .then(res => res.json())
     .then(props => {
-      const propSelect = document.getElementById('sv-property');
-      if (propSelect && Array.isArray(props) && props.length > 0) {
-        let opts = '<option value="">-- Select Property --</option>';
+      const propDatalist = document.getElementById('property-datalist');
+      if (propDatalist && Array.isArray(props) && props.length > 0) {
+        let opts = '';
         props.forEach(p => {
-          opts += `<option value="${p.title}">${p.title} (${p.location || p.district || 'Thanjavur'})</option>`;
+          const pId = p.id || 'TP-2001';
+          opts += `<option value="[ID: ${pId}] ${p.title} (${p.location || p.district || 'Thanjavur'})"></option>`;
         });
-        propSelect.innerHTML = opts;
+        propDatalist.innerHTML = opts;
       }
     }).catch(e => {});
 
