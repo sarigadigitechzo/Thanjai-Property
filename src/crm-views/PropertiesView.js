@@ -946,12 +946,14 @@ function renderFullPagePropertyForm(prop) {
 
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Poster Role / User Source</label>
-                <select id="form-prop-poster-role" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; background: #fff;">
-                  <option value="Individual Owner" ${!isEdit || prop?.posterRole === 'Individual Owner' ? 'selected' : ''}>Individual Owner</option>
-                  <option value="Builder / Developer" ${isEdit && prop?.posterRole === 'Builder / Developer' ? 'selected' : ''}>Builder / Developer</option>
-                  <option value="Agent / Broker" ${isEdit && prop?.posterRole === 'Agent / Broker' ? 'selected' : ''}>Agent / Broker</option>
-                  <option value="Admin / Official Staff" ${isEdit && prop?.posterRole === 'Admin / Official Staff' ? 'selected' : ''}>Admin / Official Staff</option>
-                </select>
+                <input type="text" list="poster-role-options" id="form-prop-poster-role" value="${isEdit ? (prop?.posterRole || prop?.userRole || 'Individual Owner') : 'Individual Owner'}" placeholder="e.g. Individual Owner, Agent, Builder, Partner, Staff..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; background: #fff;" />
+                <datalist id="poster-role-options">
+                  <option value="Individual Owner">
+                  <option value="Builder / Developer">
+                  <option value="Agent / Broker">
+                  <option value="Partner / Specialist">
+                  <option value="Admin / Official Staff">
+                </datalist>
               </div>
 
               <div>
