@@ -7,7 +7,7 @@ export const GOOGLE_RATING_SUMMARY = {
   totalReviews: 64,
   businessName: 'ThanjaiProperty.com Real Estate in Thanjavur',
   businessAddress: 'Flat No B1, 2nd Floor, Sivasakthi Appartment, behind HDFC Bank, near New Bus Stand Road, Lakshmi Nagar, New Housing Unit, Thanjavur, Tamil Nadu 613005, India',
-  googleReviewUrl: 'https://www.google.com/search?q=thanjai+property#lrd=0x3baac751a00773eb:0x39a19c5b6e512411,3,,,',
+  googleReviewUrl: 'https://www.google.com/search?q=thanjai+property#lrd=0x3baab8d3e85bc13f:0xc3d4d30ebdebd25d,1,,,,',
   categories: [
     { label: 'plot purchase', count: 4 },
     { label: 'helpful team', count: 2 },

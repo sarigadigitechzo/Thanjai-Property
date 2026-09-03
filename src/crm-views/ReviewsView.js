@@ -164,6 +164,13 @@ export function renderReviewsView() {
               </span>
 
               <div style="display: flex; align-items: center; gap: 8px;">
+                <button class="edit-review-btn" data-id="${rev.id}" style="
+                  padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
+                  color: #2563eb; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+                ">
+                  <i class="ri-edit-line"></i> Edit
+                </button>
+
                 <button class="toggle-status-review-btn" data-id="${rev.id}" style="
                   padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
                   color: #475569; font-size: 0.8rem; font-weight: 600; cursor: pointer;
@@ -251,6 +258,75 @@ export function renderReviewsView() {
         </div>
       </div>
 
+      <!-- Edit Review Modal (Admin) -->
+      <div id="admin-edit-review-modal" class="modal-overlay" style="
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+        z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px;
+      ">
+        <div style="
+          background: #ffffff; border-radius: 20px; max-width: 540px; width: 100%; max-height: 90vh;
+          overflow-y: auto; padding: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+        ">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <h3 style="font-size: 1.3rem; font-weight: 700; color: #1a202c; margin: 0;">Edit Review Details</h3>
+            <button id="close-admin-edit-review-modal-btn" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #64748b;">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+
+          <form id="admin-edit-review-form" style="display: flex; flex-direction: column; gap: 16px;">
+            <input type="hidden" id="admin-edit-rev-id" />
+            <div>
+              <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Client Name *</label>
+              <input type="text" id="admin-edit-rev-name" required placeholder="e.g. Ramesh Kumar" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Review Source</label>
+                <select id="admin-edit-rev-source" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; box-sizing: border-box;">
+                  <option value="Google">Google Review</option>
+                  <option value="WhatsApp">WhatsApp Feedback</option>
+                  <option value="Website">Website Form</option>
+                  <option value="In-Person">In-Person Client</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Rating Stars</label>
+                <select id="admin-edit-rev-rating" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; box-sizing: border-box;">
+                  <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+                  <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                  <option value="3">⭐⭐⭐ 3 Stars</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Property / Service Type</label>
+                <input type="text" id="admin-edit-rev-proptype" placeholder="e.g. 3 BHK Villa, DTCP Plot" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
+              </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Location</label>
+                <input type="text" id="admin-edit-rev-location" placeholder="e.g. Medical College Rd, Thanjavur" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Review Text Quote *</label>
+              <textarea id="admin-edit-rev-text" required rows="4" placeholder="Paste the client review text here..." style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; resize: vertical;"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+              <button type="button" id="cancel-admin-edit-rev-btn" style="padding: 10px 18px; border-radius: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 600; cursor: pointer;">Cancel</button>
+              <button type="submit" style="padding: 10px 22px; border-radius: 8px; background: #2563eb; color: #fff; border: none; font-weight: 700; cursor: pointer;">Update Review</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
     </div>
   `;
 }
@@ -266,21 +342,21 @@ export function initReviewsListeners() {
     });
   });
 
-  // Modal Handlers
-  const modal = document.getElementById('admin-add-review-modal');
-  const openBtn = document.getElementById('open-add-review-admin-btn');
-  const closeBtn = document.getElementById('close-admin-review-modal-btn');
-  const cancelBtn = document.getElementById('cancel-admin-rev-btn');
-  const form = document.getElementById('admin-add-review-form');
+  // Modal Handlers (Add Review)
+  const addModal = document.getElementById('admin-add-review-modal');
+  const openAddBtn = document.getElementById('open-add-review-admin-btn');
+  const closeAddBtn = document.getElementById('close-admin-review-modal-btn');
+  const cancelAddBtn = document.getElementById('cancel-admin-rev-btn');
+  const addForm = document.getElementById('admin-add-review-form');
 
-  const openModal = () => { if (modal) modal.style.display = 'flex'; };
-  const closeModal = () => { if (modal) { modal.style.display = 'none'; if (form) form.reset(); } };
+  const openAddModal = () => { if (addModal) addModal.style.display = 'flex'; };
+  const closeAddModal = () => { if (addModal) { addModal.style.display = 'none'; if (addForm) addForm.reset(); } };
 
-  openBtn?.addEventListener('click', openModal);
-  closeBtn?.addEventListener('click', closeModal);
-  cancelBtn?.addEventListener('click', closeModal);
+  openAddBtn?.addEventListener('click', openAddModal);
+  closeAddBtn?.addEventListener('click', closeAddModal);
+  cancelAddBtn?.addEventListener('click', closeAddModal);
 
-  form?.addEventListener('submit', (e) => {
+  addForm?.addEventListener('submit', (e) => {
     e.preventDefault();
     const name = document.getElementById('admin-rev-name')?.value.trim();
     const source = document.getElementById('admin-rev-source')?.value || 'Google';
@@ -296,16 +372,91 @@ export function initReviewsListeners() {
 
     addReview({
       name,
+      author_name: name,
       source,
       rating,
       propertyType,
+      author_role: propertyType,
       location,
       reviewText,
+      review_text: reviewText,
       status: 'Approved'
     });
 
-    closeModal();
+    closeAddModal();
     showToast('Review published to website successfully!', 'ri-checkbox-circle-fill');
+    if (typeof window.navigateToView === 'function') {
+      window.navigateToView('reviews');
+    }
+  });
+
+  // Modal Handlers (Edit Review)
+  const editModal = document.getElementById('admin-edit-review-modal');
+  const closeEditBtn = document.getElementById('close-admin-edit-review-modal-btn');
+  const cancelEditBtn = document.getElementById('cancel-admin-edit-rev-btn');
+  const editForm = document.getElementById('admin-edit-review-form');
+
+  const closeEditModal = () => { if (editModal) { editModal.style.display = 'none'; if (editForm) editForm.reset(); } };
+
+  closeEditBtn?.addEventListener('click', closeEditModal);
+  cancelEditBtn?.addEventListener('click', closeEditModal);
+
+  document.querySelectorAll('.edit-review-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const allReviews = getReviews();
+      const rev = allReviews.find(r => r.id === id);
+      if (!rev) return;
+
+      const idInput = document.getElementById('admin-edit-rev-id');
+      const nameInput = document.getElementById('admin-edit-rev-name');
+      const sourceSelect = document.getElementById('admin-edit-rev-source');
+      const ratingSelect = document.getElementById('admin-edit-rev-rating');
+      const proptypeInput = document.getElementById('admin-edit-rev-proptype');
+      const locationInput = document.getElementById('admin-edit-rev-location');
+      const textInput = document.getElementById('admin-edit-rev-text');
+
+      if (idInput) idInput.value = rev.id;
+      if (nameInput) nameInput.value = rev.name || rev.author_name || '';
+      if (sourceSelect) sourceSelect.value = rev.source || 'Google';
+      if (ratingSelect) ratingSelect.value = rev.rating || 5;
+      if (proptypeInput) proptypeInput.value = rev.propertyType || rev.author_role || '';
+      if (locationInput) locationInput.value = rev.location || '';
+      if (textInput) textInput.value = rev.reviewText || rev.review_text || '';
+
+      if (editModal) editModal.style.display = 'flex';
+    });
+  });
+
+  editForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('admin-edit-rev-id')?.value;
+    const name = document.getElementById('admin-edit-rev-name')?.value.trim();
+    const source = document.getElementById('admin-edit-rev-source')?.value || 'Google';
+    const rating = parseInt(document.getElementById('admin-edit-rev-rating')?.value, 10) || 5;
+    const propertyType = document.getElementById('admin-edit-rev-proptype')?.value.trim() || '';
+    const location = document.getElementById('admin-edit-rev-location')?.value.trim() || 'Thanjavur';
+    const reviewText = document.getElementById('admin-edit-rev-text')?.value.trim();
+
+    if (!id || !name || !reviewText) {
+      showToast('Please fill in required review fields', 'ri-error-warning-line');
+      return;
+    }
+
+    updateReview(id, {
+      name,
+      author_name: name,
+      source,
+      rating,
+      propertyType,
+      author_role: propertyType,
+      location,
+      reviewText,
+      review_text: reviewText
+    });
+
+    closeEditModal();
+    showToast('Review updated successfully!', 'ri-checkbox-circle-fill');
     if (typeof window.navigateToView === 'function') {
       window.navigateToView('reviews');
     }
