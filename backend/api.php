@@ -2281,8 +2281,8 @@ elseif ($resource === 'webhook') {
             $isGreeting = preg_match('/^(hi|hello|hey|vanakkam|வணக்கம்|good\s*(morning|afternoon|evening)|namaste|start|info|details|property|enquiry|hai|hlo)/i', $lowerMsg) || $isNewLead;
 
             if ($isGreeting) {
-                // Rate-limit check: Send welcome message at most ONCE every 24 hours per phone number
-                $welcomeCheck = $conn->query("SELECT id FROM `whatsapp_messages` WHERE `customer_phone`='$safe_in_phone' AND `direction`='outbound' AND `source`='auto_welcome' AND `createdAt` >= (NOW() - INTERVAL 24 HOUR) LIMIT 1");
+                // Rate-limit check: Send welcome message if not sent in the last 2 minutes for this phone number
+                $welcomeCheck = $conn->query("SELECT id FROM `whatsapp_messages` WHERE `customer_phone`='$safe_in_phone' AND `direction`='outbound' AND `source`='auto_welcome' AND `createdAt` >= (NOW() - INTERVAL 2 MINUTE) LIMIT 1");
                 
                 if (!$welcomeCheck || $welcomeCheck->num_rows === 0) {
                     $MASTER_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ5MCIsIm5hbWUiOiJUaGFuamFpIFByb3BlcnR5IiwiYXBwTmFtZSI6IkFpU2Vuc3kiLCJjbGllbnRJZCI6IjY5NjYxNjVmODFhMDg2MTIzZWY5MWQ4OSIsImFjdGl2ZVBsYW4iOiJQUk9fTU9OVEhMWSIsImlhdCI6MTc4NzcyNDczOX0.8SQSQDJdxrAivj8FAkWvjSk_qx4yE0dENDh70US75G0';
