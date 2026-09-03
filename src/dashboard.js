@@ -2,7 +2,7 @@ import { renderDashboardView, initDashboardListeners } from './crm-views/Dashboa
 import { renderLeadsView, initLeadsView } from './crm-views/LeadsView.js';
 import { renderPropertiesView, initPropertiesListeners, resetPropertiesViewMode, setPropertiesSearchFilter, refreshPropertiesView } from './crm-views/PropertiesView.js';
 import { renderSiteVisitsView, initSiteVisitsView } from './crm-views/SiteVisitsView.js';
-import { renderPipelineBoardView, initPipelineBoardView } from './crm-views/PipelineBoardView.js?v=2';
+import { renderPipelineBoardView, initPipelineBoardView } from './crm-views/PipelineBoardView.js';
 import { renderPartnersView, initPartnersView } from './crm-views/PartnersView.js';
 import { renderAIAgentView, initAIAgentView } from './crm-views/AIAgentView.js';
 import { renderWhatsAppLogView, initWhatsAppLogView } from './crm-views/WhatsAppLogView.js';
