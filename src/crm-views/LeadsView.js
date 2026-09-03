@@ -1177,8 +1177,8 @@ function bindLeadEvents() {
     const reader = new FileReader();
     reader.onload = async function(evt) {
       const text = evt.target.result;
-      const rows = text.split('\n').map(r => r.trim()).filter(Boolean);
-      if (rows.length < 2) {
+      const rawLines = text.split(/\r?\n/).map(r => r.trim()).filter(Boolean);
+      if (rawLines.length < 2) {
         showAlertModal({
           title: 'Empty or Invalid CSV',
           message: 'The selected CSV file appears to be empty or missing property data rows.',
@@ -1186,11 +1186,36 @@ function bindLeadEvents() {
         });
         return;
       }
+
+      function parseCSVRow(rowStr) {
+        const res = [];
+        let curr = '';
+        let inQ = false;
+        for (let idx = 0; idx < rowStr.length; idx++) {
+          const char = rowStr[idx];
+          const nextChar = rowStr[idx + 1];
+          if (char === '"') {
+            if (inQ && nextChar === '"') {
+              curr += '"';
+              idx++;
+            } else {
+              inQ = !inQ;
+            }
+          } else if (char === ',' && !inQ) {
+            res.push(curr.trim());
+            curr = '';
+          } else {
+            curr += char;
+          }
+        }
+        res.push(curr.trim());
+        return res;
+      }
       
-      const headerCols = rows[0].split(',').map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
+      const headerCols = parseCSVRow(rawLines[0]).map(c => c.replace(/^["']|["']$/g, '').trim().toLowerCase());
       const getColIdx = (names) => {
         for (let name of names) {
-          const idx = headerCols.findIndex(h => h.includes(name));
+          const idx = headerCols.findIndex(h => h === name || h.includes(name));
           if (idx !== -1) return idx;
         }
         return -1;
@@ -1199,7 +1224,7 @@ function bindLeadEvents() {
       const nameIdx = getColIdx(['name', 'lead', 'client']);
       const mobIdx = getColIdx(['mobile', 'phone', 'contact', 'whatsapp']);
       const emailIdx = getColIdx(['email', 'mail']);
-      const typeIdx = getColIdx(['propertytype', 'type', 'requirement', 'property']);
+      const typeIdx = getColIdx(['propertytype', 'requirement', 'type', 'property']);
       const budgetIdx = getColIdx(['budget', 'budgetmax', 'amount', 'price']);
       const locIdx = getColIdx(['location', 'area', 'city']);
       const sourceIdx = getColIdx(['source', 'lead source']);
@@ -1207,24 +1232,26 @@ function bindLeadEvents() {
       const notesIdx = getColIdx(['notes', 'note', 'desc', 'remarks']);
 
       const newLeads = [];
-      for (let i = 1; i < rows.length; i++) {
-        const match = rows[i].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
-        const cols = match 
-          ? match.map(c => c.replace(/^"|"$/g, '').trim())
-          : rows[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+      for (let i = 1; i < rawLines.length; i++) {
+        const cols = parseCSVRow(rawLines[i]);
+        if (cols.length === 0) continue;
 
         const val = (idx, fallback = '') => (idx !== -1 && cols[idx] !== undefined ? cols[idx] : fallback);
 
         const name = val(nameIdx !== -1 ? nameIdx : 0);
         if (name && name.toLowerCase() !== 'name') {
-          const mobile = val(mobIdx !== -1 ? mobIdx : 1, '9585777772');
+          const mobile = val(mobIdx !== -1 ? mobIdx : 1, '');
           const email = val(emailIdx !== -1 ? emailIdx : 2, '');
           const propType = val(typeIdx !== -1 ? typeIdx : 3, 'Residential Plot');
-          const budget = val(budgetIdx !== -1 ? budgetIdx : 4, '₹ 25 - 50 Lakhs');
+          const budget = val(budgetIdx !== -1 ? budgetIdx : 4, '');
           const location = val(locIdx !== -1 ? locIdx : 5, 'Thanjavur');
-          const source = val(sourceIdx !== -1 ? sourceIdx : 6, 'Website Form');
-          const status = val(statusIdx !== -1 ? statusIdx : 7, 'New Lead');
-          const notes = val(notesIdx !== -1 ? notesIdx : 8, 'Imported from CSV template.');
+          let source = val(sourceIdx !== -1 ? sourceIdx : 6, 'Manual');
+          let status = val(statusIdx !== -1 ? statusIdx : 7, 'New Lead');
+          const notes = val(notesIdx !== -1 ? notesIdx : 8, '');
+
+          // Normalize source & status strings
+          if (!source || source === '—') source = 'Manual';
+          if (!status || status === '—') status = 'New Lead';
 
           const leadObj = {
             id: `L-${Date.now()}-${i}`,
@@ -1234,7 +1261,7 @@ function bindLeadEvents() {
             whatsapp: mobile,
             email: email,
             country: 'India',
-            city: 'Thanjavur',
+            city: location.includes(',') ? location.split(',')[1].trim() : 'Thanjavur',
             area: location,
             location: location,
             budgetMin: '',
@@ -1249,7 +1276,7 @@ function bindLeadEvents() {
             assignTo: 'Unassigned',
             status: status,
             followup: '—',
-            createdAt: Date.now(),
+            createdAt: Date.now() - (i * 1000),
             timeline: [{ action: 'Imported from CSV file', date: new Date().toLocaleDateString('en-IN'), by: 'System' }]
           };
 
