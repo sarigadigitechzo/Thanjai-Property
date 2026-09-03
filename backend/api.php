@@ -654,19 +654,17 @@ elseif ($resource === 'leads') {
             $statuses = [];
             if ($resSt) { while ($r = $resSt->fetch_assoc()) { $statuses[] = ["status" => $r['st'], "count" => intval($r['cnt'])]; } }
 
-            // 3. Staff Performance (Case-insensitive multi-column pattern matching)
+            // 3. Staff Performance (Clean valid schema query)
             $resStaff = $conn->query("
                 SELECT 
                   CASE 
-                    WHEN assignedTo LIKE '%Maheshwari%' OR assignTo LIKE '%Maheshwari%' OR assigned_to LIKE '%Maheshwari%' OR notes LIKE '%Maheshwari%' THEN 'Maheshwari'
-                    WHEN assignedTo LIKE '%Kavitha%' OR assignTo LIKE '%Kavitha%' OR assigned_to LIKE '%Kavitha%' OR notes LIKE '%Kavitha%' THEN 'Kavitha'
-                    WHEN assignedTo LIKE '%Arun%' OR assignTo LIKE '%Arun%' OR assigned_to LIKE '%Arun%' OR notes LIKE '%Arun%' THEN 'Arun'
-                    WHEN assignedTo LIKE '%Priya%' OR assignTo LIKE '%Priya%' OR assigned_to LIKE '%Priya%' OR notes LIKE '%Priya%' THEN 'Priya'
-                    WHEN assignedTo LIKE '%Vijay%' OR assignTo LIKE '%Vijay%' OR assigned_to LIKE '%Vijay%' OR notes LIKE '%Vijay%' THEN 'Vijayaraghavan'
-                    WHEN TRIM(COALESCE(NULLIF(TRIM(assignedTo), ''), NULLIF(TRIM(assignTo), ''), NULLIF(TRIM(assigned_to), ''))) IS NOT NULL 
-                         AND TRIM(COALESCE(NULLIF(TRIM(assignedTo), ''), NULLIF(TRIM(assignTo), ''), NULLIF(TRIM(assigned_to), ''))) != '' 
-                         AND TRIM(COALESCE(NULLIF(TRIM(assignedTo), ''), NULLIF(TRIM(assignTo), ''), NULLIF(TRIM(assigned_to), ''))) != 'Unassigned'
-                    THEN TRIM(COALESCE(NULLIF(TRIM(assignedTo), ''), NULLIF(TRIM(assignTo), ''), NULLIF(TRIM(assigned_to), '')))
+                    WHEN assignedTo LIKE '%Maheshwari%' OR notes LIKE '%Maheshwari%' THEN 'Maheshwari'
+                    WHEN assignedTo LIKE '%Kavitha%' OR notes LIKE '%Kavitha%' THEN 'Kavitha'
+                    WHEN assignedTo LIKE '%Arun%' OR notes LIKE '%Arun%' THEN 'Arun'
+                    WHEN assignedTo LIKE '%Priya%' OR notes LIKE '%Priya%' THEN 'Priya'
+                    WHEN assignedTo LIKE '%Vijay%' OR notes LIKE '%Vijay%' THEN 'Vijayaraghavan'
+                    WHEN assignedTo IS NOT NULL AND TRIM(assignedTo) != '' AND TRIM(assignedTo) != 'Unassigned'
+                    THEN TRIM(assignedTo)
                     ELSE 'Unassigned'
                   END as staff, 
                   COUNT(*) as total, 
