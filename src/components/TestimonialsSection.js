@@ -1,170 +1,275 @@
-import { getApprovedReviews } from '../utils/reviewsStore.js';
+// src/components/TestimonialsSection.js - Luxury Google Reviews & Testimonials Marquee Component
+import { getApprovedReviews, getGoogleSummary, addReview } from '../utils/reviewsStore.js';
+import { showToast } from '../utils/toast.js';
+
+function renderReviewCards(reviewsList) {
+  return reviewsList.map(rev => `
+    <div class="testimonial-card">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="color: #f59e0b; font-size: 1.05rem; display: flex; gap: 3px;">
+            ${Array.from({ length: rev.rating || 5 }).map(() => '<i class="ri-star-fill"></i>').join('')}
+          </div>
+          <span style="
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #f0fdf4; color: #166534; font-size: 0.76rem; font-weight: 800;
+            padding: 4px 10px; border-radius: 12px; border: 1px solid #bbf7d0;
+          ">
+            <svg width="13" height="13" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Google Review
+          </span>
+        </div>
+
+        <p style="
+          color: #334155; font-size: 0.94rem; line-height: 1.6; margin: 0;
+          font-weight: 500; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+        ">
+          "${rev.reviewText || rev.review_text}"
+        </p>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; margin-top: 10px;">
+        <div style="
+          width: 40px; height: 40px; min-width: 40px; border-radius: 50%;
+          background: ${rev.avatar_color || '#eb5e28'}; color: #ffffff;
+          display: flex; align-items: center; justify-content: center;
+          font-weight: 800; font-size: 0.95rem;
+        ">
+          ${(rev.name || rev.author_name || 'U').substring(0, 2).toUpperCase()}
+        </div>
+        <div style="flex: 1; overflow: hidden;">
+          <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${rev.name || rev.author_name}
+          </h4>
+          <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
+            ${rev.propertyType || rev.author_role || rev.location || 'Verified Buyer'} • <span style="color: #94a3b8;">${rev.time_ago || 'Recent'}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
 
 export function renderTestimonialsSection() {
+  const summary = getGoogleSummary();
   const reviews = getApprovedReviews();
-  if (!reviews || reviews.length === 0) return '';
-
-  // Duplicate the reviews array to ensure seamless infinite looping marquee
-  const displayReviews = [...reviews, ...reviews, ...reviews];
 
   return `
-    <section class="testimonials-section" style="
-      padding: 90px 24px; background: linear-gradient(180deg, #fdfbf7 0%, #f7f4ed 100%);
-      position: relative; overflow: hidden; border-top: 1px solid #ebe5d8; border-bottom: 1px solid #ebe5d8;
+    <section class="testimonials-section" id="google-reviews-section" style="
+      padding: 90px 0 100px 0;
+      background: linear-gradient(180deg, #faf8f5 0%, #ffffff 50%, #fdfbf7 100%);
+      position: relative;
+      overflow: hidden;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
     ">
       
-      <!-- Background Ambient Glow -->
-      <div style="
-        position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 800px; height: 350px;
-        background: radial-gradient(circle, rgba(235,94,40,0.06) 0%, rgba(255,255,255,0) 70%);
-        pointer-events: none; z-index: 0;
-      "></div>
+      <!-- Section Header -->
+      <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 0 20px; text-align: center; margin-bottom: 48px;">
+        <span class="badge badge-orange" style="font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 6px;">
+          <i class="ri-google-fill" style="color: #ea4335;"></i> GOOGLE VERIFIED CLIENT REVIEWS
+        </span>
+        <h2 style="font-family: var(--font-serif, 'DM Serif Display', serif); font-size: clamp(2.2rem, 4vw, 3.2rem); color: #1a1a1a; margin-bottom: 16px; line-height: 1.2;">
+          Real Customer Reviews from Google Maps
+        </h2>
+        <p style="font-size: 1.05rem; color: #555; max-width: 720px; margin: 0 auto 36px auto; line-height: 1.65;">
+          Read genuine feedback from property buyers, plot purchasers, and villa investors who completed their transactions with Thanjai Property.
+        </p>
 
-      <div style="max-width: 1280px; margin: 0 auto; position: relative; z-index: 1;">
-        
-        <!-- Header & Google Rating Summary -->
-        <div style="text-align: center; max-width: 760px; margin: 0 auto 50px auto;">
-          
-          <!-- Google Badge Pill -->
-          <div style="
-            display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 50px;
-            background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 4px 14px rgba(0,0,0,0.04);
-            margin-bottom: 18px;
-          ">
-            <svg width="20" height="20" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-            </svg>
-            <span style="font-size: 0.88rem; font-weight: 700; color: #1a202c;">Google Customer Reviews</span>
-            <div style="display: flex; gap: 2px; color: #f6ad55; font-size: 0.95rem;">
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
-              <i class="ri-star-fill"></i>
+        <!-- Google Business Rating Banner Card (Matching Google Profile) -->
+        <div style="
+          max-width: 820px; margin: 0 auto; background: #ffffff; padding: 24px 30px; border-radius: 20px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.08);
+          display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;
+        ">
+          <div style="display: flex; align-items: center; gap: 18px; text-align: left;">
+            <div style="
+              width: 58px; height: 58px; border-radius: 16px; background: #f8fafc; border: 1px solid #e2e8f0;
+              display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); flex-shrink: 0;
+            ">
+              <svg width="34" height="34" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
             </div>
-            <span style="font-size: 0.85rem; font-weight: 800; color: #2d3748;">4.9 / 5.0</span>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.9rem; font-weight: 800; color: #1e293b; line-height: 1;">${summary.rating}</span>
+                <div style="color: #f59e0b; font-size: 1.2rem; display: flex; gap: 2px;">
+                  <i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-half-fill"></i>
+                </div>
+              </div>
+              <div style="font-size: 0.9rem; color: #64748b; font-weight: 600; margin-top: 3px;">
+                Based on <strong style="color: #1e293b;">${summary.totalReviews}+ Verified Reviews</strong> on Google Business
+              </div>
+            </div>
           </div>
 
-          <h2 style="
-            font-family: var(--font-display, 'DM Serif Display', Georgia, serif);
-            font-size: clamp(2rem, 3.5vw, 2.6rem); font-weight: 400; color: #1a202c; line-height: 1.2; margin: 0 0 14px 0;
-          ">
-            Trusted by 500+ Property Buyers & Families
-          </h2>
-          <p style="font-size: 1.02rem; color: #718096; line-height: 1.6; margin: 0;">
-            Discover genuine experiences from property buyers, NRI investors, and homeowners across Thanjavur and Tamil Nadu.
-          </p>
-
-          <!-- Action Triggers: Write a Review & Review on Google -->
-          <div style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 24px; flex-wrap: wrap;">
-            <button id="open-write-review-modal-btn" style="
-              display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 50px;
-              background: var(--color-orange, #eb5e28); color: #ffffff; border: none; font-weight: 700;
-              font-size: 0.92rem; cursor: pointer; box-shadow: 0 6px 18px rgba(235,94,40,0.28);
-              transition: all 0.25s ease;
-            " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-              <i class="ri-edit-line"></i>
-              <span>Write a Review</span>
-            </button>
-
-            <a href="https://maps.google.com/?q=Thanjavur+Property" target="_blank" rel="noopener noreferrer" style="
-              display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 50px;
-              background: #ffffff; color: #2d3748; border: 1px solid #cbd5e0; font-weight: 700;
-              font-size: 0.92rem; text-decoration: none; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.03);
-              transition: all 0.25s ease;
-            " onmouseover="this.style.borderColor='#4285F4'; this.style.color='#4285F4';" onmouseout="this.style.borderColor='#cbd5e0'; this.style.color='#2d3748';">
-              <i class="ri-google-fill" style="color: #4285F4;"></i>
-              <span>Review on Google</span>
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="${summary.googleReviewUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="padding: 11px 22px; font-size: 0.9rem; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 700;">
+              <i class="ri-edit-box-line"></i>
+              <span>Write a review</span>
             </a>
+            <button id="open-site-review-modal-btn" class="btn btn-outline-dark" style="padding: 11px 18px; font-size: 0.9rem; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; background: #fff; border: 1px solid #cbd5e1; cursor: pointer;">
+              <i class="ri-chat-smile-2-line"></i>
+              <span>Share Feedback</span>
+            </button>
           </div>
         </div>
 
+        <!-- Google Tags Pills (From Real Google Profile) -->
+        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 20px;">
+          ${summary.categories.map(cat => `
+            <span style="background: #ffffff; border: 1px solid #e2e8f0; color: #475569; padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.02);">
+              <i class="ri-check-line" style="color: #10b981;"></i> ${cat.label} <span style="background: #f1f5f9; color: #64748b; padding: 1px 6px; border-radius: 10px; font-size: 0.75rem;">${cat.count}</span>
+            </span>
+          `).join('')}
+        </div>
       </div>
 
-      <!-- AUTO-SCROLLING MARQUEE TRACK -->
-      <div class="testimonials-marquee-wrapper" style="width: 100%; overflow: hidden; position: relative; padding: 10px 0;">
-        
-        <!-- Left & Right Gradient Shadows for seamless fade -->
-        <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 100px; background: linear-gradient(90deg, #fdfbf7 0%, transparent 100%); z-index: 2; pointer-events: none;"></div>
-        <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 100px; background: linear-gradient(270deg, #fdfbf7 0%, transparent 100%); z-index: 2; pointer-events: none;"></div>
-
+      <!-- AUTO-SCROLLING MARQUEE TRACK (100% SEAMLESS INFINITE TICKER) -->
+      <div class="testimonials-marquee-wrapper" style="width: 100%; position: relative; overflow: hidden; padding: 12px 0;">
         <div class="testimonials-marquee-track">
-          ${displayReviews.map((rev, idx) => `
-            <div class="testimonial-card" style="
-              width: 360px; min-width: 360px; background: #ffffff; border-radius: 18px; padding: 26px;
-              border: 1px solid #ebe5d8; box-shadow: 0 8px 24px rgba(0,0,0,0.04); display: flex; flex-direction: column;
-              justify-content: space-between; position: relative; transition: all 0.3s ease; flex-shrink: 0;
-            ">
-              <!-- Top Row: User Avatar, Name & Google Logo -->
+          <div class="testimonials-marquee-group">
+            ${renderReviewCards(reviews)}
+          </div>
+          <div class="testimonials-marquee-group" aria-hidden="true">
+            ${renderReviewCards(reviews)}
+          </div>
+        </div>
+      </div>
+
+      <!-- INLINE USER SUBMISSION MODAL -->
+      <div id="site-review-modal-overlay" style="
+        display: none; position: fixed; inset: 0; z-index: 9999999;
+        background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px);
+        align-items: center; justify-content: center; padding: 20px;
+      ">
+        <div style="
+          background: #ffffff; width: 100%; max-width: 520px; border-radius: 20px;
+          padding: 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); position: relative;
+        ">
+          <button id="close-site-review-modal-btn" style="
+            position: absolute; top: 18px; right: 18px; background: #f1f5f9; border: none;
+            width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; color: #64748b;
+          "><i class="ri-close-line"></i></button>
+
+          <h3 style="font-family: var(--font-serif, 'DM Serif Display', serif); font-size: 1.5rem; color: #1e293b; margin-bottom: 6px;">
+            Share Your Experience
+          </h3>
+          <p style="font-size: 0.88rem; color: #64748b; margin-bottom: 20px;">
+            Your feedback helps us continuously improve our real estate advisory across Thanjavur & Tamil Nadu.
+          </p>
+
+          <form id="site-review-form" style="display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Your Name *</label>
+              <input type="text" id="rev-name-input" required placeholder="e.g. Vicky Selvam" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem;" />
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
-                  <div style="display: flex; align-items: center; gap: 12px;">
-                    ${rev.avatar ? `
-                      <img src="${rev.avatar}" alt="${rev.name}" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
-                    ` : `
-                      <div style="
-                        width: 46px; height: 46px; border-radius: 50%; background: #eb5e28; color: #fff;
-                        display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
-                      ">
-                        ${rev.name.charAt(0).toUpperCase()}
-                      </div>
-                    `}
-                    <div>
-                      <div style="font-weight: 700; color: #1a202c; font-size: 0.96rem; line-height: 1.2;">${rev.name}</div>
-                      <div style="font-size: 0.78rem; color: #718096; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
-                        <i class="ri-checkbox-circle-fill" style="color: #38a169; font-size: 0.85rem;"></i>
-                        <span>Verified Client</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Google / Source Badge -->
-                  <div style="
-                    width: 30px; height: 30px; border-radius: 50%; background: #f8fafc; border: 1px solid #e2e8f0;
-                    display: flex; align-items: center; justify-content: center;
-                  " title="Verified review on ${rev.source}">
-                    ${rev.source === 'Google' ? `
-                      <svg width="16" height="16" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                      </svg>
-                    ` : `
-                      <i class="ri-shield-check-fill" style="color: #eb5e28; font-size: 1rem;"></i>
-                    `}
-                  </div>
-                </div>
-
-                <!-- Stars Rating -->
-                <div style="display: flex; gap: 3px; color: #f6ad55; font-size: 1rem; margin-bottom: 12px;">
-                  ${Array(rev.rating || 5).fill('<i class="ri-star-fill"></i>').join('')}
-                </div>
-
-                <!-- Review Content -->
-                <p style="
-                  font-size: 0.92rem; color: #4a5568; line-height: 1.6; margin: 0 0 16px 0;
-                  font-style: normal; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
-                ">
-                  "${rev.reviewText}"
-                </p>
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Property Type / Role</label>
+                <input type="text" id="rev-role-input" placeholder="e.g. House Buyer" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem;" />
               </div>
-
-              <!-- Bottom Row: Property / Location Tag & Date -->
-              <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; color: #94a3b8;">
-                <span style="font-weight: 600; color: #64748b; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  ${rev.propertyType || rev.location || 'Thanjavur Property'}
-                </span>
-                <span>${rev.createdAt ? rev.createdAt.split(' ')[0] : 'Recent'}</span>
+              <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Rating</label>
+                <select id="rev-rating-input" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; background: #fff;">
+                  <option value="5">★★★★★ (5 Stars)</option>
+                  <option value="4">★★★★☆ (4 Stars)</option>
+                  <option value="3">★★★☆☆ (3 Stars)</option>
+                </select>
               </div>
             </div>
-          `).join('')}
+
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Location / Area in Thanjavur</label>
+              <input type="text" id="rev-location-input" placeholder="e.g. Medical College Road, Thanjavur" style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem;" />
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Your Review *</label>
+              <textarea id="rev-text-input" required rows="3" placeholder="Tell us about your experience with Thanjai Property..." style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; resize: vertical;"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="padding: 12px; font-size: 0.95rem; border-radius: 10px; margin-top: 6px; background: var(--color-orange, #eb5e28); color: #fff; border: none; font-weight: 700; cursor: pointer;">
+              <span>Submit Verified Review</span>
+            </button>
+          </form>
         </div>
       </div>
 
     </section>
   `;
+}
+
+export function initTestimonialsListeners() {
+  const modalOverlay = document.getElementById('site-review-modal-overlay');
+  const openModalBtn = document.getElementById('open-site-review-modal-btn');
+  const closeModalBtn = document.getElementById('close-site-review-modal-btn');
+  const reviewForm = document.getElementById('site-review-form');
+
+  if (openModalBtn && modalOverlay) {
+    openModalBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      modalOverlay.style.display = 'flex';
+    });
+  }
+
+  if (closeModalBtn && modalOverlay) {
+    closeModalBtn.addEventListener('click', () => {
+      modalOverlay.style.display = 'none';
+    });
+  }
+
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        modalOverlay.style.display = 'none';
+      }
+    });
+  }
+
+  if (reviewForm) {
+    reviewForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const author_name = document.getElementById('rev-name-input')?.value.trim();
+      const author_role = document.getElementById('rev-role-input')?.value.trim() || 'Verified Client';
+      const rating = parseInt(document.getElementById('rev-rating-input')?.value || '5', 10);
+      const location = document.getElementById('rev-location-input')?.value.trim() || 'Thanjavur';
+      const review_text = document.getElementById('rev-text-input')?.value.trim();
+
+      if (!author_name || !review_text) {
+        showToast('Please enter your name and review message.', 'ri-error-warning-line');
+        return;
+      }
+
+      await addReview({
+        name: author_name,
+        author_name,
+        propertyType: author_role,
+        author_role,
+        rating,
+        location,
+        reviewText: review_text,
+        review_text,
+        source: 'Google / Website',
+        verified_google: true,
+        time_ago: 'Just now'
+      });
+
+      showToast('Thank you! Your verified review has been published.', 'ri-checkbox-circle-fill');
+      if (modalOverlay) modalOverlay.style.display = 'none';
+      reviewForm.reset();
+    });
+  }
 }

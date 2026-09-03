@@ -10,7 +10,7 @@ import { renderLocationExplorer, initLocationExplorerListeners } from './compone
 import { renderCategoryCarousel, initCategoryCarouselListeners } from './components/CategoryCarousel.js';
 import { renderLuxuryTransition, initLuxuryTransitionListeners } from './components/LuxuryTransition.js';
 import { renderBlogSection, initBlogSectionListeners } from './components/BlogSection.js';
-import { renderTestimonialsSection } from './components/TestimonialsSection.js';
+import { renderTestimonialsSection, initTestimonialsListeners } from './components/TestimonialsSection.js';
 import { renderWriteReviewModal, initWriteReviewModalListeners } from './components/WriteReviewModal.js';
 import { renderPostPropertyCTA, initPostPropertyCTAListeners } from './components/PostPropertyCTA.js';
 import { renderHomeContactBanner, initHomeContactBannerListeners } from './components/HomeContactBanner.js';
@@ -336,6 +336,7 @@ function renderApp() {
       initLocationExplorerListeners(handleLocationSelect);
       initCategoryCarouselListeners(handleCategorySelect);
       initLuxuryTransitionListeners();
+      initTestimonialsListeners();
       initBlogSectionListeners(() => navigateToRoute('blog'), (postId) => openBlogArticle(postId));
       initHomeContactBannerListeners(() => navigateToRoute('contact'));
       break;
