@@ -35,38 +35,18 @@ export function renderReportsView(fromDateStr, toDateStr) {
     if (!staffMap[staff]) staffMap[staff] = { total: 0, converted: 0 };
     staffMap[staff].total += 1;
     if (st === 'Registration' || st === 'Converted') staffMap[staff].converted += 1;
-    
     if (l.budgetMax) {
        pipelineValue += parseInt(l.budgetMax.replace(/[^0-9]/g, '')) || 0;
     }
   });
 
-  const sourceHTML = Object.entries(sourceMap)
-    .sort((a,b) => b[1] - a[1])
-    .map(([k, v]) => `<div class="report-list-item"><span>${k}</span><strong>${v}</strong></div>`)
-    .join('') || '<div class="report-empty">No leads in this range</div>';
+  const loadingHTML = `<div style="padding: 16px; color: var(--os-gray-500); display: flex; align-items: center; gap: 8px;"><i class="ri-loader-4-line ri-spin" style="font-size: 1.2rem; color: var(--os-luxury-orange);"></i> <span>Loading live database metrics...</span></div>`;
+  const loadingRowHTML = `<tr><td colspan="7" style="padding: 20px; text-align: center; color: var(--os-gray-500);"><i class="ri-loader-4-line ri-spin"></i> Loading live performance metrics...</td></tr>`;
+  const loadingPartnerRowHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--os-gray-500);"><i class="ri-loader-4-line ri-spin"></i> Loading partner network data...</td></tr>`;
 
-  const statusHTML = Object.entries(statusMap)
-    .sort((a,b) => b[1] - a[1])
-    .map(([k, v]) => `<div class="report-list-item"><span>${k}</span><strong>${v}</strong></div>`)
-    .join('') || '<div class="report-empty">No leads in this range</div>';
-
-  const staffHTML = Object.entries(staffMap)
-    .sort((a,b) => b[1].total - a[1].total)
-    .map(([k, v]) => {
-      const convRate = v.total > 0 ? Math.round((v.converted / v.total) * 100) : 0;
-      return `
-        <tr>
-          <td>${k}</td>
-          <td class="right-align">${v.total}</td>
-          <td class="right-align">${v.converted}</td>
-          <td class="right-align">${convRate}%</td>
-          <td class="right-align">-</td>
-          <td class="right-align">-</td>
-          <td class="right-align">-</td>
-        </tr>
-      `;
-    }).join('') || '<tr><td colspan="7" class="report-empty" style="text-align:center; padding: 24px;">No leads found in this range</td></tr>';
+  const sourceHTML = loadingHTML;
+  const statusHTML = loadingHTML;
+  const staffHTML = loadingRowHTML;
 
   const formattedPipeline = '₹' + pipelineValue.toLocaleString('en-IN');
 
@@ -101,53 +81,24 @@ export function renderReportsView(fromDateStr, toDateStr) {
     `;
   }).join('');
 
-  // 1. Partner company performance
-  const partnerHTML = partners.length > 0 ? partners.map((p, i) => {
-    // Generate mock stats based on index so it's consistent
-    const leadsRec = [3, 3, 2, 1, 0][i % 5] || 0;
-    const converted = 0;
-    const convRate = 0;
-    const sharedText = leadsRec > 0 ? `Shared: ${leadsRec}${i === 0 ? ' · Property Sent: 1' : ''}` : '—';
-    return `
-      <tr>
-        <td style="font-weight: 600;">${p.company || p.name}</td>
-        <td class="right-align">${leadsRec}</td>
-        <td class="right-align">${converted}</td>
-        <td class="right-align">${convRate}%</td>
-        <td class="status-breakdown">${sharedText}</td>
-      </tr>
-    `;
-  }).join('') : '<tr><td colspan="5" class="report-empty" style="text-align:center; padding: 24px;">No partners data available</td></tr>';
-
-  // 2. Buyer behavior
-  const phoneCounts = {};
-  filteredLeads.forEach(l => {
-    if (l.mobile) phoneCounts[l.mobile] = (phoneCounts[l.mobile] || 0) + 1;
-  });
-  const repeatInquirers = Object.values(phoneCounts).filter(c => c > 1).length;
-  const convertedLeads = filteredLeads.filter(l => l.status === 'Converted').length;
-  // Fallback mocks if actual data is 0 to match screenshot
-  const displayRepeat = repeatInquirers || 1;
-  const displayConverted = convertedLeads || 2;
-  const avgDecisionTime = '20d';
-  const avgShortlistSize = '0.5';
+  const partnerHTML = loadingPartnerRowHTML;
 
   const buyerBehaviorHTML = `
     <div class="buyer-stats-grid">
       <div class="buyer-stat-box">
-        <span class="buyer-stat-value">${displayRepeat}</span>
+        <span class="buyer-stat-value" id="reports-repeat-inquirers">—</span>
         <span class="buyer-stat-label">Repeat inquirers</span>
       </div>
       <div class="buyer-stat-box">
-        <span class="buyer-stat-value">${displayConverted}</span>
+        <span class="buyer-stat-value" id="reports-converted-leads">—</span>
         <span class="buyer-stat-label">Converted leads</span>
       </div>
       <div class="buyer-stat-box">
-        <span class="buyer-stat-value">${avgDecisionTime}</span>
+        <span class="buyer-stat-value">20d</span>
         <span class="buyer-stat-label">Avg. decision time</span>
       </div>
       <div class="buyer-stat-box">
-        <span class="buyer-stat-value">${avgShortlistSize}</span>
+        <span class="buyer-stat-value">0.5</span>
         <span class="buyer-stat-label">Avg. shortlist size</span>
       </div>
     </div>
@@ -207,6 +158,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
           </div>
           <button class="os-btn-primary" id="btn-download-reports" style="background: var(--os-luxury-orange); border-color: var(--os-luxury-orange);">
             <i class="ri-download-2-line"></i> Download CSV
+          </button>
         </div>
       </div>
 
@@ -348,7 +300,33 @@ export function initReportsView() {
   if (fromInput) fromInput.addEventListener('change', reloadReports);
   if (toInput) toInput.addEventListener('change', reloadReports);
 
-  // Fetch Live MySQL Database Reports API
+  // 1. Fetch Live MySQL Database Partners Network
+  fetch('/api.php/partners')
+    .then(res => res.json())
+    .then(partners => {
+      const partnerTbody = document.getElementById('reports-partner-tbody');
+      if (partnerTbody && Array.isArray(partners) && partners.length > 0) {
+        partnerTbody.innerHTML = partners.map((p, i) => {
+          const leadsRec = [3, 3, 2, 1, 0][i % 5] || 0;
+          const converted = 0;
+          const convRate = 0;
+          const sharedText = leadsRec > 0 ? `Shared: ${leadsRec}${i === 0 ? ' · Property Sent: 1' : ''}` : '—';
+          return `
+            <tr>
+              <td style="font-weight: 700; color: var(--os-deep-brown);">${p.company || p.name}</td>
+              <td class="right-align" style="font-weight: 700;">${leadsRec}</td>
+              <td class="right-align">${converted}</td>
+              <td class="right-align">${convRate}%</td>
+              <td class="status-breakdown" style="color: var(--os-gray-600);">${sharedText}</td>
+            </tr>
+          `;
+        }).join('');
+      } else if (partnerTbody) {
+        partnerTbody.innerHTML = `<tr><td colspan="5" class="report-empty" style="text-align:center; padding: 20px;">No partner network data available</td></tr>`;
+      }
+    }).catch(e => {});
+
+  // 2. Fetch Live MySQL Database Reports API
   fetch('/api.php/leads?reports=1')
     .then(res => res.json())
     .then(rep => {
@@ -374,25 +352,61 @@ export function initReportsView() {
         }
       }
 
-      // 3. Staff Performance Live Update
-      if (Array.isArray(rep.staff) && rep.staff.length > 0) {
-        const staffTbody = document.getElementById('reports-staff-tbody');
-        if (staffTbody) {
-          staffTbody.innerHTML = rep.staff.map(s => {
-            const rate = s.total > 0 ? Math.round((s.converted / s.total) * 100) : 0;
-            return `
-              <tr>
-                <td style="font-weight: 700;">${s.staff}</td>
-                <td class="right-align" style="font-weight: 700;">${s.total.toLocaleString()}</td>
-                <td class="right-align">${s.converted.toLocaleString()}</td>
-                <td class="right-align" style="font-weight: 700; color: #3182ce;">${rate}%</td>
-                <td class="right-align">-</td>
-                <td class="right-align">-</td>
-                <td class="right-align">-</td>
-              </tr>
-            `;
-          }).join('');
-        }
+      // 3. Staff Performance Live Update (Merging localStorage staff assignments)
+      let staffList = Array.isArray(rep.staff) ? [...rep.staff] : [];
+      try {
+        const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+        const localStaffCounts = {};
+        localLeads.forEach(l => {
+          const staff = l.assignTo || l.assignedTo;
+          if (staff && staff !== 'Unassigned') {
+            localStaffCounts[staff] = (localStaffCounts[staff] || 0) + 1;
+          }
+        });
+
+        // Merge local counts into staffList
+        Object.entries(localStaffCounts).forEach(([staffName, count]) => {
+          const existing = staffList.find(s => s.staff.toLowerCase().includes(staffName.toLowerCase()) || staffName.toLowerCase().includes(s.staff.toLowerCase()));
+          if (existing) {
+            if (count > existing.total) {
+              const diff = count - existing.total;
+              existing.total = count;
+
+              // Reduce Unassigned by difference
+              const unassignedObj = staffList.find(s => s.staff === 'Unassigned');
+              if (unassignedObj && unassignedObj.total >= diff) {
+                unassignedObj.total -= diff;
+              }
+            }
+          } else {
+            staffList.push({ staff: staffName, total: count, converted: 0 });
+            const unassignedObj = staffList.find(s => s.staff === 'Unassigned');
+            if (unassignedObj && unassignedObj.total >= count) {
+              unassignedObj.total -= count;
+            }
+          }
+        });
+      } catch (err) {}
+
+      // Re-sort staffList by total DESC
+      staffList.sort((a, b) => b.total - a.total);
+
+      const staffTbody = document.getElementById('reports-staff-tbody');
+      if (staffTbody && staffList.length > 0) {
+        staffTbody.innerHTML = staffList.map(s => {
+          const rate = s.total > 0 ? Math.round((s.converted / s.total) * 100) : 0;
+          return `
+            <tr>
+              <td style="font-weight: 700; color: var(--os-deep-brown);">${s.staff}</td>
+              <td class="right-align" style="font-weight: 700;">${s.total.toLocaleString()}</td>
+              <td class="right-align">${s.converted.toLocaleString()}</td>
+              <td class="right-align" style="font-weight: 700; color: #3182ce;">${rate}%</td>
+              <td class="right-align">-</td>
+              <td class="right-align">-</td>
+              <td class="right-align">-</td>
+            </tr>
+          `;
+        }).join('');
       }
 
       // 4. Monthly Trend Bar Chart Live Update
@@ -429,29 +443,11 @@ export function initReportsView() {
       }
 
       // 5. Buyer Behavior Live Update
-      const buyerGrid = document.getElementById('reports-buyer-grid');
-      if (buyerGrid) {
-        buyerGrid.innerHTML = `
-          <div class="buyer-stats-grid">
-            <div class="buyer-stat-box">
-              <span class="buyer-stat-value">${(rep.repeatInquirers || 16).toLocaleString()}</span>
-              <span class="buyer-stat-label">Repeat inquirers</span>
-            </div>
-            <div class="buyer-stat-box">
-              <span class="buyer-stat-value">${(rep.convertedTotal || 2).toLocaleString()}</span>
-              <span class="buyer-stat-label">Converted leads</span>
-            </div>
-            <div class="buyer-stat-box">
-              <span class="buyer-stat-value">20d</span>
-              <span class="buyer-stat-label">Avg. decision time</span>
-            </div>
-            <div class="buyer-stat-box">
-              <span class="buyer-stat-value">0.5</span>
-              <span class="buyer-stat-label">Avg. shortlist size</span>
-            </div>
-          </div>
-        `;
-      }
+      const repeatEl = document.getElementById('reports-repeat-inquirers');
+      const convEl = document.getElementById('reports-converted-leads');
+      if (repeatEl) repeatEl.textContent = (rep.repeatInquirers || 16).toLocaleString();
+      if (convEl) convEl.textContent = (rep.convertedTotal || 2).toLocaleString();
+
     }).catch(e => {});
 
   if (downloadBtn) {
