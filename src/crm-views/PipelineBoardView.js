@@ -385,13 +385,29 @@ export function initPipelineBoardView() {
     if (existing) existing.remove();
 
     const clientName = leadObj.name || 'Client';
-    let defaultProp = (leadObj.requirement && leadObj.requirement !== 'Any' && leadObj.requirement !== 'All') 
-      ? leadObj.requirement 
-      : (leadObj.propertyType || leadObj.propertyTitle || 'Thanjavur Property');
+    const rawProp = leadObj.requirement || leadObj.propertyType || leadObj.propertyTitle || '';
+    const isGenericProp = !rawProp || ['any', 'all', 'none', '—', '-'].includes(rawProp.trim().toLowerCase());
+    const initialPropTitle = isGenericProp ? 'DTCP Plots / Luxury Villa' : rawProp;
+
     let defaultLoc = leadObj.location || leadObj.preferredLocation || leadObj.city || 'Medical College Road, Thanjavur';
 
     const allProperties = (typeof getProperties === 'function' ? getProperties() : []) || [];
-    const propOptionsHtml = allProperties.map(p => `<option value="${p.title}">${p.title} (${p.location || 'Thanjavur'})</option>`).join('');
+    const matchedProp = allProperties.find(p => p.title.trim().toLowerCase() === initialPropTitle.trim().toLowerCase());
+
+    const buildPropSelectorHtml = (label = 'Property / Requirement') => `
+      <div class="os-form-group" style="margin-bottom: 14px;">
+        <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">${label}</label>
+        <select id="pwa-prop-select" class="os-input" style="width: 100%; margin-bottom: 6px; cursor: pointer; background: #ffffff;">
+          <option value="">-- Choose from Verified Properties (${allProperties.length} listings) --</option>
+          ${allProperties.map(p => {
+            const isSelected = matchedProp && matchedProp.id === p.id;
+            return `<option value="${p.title}" data-loc="${p.location || 'Thanjavur'}" ${isSelected ? 'selected' : ''}>${p.title} (${p.location || 'Thanjavur'})</option>`;
+          }).join('')}
+          <option value="__custom__" ${!matchedProp ? 'selected' : ''}>✍️ Custom Property / Requirement...</option>
+        </select>
+        <input type="text" id="pwa-prop" value="${initialPropTitle}" class="os-input" style="width: 100%; display: ${matchedProp ? 'none' : 'block'};" placeholder="Type property title or requirement..." />
+      </div>
+    `;
 
     let fieldsHtml = '';
     let getParamsFn = () => [];
@@ -405,19 +421,15 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property / Requirement</label>
-          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" placeholder="Select or type property name..." />
-          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
-        </div>
+        ${buildPropSelectorHtml('Property / Requirement Title')}
         <div class="os-form-group" style="margin-bottom: 14px;">
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Custom Message Text</label>
-          <textarea id="pwa-msg" class="os-input" style="width: 100%; height: 75px; resize: vertical;">Thank you for contacting Thanjai Property! Our property specialist will guide you with verified options shortly.</textarea>
+          <textarea id="pwa-msg" class="os-input" style="width: 100%; height: 70px; resize: vertical;">Thank you for contacting Thanjai Property! Our property specialist will guide you with verified options shortly.</textarea>
         </div>
       `;
       getParamsFn = () => [
         document.getElementById('pwa-name')?.value || clientName,
-        document.getElementById('pwa-prop')?.value || defaultProp,
+        document.getElementById('pwa-prop')?.value || initialPropTitle,
         document.getElementById('pwa-msg')?.value || 'Thank you for contacting Thanjai Property!'
       ];
       getPreviewFn = () => {
@@ -431,11 +443,7 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Name</label>
-          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
-          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
-        </div>
+        ${buildPropSelectorHtml('Property Title')}
         <div class="os-form-group" style="margin-bottom: 14px;">
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Location</label>
           <input type="text" id="pwa-loc" value="${defaultLoc}" class="os-input" style="width: 100%;" />
@@ -443,7 +451,7 @@ export function initPipelineBoardView() {
       `;
       getParamsFn = () => [
         document.getElementById('pwa-name')?.value || clientName,
-        document.getElementById('pwa-prop')?.value || defaultProp,
+        document.getElementById('pwa-prop')?.value || initialPropTitle,
         document.getElementById('pwa-loc')?.value || defaultLoc
       ];
       getPreviewFn = () => {
@@ -457,11 +465,7 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Title</label>
-          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
-          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
-        </div>
+        ${buildPropSelectorHtml('Property Title for Site Visit')}
         <div class="os-form-group" style="margin-bottom: 14px;">
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Visit Date & Time</label>
           <input type="text" id="pwa-time" value="Tomorrow at 10:30 AM" class="os-input" style="width: 100%;" />
@@ -477,7 +481,7 @@ export function initPipelineBoardView() {
       `;
       getParamsFn = () => [
         document.getElementById('pwa-name')?.value || clientName,
-        document.getElementById('pwa-prop')?.value || defaultProp,
+        document.getElementById('pwa-prop')?.value || initialPropTitle,
         document.getElementById('pwa-time')?.value || 'Tomorrow at 10:30 AM',
         document.getElementById('pwa-loc')?.value || defaultLoc,
         document.getElementById('pwa-map')?.value || 'https://maps.google.com/?q=Thanjavur'
@@ -493,15 +497,11 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Visited</label>
-          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
-          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
-        </div>
+        ${buildPropSelectorHtml('Property Visited')}
       `;
       getParamsFn = () => [
         document.getElementById('pwa-name')?.value || clientName,
-        document.getElementById('pwa-prop')?.value || defaultProp
+        document.getElementById('pwa-prop')?.value || initialPropTitle
       ];
       getPreviewFn = () => {
         const p = getParamsFn();
@@ -514,11 +514,7 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Name</label>
-          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
-          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
-        </div>
+        ${buildPropSelectorHtml('Property Name')}
         <div class="os-form-group" style="margin-bottom: 14px;">
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Proposed Meeting Time</label>
           <input type="text" id="pwa-time" value="This Week at Our Office" class="os-input" style="width: 100%;" />
@@ -526,7 +522,7 @@ export function initPipelineBoardView() {
       `;
       getParamsFn = () => [
         document.getElementById('pwa-name')?.value || clientName,
-        document.getElementById('pwa-prop')?.value || defaultProp,
+        document.getElementById('pwa-prop')?.value || initialPropTitle,
         document.getElementById('pwa-time')?.value || 'This Week'
       ];
       getPreviewFn = () => {
@@ -540,15 +536,11 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Name</label>
-          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
-          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
-        </div>
+        ${buildPropSelectorHtml('Property Name')}
       `;
       getParamsFn = () => [
         document.getElementById('pwa-name')?.value || clientName,
-        document.getElementById('pwa-prop')?.value || defaultProp
+        document.getElementById('pwa-prop')?.value || initialPropTitle
       ];
       getPreviewFn = () => {
         const p = getParamsFn();
@@ -561,11 +553,7 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Property Registered</label>
-          <input type="text" list="pwa-prop-list" id="pwa-prop" value="${defaultProp}" class="os-input" style="width: 100%;" />
-          <datalist id="pwa-prop-list">${propOptionsHtml}</datalist>
-        </div>
+        ${buildPropSelectorHtml('Property Registered')}
         <div class="os-form-group" style="margin-bottom: 14px;">
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Google Review Link</label>
           <input type="text" id="pwa-rev" value="https://g.page/r/thanjai-property/review" class="os-input" style="width: 100%;" />
@@ -573,7 +561,7 @@ export function initPipelineBoardView() {
       `;
       getParamsFn = () => [
         document.getElementById('pwa-name')?.value || clientName,
-        document.getElementById('pwa-prop')?.value || defaultProp,
+        document.getElementById('pwa-prop')?.value || initialPropTitle,
         document.getElementById('pwa-rev')?.value || 'https://g.page/r/thanjai-property/review'
       ];
       getPreviewFn = () => {
@@ -586,13 +574,13 @@ export function initPipelineBoardView() {
     modalWrap.id = 'pipeline-wa-modal-wrap';
     modalWrap.style.cssText = `
       position: fixed; inset: 0; z-index: 10000; background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px;
+      backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; overflow-y: auto;
     `;
 
     modalWrap.innerHTML = `
-      <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 540px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; animation: popIn 0.25s ease-out; font-family: 'Manrope', sans-serif;">
+      <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 530px; max-height: min(88vh, 660px); margin: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35); overflow: hidden; display: flex; flex-direction: column; animation: popIn 0.25s ease-out; font-family: 'Manrope', sans-serif;">
         <!-- Modal Header -->
-        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 20px 24px; color: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+        <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 16px 20px; color: #ffffff; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <div style="width: 36px; height: 36px; background: rgba(37,211,102,0.15); border: 1px solid rgba(37,211,102,0.3); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #25d366; font-size: 1.2rem;">
               <i class="ri-whatsapp-fill"></i>
@@ -606,27 +594,27 @@ export function initPipelineBoardView() {
         </div>
 
         <!-- Modal Body -->
-        <div style="padding: 24px; max-height: 75vh; overflow-y: auto;">
-          <p style="margin: 0 0 16px; font-size: 0.85rem; color: #64748b;">
+        <div style="padding: 18px 20px; overflow-y: auto; flex: 1; min-height: 0;">
+          <p style="margin: 0 0 14px; font-size: 0.83rem; color: #64748b;">
             Verify and customize the parameters below before dispatching the automated WhatsApp message to <strong style="color: #0f172a;">${clientName}</strong>:
           </p>
 
           <div id="pwa-fields-container">${fieldsHtml}</div>
 
           <!-- Live WhatsApp Preview Box -->
-          <div style="margin-top: 18px; background: #eef8f2; border: 1px solid #c6ebd4; border-radius: 12px; padding: 14px; position: relative;">
+          <div style="margin-top: 14px; background: #eef8f2; border: 1px solid #c6ebd4; border-radius: 12px; padding: 12px; position: relative;">
             <div style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: #15803d; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-              <i class="ri-eye-line"></i> Live Message Preview (SmartPing Template: <code>${campaignName}</code>)
+              <i class="ri-eye-line"></i> Live Message Preview (SmartPing: <code>${campaignName}</code>)
             </div>
-            <pre id="pwa-live-preview" style="margin: 0; font-family: inherit; font-size: 0.83rem; color: #1e293b; white-space: pre-wrap; line-height: 1.45;"></pre>
+            <pre id="pwa-live-preview" style="margin: 0; font-family: inherit; font-size: 0.82rem; color: #1e293b; white-space: pre-wrap; line-height: 1.45;"></pre>
           </div>
         </div>
 
         <!-- Modal Footer Actions -->
-        <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-          <button id="pwa-cancel-btn" class="os-btn-secondary" style="font-size: 0.85rem; padding: 9px 14px; border: 1px solid #cbd5e1; background: #ffffff; color: #64748b;">Cancel</button>
-          <button id="pwa-skip-btn" class="os-btn-secondary" style="font-size: 0.85rem; padding: 9px 14px; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 700;">Move Without WhatsApp</button>
-          <button id="pwa-confirm-btn" class="os-btn-primary" style="font-size: 0.85rem; padding: 9px 18px; background: #25d366; border-color: #25d366; color: #ffffff; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+        <div style="padding: 14px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; flex-shrink: 0;">
+          <button id="pwa-cancel-btn" class="os-btn-secondary" style="font-size: 0.82rem; padding: 8px 12px; border: 1px solid #cbd5e1; background: #ffffff; color: #64748b;">Cancel</button>
+          <button id="pwa-skip-btn" class="os-btn-secondary" style="font-size: 0.82rem; padding: 8px 12px; border: 1px solid #cbd5e1; background: #ffffff; color: #0f172a; font-weight: 700;">Move Without WhatsApp</button>
+          <button id="pwa-confirm-btn" class="os-btn-primary" style="font-size: 0.82rem; padding: 8px 16px; background: #25d366; border-color: #25d366; color: #ffffff; font-weight: 800; display: flex; align-items: center; gap: 6px;">
             <i class="ri-send-plane-fill"></i> Send WhatsApp & Move
           </button>
         </div>
@@ -641,6 +629,28 @@ export function initPipelineBoardView() {
       if (previewEl) previewEl.textContent = getPreviewFn();
     };
     updatePreview();
+
+    // Property dropdown selector change listener
+    const propSelect = document.getElementById('pwa-prop-select');
+    const propInput = document.getElementById('pwa-prop');
+    const locInput = document.getElementById('pwa-loc');
+
+    if (propSelect && propInput) {
+      propSelect.addEventListener('change', function() {
+        if (this.value === '__custom__') {
+          propInput.style.display = 'block';
+          propInput.focus();
+        } else if (this.value) {
+          propInput.value = this.value;
+          propInput.style.display = 'none';
+          const selOpt = this.options[this.selectedIndex];
+          if (selOpt && selOpt.dataset.loc && locInput) {
+            locInput.value = selOpt.dataset.loc;
+          }
+        }
+        updatePreview();
+      });
+    }
 
     // Attach input listeners for instant live preview updates
     modalWrap.querySelectorAll('input, textarea, select').forEach(input => {
