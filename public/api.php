@@ -491,7 +491,7 @@ elseif ($resource === 'leads') {
             if ($resTotal && $r = $resTotal->fetch_assoc()) { $totalCount = intval($r['cnt']); }
 
             $todayCount = 0;
-            $resToday = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE DATE(createdAt) = CURDATE() OR DATE(created_at) = CURDATE()");
+            $resToday = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE DATE(createdAt) = CURDATE() OR DATE(created_at) = CURDATE() OR createdAt LIKE CONCAT('%', DATE_FORMAT(NOW(), '%d %b %Y'), '%') OR createdAt LIKE CONCAT('%', DATE_FORMAT(NOW(), '%d Sept %Y'), '%')");
             if ($resToday && $r = $resToday->fetch_assoc()) { $todayCount = intval($r['cnt']); }
 
             $followupCount = 0;

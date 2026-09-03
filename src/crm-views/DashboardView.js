@@ -9,8 +9,22 @@ export function renderDashboardView() {
   const totalLeads = Math.max(leads.length, storedTotal || 0);
   
   // Calculate new leads today
-  const today = new Date().toISOString().split('T')[0];
-  const newToday = leads.filter(l => l.date === today && l.status === 'new').length;
+  const now = new Date();
+  const todayISO = now.toISOString().split('T')[0];
+  const todayDayNum = String(now.getDate()).padStart(2, '0');
+  const todayMonthName = now.toLocaleString('en-US', { month: 'short' }).toLowerCase();
+
+  const newToday = leads.filter(l => {
+    if (!l) return false;
+    if (l.createdAt) {
+      const d = new Date(l.createdAt);
+      if (!isNaN(d.getTime()) && d.toDateString() === now.toDateString()) return true;
+    }
+    const leadStr = `${l.createdAt || ''} ${l.date || ''} ${l.created_at || ''}`.toLowerCase();
+    if (leadStr.includes(todayISO)) return true;
+    if (leadStr.includes(todayDayNum) && leadStr.includes(todayMonthName)) return true;
+    return false;
+  }).length;
 
 
   // Pipeline Distribution
