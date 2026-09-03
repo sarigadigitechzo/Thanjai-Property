@@ -61,7 +61,7 @@ export function renderDashboardView() {
             <span class="kpi-title">TOTAL LEADS</span>
             <div class="kpi-icon" style="background: #ebf8ff; color: #3182ce;"><i class="ri-user-line"></i></div>
           </div>
-          <div class="kpi-value count-up">${totalLeads}</div>
+          <div class="kpi-value count-up" id="kpi-total-leads">${totalLeads}</div>
           <div class="kpi-trend up"><i class="ri-arrow-up-line"></i> Live count</div>
         </div>
 
@@ -71,7 +71,7 @@ export function renderDashboardView() {
             <span class="kpi-title">NEW TODAY</span>
             <div class="kpi-icon" style="background: #e6fffa; color: #319795;"><i class="ri-sparkling-fill"></i></div>
           </div>
-          <div class="kpi-value count-up">${newToday}</div>
+          <div class="kpi-value count-up" id="kpi-new-today">${newToday}</div>
           <div class="kpi-trend neutral"><i class="ri-subtract-line"></i> Just arrived</div>
         </div>
 
@@ -81,7 +81,7 @@ export function renderDashboardView() {
             <span class="kpi-title">FOLLOW-UPS DUE</span>
             <div class="kpi-icon" style="background: #feebc8; color: #dd6b20;"><i class="ri-calendar-event-line"></i></div>
           </div>
-          <div class="kpi-value count-up">${followUpCount}</div>
+          <div class="kpi-value count-up" id="kpi-followups-due">${followUpCount}</div>
           <div class="kpi-trend neutral"><i class="ri-time-line"></i> today</div>
         </div>
 
@@ -91,7 +91,7 @@ export function renderDashboardView() {
             <span class="kpi-title">CONVERSION RATE</span>
             <div class="kpi-icon" style="background: #faf5ff; color: #805ad5;"><i class="ri-pie-chart-line"></i></div>
           </div>
-          <div class="kpi-value">${totalLeads > 0 ? Math.round((regCount / totalLeads) * 100) : 0}%</div>
+          <div class="kpi-value" id="kpi-conversion-rate">${totalLeads > 0 ? Math.round((regCount / totalLeads) * 100) : 0}%</div>
           <div class="kpi-trend up"><i class="ri-arrow-up-line"></i> based on data</div>
         </div>
 
@@ -101,7 +101,7 @@ export function renderDashboardView() {
             <span class="kpi-title">PROPERTIES AVAILABLE</span>
             <div class="kpi-icon" style="background: #e6fffa; color: #00a3c4;"><i class="ri-building-line"></i></div>
           </div>
-          <div class="kpi-value count-up">${activePropertiesCount}</div>
+          <div class="kpi-value count-up" id="kpi-properties-available">${activePropertiesCount}</div>
           <div class="kpi-trend up"><i class="ri-checkbox-circle-line"></i> Active inventory</div>
         </div>
 
@@ -382,4 +382,24 @@ export function initDashboardListeners() {
       }
     });
   });
+
+  // Fetch Live MySQL Database Stats
+  fetch('/api.php/leads?stats=1')
+    .then(res => res.json())
+    .then(stats => {
+      if (stats && typeof stats.totalLeads === 'number') {
+        const totalEl = document.getElementById('kpi-total-leads');
+        const todayEl = document.getElementById('kpi-new-today');
+        const dueEl = document.getElementById('kpi-followups-due');
+        const convEl = document.getElementById('kpi-conversion-rate');
+
+        if (totalEl) totalEl.textContent = stats.totalLeads.toLocaleString();
+        if (todayEl) todayEl.textContent = stats.newToday.toLocaleString();
+        if (dueEl) dueEl.textContent = stats.followupsDue.toLocaleString();
+        if (convEl && stats.totalLeads > 0) {
+          const rate = Math.round((stats.convertedCount / stats.totalLeads) * 100);
+          convEl.textContent = `${rate}%`;
+        }
+      }
+    }).catch(e => {});
 }

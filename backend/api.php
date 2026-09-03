@@ -497,6 +497,32 @@ if ($resource === 'properties') {
 } 
 elseif ($resource === 'leads') {
     if ($method === 'GET') {
+        if (isset($_GET['stats']) || isset($_GET['count_only'])) {
+            $totalCount = 0;
+            $resTotal = $conn->query("SELECT COUNT(*) as cnt FROM leads");
+            if ($resTotal && $r = $resTotal->fetch_assoc()) { $totalCount = intval($r['cnt']); }
+
+            $todayCount = 0;
+            $resToday = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE DATE(createdAt) = CURDATE() OR DATE(created_at) = CURDATE()");
+            if ($resToday && $r = $resToday->fetch_assoc()) { $todayCount = intval($r['cnt']); }
+
+            $followupCount = 0;
+            $resFup = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%follow%' OR status LIKE '%contact%' OR (followup IS NOT NULL AND followup != '—' AND followup != '')");
+            if ($resFup && $r = $resFup->fetch_assoc()) { $followupCount = intval($r['cnt']); }
+
+            $convertedCount = 0;
+            $resConv = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%convert%' OR status LIKE '%negotiation%'");
+            if ($resConv && $r = $resConv->fetch_assoc()) { $convertedCount = intval($r['cnt']); }
+
+            echo json_encode([
+                "totalLeads" => $totalCount,
+                "newToday" => $todayCount,
+                "followupsDue" => $followupCount,
+                "convertedCount" => $convertedCount
+            ]);
+            exit();
+        }
+
         $result = $conn->query("SELECT * FROM leads ORDER BY createdAt DESC");
         $rows = [];
         while($row = $result->fetch_assoc()) { $rows[] = $row; }
