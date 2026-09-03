@@ -20,14 +20,14 @@ export function renderLeadsView() {
       </div>
 
       <!-- Filters -->
-      <div class="os-filter-bar" style="background: transparent; padding: 0; box-shadow: none; border: none; margin-bottom: 24px; display: flex; gap: 16px; flex-wrap: nowrap;">
-        <div class="search-box" style="flex: 1; max-width: 300px; background: var(--os-white); border: var(--os-border-thin); border-radius: var(--os-radius-sm);">
+      <div class="os-filter-bar" style="background: transparent; padding: 0; box-shadow: none; border: none; margin-bottom: 20px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; overflow: visible;">
+        <div class="search-box" style="flex: 0 0 200px; min-width: 160px; background: var(--os-white); border: var(--os-border-thin); border-radius: var(--os-radius-sm);">
           <i class="ri-search-line"></i>
-          <input type="text" id="filter-search" placeholder="Search name / phone / email..." style="background: transparent;" />
+          <input type="text" id="filter-search" placeholder="Search name / phone..." style="background: transparent;" />
         </div>
         
         <!-- Custom Selects -->
-        <div class="os-custom-select" id="filter-status">
+        <div class="os-custom-select" id="filter-status" style="flex: 0 0 auto; min-width: 115px;">
           <div class="select-value">All statuses</div>
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
@@ -42,7 +42,7 @@ export function renderLeadsView() {
           </div>
         </div>
 
-        <div class="os-custom-select" id="filter-source">
+        <div class="os-custom-select" id="filter-source" style="flex: 0 0 auto; min-width: 115px;">
           <div class="select-value">All sources</div>
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
@@ -58,7 +58,7 @@ export function renderLeadsView() {
           </div>
         </div>
 
-        <div class="os-custom-select" id="filter-type">
+        <div class="os-custom-select" id="filter-type" style="flex: 0 0 auto; min-width: 130px;">
           <div class="select-value">All property types</div>
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
@@ -76,7 +76,7 @@ export function renderLeadsView() {
           </div>
         </div>
 
-        <div class="os-custom-select" id="filter-staff">
+        <div class="os-custom-select" id="filter-staff" style="flex: 0 0 auto; min-width: 105px;">
           <div class="select-value">All staff</div>
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
@@ -96,8 +96,20 @@ ${(() => {
           </div>
         </div>
 
-        <label class="filter-toggle" style="background: var(--os-white); border: var(--os-border-thin); padding: 0 16px; border-radius: var(--os-radius-sm); height: 42px; display: flex; align-items: center; cursor: pointer;">
-          <input type="checkbox" id="filter-due" style="accent-color: var(--os-luxury-orange);" /> <span style="margin-left: 8px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-600);">Due</span>
+        <div class="os-custom-select" id="filter-date" style="flex: 0 0 auto; min-width: 120px;">
+          <div class="select-value">All Time</div>
+          <i class="ri-arrow-down-s-line"></i>
+          <div class="select-dropdown">
+            <div class="select-option selected">All Time</div>
+            <div class="select-option">Today</div>
+            <div class="select-option">This Month</div>
+            <div class="select-option">This Year</div>
+            <div class="select-option">Custom Range</div>
+          </div>
+        </div>
+
+        <label class="filter-toggle" style="background: var(--os-white); border: var(--os-border-thin); padding: 0 12px; border-radius: var(--os-radius-sm); height: 42px; display: flex; align-items: center; cursor: pointer; flex: 0 0 auto; white-space: nowrap;">
+          <input type="checkbox" id="filter-due" style="accent-color: var(--os-luxury-orange);" /> <span style="margin-left: 6px; font-size: 0.88rem; font-weight: 500; color: var(--os-gray-600);">Due</span>
         </label>
       </div>
 
@@ -303,6 +315,32 @@ ${(() => {
         </div>
       </div>
     </div>
+
+    <!-- Custom Date Range Modal Popup -->
+    <div class="os-modal-overlay" id="custom-date-modal">
+      <div class="os-modal-card" style="max-width: 440px; border-radius: var(--os-radius-xl); padding: 24px; box-shadow: var(--os-shadow-xl);">
+        <div class="os-modal-header" style="border-bottom: 1px solid var(--os-gray-200); padding-bottom: 16px; margin-bottom: 20px;">
+          <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--os-dark); display: flex; align-items: center; gap: 8px;">
+            <i class="ri-calendar-event-fill" style="color: var(--os-luxury-orange);"></i> Select Date Range
+          </h2>
+          <button class="os-modal-close" id="close-custom-date-modal"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="os-modal-body" style="padding: 0; margin-bottom: 24px;">
+          <div class="form-group" style="margin-bottom: 18px;">
+            <label style="font-size: 0.88rem; font-weight: 600; color: var(--os-gray-700); margin-bottom: 8px; display: block;">From Date (Start)</label>
+            <input type="date" id="filter-date-start" class="os-input" style="width: 100%; height: 44px; padding: 0 14px; border: var(--os-border-thin); border-radius: var(--os-radius-sm); font-family: inherit; font-size: 0.92rem; box-sizing: border-box;" />
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label style="font-size: 0.88rem; font-weight: 600; color: var(--os-gray-700); margin-bottom: 8px; display: block;">To Date (End)</label>
+            <input type="date" id="filter-date-end" class="os-input" style="width: 100%; height: 44px; padding: 0 14px; border: var(--os-border-thin); border-radius: var(--os-radius-sm); font-family: inherit; font-size: 0.92rem; box-sizing: border-box;" />
+          </div>
+        </div>
+        <div class="os-modal-footer" style="border-top: 1px solid var(--os-gray-200); padding-top: 20px; display: flex; justify-content: flex-end; gap: 12px;">
+          <button class="os-btn-secondary" id="cancel-custom-date-btn" style="padding: 10px 20px;">Clear / Reset</button>
+          <button class="os-btn-primary" id="apply-custom-date-btn" style="background: var(--os-luxury-orange); border-color: var(--os-luxury-orange); padding: 10px 22px;">Apply Filter</button>
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -452,15 +490,21 @@ function renderTable() {
   const sourceEl = document.getElementById('filter-source');
   const typeEl = document.getElementById('filter-type');
   const staffEl = document.getElementById('filter-staff');
+  const dateEl = document.getElementById('filter-date');
+  const startDateEl = document.getElementById('filter-date-start');
+  const endDateEl = document.getElementById('filter-date-end');
   const dueEl = document.getElementById('filter-due');
 
   if (searchEl && statusEl) {
     const q = searchEl.value.toLowerCase();
-    const fStatus = statusEl.querySelector('.select-value').textContent;
-    const fSource = sourceEl.querySelector('.select-value').textContent;
-    const fType = typeEl.querySelector('.select-value').textContent;
-    const fStaff = staffEl.querySelector('.select-value').textContent;
-    const fDue = dueEl.checked;
+    const fStatus = statusEl.querySelector('.select-value').textContent.trim();
+    const fSource = sourceEl.querySelector('.select-value').textContent.trim();
+    const fType = typeEl.querySelector('.select-value').textContent.trim();
+    const fStaff = staffEl.querySelector('.select-value').textContent.trim();
+    const fDate = dateEl ? dateEl.querySelector('.select-value').textContent.trim() : 'All Time';
+    const startDateVal = startDateEl ? startDateEl.value : '';
+    const endDateVal = endDateEl ? endDateEl.value : '';
+    const fDue = dueEl ? dueEl.checked : false;
 
     leads = leads.filter(lead => {
       // Search
@@ -474,6 +518,52 @@ function renderTable() {
       if (fType !== 'All property types' && lead.type !== fType) return false;
       if (fStaff !== 'All staff' && lead.assignTo !== fStaff) return false;
       
+      // Date Filter
+      if (fDate !== 'All Time') {
+        let leadDate = null;
+        const rawDate = lead.createdAt || lead.created_at || lead.date || lead.created;
+        if (rawDate) {
+          if (typeof rawDate === 'number') leadDate = new Date(rawDate);
+          else if (!isNaN(Number(rawDate))) leadDate = new Date(Number(rawDate));
+          else leadDate = new Date(String(rawDate));
+        }
+
+        const now = new Date();
+
+        if (fDate === 'Today') {
+          if (!leadDate || isNaN(leadDate.getTime())) return false;
+          if (leadDate.getDate() !== now.getDate() || 
+              leadDate.getMonth() !== now.getMonth() || 
+              leadDate.getFullYear() !== now.getFullYear()) {
+            return false;
+          }
+        } else if (fDate === 'This Month') {
+          if (!leadDate || isNaN(leadDate.getTime())) return false;
+          if (leadDate.getMonth() !== now.getMonth() || 
+              leadDate.getFullYear() !== now.getFullYear()) {
+            return false;
+          }
+        } else if (fDate === 'This Year') {
+          if (!leadDate || isNaN(leadDate.getTime())) return false;
+          if (leadDate.getFullYear() !== now.getFullYear()) {
+            return false;
+          }
+        } else {
+          // Handles 'Custom Range' and formatted custom date strings like '01 Sep - 03 Sep'
+          if (!leadDate || isNaN(leadDate.getTime())) return false;
+          if (startDateVal) {
+            const sDate = new Date(startDateVal);
+            sDate.setHours(0, 0, 0, 0);
+            if (leadDate < sDate) return false;
+          }
+          if (endDateVal) {
+            const eDate = new Date(endDateVal);
+            eDate.setHours(23, 59, 59, 999);
+            if (leadDate > eDate) return false;
+          }
+        }
+      }
+
       // Due Checkbox
       if (fDue) {
         if (!lead.followup || lead.followup === '—') return false;
@@ -633,6 +723,13 @@ function bindLeadEvents() {
         select.classList.remove('open');
         // Trigger table re-render if a filter dropdown changes
         if (select.id && select.id.startsWith('filter-')) {
+          if (select.id === 'filter-date') {
+            if (option.textContent.trim() === 'Custom Range') {
+              const dateModal = document.getElementById('custom-date-modal');
+              if (dateModal) dateModal.classList.add('show');
+              return;
+            }
+          }
           currentPage = 1;
           renderTable();
         }
@@ -645,10 +742,70 @@ function bindLeadEvents() {
     customSelects.forEach(select => select.classList.remove('open'));
   });
 
+  // Custom Date Modal Logic
+  const dateModal = document.getElementById('custom-date-modal');
+  const closeDateModal = document.getElementById('close-custom-date-modal');
+  const cancelDateModal = document.getElementById('cancel-custom-date-btn');
+  const applyDateModal = document.getElementById('apply-custom-date-btn');
+  const dateDropdownVal = document.querySelector('#filter-date .select-value');
+
+  if (closeDateModal) {
+    closeDateModal.addEventListener('click', () => {
+      if (dateModal) dateModal.classList.remove('show');
+    });
+  }
+
+  if (cancelDateModal) {
+    cancelDateModal.addEventListener('click', () => {
+      const sInput = document.getElementById('filter-date-start');
+      const eInput = document.getElementById('filter-date-end');
+      if (sInput) sInput.value = '';
+      if (eInput) eInput.value = '';
+      if (dateDropdownVal) dateDropdownVal.textContent = 'All Time';
+      if (dateModal) dateModal.classList.remove('show');
+      currentPage = 1;
+      renderTable();
+    });
+  }
+
+  if (applyDateModal) {
+    applyDateModal.addEventListener('click', () => {
+      const sVal = document.getElementById('filter-date-start')?.value;
+      const eVal = document.getElementById('filter-date-end')?.value;
+      
+      if (!sVal && !eVal) {
+        showToast('Please select at least one date.', 'warning');
+        return;
+      }
+
+      const formatDateLabel = (dStr) => {
+        if (!dStr) return '';
+        const d = new Date(dStr);
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+      };
+
+      let labelText = 'Custom Range';
+      if (sVal && eVal) labelText = `${formatDateLabel(sVal)} - ${formatDateLabel(eVal)}`;
+      else if (sVal) labelText = `From ${formatDateLabel(sVal)}`;
+      else if (eVal) labelText = `Up to ${formatDateLabel(eVal)}`;
+
+      if (dateDropdownVal) dateDropdownVal.textContent = labelText;
+      if (dateModal) dateModal.classList.remove('show');
+      currentPage = 1;
+      renderTable();
+    });
+  }
+
+  if (dateModal) {
+    dateModal.addEventListener('click', (e) => {
+      if (e.target === dateModal) dateModal.classList.remove('show');
+    });
+  }
+
   // Attach search, due checkbox and pagination event listeners
   const searchInput = document.getElementById('filter-search');
   if (searchInput) searchInput.addEventListener('input', () => { currentPage = 1; renderTable(); });
-  
+
   const dueCheckbox = document.getElementById('filter-due');
   if (dueCheckbox) dueCheckbox.addEventListener('change', () => { currentPage = 1; renderTable(); });
 
