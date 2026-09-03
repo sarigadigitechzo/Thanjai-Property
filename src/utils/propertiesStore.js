@@ -563,6 +563,7 @@ function normalizePropertyRecord(p) {
     size: p.size ? formatPropertySize(p.size) : '',
     builtUpArea: p.builtUpArea ? formatPropertySize(p.builtUpArea) : '',
     posterRole: p.posterRole || p.userRole || 'Individual Owner',
+    userSource: p.userSource || p.source || 'Direct Website Submission',
     bedrooms: p.bedrooms ? parseInt(p.bedrooms, 10) : null,
     bathrooms: p.bathrooms ? parseInt(p.bathrooms, 10) : null,
     floor: p.floor || null,

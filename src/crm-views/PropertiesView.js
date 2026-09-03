@@ -31,6 +31,47 @@ let formVideoFileUrl = '';
 let leafletMapInstance = null;
 let leafletMarkerInstance = null;
 
+const TN_DISTRICTS_TALUKS = {
+  'Thanjavur': ['Thanjavur', 'Kumbakonam', 'Pattukkottai', 'Orathanadu', 'Thiruvaiyaru', 'Papanasam', 'Budalur', 'Peravurani', 'Thiruvidaimarudur'],
+  'Madurai': ['Madurai North', 'Madurai South', 'Melur', 'Thirumangalam', 'Usilampatti', 'Vadipatti', 'Peraiyur', 'Thiruparankundram', 'Kalligudi'],
+  'Tiruchirappalli': ['Tiruchirappalli East', 'Tiruchirappalli West', 'Srirangam', 'Manapparai', 'Musiri', 'Thuraiyur', 'Lalgudi', 'Thottiyam', 'Marungapuri'],
+  'Chennai': ['Alandur', 'Ambattur', 'Aminjikarai', 'Ayanavaram', 'Egmore', 'Guindy', 'Madhavaram', 'Madhuravoyal', 'Mambalam', 'Mylapore', 'Perambur', 'Purasawalkam', 'Sholinganallur', 'Thiruvottiyur', 'Tondiarpet', 'Velachery'],
+  'Coimbatore': ['Coimbatore North', 'Coimbatore South', 'Pollachi', 'Mettupalayam', 'Sulur', 'Annur', 'Kinathukadavu', 'Madukkarai', 'Perur', 'Valparai', 'Anaimalai'],
+  'Tiruvarur': ['Tiruvarur', 'Mannargudi', 'Nannilam', 'Thiruthuraipoondi', 'Kudavasal', 'Valangaiman', 'Needamangalam', 'Koothanallur'],
+  'Nagapattinam': ['Nagapattinam', 'Kilvelur', 'Vedaranyam', 'Thirukkuvalai'],
+  'Mayiladuthurai': ['Mayiladuthurai', 'Sirkazhi', 'Tharangambadi', 'Kuthalam'],
+  'Pudukkottai': ['Pudukkottai', 'Aranthangi', 'Alangudi', 'Gandarvakottai', 'Illuppur', 'Kulathur', 'Manamelkudi', 'Ponnamaravathi', 'Thirumayam', 'Viralimalai', 'Avudaiyarkoil', 'Karambakudi'],
+  'Dindigul': ['Dindigul East', 'Dindigul West', 'Palani', 'Kodaikanal', 'Natham', 'Nilakottai', 'Oddanchatram', 'Vedasandur', 'Athoor', 'Gujiliamparai'],
+  'Salem': ['Salem', 'Attur', 'Edappadi', 'Gangavalli', 'Mettur', 'Omalur', 'Pethanaickenpalayam', 'Sankari', 'Valapady', 'Yercaud', 'Kadayampatti'],
+  'Erode': ['Erode', 'Bhavani', 'Gobichettipalayam', 'Perundurai', 'Sathyamangalam', 'Anthiyur', 'Kodumudi', 'Modakkurichi', 'Thalavadi'],
+  'Tiruppur': ['Tiruppur North', 'Tiruppur South', 'Avinashi', 'Dharapuram', 'Kangeyam', 'Madathukulam', 'Udumalaipettai', 'Uthukuli'],
+  'Tirunelveli': ['Tirunelveli', 'Palayamkottai', 'Ambasamudram', 'Cheranmahadevi', 'Manur', 'Nanguneri', 'Radhapuram', 'Tisayanvilai'],
+  'Tenkasi': ['Tenkasi', 'Alangulam', 'Kadayanallur', 'Sankarankovil', 'Shenkottai', 'Sivagiri', 'Thiruvengadam', 'Veerakeralampudur'],
+  'Kanyakumari': ['Agasteeswaram', 'Kalkulam', 'Killiyoor', 'Thiruvattar', 'Thovalai', 'Vilavancode'],
+  'Thoothukudi': ['Thoothukudi', 'Ettayapuram', 'Kovilpatti', 'Ottapidaram', 'Sathankulam', 'Srivaikuntam', 'Tiruchendur', 'Vilathikulam', 'Kayathar', 'Eral'],
+  'Ramanathapuram': ['Ramanathapuram', 'Kadaladi', 'Kamuthi', 'Keezhakarai', 'Mudukulathur', 'Paramakudi', 'Rameswaram', 'Tiruvadanai', 'Rajasingamangalam'],
+  'Sivaganga': ['Sivaganga', 'Devakottai', 'Ilanyangudi', 'Karaikudi', 'Manamadurai', 'Singampunari', 'Tirupathur', 'Tirupuvanam', 'Kalaiyarkoil'],
+  'Theni': ['Theni', 'Aandipatti', 'Bodinayakanur', 'Periyakulam', 'Uthamapalayam'],
+  'Virudhunagar': ['Virudhunagar', 'Aruppukkottai', 'Kariyapatti', 'Rajapalayam', 'Sathur', 'Sivakasi', 'Srivilliputhur', 'Tiruchuli', 'Vembakottai', 'Watrap'],
+  'Karur': ['Karur', 'Aravakurichi', 'Kadavur', 'Krishnarayapuram', 'Kulithalai', 'Manmangalam', 'Pugalur'],
+  'Namakkal': ['Namakkal', 'Kollimalai', 'Kumarapalayam', 'Mohanur', 'Paramathi Velur', 'Rasipuram', 'Sendamangalam', 'Tiruchengode'],
+  'Perambalur': ['Perambalur', 'Alathur', 'Kunnam', 'Veppanthattai'],
+  'Ariyalur': ['Ariyalur', 'Andimadam', 'Sendurai', 'Udayarpalayam'],
+  'Cuddalore': ['Cuddalore', 'Bhuvanagiri', 'Chidambaram', 'Kattumannarkoil', 'Kurinjipadi', 'Panruti', 'Srimushnam', 'Titakudi', 'Veppur', 'Vriddhachalam'],
+  'Kallakurichi': ['Kallakurichi', 'Chinnasalem', 'Kalvarayan Hills', 'Sankarapuram', 'Tirukoilur', 'Ulundurpet'],
+  'Villupuram': ['Villupuram', 'Gingee', 'Kandachipuram', 'Marakkanam', 'Melmalayanur', 'Thiruvennainallur', 'Tindivanam', 'Vanur', 'Vikravandi'],
+  'Chengalpattu': ['Chengalpattu', 'Cheyyur', 'Maduranthakam', 'Pallavaram', 'Tambaram', 'Thiruporur', 'Tirukalukundram', 'Vandalur'],
+  'Kanchipuram': ['Kanchipuram', 'Kundrathur', 'Sriperumbudur', 'Uthiramerur', 'Walajabad'],
+  'Tiruvallur': ['Tiruvallur', 'Avadi', 'Gummidipoondi', 'Pallipattu', 'Ponneri', 'Poonamallee', 'R.K. Pet', 'Tiruttani', 'Uthukkottai'],
+  'Vellore': ['Vellore', 'Anaicut', 'Gudiyatham', 'Katpadi', 'K.V. Kuppam', 'Pernambut'],
+  'Ranipet': ['Ranipet', 'Arakkonam', 'Arcot', 'Kalavai', 'Nemili', 'Sholinghur', 'Walajah'],
+  'Tirupathur': ['Tirupathur', 'Ambur', 'Natrampalli', 'Vaniyambadi'],
+  'Tiruvannamalai': ['Tiruvannamalai', 'Arani', 'Chengam', 'Chetpet', 'Cheyyar', 'Jamunamarathur', 'Kalasapakkam', 'Kilpennathur', 'Polur', 'Thandarampattu', 'Vandavasi', 'Vembakkam'],
+  'Dharmapuri': ['Dharmapuri', 'Harur', 'Karimangalam', 'Nallampalli', 'Palacode', 'Pappireddipatti', 'Pennagaram'],
+  'Krishnagiri': ['Krishnagiri', 'Anchetti', 'Bargur', 'Hosur', 'Pochampalli', 'Shoolagiri', 'Uthangarai', 'Denkanikottai'],
+  'Nilgiris': ['Udhagamandalam (Ooty)', 'Coonoor', 'Gudalur', 'Kotagiri', 'Kundah', 'Pandalur']
+};
+
 function compressImageFile(file, maxWidth = 1000, maxHeight = 800, quality = 0.75) {
   return new Promise((resolve) => {
     if (!file || !file.type.startsWith('image/')) {
@@ -733,6 +774,23 @@ function renderFullPagePropertyForm(prop) {
   const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room'];
   const isResidential = resKeywords.some(k => val.includes(k)) || currentType === 'Villa';
 
+  const activeDistrict = prop?.district || 'Thanjavur';
+  const talukList = TN_DISTRICTS_TALUKS[activeDistrict] || TN_DISTRICTS_TALUKS['Thanjavur'] || ['Thanjavur'];
+  const activeTaluk = prop?.taluk || talukList[0] || 'Thanjavur';
+  const isCustomTaluk = !talukList.includes(activeTaluk);
+  const isCustomDistrict = !TN_DISTRICTS_TALUKS[activeDistrict];
+
+  const knownRoads = [
+    'Medical College Road', 'Trichy Road', 'Pudukkottai Road', 'Madhakottai Road',
+    'Nanjikottai Road', 'Villar Road', 'Pattukottai Bypass', 'Mariyamman Kovil Road',
+    'Srinivasapuram', 'Reddipalayam Road', 'Kumbakonam Bypass'
+  ];
+  const activeRoad = prop?.road || '';
+  const isOtherRoad = activeRoad && !knownRoads.includes(activeRoad);
+
+  const activePosterRole = prop?.posterRole || prop?.userRole || 'Individual Owner';
+  const activeUserSource = prop?.userSource || prop?.source || 'Direct Website Submission';
+
   return `
     <div class="view-enter full-page-property-form-container" style="padding-bottom: 60px;">
       
@@ -788,16 +846,12 @@ function renderFullPagePropertyForm(prop) {
                 <input type="text" id="form-prop-type" required value="${isEdit ? prop?.type || '' : ''}" placeholder="e.g. Villa, House, Apartment, Land, Plot..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
-              <!-- Category Dropdown -->
+              <!-- Category Dropdown (Strictly Sale & Rent) -->
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Category *</label>
                 <select id="form-prop-category" required style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
-                  <option value="" disabled ${!isEdit || !prop?.categoryRaw ? 'selected' : ''}>-- Select Category --</option>
-                  <option value="Sale" ${isEdit && (prop?.categoryRaw === 'Sale' || prop?.category === 'Sale' || prop?.purpose === 'buy') ? 'selected' : ''}>Sale</option>
+                  <option value="Sale" ${!isEdit || prop?.categoryRaw === 'Sale' || prop?.category === 'Sale' || prop?.purpose === 'buy' ? 'selected' : ''}>Sale</option>
                   <option value="Rent" ${isEdit && (prop?.categoryRaw === 'Rent' || prop?.category === 'Rent' || prop?.purpose === 'rent') ? 'selected' : ''}>Rent</option>
-                  <option value="Lease" ${isEdit && prop?.categoryRaw === 'Lease' ? 'selected' : ''}>Lease</option>
-                  <option value="Commercial" ${isEdit && prop?.categoryRaw === 'Commercial' ? 'selected' : ''}>Commercial</option>
-                  <option value="Residential" ${isEdit && prop?.categoryRaw === 'Residential' ? 'selected' : ''}>Residential</option>
                 </select>
               </div>
 
@@ -807,36 +861,35 @@ function renderFullPagePropertyForm(prop) {
                 <input type="text" id="form-prop-area" required value="${isEdit ? prop?.area || prop?.location || '' : ''}" placeholder="e.g. Sundaram Nagar, Medical College Area" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
-              <!-- Road / Location Hub (11 Road Dropdown) -->
+              <!-- Road / Location Hub (11 Road Dropdown + Other Road Option) -->
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Road / Prime Corridor</label>
                 <select id="form-prop-road" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
-                  <option value="" ${!isEdit || !prop?.road ? 'selected' : ''}>-- Select Road Corridor (Optional) --</option>
-                  <option value="Medical College Road" ${isEdit && prop?.road === 'Medical College Road' ? 'selected' : ''}>Medical College Road</option>
-                  <option value="Trichy Road" ${isEdit && prop?.road === 'Trichy Road' ? 'selected' : ''}>Trichy Road</option>
-                  <option value="Pudukkottai Road" ${isEdit && prop?.road === 'Pudukkottai Road' ? 'selected' : ''}>Pudukkottai Road</option>
-                  <option value="Madhakottai Road" ${isEdit && prop?.road === 'Madhakottai Road' ? 'selected' : ''}>Madhakottai Road</option>
-                  <option value="Nanjikottai Road" ${isEdit && prop?.road === 'Nanjikottai Road' ? 'selected' : ''}>Nanjikottai Road</option>
-                  <option value="Villar Road" ${isEdit && prop?.road === 'Villar Road' ? 'selected' : ''}>Villar Road</option>
-                  <option value="Pattukottai Bypass" ${isEdit && prop?.road === 'Pattukottai Bypass' ? 'selected' : ''}>Pattukottai Bypass</option>
-                  <option value="Mariyamman Kovil Road" ${isEdit && prop?.road === 'Mariyamman Kovil Road' ? 'selected' : ''}>Mariyamman Kovil Road</option>
-                  <option value="Srinivasapuram" ${isEdit && prop?.road === 'Srinivasapuram' ? 'selected' : ''}>Srinivasapuram</option>
-                  <option value="Reddipalayam Road" ${isEdit && prop?.road === 'Reddipalayam Road' ? 'selected' : ''}>Reddipalayam Road</option>
-                  <option value="Kumbakonam Bypass" ${isEdit && prop?.road === 'Kumbakonam Bypass' ? 'selected' : ''}>Kumbakonam Bypass</option>
-                  <option value="Other / Outside Road" ${isEdit && prop?.road === 'Other / Outside Road' ? 'selected' : ''}>Other / Outside Road</option>
+                  <option value="" ${!isEdit || !activeRoad ? 'selected' : ''}>-- Select Road Corridor (Optional) --</option>
+                  ${knownRoads.map(r => `<option value="${r}" ${activeRoad === r ? 'selected' : ''}>${r}</option>`).join('')}
+                  <option value="Other Road" ${isOtherRoad ? 'selected' : ''}>Other Road...</option>
                 </select>
+                <input type="text" id="form-prop-road-custom" value="${isOtherRoad ? activeRoad : ''}" placeholder="Type road name or landmark..." style="width: 100%; margin-top: 6px; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; display: ${isOtherRoad ? 'block' : 'none'};" />
               </div>
 
-              <!-- Taluk -->
+              <!-- Taluk (Dynamic Dropdown) -->
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Taluk</label>
-                <input type="text" id="form-prop-taluk" value="${isEdit ? prop?.taluk || '' : ''}" placeholder="e.g. Thanjavur, Kumbakonam, Pattukkottai" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <select id="form-prop-taluk-select" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
+                  ${talukList.map(t => `<option value="${t}" ${activeTaluk === t ? 'selected' : ''}>${t}</option>`).join('')}
+                  <option value="__other__" ${isCustomTaluk ? 'selected' : ''}>Other Taluk...</option>
+                </select>
+                <input type="text" id="form-prop-taluk" value="${activeTaluk}" placeholder="e.g. Thanjavur, Kumbakonam" style="width: 100%; margin-top: 6px; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; display: ${isCustomTaluk ? 'block' : 'none'};" />
               </div>
 
-              <!-- District -->
+              <!-- District (Default Thanjavur + All TN Districts) -->
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">District</label>
-                <input type="text" id="form-prop-district" value="${isEdit ? prop?.district || '' : ''}" placeholder="e.g. Thanjavur, Trichy, Madurai" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">District *</label>
+                <select id="form-prop-district-select" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
+                  ${Object.keys(TN_DISTRICTS_TALUKS).map(d => `<option value="${d}" ${activeDistrict === d ? 'selected' : ''}>${d}</option>`).join('')}
+                  <option value="__other__" ${isCustomDistrict ? 'selected' : ''}>Other District / State...</option>
+                </select>
+                <input type="text" id="form-prop-district" value="${activeDistrict}" placeholder="Type district name..." style="width: 100%; margin-top: 6px; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; display: ${isCustomDistrict ? 'block' : 'none'};" />
               </div>
 
               <!-- Facing -->
@@ -929,7 +982,7 @@ function renderFullPagePropertyForm(prop) {
             </div>
           </div>
 
-          <!-- SECTION 3: OWNER & CONTACT -->
+          <!-- SECTION 3: OWNER & CONTACT (Separate Poster Role & User Source) -->
           <div style="border-top: 1px solid #e2e8f0; padding-top: 24px;">
             <h4 style="font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: #4a5568; letter-spacing: 0.08em; margin-bottom: 18px;">
               OWNER & CONTACT
@@ -944,9 +997,23 @@ function renderFullPagePropertyForm(prop) {
                 </select>
               </div>
 
+              <!-- Poster Role (Clean Dropdown) -->
               <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Poster Role / User Source</label>
-                <input type="text" id="form-prop-poster-role" value="${isEdit ? (prop?.posterRole || prop?.userRole || 'Individual Owner') : 'Individual Owner'}" placeholder="e.g. Individual Owner, Agent, Builder, Partner, Staff..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Poster Role</label>
+                <select id="form-prop-poster-role" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
+                  <option value="Individual Owner" ${activePosterRole === 'Individual Owner' ? 'selected' : ''}>Individual Owner</option>
+                  <option value="Super Admin" ${activePosterRole === 'Super Admin' ? 'selected' : ''}>Super Admin</option>
+                  <option value="Admin Staff" ${activePosterRole === 'Admin Staff' ? 'selected' : ''}>Admin Staff</option>
+                  <option value="Agent / Broker" ${activePosterRole === 'Agent / Broker' || activePosterRole === 'Agent' ? 'selected' : ''}>Agent / Broker</option>
+                  <option value="Builder / Developer" ${activePosterRole === 'Builder / Developer' || activePosterRole === 'Builder' ? 'selected' : ''}>Builder / Developer</option>
+                  <option value="Partner User" ${activePosterRole === 'Partner User' || activePosterRole === 'Partner' ? 'selected' : ''}>Partner User</option>
+                </select>
+              </div>
+
+              <!-- User Source (Freeform Input) -->
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">User Source</label>
+                <input type="text" id="form-prop-user-source" value="${activeUserSource}" placeholder="e.g. Direct Website Submission, WhatsApp Enquiry, Facebook Ads, Walk-in..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
 
               <div>
@@ -1709,6 +1776,75 @@ function initPropertyFormListeners() {
     }
   });
 
+  // District Dynamic Change Listener
+  const distSelect = document.getElementById('form-prop-district-select');
+  const distInput = document.getElementById('form-prop-district');
+  const talukSelect = document.getElementById('form-prop-taluk-select');
+  const talukInput = document.getElementById('form-prop-taluk');
+
+  distSelect?.addEventListener('change', () => {
+    const selectedDist = distSelect.value;
+    if (selectedDist === '__other__') {
+      if (distInput) {
+        distInput.style.display = 'block';
+        distInput.value = '';
+        distInput.focus();
+      }
+      if (talukSelect) {
+        talukSelect.innerHTML = `<option value="__other__">Other Taluk...</option>`;
+      }
+      if (talukInput) {
+        talukInput.style.display = 'block';
+        talukInput.value = '';
+      }
+    } else {
+      if (distInput) {
+        distInput.style.display = 'none';
+        distInput.value = selectedDist;
+      }
+      const taluks = TN_DISTRICTS_TALUKS[selectedDist] || [selectedDist];
+      if (talukSelect) {
+        talukSelect.innerHTML = taluks.map(t => `<option value="${t}">${t}</option>`).join('') + `<option value="__other__">Other Taluk...</option>`;
+      }
+      if (talukInput) {
+        talukInput.style.display = 'none';
+        talukInput.value = taluks[0] || '';
+      }
+    }
+  });
+
+  // Taluk Dynamic Change Listener
+  talukSelect?.addEventListener('change', () => {
+    if (talukSelect.value === '__other__') {
+      if (talukInput) {
+        talukInput.style.display = 'block';
+        talukInput.value = '';
+        talukInput.focus();
+      }
+    } else {
+      if (talukInput) {
+        talukInput.style.display = 'none';
+        talukInput.value = talukSelect.value;
+      }
+    }
+  });
+
+  // Road Dynamic Change Listener (Show text box on "Other Road")
+  const roadSelect = document.getElementById('form-prop-road');
+  const roadCustomInput = document.getElementById('form-prop-road-custom');
+  roadSelect?.addEventListener('change', () => {
+    if (roadSelect.value === 'Other Road') {
+      if (roadCustomInput) {
+        roadCustomInput.style.display = 'block';
+        roadCustomInput.focus();
+      }
+    } else {
+      if (roadCustomInput) {
+        roadCustomInput.style.display = 'none';
+      }
+    }
+  });
+
   document.getElementById('use-my-location-btn')?.addEventListener('click', () => {
     if ('geolocation' in navigator) {
       showToast('Fetching current GPS coordinates...', 'ri-compass-line');
@@ -1785,6 +1921,9 @@ function initPropertyFormListeners() {
 
     formImagesList = [...new Set(formImagesList)];
     if (loadedCount > 0) {
+      if (mainImgInput && !mainImgInput.value && formImagesList.length > 0) {
+        mainImgInput.value = formImagesList[0];
+      }
       refreshGalleryPreviewGrid();
       showToast(`${loadedCount} HD photo(s) added to property!`, 'ri-image-add-line');
     }
@@ -1835,13 +1974,28 @@ function initPropertyFormListeners() {
     }
 
     const area = document.getElementById('form-prop-area')?.value.trim() || '';
-    const road = document.getElementById('form-prop-road')?.value || '';
-    const taluk = document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur';
-    const district = document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur';
+    
+    const roadSelectVal = document.getElementById('form-prop-road')?.value || '';
+    const road = roadSelectVal === 'Other Road' 
+      ? (document.getElementById('form-prop-road-custom')?.value.trim() || 'Other Road') 
+      : roadSelectVal;
+
+    const distSelectVal = document.getElementById('form-prop-district-select')?.value || '';
+    const district = distSelectVal === '__other__' 
+      ? (document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur') 
+      : (distSelectVal || document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur');
+
+    const talukSelectVal = document.getElementById('form-prop-taluk-select')?.value || '';
+    const taluk = talukSelectVal === '__other__' 
+      ? (document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur') 
+      : (talukSelectVal || document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur');
+
     const facing = document.getElementById('form-prop-facing')?.value.trim() || '';
     const size = document.getElementById('form-prop-size')?.value.trim();
     const builtUpArea = document.getElementById('form-prop-builtup-size')?.value.trim() || '';
     const posterRole = document.getElementById('form-prop-poster-role')?.value || 'Individual Owner';
+    const userSource = document.getElementById('form-prop-user-source')?.value.trim() || 'Direct Website Submission';
+
     const bedrooms = document.getElementById('form-prop-bedrooms')?.value;
     const bathrooms = document.getElementById('form-prop-bathrooms')?.value;
     const floor = document.getElementById('form-prop-floor')?.value.trim() || '';
@@ -1899,6 +2053,7 @@ function initPropertyFormListeners() {
       size: size ? formatPropertySize(size) : '',
       builtUpArea: (isRes && builtUpArea) ? formatPropertySize(builtUpArea) : (builtUpArea ? formatPropertySize(builtUpArea) : ''),
       posterRole: posterRole,
+      userSource: userSource,
       bedrooms: (isRes && bedrooms) ? parseInt(bedrooms, 10) : null,
       bathrooms: (isRes && bathrooms) ? parseInt(bathrooms, 10) : null,
       floor: (isRes && floor) ? floor : null,
@@ -2033,9 +2188,18 @@ function bindGalleryDeleteButtons() {
       e.preventDefault();
       const index = parseInt(btn.dataset.index, 10);
       if (!isNaN(index) && index >= 0 && index < formImagesList.length) {
-        formImagesList.splice(index, 1);
+        const removed = formImagesList.splice(index, 1)[0];
+        
+        // Sync Primary Image URL input so removed image never reappears on reload
+        const mainImgInput = document.getElementById('form-prop-img-main');
+        if (mainImgInput) {
+          if (mainImgInput.value === removed || index === 0) {
+            mainImgInput.value = formImagesList[0] || '';
+          }
+        }
+
         refreshGalleryPreviewGrid();
-        showToast('Photo removed from upload queue', 'ri-delete-bin-line');
+        showToast('Photo removed from property', 'ri-delete-bin-line');
       }
     });
   });
