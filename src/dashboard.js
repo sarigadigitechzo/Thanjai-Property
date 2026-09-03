@@ -424,14 +424,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function keepUrlClean() {
-    if (window.history && window.history.replaceState) {
-      window.history.replaceState(null, '', '/admin-dashboard');
-    }
-  }
-
   function handleHashChange() {
-    const rawHash = window.location.hash.slice(1) || 'dashboard';
+    let rawHash = window.location.hash.slice(1);
+    if (!rawHash) {
+      rawHash = sessionStorage.getItem('thanjai_active_view') || 'dashboard';
+    } else {
+      sessionStorage.setItem('thanjai_active_view', rawHash);
+    }
+
     const cleanHash = rawHash.split('?')[0];
     let queryParam = null;
     if (rawHash.includes('?')) {
@@ -444,26 +444,35 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = cleanHash.split('/')[1];
       loadView('lead-detail', id);
       setActiveNav('leads');
-      keepUrlClean();
       return;
     }
 
     loadView(cleanHash, queryParam);
     setActiveNav(cleanHash);
-    keepUrlClean();
+
+    // Restore saved scroll position if refreshed on same page
+    const savedY = sessionStorage.getItem('thanjai_scroll_y');
+    if (savedY) {
+      setTimeout(() => {
+        window.scrollTo({ top: parseInt(savedY, 10) || 0, behavior: 'instant' });
+      }, 50);
+    }
   }
 
-  // Intercept Sidebar Nav Clicks to keep URL clean
+  // Intercept Sidebar Nav Clicks to update route hash
   navItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
       const view = item.dataset.view;
       if (view) {
-        loadView(view);
-        setActiveNav(view);
-        keepUrlClean();
+        window.location.hash = '#' + view;
       }
     });
+  });
+
+  // Track scroll position before page reload
+  window.addEventListener('beforeunload', () => {
+    sessionStorage.setItem('thanjai_scroll_y', window.scrollY);
   });
 
   // Event Listeners
@@ -498,9 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshPropertiesView();
       } else if (currentView !== 'leads') {
         // If user starts typing a Property ID or query from another view, switch to Properties Inventory
-        loadView('properties');
-        setActiveNav('properties');
-        keepUrlClean();
+        window.location.hash = '#properties';
       }
     });
   });
@@ -513,9 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (aiBtn) {
     aiBtn.addEventListener('click', () => {
-      loadView('ai');
-      setActiveNav('ai');
-      keepUrlClean();
+      window.location.hash = '#ai';
     });
   }
 
@@ -538,9 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileSettingsBtn = document.getElementById('profile-settings-btn');
   if (profileSettingsBtn) {
     profileSettingsBtn.addEventListener('click', () => {
-      loadView('settings');
-      setActiveNav('settings');
-      keepUrlClean();
+      window.location.hash = '#settings';
       if (profileMenu) profileMenu.classList.remove('show');
     });
   }
