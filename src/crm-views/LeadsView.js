@@ -398,10 +398,7 @@ function mapLeadFromAPI(l) {
     if (match) extractedPropId = match[1].toUpperCase();
   }
 
-  let detectedSource = l.source || 'Contact Enquiry';
-  if (extractedPropId) {
-    detectedSource = 'Property Inquiry';
-  }
+  let detectedSource = l.source ? l.source : (extractedPropId ? 'Property Inquiry' : 'Contact Enquiry');
 
   return {
     id: l.id,
@@ -660,13 +657,7 @@ function renderTable() {
     else if (statusTxt.includes('CONVERTED')) statusColor = 'badge-cyan';
     
     const propId = lead.propertyId || lead.propertyMatch;
-    let rawSource = (lead.source || 'MANUAL').toUpperCase();
-    let sourceTxt = 'CONTACT ENQUIRY';
-    if (propId || rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
-      sourceTxt = 'PROPERTY INQUIRY';
-    } else {
-      sourceTxt = 'CONTACT ENQUIRY';
-    }
+    let sourceTxt = (lead.source || (propId ? 'PROPERTY INQUIRY' : 'CONTACT ENQUIRY')).toUpperCase();
     let propBadgeHtml = '';
     if (propId) {
       propBadgeHtml = `
