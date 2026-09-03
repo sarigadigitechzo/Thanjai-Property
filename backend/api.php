@@ -1099,10 +1099,11 @@ elseif ($resource === 'send_whatsapp') {
 
         // 1. PRIMARY: SmartPing endpoint (this is what Thanjai Property uses)
         $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
+        $destPhone = '91' . $last10;
         $postData1 = [
             'apiKey' => $apiKey,
             'campaignName' => $campaignName,
-            'destination' => $smartPingPhone,
+            'destination' => $destPhone,
             'userName' => (string)$userName,
             'templateParams' => $stringParams
         ];
@@ -2304,10 +2305,11 @@ elseif ($resource === 'webhook') {
 
                     // Dispatch to SmartPing
                     $smartPingUrl = 'https://backend.api-wa.co/campaign/smartping/api/v2';
+                    $destPhone = '91' . $last10;
                     $payload = json_encode([
                         'apiKey' => $apiKey,
                         'campaignName' => $campaignName,
-                        'destination' => $formattedPhone,
+                        'destination' => $destPhone,
                         'userName' => (string)$displayName,
                         'templateParams' => $stringParams
                     ]);
