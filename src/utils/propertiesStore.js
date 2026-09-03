@@ -137,7 +137,12 @@ export function getProperties() {
   if (!propertiesCache || propertiesCache.length === 0) {
     propertiesCache = loadPropertiesFromStorage();
   }
-  return propertiesCache;
+  // Ensure newest created properties are always listed FIRST (1st place)
+  return [...propertiesCache].sort((a, b) => {
+    const timeA = a && a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b && b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
 }
 
 export function getPublicProperties() {
