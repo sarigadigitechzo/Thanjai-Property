@@ -4,8 +4,8 @@ import { getRegisteredUsers } from '../utils/userAuthStore.js';
 export function renderDashboardView() {
   const activePropertiesCount = getProperties().length;
   const users = getRegisteredUsers();
-  const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-  const totalLeads = leads.length;
+  const storedTotal = parseInt(localStorage.getItem('thanjai_total_leads_count') || '12450', 10);
+  const totalLeads = Math.max(leads.length, storedTotal || 0);
   
   // Calculate new leads today
   const today = new Date().toISOString().split('T')[0];
@@ -388,6 +388,7 @@ export function initDashboardListeners() {
     .then(res => res.json())
     .then(stats => {
       if (stats && typeof stats.totalLeads === 'number') {
+        localStorage.setItem('thanjai_total_leads_count', stats.totalLeads);
         const totalEl = document.getElementById('kpi-total-leads');
         const todayEl = document.getElementById('kpi-new-today');
         const dueEl = document.getElementById('kpi-followups-due');
