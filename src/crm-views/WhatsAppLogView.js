@@ -180,19 +180,26 @@ export async function initWhatsAppLogView() {
 
   let activePhone10 = null;
   let conversationsMap = new Map();
+  let cachedLeadsList = null;
 
   async function loadAllMessagesAndConversations() {
-    // Load leads to get contact names and phones (for sidebar contacts list)
-    let leads = [];
-    try {
-      const apiLeads = await fetchFromAPI('/leads');
-      if (apiLeads && Array.isArray(apiLeads)) leads = apiLeads;
-    } catch(e) {}
-    if (leads.length === 0) {
-      leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+    // Load leads once to get contact names and phones (cached in memory)
+    if (!cachedLeadsList) {
+      let leads = [];
+      try {
+        const localLeads = JSON.parse(localStorage.getItem('thanjai_leads'));
+        if (localLeads && Array.isArray(localLeads) && localLeads.length > 0) {
+          leads = localLeads;
+        } else {
+          const apiLeads = await fetchFromAPI('/leads');
+          if (apiLeads && Array.isArray(apiLeads)) leads = apiLeads;
+        }
+      } catch(e) {}
+      cachedLeadsList = leads;
     }
+    const leads = cachedLeadsList || [];
 
-    // SINGLE SOURCE OF TRUTH: fetch from unified whatsapp_messages table only
+    // SINGLE SOURCE OF TRUTH: fetch from unified whatsapp_messages table only (fast lightweight request)
     let allMessages = [];
     try {
       const msgs = await fetchFromAPI('/whatsapp_messages');
