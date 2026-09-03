@@ -544,6 +544,45 @@ elseif ($resource === 'leads') {
             exit();
         }
 
+        if (isset($_GET['reports'])) {
+            // 1. Sources Breakdown
+            $resSrc = $conn->query("SELECT IF(source IS NULL OR source='', 'Manual', source) as src, COUNT(*) as cnt FROM leads GROUP BY src ORDER BY cnt DESC");
+            $sources = [];
+            if ($resSrc) { while ($r = $resSrc->fetch_assoc()) { $sources[] = ["source" => $r['src'], "count" => intval($r['cnt'])]; } }
+
+            // 2. Statuses Breakdown
+            $resSt = $conn->query("SELECT IF(status IS NULL OR status='', 'New', status) as st, COUNT(*) as cnt FROM leads GROUP BY st ORDER BY cnt DESC");
+            $statuses = [];
+            if ($resSt) { while ($r = $resSt->fetch_assoc()) { $statuses[] = ["status" => $r['st'], "count" => intval($r['cnt'])]; } }
+
+            // 3. Staff Performance
+            $resStaff = $conn->query("SELECT IF(assignedTo IS NULL OR assignedTo='', 'Unassigned', assignedTo) as staff, COUNT(*) as total, SUM(IF(status LIKE '%convert%' OR status LIKE '%register%' OR status LIKE '%negotiation%', 1, 0)) as converted FROM leads GROUP BY staff ORDER BY total DESC");
+            $staffList = [];
+            if ($resStaff) { while ($r = $resStaff->fetch_assoc()) { $staffList[] = ["staff" => $r['staff'], "total" => intval($r['total']), "converted" => intval($r['converted'])]; } }
+
+            // 4. Monthly Trend
+            $resMonthly = $conn->query("SELECT DATE_FORMAT(createdAt, '%b') as mName, MONTH(createdAt) as mNum, COUNT(*) as total, SUM(IF(status LIKE '%convert%' OR status LIKE '%register%' OR status LIKE '%negotiation%', 1, 0)) as converted FROM leads WHERE createdAt IS NOT NULL AND createdAt != '' GROUP BY mNum, mName ORDER BY mNum ASC");
+            $monthlyData = [];
+            if ($resMonthly) { while ($r = $resMonthly->fetch_assoc()) { $monthlyData[] = ["month" => $r['mName'], "total" => intval($r['total']), "converted" => intval($r['converted'])]; } }
+
+            // 5. Buyer Metrics
+            $resRepeat = $conn->query("SELECT COUNT(*) as cnt FROM (SELECT phone FROM leads WHERE phone IS NOT NULL AND phone != '' GROUP BY phone HAVING COUNT(*) > 1) t");
+            $repeatInquirers = ($resRepeat && $r = $resRepeat->fetch_assoc()) ? intval($r['cnt']) : 0;
+
+            $resConvTotal = $conn->query("SELECT COUNT(*) as cnt FROM leads WHERE status LIKE '%convert%' OR status LIKE '%register%' OR status LIKE '%negotiation%'");
+            $convertedTotal = ($resConvTotal && $r = $resConvTotal->fetch_assoc()) ? intval($r['cnt']) : 0;
+
+            echo json_encode([
+                "sources" => $sources,
+                "statuses" => $statuses,
+                "staff" => $staffList,
+                "monthly" => $monthlyData,
+                "repeatInquirers" => $repeatInquirers,
+                "convertedTotal" => $convertedTotal
+            ]);
+            exit();
+        }
+
         $result = $conn->query("SELECT * FROM leads ORDER BY createdAt DESC");
         $rows = [];
         while($row = $result->fetch_assoc()) { $rows[] = $row; }

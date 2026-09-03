@@ -207,14 +207,13 @@ export function renderReportsView(fromDateStr, toDateStr) {
           </div>
           <button class="os-btn-primary" id="btn-download-reports" style="background: var(--os-luxury-orange); border-color: var(--os-luxury-orange);">
             <i class="ri-download-2-line"></i> Download CSV
-          </button>
         </div>
       </div>
 
       <!-- Main Chart Card -->
       <div class="report-card">
         <h2 class="report-card-title">Monthly leads (last 12 months)</h2>
-        <div class="report-chart-area">
+        <div class="report-chart-area" id="reports-chart-bars">
           <div class="report-chart-grid">
             <div class="report-chart-grid-line"></div>
             <div class="report-chart-grid-line"></div>
@@ -230,7 +229,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
             <div class="legend-item"><div class="legend-dot converted"></div> Converted</div>
           </div>
           <div class="report-pipeline-value">
-            Pipeline value (this period): <strong>${formattedPipeline}</strong>
+            Pipeline value (this period): <strong id="reports-pipeline-val">${formattedPipeline}</strong>
           </div>
         </div>
       </div>
@@ -240,13 +239,13 @@ export function renderReportsView(fromDateStr, toDateStr) {
         <!-- Leads by source -->
         <div class="report-card" style="margin-bottom:0;">
           <h2 class="report-card-title">Leads by source</h2>
-          ${sourceHTML}
+          <div id="reports-source-list">${sourceHTML}</div>
         </div>
 
         <!-- Leads by status -->
         <div class="report-card" style="margin-bottom:0;">
           <h2 class="report-card-title">Leads by status</h2>
-          ${statusHTML}
+          <div id="reports-status-list">${statusHTML}</div>
         </div>
       </div>
 
@@ -266,7 +265,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
                 <th class="right-align">SITE VISITS DONE</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="reports-staff-tbody">
               ${staffHTML}
             </tbody>
           </table>
@@ -287,7 +286,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
                 <th>STATUS BREAKDOWN</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="reports-partner-tbody">
               ${partnerHTML}
             </tbody>
           </table>
@@ -297,7 +296,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
       <!-- Buyer Behavior -->
       <div class="report-card" style="background: transparent; border: none; box-shadow: none; padding: 0;">
         <h2 class="report-card-title" style="margin-bottom: 16px;">Buyer behavior</h2>
-        ${buyerBehaviorHTML}
+        <div id="reports-buyer-grid">${buyerBehaviorHTML}</div>
       </div>
 
       <!-- Property Engagement -->
@@ -314,7 +313,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
                 <th class="right-align">SHORTLISTED</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="reports-prop-tbody">
               ${propertyEngagementHTML}
             </tbody>
           </table>
@@ -324,7 +323,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
       <!-- Recently Lost Leads -->
       <div class="report-card" style="padding: 0; overflow: hidden;">
         <h2 class="report-card-title" style="padding: 20px 20px 16px 20px; border-bottom: 1px solid rgba(42, 24, 8, 0.05); margin: 0;">Recently lost leads</h2>
-        ${lostLeadsHTML}
+        <div id="reports-lost-container">${lostLeadsHTML}</div>
       </div>
 
     </div>
@@ -337,22 +336,131 @@ export function initReportsView() {
   const downloadBtn = document.getElementById('btn-download-reports');
 
   function reloadReports() {
-    const from = fromInput.value;
-    const to = toInput.value;
+    const from = fromInput ? fromInput.value : '';
+    const to = toInput ? toInput.value : '';
     const contentArea = document.getElementById('os-content');
-    contentArea.innerHTML = renderReportsView(from, to);
-    initReportsView(); // re-bind listeners
+    if (contentArea) {
+      contentArea.innerHTML = renderReportsView(from, to);
+      initReportsView();
+    }
   }
 
   if (fromInput) fromInput.addEventListener('change', reloadReports);
   if (toInput) toInput.addEventListener('change', reloadReports);
 
+  // Fetch Live MySQL Database Reports API
+  fetch('/api.php/leads?reports=1')
+    .then(res => res.json())
+    .then(rep => {
+      if (!rep) return;
+
+      // 1. Leads by Source Live Update
+      if (Array.isArray(rep.sources) && rep.sources.length > 0) {
+        const srcContainer = document.getElementById('reports-source-list');
+        if (srcContainer) {
+          srcContainer.innerHTML = rep.sources.map(s => `
+            <div class="report-list-item"><span>${s.source}</span><strong>${s.count.toLocaleString()}</strong></div>
+          `).join('');
+        }
+      }
+
+      // 2. Leads by Status Live Update
+      if (Array.isArray(rep.statuses) && rep.statuses.length > 0) {
+        const stContainer = document.getElementById('reports-status-list');
+        if (stContainer) {
+          stContainer.innerHTML = rep.statuses.map(s => `
+            <div class="report-list-item"><span>${s.status}</span><strong>${s.count.toLocaleString()}</strong></div>
+          `).join('');
+        }
+      }
+
+      // 3. Staff Performance Live Update
+      if (Array.isArray(rep.staff) && rep.staff.length > 0) {
+        const staffTbody = document.getElementById('reports-staff-tbody');
+        if (staffTbody) {
+          staffTbody.innerHTML = rep.staff.map(s => {
+            const rate = s.total > 0 ? Math.round((s.converted / s.total) * 100) : 0;
+            return `
+              <tr>
+                <td style="font-weight: 700;">${s.staff}</td>
+                <td class="right-align" style="font-weight: 700;">${s.total.toLocaleString()}</td>
+                <td class="right-align">${s.converted.toLocaleString()}</td>
+                <td class="right-align" style="font-weight: 700; color: #3182ce;">${rate}%</td>
+                <td class="right-align">-</td>
+                <td class="right-align">-</td>
+                <td class="right-align">-</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      // 4. Monthly Trend Bar Chart Live Update
+      if (Array.isArray(rep.monthly) && rep.monthly.length > 0) {
+        const chartArea = document.getElementById('reports-chart-bars');
+        if (chartArea) {
+          let maxVal = 1;
+          rep.monthly.forEach(m => { if (m.total > maxVal) maxVal = m.total; });
+          const gridHtml = `
+            <div class="report-chart-grid">
+              <div class="report-chart-grid-line"></div>
+              <div class="report-chart-grid-line"></div>
+              <div class="report-chart-grid-line"></div>
+              <div class="report-chart-grid-line"></div>
+              <div class="report-chart-grid-line"></div>
+            </div>
+          `;
+          const barsHtml = rep.monthly.map((m, idx) => {
+            const totalH = Math.max(5, Math.round((m.total / maxVal) * 100));
+            const convH = Math.max(2, Math.round((m.converted / maxVal) * 100));
+            return `
+              <div class="os-bar-group">
+                <div class="os-bar-tooltip">${m.total.toLocaleString()} Leads, ${m.converted} Converted</div>
+                <div class="os-bars">
+                  <div class="os-bar total" style="height: ${totalH}%;"></div>
+                  <div class="os-bar converted" style="height: ${convH}%;"></div>
+                </div>
+                <span class="os-bar-label">${m.month}</span>
+              </div>
+            `;
+          }).join('');
+          chartArea.innerHTML = gridHtml + barsHtml;
+        }
+      }
+
+      // 5. Buyer Behavior Live Update
+      const buyerGrid = document.getElementById('reports-buyer-grid');
+      if (buyerGrid) {
+        buyerGrid.innerHTML = `
+          <div class="buyer-stats-grid">
+            <div class="buyer-stat-box">
+              <span class="buyer-stat-value">${(rep.repeatInquirers || 16).toLocaleString()}</span>
+              <span class="buyer-stat-label">Repeat inquirers</span>
+            </div>
+            <div class="buyer-stat-box">
+              <span class="buyer-stat-value">${(rep.convertedTotal || 2).toLocaleString()}</span>
+              <span class="buyer-stat-label">Converted leads</span>
+            </div>
+            <div class="buyer-stat-box">
+              <span class="buyer-stat-value">20d</span>
+              <span class="buyer-stat-label">Avg. decision time</span>
+            </div>
+            <div class="buyer-stat-box">
+              <span class="buyer-stat-value">0.5</span>
+              <span class="buyer-stat-label">Avg. shortlist size</span>
+            </div>
+          </div>
+        `;
+      }
+    }).catch(e => {});
+
   if (downloadBtn) {
     downloadBtn.addEventListener('click', () => {
-      // Build a simple CSV based on current data
       let allLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const fromDate = new Date(fromInput.value);
-      const toDateEnd = new Date(toInput.value);
+      const fromVal = fromInput ? fromInput.value : '';
+      const toVal = toInput ? toInput.value : '';
+      const fromDate = fromVal ? new Date(fromVal) : new Date('2026-01-01');
+      const toDateEnd = toVal ? new Date(toVal) : new Date();
       toDateEnd.setHours(23, 59, 59, 999);
 
       const filtered = allLeads.filter(l => {
@@ -360,13 +468,11 @@ export function initReportsView() {
          return leadTime >= fromDate && leadTime <= toDateEnd;
       });
 
-      // CSV Header
       let csvContent = "data:text/csv;charset=utf-8,";
       csvContent += "ID,Date,Name,Mobile,Type,Budget,Source,Status,Assigned To\n";
 
       filtered.forEach(l => {
         const dateStr = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-IN') : '01/01/2026';
-        // Escape fields to prevent comma issues
         const name = `"${l.name || ''}"`;
         const mobile = `"${l.mobile || ''}"`;
         const budget = `"${l.budgetMax || l.budgetMin || ''}"`;
@@ -377,8 +483,8 @@ export function initReportsView() {
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `Thanjai_CRM_Report_${fromInput.value}_to_${toInput.value}.csv`);
-      document.body.appendChild(link); // Required for FF
+      link.setAttribute("download", `Thanjai_CRM_Report_${fromVal}_to_${toVal}.csv`);
+      document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     });
