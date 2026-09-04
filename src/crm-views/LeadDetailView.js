@@ -1987,8 +1987,9 @@ export function initLeadDetailView(id) {
           if (select.id === 'ld-assign-dropdown') {
              const val = option.textContent.trim();
              const newAssignee = (val === 'Assign to...') ? 'Unassigned' : val;
-             if (leads[idx].assignTo !== newAssignee) {
+             if (leads[idx].assignTo !== newAssignee || leads[idx].assignedTo !== newAssignee) {
                leads[idx].assignTo = newAssignee;
+               leads[idx].assignedTo = newAssignee;
                if (!leads[idx].timeline) leads[idx].timeline = [];
                leads[idx].timeline.unshift({
                  type: 'system',

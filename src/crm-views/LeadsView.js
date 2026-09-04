@@ -728,12 +728,20 @@ function renderTable() {
       `;
     }
 
+    const assignedName = (lead.assignTo || lead.assignedTo || '').trim();
     let assignedHtml = `<td style="color: var(--os-gray-400);">—</td>`;
-    if (lead.assignTo && lead.assignTo !== 'Unassigned') {
-       let names = lead.assignTo.split(' ');
+    if (assignedName && assignedName !== 'Unassigned' && assignedName !== '—' && assignedName !== '-' && assignedName !== 'none') {
+       let names = assignedName.split(' ');
        assignedHtml = `<td>
-         <div style="font-weight: 500; color: var(--os-gray-600);">${names[0]}</div>
-         <div style="font-size: 0.85rem; color: var(--os-gray-400);">${names[1] || ''}</div>
+         <div style="display: flex; align-items: center; gap: 8px;">
+           <div style="width: 28px; height: 28px; border-radius: 50%; background: #FFF5EB; color: #eb5e28; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; border: 1px solid #fed7aa; flex-shrink: 0;">
+             ${names[0] ? names[0][0].toUpperCase() : 'S'}
+           </div>
+           <div>
+             <div style="font-weight: 600; color: #1e293b; font-size: 0.88rem;">${names[0]}</div>
+             ${names.length > 1 ? `<div style="font-size: 0.76rem; color: #64748b; font-weight: 500;">${names.slice(1).join(' ')}</div>` : ''}
+           </div>
+         </div>
        </td>`;
     }
 
