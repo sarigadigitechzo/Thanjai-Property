@@ -425,6 +425,17 @@ export async function initSiteVisitsView() {
 
   if (scheduleBtn && svModal) {
     scheduleBtn.addEventListener('click', () => {
+      // Auto-prefill the visit datetime with currently selected date & default 10:00 AM
+      const dtInput = document.getElementById('sv-datetime');
+      if (dtInput) {
+        const selD = new Date(currentYear, currentMonth, selectedDay, 10, 0, 0);
+        const yyyy = selD.getFullYear();
+        const mm = String(selD.getMonth() + 1).padStart(2, '0');
+        const dd = String(selD.getDate()).padStart(2, '0');
+        const hh = String(selD.getHours()).padStart(2, '0');
+        const min = String(selD.getMinutes()).padStart(2, '0');
+        dtInput.value = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+      }
       svModal.classList.add('show');
     });
   }
@@ -435,18 +446,47 @@ export async function initSiteVisitsView() {
   if (cancelSvBtn) cancelSvBtn.addEventListener('click', closeSvModal);
   if (confirmSvBtn) {
     confirmSvBtn.addEventListener('click', () => {
-      const clientName = document.getElementById('sv-client-name').value.trim();
-      const property = document.getElementById('sv-property').value.trim();
-      const datetime = document.getElementById('sv-datetime').value;
+      let rawClient = document.getElementById('sv-client-name').value.trim();
+      let rawProp = document.getElementById('sv-property').value.trim();
+      let datetime = document.getElementById('sv-datetime').value;
       const assignedTo = document.getElementById('sv-assigned-to')?.value || 'Vijayaraghavan (Super Admin)';
 
-      if (!clientName || !datetime) {
+      if (!rawClient) {
         showAlertModal({
-          title: 'Missing Details',
-          message: 'Please enter both the <strong>Client Name</strong> and the <strong>Visit Date & Time</strong>.',
+          title: 'Client Name Required',
+          message: 'Please enter or select a <strong>Client Name / Lead</strong> for the site visit.',
           type: 'warning'
         });
         return;
+      }
+
+      // If datetime was omitted, fallback to currently selected date at 10:00 AM
+      if (!datetime) {
+        const selD = new Date(currentYear, currentMonth, selectedDay, 10, 0, 0);
+        const yyyy = selD.getFullYear();
+        const mm = String(selD.getMonth() + 1).padStart(2, '0');
+        const dd = String(selD.getDate()).padStart(2, '0');
+        datetime = `${yyyy}-${mm}-${dd}T10:00`;
+      }
+
+      // Clean client name and phone from datalist format "[ID: LEAD-1001] Client Name (+91 98424 12345)"
+      let cleanClientName = rawClient;
+      let clientPhone = 'Site Visit';
+      if (rawClient.includes('[ID:') || rawClient.includes(']')) {
+        const afterBracket = rawClient.split(']')[1] || rawClient;
+        const phoneMatch = afterBracket.match(/\(([^)]+)\)/);
+        if (phoneMatch) {
+          clientPhone = phoneMatch[1].trim();
+          cleanClientName = afterBracket.replace(/\([^)]+\)/, '').trim();
+        } else {
+          cleanClientName = afterBracket.trim();
+        }
+      }
+
+      // Clean property from datalist format "[ID: TP-2001] Title (Location)"
+      let cleanProperty = rawProp || 'Thanjavur Verified Property';
+      if (rawProp.includes('[ID:') || rawProp.includes(']')) {
+        cleanProperty = (rawProp.split(']')[1] || rawProp).trim();
       }
 
       const dateObj = new Date(datetime);
@@ -459,12 +499,12 @@ export async function initSiteVisitsView() {
       // Save to API
       const newVisit = {
         id: `SV-${Date.now()}`,
-        leadId: clientName,
-        propertyId: property || 'TBD',
+        leadId: cleanClientName,
+        propertyId: cleanProperty,
         visitDate: datetime.replace('T', ' ') + ':00',
         status: 'Scheduled',
         assignedTo: assignedTo,
-        notes: JSON.stringify({ clientName, property, assignedTo })
+        notes: JSON.stringify({ clientName: cleanClientName, phone: clientPhone, property: cleanProperty, assignedTo })
       };
 
       fetchFromAPI('/site_visits', {
@@ -479,20 +519,24 @@ export async function initSiteVisitsView() {
         id: newVisit.id,
         date: day,
         month: monthNames[dateObj.getMonth()],
-        hours: hours.toString(),
+        hours: hours.toString().padStart(2, '0'),
         mins: mins,
         ampm: ampm,
-        clientName: clientName,
-        phone: 'Site Visit',
-        property: property || 'TBD',
+        clientName: cleanClientName,
+        phone: clientPhone,
+        property: cleanProperty,
         assignedTo: assignedTo,
         isNew: true
       });
 
+      try {
+        localStorage.setItem('thanjai_visits', JSON.stringify(visits));
+      } catch (e) {}
+
       addAuditLog({
-        action: `Scheduled Site Visit (${clientName})`,
+        action: `Scheduled Site Visit (${cleanClientName})`,
         module: 'Site Visits',
-        details: `Scheduled property tour for ${clientName} at ${property || 'Property'} assigned to ${assignedTo} on ${day} ${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()} at ${hours}:${mins} ${ampm}.`
+        details: `Scheduled property tour for ${cleanClientName} at ${cleanProperty} assigned to ${assignedTo} on ${day} ${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()} at ${hours}:${mins} ${ampm}.`
       });
 
       showToast(`Site visit scheduled & assigned to ${assignedTo}!`, 'ri-checkbox-circle-fill');
