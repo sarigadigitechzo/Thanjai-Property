@@ -6,16 +6,16 @@ let activeFilter = 'all';
 export function renderReviewsView() {
   const allReviews = getReviews();
   
-  const googleCount = allReviews.filter(r => r.source === 'Google').length;
+  const googleCount = allReviews.filter(r => r.source === 'Google' || r.source === 'Google / Website').length;
   const webCount = allReviews.filter(r => r.source === 'Website').length;
   const approvedCount = allReviews.filter(r => r.status === 'Approved').length;
   const avgRating = allReviews.length > 0 
     ? (allReviews.reduce((sum, r) => sum + (r.rating || 5), 0) / allReviews.length).toFixed(1)
-    : '5.0';
+    : '4.6';
 
   const filteredReviews = allReviews.filter(r => {
     if (activeFilter === 'all') return true;
-    if (activeFilter === 'google') return r.source === 'Google';
+    if (activeFilter === 'google') return r.source === 'Google' || r.source === 'Google / Website';
     if (activeFilter === 'website') return r.source === 'Website';
     if (activeFilter === 'whatsapp') return r.source === 'WhatsApp';
     if (activeFilter === 'hidden') return r.status === 'Hidden';
@@ -42,13 +42,13 @@ export function renderReviewsView() {
           </div>
         </div>
 
-        <button id="open-add-review-admin-btn" style="
+        <button id="open-add-review-admin-btn" onclick="document.getElementById('admin-add-review-modal').style.display='flex';" style="
           display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 12px;
           background: #4285F4; color: #ffffff; border: none; font-weight: 700; font-size: 0.92rem;
           cursor: pointer; box-shadow: 0 4px 14px rgba(66, 133, 244, 0.3); transition: all 0.2s;
         ">
           <i class="ri-add-line" style="font-size: 1.1rem;"></i>
-          <span>+ Add Google / Client Review</span>
+          <span>Add Google / Client Review</span>
         </button>
       </div>
 
@@ -58,7 +58,7 @@ export function renderReviewsView() {
           <div style="font-size: 0.78rem; font-weight: 700; color: #718096; text-transform: uppercase;">Average Rating</div>
           <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
             <span style="font-size: 1.8rem; font-weight: 800; color: #1a202c;">${avgRating}</span>
-            <div style="color: #f59e0b; font-size: 1.1rem;"><i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-fill"></i></div>
+            <div style="color: #f59e0b; font-size: 1.1rem;"><i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-fill"></i><i class="ri-star-half-fill"></i></div>
           </div>
         </div>
 
@@ -103,156 +103,143 @@ export function renderReviewsView() {
 
       <!-- Reviews Grid -->
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
-        ${filteredReviews.map(rev => `
-          <div style="
-            background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; padding: 22px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;
-          ">
-            <div>
-              <!-- Top Row: Name, Avatar, Source -->
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  ${rev.avatar ? `
-                    <img src="${rev.avatar}" alt="${rev.name}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover;" />
-                  ` : `
+        ${filteredReviews.map(rev => {
+          const firstLetter = (rev.name || rev.author_name || 'U').trim().charAt(0).toUpperCase();
+          const displayName = rev.name || rev.author_name || 'Verified Client';
+          const reviewQuote = rev.reviewText || rev.review_text || '';
+
+          return `
+            <div style="
+              background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; padding: 22px;
+              box-shadow: 0 4px 16px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between;
+            ">
+              <div>
+                <!-- Top Row: 1-Letter Avatar, Name, Source -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                  <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="
-                      width: 44px; height: 44px; border-radius: 50%; background: #4285F4; color: #fff;
-                      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
+                      width: 44px; height: 44px; border-radius: 50%; background: ${rev.avatar_color || '#4285F4'}; color: #fff;
+                      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.15rem;
                     ">
-                      ${(rev.name || rev.author_name || 'U').trim().charAt(0).toUpperCase()}
+                      ${firstLetter}
                     </div>
-                  `}
-                  <div>
-                    <div style="font-weight: 700; color: #1a202c; font-size: 0.96rem;">${rev.name || rev.author_name}</div>
-                    <div style="font-size: 0.78rem; color: #718096;">${rev.location || 'Thanjavur'}</div>
+                    <div>
+                      <div style="font-weight: 700; color: #1a202c; font-size: 1rem;">${displayName}</div>
+                    </div>
                   </div>
+
+                  <span style="
+                    padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+                    background: ${rev.source === 'Google' || rev.source === 'Google / Website' ? 'rgba(66, 133, 244, 0.12)' : 'rgba(235, 94, 40, 0.12)'};
+                    color: ${rev.source === 'Google' || rev.source === 'Google / Website' ? '#4285F4' : '#eb5e28'};
+                  ">
+                    ${rev.source || 'Google'}
+                  </span>
                 </div>
 
-                <span style="
-                  padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
-                  background: ${rev.source === 'Google' ? 'rgba(66, 133, 244, 0.12)' : 'rgba(235, 94, 40, 0.12)'};
-                  color: ${rev.source === 'Google' ? '#4285F4' : '#eb5e28'};
-                ">
-                  ${rev.source}
-                </span>
-              </div>
-
-              <!-- Rating & Property Type -->
-              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-                <div style="display: flex; gap: 2px; color: #f59e0b; font-size: 1rem;">
+                <!-- Rating -->
+                <div style="display: flex; gap: 2px; color: #f59e0b; font-size: 1rem; margin-bottom: 12px;">
                   ${Array(rev.rating || 5).fill('<i class="ri-star-fill"></i>').join('')}
                 </div>
-                <span style="font-size: 0.8rem; font-weight: 600; color: #64748b;">
-                  ${rev.propertyType || 'Property Buyer'}
+
+                <!-- Review Text -->
+                <p style="font-size: 0.92rem; color: #4a5568; line-height: 1.6; margin: 0 0 16px 0;">
+                  "${reviewQuote}"
+                </p>
+              </div>
+
+              <!-- Footer: Status & Action Buttons -->
+              <div style="border-top: 1px solid #f1f5f9; padding-top: 14px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="
+                  padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;
+                  background: ${rev.status === 'Approved' ? '#f0fdf4' : '#fef2f2'};
+                  color: ${rev.status === 'Approved' ? '#16a34a' : '#ef4444'};
+                ">
+                  ${rev.status === 'Approved' ? '● Published Live' : '○ Hidden'}
                 </span>
-              </div>
 
-              <!-- Review Text -->
-              <p style="font-size: 0.9rem; color: #4a5568; line-height: 1.6; margin: 0 0 16px 0;">
-                "${rev.reviewText}"
-              </p>
-            </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button class="edit-review-btn" data-id="${rev.id}" style="
+                    padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
+                    color: #2563eb; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+                  ">
+                    <i class="ri-edit-line"></i> Edit
+                  </button>
 
-            <!-- Footer: Status & Action Buttons -->
-            <div style="border-top: 1px solid #f1f5f9; padding-top: 14px; display: flex; align-items: center; justify-content: space-between;">
-              <span style="
-                padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;
-                background: ${rev.status === 'Approved' ? '#f0fdf4' : '#fef2f2'};
-                color: ${rev.status === 'Approved' ? '#16a34a' : '#ef4444'};
-              ">
-                ${rev.status === 'Approved' ? '● Published Live' : '○ Hidden'}
-              </span>
+                  <button class="toggle-status-review-btn" data-id="${rev.id}" style="
+                    padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
+                    color: #475569; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+                  ">
+                    ${rev.status === 'Approved' ? 'Hide' : 'Publish'}
+                  </button>
 
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <button class="edit-review-btn" data-id="${rev.id}" style="
-                  padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
-                  color: #2563eb; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
-                ">
-                  <i class="ri-edit-line"></i> Edit
-                </button>
-
-                <button class="toggle-status-review-btn" data-id="${rev.id}" style="
-                  padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
-                  color: #475569; font-size: 0.8rem; font-weight: 600; cursor: pointer;
-                ">
-                  ${rev.status === 'Approved' ? 'Hide' : 'Publish'}
-                </button>
-
-                <button class="delete-review-btn" data-id="${rev.id}" style="
-                  padding: 6px 10px; border-radius: 8px; border: 1px solid #fee2e2; background: #fff;
-                  color: #ef4444; font-size: 0.85rem; cursor: pointer;
-                " title="Delete Review">
-                  <i class="ri-delete-bin-line"></i>
-                </button>
+                  <button class="delete-review-btn" data-id="${rev.id}" style="
+                    padding: 6px 10px; border-radius: 8px; border: 1px solid #fee2e2; background: #fff;
+                    color: #ef4444; font-size: 0.85rem; cursor: pointer;
+                  " title="Delete Review">
+                    <i class="ri-delete-bin-line"></i>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        `).join('')}
+          `;
+        }).join('')}
       </div>
 
-      <!-- Add / Edit Manual Review Modal (Admin) -->
+      <!-- Add Manual Review Modal (Admin) -->
       <div id="admin-add-review-modal" class="modal-overlay" style="
-        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px);
         z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px;
       ">
         <div style="
-          background: #ffffff; border-radius: 20px; max-width: 540px; width: 100%; max-height: 90vh;
-          overflow-y: auto; padding: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+          background: #ffffff; border-radius: 22px; max-width: 500px; width: 100%; max-height: 90vh;
+          overflow-y: auto; padding: 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;
         ">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-            <h3 style="font-size: 1.3rem; font-weight: 700; color: #1a202c; margin: 0;">Add Google / Manual Review</h3>
-            <button id="close-admin-review-modal-btn" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #64748b;">
+            <h3 style="font-size: 1.35rem; font-weight: 700; color: #1a202c; margin: 0;">Add Google / Client Review</h3>
+            <button id="close-admin-review-modal-btn" style="background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center;">
               <i class="ri-close-line"></i>
             </button>
           </div>
 
           <form id="admin-add-review-form" style="display: flex; flex-direction: column; gap: 16px;">
-            <div>
-              <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Client Name *</label>
-              <input type="text" id="admin-rev-name" required placeholder="e.g. Ramesh Kumar" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Review Source</label>
-                <select id="admin-rev-source" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; box-sizing: border-box;">
-                  <option value="Google" selected>Google Review</option>
-                  <option value="WhatsApp">WhatsApp Feedback</option>
-                  <option value="Website">Website Form</option>
-                  <option value="In-Person">In-Person Client</option>
-                </select>
+            
+            <!-- 1 to 5 Clickable Stars Rating -->
+            <div style="background: #fafaf9; padding: 14px 18px; border-radius: 14px; border: 1px solid #e2e8f0; text-align: center;">
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Select Rating (1 to 5 Stars) *</label>
+              <div id="admin-add-stars-picker" style="display: inline-flex; gap: 8px; font-size: 1.9rem; color: #cbd5e1; cursor: pointer;">
+                <i class="ri-star-fill admin-add-star" data-value="1" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill admin-add-star" data-value="2" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill admin-add-star" data-value="3" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill admin-add-star" data-value="4" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill admin-add-star" data-value="5" style="color: #f59e0b;"></i>
               </div>
-
-              <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Rating Stars</label>
-                <select id="admin-rev-rating" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; box-sizing: border-box;">
-                  <option value="5" selected>⭐⭐⭐⭐⭐ 5 Stars</option>
-                  <option value="4">⭐⭐⭐⭐ 4 Stars</option>
-                  <option value="3">⭐⭐⭐ 3 Stars</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Property / Service Type</label>
-                <input type="text" id="admin-rev-proptype" placeholder="e.g. 3 BHK Villa, DTCP Plot" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
-              </div>
-
-              <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Location</label>
-                <input type="text" id="admin-rev-location" placeholder="e.g. Medical College Rd, Thanjavur" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
-              </div>
+              <input type="hidden" id="admin-rev-rating" value="5" />
             </div>
 
             <div>
-              <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Review Text Quote *</label>
-              <textarea id="admin-rev-text" required rows="4" placeholder="Paste the client review text here..." style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; resize: vertical;"></textarea>
+              <label style="font-size: 0.84rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Client Name *</label>
+              <input type="text" id="admin-rev-name" required placeholder="e.g. Ramesh Kumar" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-              <button type="button" id="cancel-admin-rev-btn" style="padding: 10px 18px; border-radius: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 600; cursor: pointer;">Cancel</button>
-              <button type="submit" style="padding: 10px 22px; border-radius: 8px; background: #4285F4; color: #fff; border: none; font-weight: 700; cursor: pointer;">Save & Publish</button>
+            <div>
+              <label style="font-size: 0.84rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Review Source</label>
+              <select id="admin-rev-source" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; box-sizing: border-box;">
+                <option value="Google" selected>Google Review</option>
+                <option value="WhatsApp">WhatsApp Feedback</option>
+                <option value="Website">Website Form</option>
+                <option value="In-Person">In-Person Client</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size: 0.84rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Review Comments & Feedback *</label>
+              <textarea id="admin-rev-text" required rows="4" placeholder="Paste the client review text here..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; resize: vertical;"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+              <button type="button" id="cancel-admin-rev-btn" style="padding: 11px 18px; border-radius: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 600; cursor: pointer;">Cancel</button>
+              <button type="submit" style="padding: 11px 24px; border-radius: 10px; background: #4285F4; color: #fff; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(66, 133, 244, 0.3);">Save & Publish</button>
             </div>
           </form>
         </div>
@@ -260,68 +247,59 @@ export function renderReviewsView() {
 
       <!-- Edit Review Modal (Admin) -->
       <div id="admin-edit-review-modal" class="modal-overlay" style="
-        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px);
+        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px);
         z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px;
       ">
         <div style="
-          background: #ffffff; border-radius: 20px; max-width: 540px; width: 100%; max-height: 90vh;
-          overflow-y: auto; padding: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+          background: #ffffff; border-radius: 22px; max-width: 500px; width: 100%; max-height: 90vh;
+          overflow-y: auto; padding: 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;
         ">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-            <h3 style="font-size: 1.3rem; font-weight: 700; color: #1a202c; margin: 0;">Edit Review Details</h3>
-            <button id="close-admin-edit-review-modal-btn" style="background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #64748b;">
+            <h3 style="font-size: 1.35rem; font-weight: 700; color: #1a202c; margin: 0;">Edit Review Details</h3>
+            <button id="close-admin-edit-review-modal-btn" style="background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center;">
               <i class="ri-close-line"></i>
             </button>
           </div>
 
           <form id="admin-edit-review-form" style="display: flex; flex-direction: column; gap: 16px;">
             <input type="hidden" id="admin-edit-rev-id" />
-            <div>
-              <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Client Name *</label>
-              <input type="text" id="admin-edit-rev-name" required placeholder="e.g. Ramesh Kumar" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Review Source</label>
-                <select id="admin-edit-rev-source" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; box-sizing: border-box;">
-                  <option value="Google">Google Review</option>
-                  <option value="WhatsApp">WhatsApp Feedback</option>
-                  <option value="Website">Website Form</option>
-                  <option value="In-Person">In-Person Client</option>
-                </select>
+            
+            <!-- 1 to 5 Clickable Stars Rating -->
+            <div style="background: #fafaf9; padding: 14px 18px; border-radius: 14px; border: 1px solid #e2e8f0; text-align: center;">
+              <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #475569; margin-bottom: 6px;">Select Rating (1 to 5 Stars) *</label>
+              <div id="admin-edit-stars-picker" style="display: inline-flex; gap: 8px; font-size: 1.9rem; color: #cbd5e1; cursor: pointer;">
+                <i class="ri-star-fill admin-edit-star" data-value="1" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill admin-edit-star" data-value="2" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill admin-edit-star" data-value="3" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill admin-edit-star" data-value="4" style="color: #f59e0b;"></i>
+                <i class="ri-star-fill admin-edit-star" data-value="5" style="color: #f59e0b;"></i>
               </div>
-
-              <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Rating Stars</label>
-                <select id="admin-edit-rev-rating" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; box-sizing: border-box;">
-                  <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
-                  <option value="4">⭐⭐⭐⭐ 4 Stars</option>
-                  <option value="3">⭐⭐⭐ 3 Stars</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-              <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Property / Service Type</label>
-                <input type="text" id="admin-edit-rev-proptype" placeholder="e.g. 3 BHK Villa, DTCP Plot" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
-              </div>
-
-              <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Location</label>
-                <input type="text" id="admin-edit-rev-location" placeholder="e.g. Medical College Rd, Thanjavur" style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
-              </div>
+              <input type="hidden" id="admin-edit-rev-rating" value="5" />
             </div>
 
             <div>
-              <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Review Text Quote *</label>
-              <textarea id="admin-edit-rev-text" required rows="4" placeholder="Paste the client review text here..." style="width: 100%; padding: 10px 12px; font-size: 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; resize: vertical;"></textarea>
+              <label style="font-size: 0.84rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Client Name *</label>
+              <input type="text" id="admin-edit-rev-name" required placeholder="e.g. Ramesh Kumar" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box;" />
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-              <button type="button" id="cancel-admin-edit-rev-btn" style="padding: 10px 18px; border-radius: 8px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 600; cursor: pointer;">Cancel</button>
-              <button type="submit" style="padding: 10px 22px; border-radius: 8px; background: #2563eb; color: #fff; border: none; font-weight: 700; cursor: pointer;">Update Review</button>
+            <div>
+              <label style="font-size: 0.84rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Review Source</label>
+              <select id="admin-edit-rev-source" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e1; background: #fff; box-sizing: border-box;">
+                <option value="Google">Google Review</option>
+                <option value="WhatsApp">WhatsApp Feedback</option>
+                <option value="Website">Website Form</option>
+                <option value="In-Person">In-Person Client</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size: 0.84rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px;">Review Comments & Feedback *</label>
+              <textarea id="admin-edit-rev-text" required rows="4" placeholder="Paste the client review text here..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; resize: vertical;"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
+              <button type="button" id="cancel-admin-edit-rev-btn" style="padding: 11px 18px; border-radius: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 600; cursor: pointer;">Cancel</button>
+              <button type="submit" style="padding: 11px 24px; border-radius: 10px; background: #2563eb; color: #fff; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);">Update Review</button>
             </div>
           </form>
         </div>
@@ -349,8 +327,42 @@ export function initReviewsListeners() {
   const cancelAddBtn = document.getElementById('cancel-admin-rev-btn');
   const addForm = document.getElementById('admin-add-review-form');
 
-  const openAddModal = () => { if (addModal) addModal.style.display = 'flex'; };
-  const closeAddModal = () => { if (addModal) { addModal.style.display = 'none'; if (addForm) addForm.reset(); } };
+  const addStarsPicker = document.getElementById('admin-add-stars-picker');
+  const addRatingInput = document.getElementById('admin-rev-rating');
+
+  function setAddStarRating(val) {
+    if (addRatingInput) addRatingInput.value = val;
+    if (addStarsPicker) {
+      addStarsPicker.querySelectorAll('.admin-add-star').forEach(star => {
+        const starVal = parseInt(star.dataset.value, 10);
+        if (starVal <= val) {
+          star.style.color = '#f59e0b';
+        } else {
+          star.style.color = '#cbd5e1';
+        }
+      });
+    }
+  }
+
+  addStarsPicker?.querySelectorAll('.admin-add-star').forEach(star => {
+    star.addEventListener('click', () => {
+      const val = parseInt(star.dataset.value, 10) || 5;
+      setAddStarRating(val);
+    });
+  });
+
+  const openAddModal = () => { 
+    if (addModal) {
+      setAddStarRating(5);
+      addModal.style.display = 'flex'; 
+    }
+  };
+  const closeAddModal = () => { 
+    if (addModal) { 
+      addModal.style.display = 'none'; 
+      if (addForm) addForm.reset(); 
+    } 
+  };
 
   openAddBtn?.addEventListener('click', openAddModal);
   closeAddBtn?.addEventListener('click', closeAddModal);
@@ -361,8 +373,6 @@ export function initReviewsListeners() {
     const name = document.getElementById('admin-rev-name')?.value.trim();
     const source = document.getElementById('admin-rev-source')?.value || 'Google';
     const rating = parseInt(document.getElementById('admin-rev-rating')?.value, 10) || 5;
-    const propertyType = document.getElementById('admin-rev-proptype')?.value.trim() || '';
-    const location = document.getElementById('admin-rev-location')?.value.trim() || 'Thanjavur';
     const reviewText = document.getElementById('admin-rev-text')?.value.trim();
 
     if (!name || !reviewText) {
@@ -375,16 +385,14 @@ export function initReviewsListeners() {
       author_name: name,
       source,
       rating,
-      propertyType,
-      author_role: propertyType,
-      location,
       reviewText,
       review_text: reviewText,
-      status: 'Approved'
+      status: 'Approved',
+      time_ago: 'Just now'
     });
 
     closeAddModal();
-    showToast('Review published to website successfully!', 'ri-checkbox-circle-fill');
+    showToast('Review published successfully!', 'ri-checkbox-circle-fill');
     if (typeof window.navigateToView === 'function') {
       window.navigateToView('reviews');
     }
@@ -395,6 +403,30 @@ export function initReviewsListeners() {
   const closeEditBtn = document.getElementById('close-admin-edit-review-modal-btn');
   const cancelEditBtn = document.getElementById('cancel-admin-edit-rev-btn');
   const editForm = document.getElementById('admin-edit-review-form');
+
+  const editStarsPicker = document.getElementById('admin-edit-stars-picker');
+  const editRatingInput = document.getElementById('admin-edit-rev-rating');
+
+  function setEditStarRating(val) {
+    if (editRatingInput) editRatingInput.value = val;
+    if (editStarsPicker) {
+      editStarsPicker.querySelectorAll('.admin-edit-star').forEach(star => {
+        const starVal = parseInt(star.dataset.value, 10);
+        if (starVal <= val) {
+          star.style.color = '#f59e0b';
+        } else {
+          star.style.color = '#cbd5e1';
+        }
+      });
+    }
+  }
+
+  editStarsPicker?.querySelectorAll('.admin-edit-star').forEach(star => {
+    star.addEventListener('click', () => {
+      const val = parseInt(star.dataset.value, 10) || 5;
+      setEditStarRating(val);
+    });
+  });
 
   const closeEditModal = () => { if (editModal) { editModal.style.display = 'none'; if (editForm) editForm.reset(); } };
 
@@ -411,17 +443,12 @@ export function initReviewsListeners() {
       const idInput = document.getElementById('admin-edit-rev-id');
       const nameInput = document.getElementById('admin-edit-rev-name');
       const sourceSelect = document.getElementById('admin-edit-rev-source');
-      const ratingSelect = document.getElementById('admin-edit-rev-rating');
-      const proptypeInput = document.getElementById('admin-edit-rev-proptype');
-      const locationInput = document.getElementById('admin-edit-rev-location');
       const textInput = document.getElementById('admin-edit-rev-text');
 
       if (idInput) idInput.value = rev.id;
       if (nameInput) nameInput.value = rev.name || rev.author_name || '';
       if (sourceSelect) sourceSelect.value = rev.source || 'Google';
-      if (ratingSelect) ratingSelect.value = rev.rating || 5;
-      if (proptypeInput) proptypeInput.value = rev.propertyType || rev.author_role || '';
-      if (locationInput) locationInput.value = rev.location || '';
+      setEditStarRating(rev.rating || 5);
       if (textInput) textInput.value = rev.reviewText || rev.review_text || '';
 
       if (editModal) editModal.style.display = 'flex';
@@ -434,8 +461,6 @@ export function initReviewsListeners() {
     const name = document.getElementById('admin-edit-rev-name')?.value.trim();
     const source = document.getElementById('admin-edit-rev-source')?.value || 'Google';
     const rating = parseInt(document.getElementById('admin-edit-rev-rating')?.value, 10) || 5;
-    const propertyType = document.getElementById('admin-edit-rev-proptype')?.value.trim() || '';
-    const location = document.getElementById('admin-edit-rev-location')?.value.trim() || 'Thanjavur';
     const reviewText = document.getElementById('admin-edit-rev-text')?.value.trim();
 
     if (!id || !name || !reviewText) {
@@ -448,9 +473,6 @@ export function initReviewsListeners() {
       author_name: name,
       source,
       rating,
-      propertyType,
-      author_role: propertyType,
-      location,
       reviewText,
       review_text: reviewText
     });
