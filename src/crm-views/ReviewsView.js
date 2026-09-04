@@ -1,3 +1,4 @@
+// src/crm-views/ReviewsView.js - Luxury Google Reviews & Testimonials CRM Module
 import { getReviews, addReview, updateReview, deleteReview, toggleReviewStatus } from '../utils/reviewsStore.js';
 import { showToast } from '../utils/toast.js';
 
@@ -42,12 +43,12 @@ export function renderReviewsView() {
           </div>
         </div>
 
-        <button id="open-add-review-admin-btn" onclick="document.getElementById('admin-add-review-modal').style.display='flex';" style="
-          display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 12px;
-          background: #4285F4; color: #ffffff; border: none; font-weight: 700; font-size: 0.92rem;
-          cursor: pointer; box-shadow: 0 4px 14px rgba(66, 133, 244, 0.3); transition: all 0.2s;
+        <button id="open-add-review-admin-btn" type="button" onclick="if(window.openAdminAddReviewModal) window.openAdminAddReviewModal();" style="
+          display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 12px;
+          background: #4285F4; color: #ffffff; border: none; font-weight: 700; font-size: 0.95rem;
+          cursor: pointer; box-shadow: 0 4px 14px rgba(66, 133, 244, 0.35); transition: all 0.2s;
         ">
-          <i class="ri-add-line" style="font-size: 1.1rem;"></i>
+          <i class="ri-add-line" style="font-size: 1.2rem;"></i>
           <span>Add Google / Client Review</span>
         </button>
       </div>
@@ -159,9 +160,9 @@ export function renderReviewsView() {
                 </span>
 
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <button class="edit-review-btn" data-id="${rev.id}" style="
-                    padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
-                    color: #2563eb; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+                  <button class="edit-review-btn" data-id="${rev.id}" onclick="if(window.openAdminEditReviewModal) window.openAdminEditReviewModal('${rev.id}');" style="
+                    padding: 6px 14px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
+                    color: #2563eb; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
                   ">
                     <i class="ri-edit-line"></i> Edit
                   </button>
@@ -187,17 +188,18 @@ export function renderReviewsView() {
       </div>
 
       <!-- Add Manual Review Modal (Admin) -->
-      <div id="admin-add-review-modal" class="modal-overlay" style="
-        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px);
-        z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px;
+      <div id="admin-add-review-modal" style="
+        position: fixed; inset: 0; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        z-index: 9999999; display: none; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
       ">
         <div style="
           background: #ffffff; border-radius: 22px; max-width: 500px; width: 100%; max-height: 90vh;
-          overflow-y: auto; padding: 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;
+          overflow-y: auto; padding: 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); position: relative; box-sizing: border-box;
         ">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
             <h3 style="font-size: 1.35rem; font-weight: 700; color: #1a202c; margin: 0;">Add Google / Client Review</h3>
-            <button id="close-admin-review-modal-btn" style="background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center;">
+            <button id="close-admin-review-modal-btn" type="button" onclick="if(window.closeAdminAddReviewModal) window.closeAdminAddReviewModal();" style="background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center;">
               <i class="ri-close-line"></i>
             </button>
           </div>
@@ -238,7 +240,7 @@ export function renderReviewsView() {
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
-              <button type="button" id="cancel-admin-rev-btn" style="padding: 11px 18px; border-radius: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 600; cursor: pointer;">Cancel</button>
+              <button type="button" id="cancel-admin-rev-btn" onclick="if(window.closeAdminAddReviewModal) window.closeAdminAddReviewModal();" style="padding: 11px 18px; border-radius: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 600; cursor: pointer;">Cancel</button>
               <button type="submit" style="padding: 11px 24px; border-radius: 10px; background: #4285F4; color: #fff; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(66, 133, 244, 0.3);">Save & Publish</button>
             </div>
           </form>
@@ -246,17 +248,18 @@ export function renderReviewsView() {
       </div>
 
       <!-- Edit Review Modal (Admin) -->
-      <div id="admin-edit-review-modal" class="modal-overlay" style="
-        position: fixed; inset: 0; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px);
-        z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px;
+      <div id="admin-edit-review-modal" style="
+        position: fixed; inset: 0; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        z-index: 9999999; display: none; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
       ">
         <div style="
           background: #ffffff; border-radius: 22px; max-width: 500px; width: 100%; max-height: 90vh;
-          overflow-y: auto; padding: 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;
+          overflow-y: auto; padding: 30px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); position: relative; box-sizing: border-box;
         ">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
             <h3 style="font-size: 1.35rem; font-weight: 700; color: #1a202c; margin: 0;">Edit Review Details</h3>
-            <button id="close-admin-edit-review-modal-btn" style="background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center;">
+            <button id="close-admin-edit-review-modal-btn" type="button" onclick="if(window.closeAdminEditReviewModal) window.closeAdminEditReviewModal();" style="background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; color: #64748b; display: flex; align-items: center; justify-content: center;">
               <i class="ri-close-line"></i>
             </button>
           </div>
@@ -298,7 +301,7 @@ export function renderReviewsView() {
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;">
-              <button type="button" id="cancel-admin-edit-rev-btn" style="padding: 11px 18px; border-radius: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 600; cursor: pointer;">Cancel</button>
+              <button type="button" id="cancel-admin-edit-rev-btn" onclick="if(window.closeAdminEditReviewModal) window.closeAdminEditReviewModal();" style="padding: 11px 18px; border-radius: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 600; cursor: pointer;">Cancel</button>
               <button type="submit" style="padding: 11px 24px; border-radius: 10px; background: #2563eb; color: #fff; border: none; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);">Update Review</button>
             </div>
           </form>
@@ -308,6 +311,71 @@ export function renderReviewsView() {
     </div>
   `;
 }
+
+// Global modal helpers attached to window
+window.setAddStarRating = function(val) {
+  const addRatingInput = document.getElementById('admin-rev-rating');
+  const addStarsPicker = document.getElementById('admin-add-stars-picker');
+  if (addRatingInput) addRatingInput.value = val;
+  if (addStarsPicker) {
+    addStarsPicker.querySelectorAll('.admin-add-star').forEach(star => {
+      const starVal = parseInt(star.dataset.value, 10);
+      star.style.color = starVal <= val ? '#f59e0b' : '#cbd5e1';
+    });
+  }
+};
+
+window.setEditStarRating = function(val) {
+  const editRatingInput = document.getElementById('admin-edit-rev-rating');
+  const editStarsPicker = document.getElementById('admin-edit-stars-picker');
+  if (editRatingInput) editRatingInput.value = val;
+  if (editStarsPicker) {
+    editStarsPicker.querySelectorAll('.admin-edit-star').forEach(star => {
+      const starVal = parseInt(star.dataset.value, 10);
+      star.style.color = starVal <= val ? '#f59e0b' : '#cbd5e1';
+    });
+  }
+};
+
+window.openAdminAddReviewModal = function() {
+  const modal = document.getElementById('admin-add-review-modal');
+  if (modal) {
+    window.setAddStarRating(5);
+    const form = document.getElementById('admin-add-review-form');
+    if (form) form.reset();
+    modal.style.display = 'flex';
+  }
+};
+
+window.closeAdminAddReviewModal = function() {
+  const modal = document.getElementById('admin-add-review-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.openAdminEditReviewModal = function(id) {
+  const allReviews = getReviews();
+  const rev = allReviews.find(r => r.id === id);
+  if (!rev) return;
+
+  const idInput = document.getElementById('admin-edit-rev-id');
+  const nameInput = document.getElementById('admin-edit-rev-name');
+  const sourceSelect = document.getElementById('admin-edit-rev-source');
+  const textInput = document.getElementById('admin-edit-rev-text');
+  const editModal = document.getElementById('admin-edit-review-modal');
+
+  if (idInput) idInput.value = rev.id;
+  if (nameInput) nameInput.value = rev.name || rev.author_name || '';
+  if (sourceSelect) sourceSelect.value = rev.source || 'Google';
+  window.setEditStarRating(rev.rating || 5);
+  if (textInput) textInput.value = rev.reviewText || rev.review_text || '';
+
+  if (editModal) editModal.style.display = 'flex';
+};
+
+window.closeAdminEditReviewModal = function() {
+  const modal = document.getElementById('admin-edit-review-modal');
+  if (modal) modal.style.display = 'none';
+};
 
 export function initReviewsListeners() {
   // Tab Switching
@@ -326,47 +394,24 @@ export function initReviewsListeners() {
   const closeAddBtn = document.getElementById('close-admin-review-modal-btn');
   const cancelAddBtn = document.getElementById('cancel-admin-rev-btn');
   const addForm = document.getElementById('admin-add-review-form');
-
   const addStarsPicker = document.getElementById('admin-add-stars-picker');
-  const addRatingInput = document.getElementById('admin-rev-rating');
-
-  function setAddStarRating(val) {
-    if (addRatingInput) addRatingInput.value = val;
-    if (addStarsPicker) {
-      addStarsPicker.querySelectorAll('.admin-add-star').forEach(star => {
-        const starVal = parseInt(star.dataset.value, 10);
-        if (starVal <= val) {
-          star.style.color = '#f59e0b';
-        } else {
-          star.style.color = '#cbd5e1';
-        }
-      });
-    }
-  }
 
   addStarsPicker?.querySelectorAll('.admin-add-star').forEach(star => {
     star.addEventListener('click', () => {
       const val = parseInt(star.dataset.value, 10) || 5;
-      setAddStarRating(val);
+      window.setAddStarRating(val);
     });
   });
 
-  const openAddModal = () => { 
-    if (addModal) {
-      setAddStarRating(5);
-      addModal.style.display = 'flex'; 
-    }
-  };
-  const closeAddModal = () => { 
-    if (addModal) { 
-      addModal.style.display = 'none'; 
-      if (addForm) addForm.reset(); 
-    } 
-  };
+  openAddBtn?.addEventListener('click', window.openAdminAddReviewModal);
+  closeAddBtn?.addEventListener('click', window.closeAdminAddReviewModal);
+  cancelAddBtn?.addEventListener('click', window.closeAdminAddReviewModal);
 
-  openAddBtn?.addEventListener('click', openAddModal);
-  closeAddBtn?.addEventListener('click', closeAddModal);
-  cancelAddBtn?.addEventListener('click', closeAddModal);
+  if (addModal) {
+    addModal.addEventListener('click', (e) => {
+      if (e.target === addModal) window.closeAdminAddReviewModal();
+    });
+  }
 
   addForm?.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -391,7 +436,7 @@ export function initReviewsListeners() {
       time_ago: 'Just now'
     });
 
-    closeAddModal();
+    window.closeAdminAddReviewModal();
     showToast('Review published successfully!', 'ri-checkbox-circle-fill');
     if (typeof window.navigateToView === 'function') {
       window.navigateToView('reviews');
@@ -403,55 +448,28 @@ export function initReviewsListeners() {
   const closeEditBtn = document.getElementById('close-admin-edit-review-modal-btn');
   const cancelEditBtn = document.getElementById('cancel-admin-edit-rev-btn');
   const editForm = document.getElementById('admin-edit-review-form');
-
   const editStarsPicker = document.getElementById('admin-edit-stars-picker');
-  const editRatingInput = document.getElementById('admin-edit-rev-rating');
-
-  function setEditStarRating(val) {
-    if (editRatingInput) editRatingInput.value = val;
-    if (editStarsPicker) {
-      editStarsPicker.querySelectorAll('.admin-edit-star').forEach(star => {
-        const starVal = parseInt(star.dataset.value, 10);
-        if (starVal <= val) {
-          star.style.color = '#f59e0b';
-        } else {
-          star.style.color = '#cbd5e1';
-        }
-      });
-    }
-  }
 
   editStarsPicker?.querySelectorAll('.admin-edit-star').forEach(star => {
     star.addEventListener('click', () => {
       const val = parseInt(star.dataset.value, 10) || 5;
-      setEditStarRating(val);
+      window.setEditStarRating(val);
     });
   });
 
-  const closeEditModal = () => { if (editModal) { editModal.style.display = 'none'; if (editForm) editForm.reset(); } };
+  closeEditBtn?.addEventListener('click', window.closeAdminEditReviewModal);
+  cancelEditBtn?.addEventListener('click', window.closeAdminEditReviewModal);
 
-  closeEditBtn?.addEventListener('click', closeEditModal);
-  cancelEditBtn?.addEventListener('click', closeEditModal);
+  if (editModal) {
+    editModal.addEventListener('click', (e) => {
+      if (e.target === editModal) window.closeAdminEditReviewModal();
+    });
+  }
 
   document.querySelectorAll('.edit-review-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.dataset.id;
-      const allReviews = getReviews();
-      const rev = allReviews.find(r => r.id === id);
-      if (!rev) return;
-
-      const idInput = document.getElementById('admin-edit-rev-id');
-      const nameInput = document.getElementById('admin-edit-rev-name');
-      const sourceSelect = document.getElementById('admin-edit-rev-source');
-      const textInput = document.getElementById('admin-edit-rev-text');
-
-      if (idInput) idInput.value = rev.id;
-      if (nameInput) nameInput.value = rev.name || rev.author_name || '';
-      if (sourceSelect) sourceSelect.value = rev.source || 'Google';
-      setEditStarRating(rev.rating || 5);
-      if (textInput) textInput.value = rev.reviewText || rev.review_text || '';
-
-      if (editModal) editModal.style.display = 'flex';
+      if (id) window.openAdminEditReviewModal(id);
     });
   });
 
@@ -477,7 +495,7 @@ export function initReviewsListeners() {
       review_text: reviewText
     });
 
-    closeEditModal();
+    window.closeAdminEditReviewModal();
     showToast('Review updated successfully!', 'ri-checkbox-circle-fill');
     if (typeof window.navigateToView === 'function') {
       window.navigateToView('reviews');
