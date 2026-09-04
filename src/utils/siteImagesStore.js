@@ -10,7 +10,7 @@ export const DEFAULT_SITE_IMAGES = {
     aspectRatio: "16:9",
     format: "JPG / WebP",
     maxSize: "< 2 MB",
-    defaultUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=2000&q=90",
+    defaultUrl: "/hero-bg-live.webp",
     description: "Main full-width background banner displayed at the top of the homepage."
   },
   showcase_bg: {
@@ -335,10 +335,13 @@ export async function initSiteImagesStore() {
   try {
     const imagesData = await fetchFromAPI('/website_images');
     if (imagesData && Array.isArray(imagesData) && imagesData.length > 0) {
-      siteImagesCache = {};
+      if (!siteImagesCache) {
+        siteImagesCache = getSavedSiteImages();
+      }
       imagesData.forEach(img => {
         siteImagesCache[img.id] = img.currentUrl;
       });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(siteImagesCache));
       window.dispatchEvent(new CustomEvent('siteImagesUpdated'));
     }
   } catch (error) {
@@ -356,6 +359,15 @@ export async function initSiteImagesStore() {
 
 function getSavedSiteImages() {
   if (siteImagesCache) return siteImagesCache;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      siteImagesCache = JSON.parse(raw);
+      return siteImagesCache;
+    }
+  } catch (e) {
+    console.error("Error reading saved site images", e);
+  }
   siteImagesCache = {};
   return siteImagesCache;
 }
@@ -396,6 +408,9 @@ export function updateSiteImage(key, newUrl) {
 
   const savedMap = getSavedSiteImages();
   savedMap[key] = newUrl;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedMap));
+  } catch (e) {}
 
   // Log to Audit Trail
   addAuditLog({
@@ -426,6 +441,9 @@ export function resetSiteImage(key) {
   const savedMap = getSavedSiteImages();
   if (savedMap[key]) {
     delete savedMap[key];
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(savedMap));
+    } catch (e) {}
 
     addAuditLog({
       timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
