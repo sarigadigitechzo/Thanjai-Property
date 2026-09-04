@@ -1255,6 +1255,7 @@ function bindLeadEvents() {
       const locIdx = getColIdx(['location', 'area', 'city']);
       const sourceIdx = getColIdx(['source', 'lead source']);
       const statusIdx = getColIdx(['status']);
+      const assignIdx = getColIdx(['assigned to', 'assignedto', 'assignto', 'assigned', 'staff', 'owner', 'agent', 'executive']);
       const notesIdx = getColIdx(['notes', 'note', 'desc', 'remarks']);
 
       const newLeads = [];
@@ -1273,11 +1274,15 @@ function bindLeadEvents() {
           const location = val(locIdx !== -1 ? locIdx : 5, 'Thanjavur');
           let source = val(sourceIdx !== -1 ? sourceIdx : 6, 'Manual');
           let status = val(statusIdx !== -1 ? statusIdx : 7, 'New Lead');
+          let assigned = val(assignIdx !== -1 ? assignIdx : -1, 'Unassigned');
           const notes = val(notesIdx !== -1 ? notesIdx : 8, '');
 
-          // Normalize source & status strings
+          // Normalize source, status & assigned strings
           if (!source || source === '—') source = 'Manual';
           if (!status || status === '—') status = 'New Lead';
+          if (!assigned || assigned === '—' || assigned === '-' || assigned === 'null' || assigned === 'undefined') {
+            assigned = 'Unassigned';
+          }
 
           const leadObj = {
             id: `L-${Date.now()}-${i}`,
@@ -1299,26 +1304,27 @@ function bindLeadEvents() {
             propertyType: propType,
             requirement: propType,
             source: source,
-            assignTo: 'Unassigned',
+            assignTo: assigned,
+            assignedTo: assigned,
             status: status,
             followup: '—',
             createdAt: Date.now() - (i * 1000),
-            timeline: [{ action: 'Imported from CSV file', date: new Date().toLocaleDateString('en-IN'), by: 'System' }]
+            timeline: [{ action: `Imported from CSV file (Assigned to: ${assigned})`, date: new Date().toLocaleDateString('en-IN'), by: 'System' }]
           };
 
           newLeads.push(leadObj);
-
-          // Sync to backend API if available
-          try {
-            fetchFromAPI('/leads', {
-              method: 'POST',
-              body: JSON.stringify(leadObj)
-            }).catch(e => console.warn(e));
-          } catch (err) {}
         }
       }
       
       if (newLeads.length > 0) {
+        // Batch sync to live MySQL backend
+        try {
+          fetchFromAPI('/leads', {
+            method: 'POST',
+            body: JSON.stringify(newLeads)
+          }).catch(e => console.warn('API sync warning:', e));
+        } catch (err) {}
+
         const leads = getLeads();
         const updatedLeads = [...newLeads, ...leads];
         saveLeads(updatedLeads);
@@ -1326,7 +1332,7 @@ function bindLeadEvents() {
         addAuditLog({
           action: `Bulk Imported Leads (${newLeads.length})`,
           module: 'CRM Pipeline',
-          details: `Imported ${newLeads.length} new leads via CSV batch upload.`
+          details: `Imported ${newLeads.length} new leads via CSV batch upload with staff assignments preserved.`
         });
         showToast(`${newLeads.length} leads imported successfully into CRM!`, 'ri-checkbox-circle-fill');
       } else {
@@ -1343,7 +1349,7 @@ function bindLeadEvents() {
 
   if (sampleBtn) {
     sampleBtn.addEventListener('click', () => {
-      const csvContent = 'Name,Mobile,Email,PropertyType,Budget,Location,Source,Status,Notes\n"Arun Kumar","9842154321","arun.kumar@gmail.com","Luxury Villa","12500000","Medical College Road, Thanjavur","Website Form","New Lead","Looking for 3 or 4 BHK independent luxury villa near Medical College Road with car parking."\n"Priya Raman","9443219876","priya.raman@yahoo.com","Residential Plot","3500000","Trichy Road, Thanjavur","Phone Call","Contacted","Interested in DTCP approved East-facing corner plot near New Bus Stand bypass."';
+      const csvContent = 'Name,Mobile,Email,PropertyType,Budget,Location,Source,Status,Assigned To,Notes\n"Arun Kumar","9842154321","arun.kumar@gmail.com","Luxury Villa","12500000","Medical College Road, Thanjavur","Website Form","New Lead","Esther","Looking for 3 or 4 BHK independent luxury villa near Medical College Road with car parking."\n"Priya Raman","9443219876","priya.raman@yahoo.com","Residential Plot","3500000","Trichy Road, Thanjavur","Phone Call","Contacted","Maheshwari","Interested in DTCP approved East-facing corner plot near New Bus Stand bypass."';
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);

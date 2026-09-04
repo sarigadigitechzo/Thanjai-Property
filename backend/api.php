@@ -766,29 +766,44 @@ elseif ($resource === 'leads') {
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
-        $data = json_decode(file_get_contents("php://input"), true);
-        $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, whatsapp, email, source, status, budget, requirement, location, timeline, assignedTo, notes, followup, propertyId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $raw = json_decode(file_get_contents("php://input"), true);
+        if (!$raw) {
+            $raw = $_POST;
+        }
+        $leadsArray = (isset($raw[0]) && is_array($raw[0])) ? $raw : [$raw];
+
+        $stmt = $conn->prepare("INSERT INTO leads (id, name, phone, whatsapp, email, source, status, budget, requirement, location, timeline, assignedTo, notes, followup, propertyId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone), whatsapp=VALUES(whatsapp), email=VALUES(email), source=VALUES(source), status=VALUES(status), budget=VALUES(budget), requirement=VALUES(requirement), location=VALUES(location), timeline=VALUES(timeline), assignedTo=VALUES(assignedTo), notes=VALUES(notes), followup=VALUES(followup), propertyId=VALUES(propertyId)");
         if (!$stmt) {
             http_response_code(500);
             echo json_encode(["error" => "Database prepare error: " . $conn->error]);
             exit();
         }
-        $phone = $data['phone'] ?? $data['mobile'] ?? '';
-        $whatsapp = $data['whatsapp'] ?? $phone;
-        $timeline = is_string($data['timeline'] ?? null) ? $data['timeline'] : json_encode($data['timeline'] ?? []);
-        $notes = is_string($data['notes'] ?? null) ? $data['notes'] : json_encode($data['notes'] ?? []);
-        $followup = $data['followup'] ?? '—';
-        $location = $data['location'] ?? $data['area'] ?? $data['city'] ?? 'Thanjavur';
-        $requirement = $data['requirement'] ?? $data['propertyType'] ?? $data['type'] ?? 'Residential Plot';
-        $assignedTo = $data['assignedTo'] ?? $data['assignTo'] ?? 'Unassigned';
-        $propertyId = $data['propertyId'] ?? $data['propertyMatch'] ?? null;
-        $stmt->bind_param("sssssssssssssss", $data['id'], $data['name'], $phone, $whatsapp, $data['email'], $data['source'], $data['status'], $data['budget'], $requirement, $location, $timeline, $assignedTo, $notes, $followup, $propertyId);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Lead created successfully"]);
-        } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+
+        $insertedCount = 0;
+        foreach ($leadsArray as $data) {
+            if (!is_array($data) || empty($data['name'])) continue;
+            $lId = strval($data['id'] ?? ('L-' . time() . '-' . rand(100, 999)));
+            $name = strval($data['name'] ?? 'CRM Lead');
+            $phone = strval($data['phone'] ?? ($data['mobile'] ?? ''));
+            $whatsapp = strval($data['whatsapp'] ?? $phone);
+            $email = strval($data['email'] ?? '');
+            $source = strval($data['source'] ?? 'Manual');
+            $status = strval($data['status'] ?? 'New Lead');
+            $budget = strval($data['budget'] ?? ($data['budgetMax'] ?? ''));
+            $requirement = strval($data['requirement'] ?? ($data['propertyType'] ?? ($data['type'] ?? 'Residential Plot')));
+            $location = strval($data['location'] ?? ($data['area'] ?? ($data['city'] ?? 'Thanjavur')));
+            $timeline = is_string($data['timeline'] ?? null) ? $data['timeline'] : json_encode($data['timeline'] ?? []);
+            $assignedTo = strval($data['assignedTo'] ?? ($data['assignTo'] ?? 'Unassigned'));
+            $notes = is_string($data['notes'] ?? null) ? $data['notes'] : json_encode($data['notes'] ?? []);
+            $followup = strval($data['followup'] ?? '—');
+            $propertyId = $data['propertyId'] ?? ($data['propertyMatch'] ?? null);
+
+            $stmt->bind_param("sssssssssssssss", $lId, $name, $phone, $whatsapp, $email, $source, $status, $budget, $requirement, $location, $timeline, $assignedTo, $notes, $followup, $propertyId);
+            if ($stmt->execute()) {
+                $insertedCount++;
+            }
         }
+        echo json_encode(["message" => "Processed $insertedCount leads successfully", "count" => $insertedCount]);
     }
     elseif ($method === 'PUT') {
         $data = json_decode(file_get_contents("php://input"), true);
@@ -837,9 +852,16 @@ elseif ($resource === 'leads') {
                 $whereParts[] = "`id` = '" . $conn->real_escape_string($targetId) . "'";
             }
             if ($phone) {
-                $whereParts[] = "(`phone` = '" . $conn->real_escape_string($phone) . "' OR `whatsapp` = '" . $conn->real_escape_string($phone) . "')";
+                $cleanDigits = preg_replace('/\D/', '', $phone);
+                $whereParts[] = "`phone` = '" . $conn->real_escape_string($phone) . "'";
+                $whereParts[] = "`whatsapp` = '" . $conn->real_escape_string($phone) . "'";
+                if (strlen($cleanDigits) >= 10) {
+                    $tenDigit = substr($cleanDigits, -10);
+                    $whereParts[] = "`phone` LIKE '%" . $conn->real_escape_string($tenDigit) . "%'";
+                    $whereParts[] = "`whatsapp` LIKE '%" . $conn->real_escape_string($tenDigit) . "%'";
+                }
             }
-            if ($name && !$targetId && !$phone) {
+            if ($name && !$targetId) {
                 $whereParts[] = "`name` = '" . $conn->real_escape_string($name) . "'";
             }
 
