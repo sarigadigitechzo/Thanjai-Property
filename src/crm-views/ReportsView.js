@@ -1,3 +1,5 @@
+import { fetchFromAPI } from '../utils/api.js';
+
 export function renderReportsView(fromDateStr, toDateStr) {
   // Determine dates
   let fromDate = fromDateStr ? new Date(fromDateStr) : new Date(new Date().getFullYear(), 0, 1);
@@ -312,8 +314,7 @@ export function initReportsView() {
   const toVal = toInput ? toInput.value : '';
 
   // 1. Fetch Live MySQL Database Partners Network
-  fetch('/api.php/partners')
-    .then(res => res.json())
+  fetchFromAPI('/partners')
     .then(partners => {
       const partnerTbody = document.getElementById('reports-partner-tbody');
       if (partnerTbody && Array.isArray(partners) && partners.length > 0) {
@@ -464,8 +465,7 @@ export function initReportsView() {
   if (downloadBtn) {
     downloadBtn.addEventListener('click', () => {
       // Fetch 100% Live DB Leads and download CSV directly
-      fetch('/api.php/leads')
-        .then(res => res.json())
+      fetchFromAPI('/leads')
         .then(allLeads => {
           if (!Array.isArray(allLeads)) allLeads = [];
           const fromDate = fromVal ? new Date(fromVal + 'T00:00:00') : new Date('2026-01-01');

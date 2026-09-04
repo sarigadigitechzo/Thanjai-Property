@@ -1977,141 +1977,151 @@ function initPropertyFormListeners() {
 
   bindGalleryDeleteButtons();
 
-  // Form Submit Handler
-  document.getElementById('prop-admin-form')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const title = document.getElementById('form-prop-title')?.value.trim();
-    const type = document.getElementById('form-prop-type')?.value;
-    const category = document.getElementById('form-prop-category')?.value;
-    const rawPrice = document.getElementById('form-prop-price-num')?.value || document.getElementById('form-prop-price')?.value;
-    const numPrice = parseFloat(rawPrice) || 0;
-    
-    let priceFormatted = '';
-    if (numPrice >= 10000000) {
-      priceFormatted = `₹ ${(numPrice / 10000000).toFixed(2)} Crore`;
-    } else if (numPrice >= 100000) {
-      priceFormatted = `₹ ${(numPrice / 100000).toFixed(2)} Lakhs`;
-    } else if (numPrice > 0) {
-      priceFormatted = `₹ ${numPrice.toLocaleString('en-IN')}`;
-    } else {
-      priceFormatted = 'Price on Request';
-    }
+  // Form Submit Handler (with double-click prevention)
+  const propAdminForm = document.getElementById('prop-admin-form');
+  if (propAdminForm) {
+    propAdminForm.onsubmit = (e) => {
+      e.preventDefault();
+      const submitBtn = propAdminForm.querySelector('button[type="submit"]');
+      if (submitBtn && submitBtn.disabled) return;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Saving...';
+      }
 
-    const area = document.getElementById('form-prop-area')?.value.trim() || '';
-    
-    const roadSelectVal = document.getElementById('form-prop-road')?.value || '';
-    const road = roadSelectVal === 'Other Road' 
-      ? (document.getElementById('form-prop-road-custom')?.value.trim() || 'Other Road') 
-      : roadSelectVal;
+      const title = document.getElementById('form-prop-title')?.value.trim();
+      const type = document.getElementById('form-prop-type')?.value;
+      const category = document.getElementById('form-prop-category')?.value;
+      const rawPrice = document.getElementById('form-prop-price-num')?.value || document.getElementById('form-prop-price')?.value;
+      const numPrice = parseFloat(rawPrice) || 0;
+      
+      let priceFormatted = '';
+      if (numPrice >= 10000000) {
+        priceFormatted = `₹ ${(numPrice / 10000000).toFixed(2)} Crore`;
+      } else if (numPrice >= 100000) {
+        priceFormatted = `₹ ${(numPrice / 100000).toFixed(2)} Lakhs`;
+      } else if (numPrice > 0) {
+        priceFormatted = `₹ ${numPrice.toLocaleString('en-IN')}`;
+      } else {
+        priceFormatted = 'Price on Request';
+      }
 
-    const distSelectVal = document.getElementById('form-prop-district-select')?.value || '';
-    const district = distSelectVal === '__other__' 
-      ? (document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur') 
-      : (distSelectVal || document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur');
+      const area = document.getElementById('form-prop-area')?.value.trim() || '';
+      
+      const roadSelectVal = document.getElementById('form-prop-road')?.value || '';
+      const road = roadSelectVal === 'Other Road' 
+        ? (document.getElementById('form-prop-road-custom')?.value.trim() || 'Other Road') 
+        : roadSelectVal;
 
-    const talukSelectVal = document.getElementById('form-prop-taluk-select')?.value || '';
-    const taluk = talukSelectVal === '__other__' 
-      ? (document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur') 
-      : (talukSelectVal || document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur');
+      const distSelectVal = document.getElementById('form-prop-district-select')?.value || '';
+      const district = distSelectVal === '__other__' 
+        ? (document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur') 
+        : (distSelectVal || document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur');
 
-    const facing = document.getElementById('form-prop-facing')?.value.trim() || '';
-    const size = document.getElementById('form-prop-size')?.value.trim();
-    const builtUpArea = document.getElementById('form-prop-builtup-size')?.value.trim() || '';
-    const posterRole = document.getElementById('form-prop-poster-role')?.value || 'Individual Owner';
-    const userSource = document.getElementById('form-prop-user-source')?.value.trim() || 'Direct Website Submission';
+      const talukSelectVal = document.getElementById('form-prop-taluk-select')?.value || '';
+      const taluk = talukSelectVal === '__other__' 
+        ? (document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur') 
+        : (talukSelectVal || document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur');
 
-    const bedrooms = document.getElementById('form-prop-bedrooms')?.value;
-    const bathrooms = document.getElementById('form-prop-bathrooms')?.value;
-    const floor = document.getElementById('form-prop-floor')?.value.trim() || '';
-    const furnishing = document.getElementById('form-prop-furnishing')?.value;
-    const status = document.getElementById('form-prop-availability')?.value || document.getElementById('form-prop-status')?.value || 'Available';
-    const approval = document.getElementById('form-prop-approval')?.value.trim();
-    const featuresStr = document.getElementById('form-prop-features')?.value.trim();
-    const description = document.getElementById('form-prop-desc')?.value.trim();
-    
-    const rawVideoText = document.getElementById('form-prop-videolink')?.value.trim() || '';
-    const videoLinks = rawVideoText ? rawVideoText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean) : [];
-    const allCombinedVideos = [...videoLinks, ...uploadedVideosList];
-    if (formVideoFileUrl && !allCombinedVideos.includes(formVideoFileUrl)) allCombinedVideos.push(formVideoFileUrl);
-    const videoUrl = allCombinedVideos.length > 0 ? (allCombinedVideos.length === 1 ? allCombinedVideos[0] : allCombinedVideos.join('\n')) : '';
+      const facing = document.getElementById('form-prop-facing')?.value.trim() || '';
+      const size = document.getElementById('form-prop-size')?.value.trim();
+      const builtUpArea = document.getElementById('form-prop-builtup-size')?.value.trim() || '';
+      const posterRole = document.getElementById('form-prop-poster-role')?.value || 'Individual Owner';
+      const userSource = document.getElementById('form-prop-user-source')?.value.trim() || 'Direct Website Submission';
 
-    const rawLatitude = document.getElementById('form-prop-latitude')?.value.trim();
-    const rawLongitude = document.getElementById('form-prop-longitude')?.value.trim();
-    const latitude = rawLatitude ? String(parseCoordinate(rawLatitude, rawLatitude)) : '';
-    const longitude = rawLongitude ? String(parseCoordinate(rawLongitude, rawLongitude)) : '';
-    const mainImg = document.getElementById('form-prop-img-main')?.value.trim();
+      const bedrooms = document.getElementById('form-prop-bedrooms')?.value;
+      const bathrooms = document.getElementById('form-prop-bathrooms')?.value;
+      const floor = document.getElementById('form-prop-floor')?.value.trim() || '';
+      const furnishing = document.getElementById('form-prop-furnishing')?.value;
+      const status = document.getElementById('form-prop-availability')?.value || document.getElementById('form-prop-status')?.value || 'Available';
+      const approval = document.getElementById('form-prop-approval')?.value.trim();
+      const featuresStr = document.getElementById('form-prop-features')?.value.trim();
+      const description = document.getElementById('form-prop-desc')?.value.trim();
+      
+      const rawVideoText = document.getElementById('form-prop-videolink')?.value.trim() || '';
+      const videoLinks = rawVideoText ? rawVideoText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean) : [];
+      const allCombinedVideos = [...videoLinks, ...uploadedVideosList];
+      if (formVideoFileUrl && !allCombinedVideos.includes(formVideoFileUrl)) allCombinedVideos.push(formVideoFileUrl);
+      const videoUrl = allCombinedVideos.length > 0 ? (allCombinedVideos.length === 1 ? allCombinedVideos[0] : allCombinedVideos.join('\n')) : '';
 
-    let finalImages = [...formImagesList];
-    if (mainImg && !finalImages.includes(mainImg)) {
-      finalImages.unshift(mainImg);
-    }
-    finalImages = [...new Set(finalImages.filter(Boolean))];
+      const rawLatitude = document.getElementById('form-prop-latitude')?.value.trim();
+      const rawLongitude = document.getElementById('form-prop-longitude')?.value.trim();
+      const latitude = rawLatitude ? String(parseCoordinate(rawLatitude, rawLatitude)) : '';
+      const longitude = rawLongitude ? String(parseCoordinate(rawLongitude, rawLongitude)) : '';
+      const mainImg = document.getElementById('form-prop-img-main')?.value.trim();
 
-    if (finalImages.length === 0) {
-      finalImages.push('/default-property.jpg');
-    }
+      let finalImages = [...formImagesList];
+      if (mainImg && !finalImages.includes(mainImg)) {
+        finalImages.unshift(mainImg);
+      }
+      finalImages = [...new Set(finalImages.filter(Boolean))];
 
-    const featuresArray = featuresStr ? featuresStr.split(',').map(f => f.trim()).filter(Boolean) : [];
+      if (finalImages.length === 0) {
+        finalImages.push('/default-property.jpg');
+      }
 
-    const roadPart = road && road !== 'Other / Outside Road' ? road : '';
-    const locParts = [area, roadPart, taluk, district].filter(Boolean);
-    const combinedLocation = locParts.length > 0 ? [...new Set(locParts)].join(', ') : (area || district || '');
+      const featuresArray = featuresStr ? featuresStr.split(',').map(f => f.trim()).filter(Boolean) : [];
 
-    const val = (type || '').toLowerCase();
-    const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room'];
-    const isRes = resKeywords.some(k => val.includes(k));
+      const roadPart = road && road !== 'Other / Outside Road' ? road : '';
+      const locParts = [area, roadPart, taluk, district].filter(Boolean);
+      const combinedLocation = locParts.length > 0 ? [...new Set(locParts)].join(', ') : (area || district || '');
 
-    const formData = {
-      title: title || 'Untitled Property',
-      type: type || 'Villa',
-      category: category || 'Sale',
-      categoryRaw: category || 'Sale',
-      price: numPrice,
-      priceFormatted: priceFormatted,
-      location: combinedLocation,
-      area: area,
-      road: road,
-      taluk: taluk,
-      district: district,
-      facing: facing,
-      size: size ? formatPropertySize(size) : '',
-      builtUpArea: (isRes && builtUpArea) ? formatPropertySize(builtUpArea) : (builtUpArea ? formatPropertySize(builtUpArea) : ''),
-      posterRole: posterRole,
-      userSource: userSource,
-      bedrooms: (isRes && bedrooms) ? parseInt(bedrooms, 10) : null,
-      bathrooms: (isRes && bathrooms) ? parseInt(bathrooms, 10) : null,
-      floor: (isRes && floor) ? floor : null,
-      furnishing: isRes ? (furnishing || 'Not specified') : 'Not specified',
-      status: status,
-      availability: status,
-      approval: approval || '',
-      latitude: latitude,
-      longitude: longitude,
-      videoUrl: videoUrl,
-      images: finalImages,
-      features: featuresArray,
-      description: description || '',
-      adType: document.getElementById('form-prop-ad-type')?.value || 'free',
-      ownerName: document.getElementById('form-prop-owner-company')?.value.trim() || document.getElementById('form-prop-owner-name')?.value?.trim() || '',
-      ownerPhone: document.getElementById('form-prop-contact-phone')?.value.trim() || document.getElementById('form-prop-owner-phone')?.value?.trim() || '',
-      inquiryPhone: document.getElementById('form-prop-inquiry-phone')?.value.trim() || '8489996852',
-      listedBy: document.getElementById('form-prop-contact-name')?.value.trim() || 'Thanjai Property'
+      const val = (type || '').toLowerCase();
+      const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room'];
+      const isRes = resKeywords.some(k => val.includes(k));
+
+      const formData = {
+        title: title || 'Untitled Property',
+        type: type || 'Villa',
+        category: category || 'Sale',
+        categoryRaw: category || 'Sale',
+        price: numPrice,
+        priceFormatted: priceFormatted,
+        location: combinedLocation,
+        area: area,
+        road: road,
+        taluk: taluk,
+        district: district,
+        facing: facing,
+        size: size ? formatPropertySize(size) : '',
+        builtUpArea: (isRes && builtUpArea) ? formatPropertySize(builtUpArea) : (builtUpArea ? formatPropertySize(builtUpArea) : ''),
+        posterRole: posterRole,
+        userSource: userSource,
+        bedrooms: (isRes && bedrooms) ? parseInt(bedrooms, 10) : null,
+        bathrooms: (isRes && bathrooms) ? parseInt(bathrooms, 10) : null,
+        floor: (isRes && floor) ? floor : null,
+        furnishing: isRes ? (furnishing || 'Not specified') : 'Not specified',
+        status: status,
+        availability: status,
+        approval: approval || '',
+        latitude: latitude,
+        longitude: longitude,
+        videoUrl: videoUrl,
+        images: finalImages,
+        features: featuresArray,
+        description: description || '',
+        adType: document.getElementById('form-prop-ad-type')?.value || 'free',
+        ownerName: document.getElementById('form-prop-owner-company')?.value.trim() || document.getElementById('form-prop-owner-name')?.value?.trim() || '',
+        ownerPhone: document.getElementById('form-prop-contact-phone')?.value.trim() || document.getElementById('form-prop-owner-phone')?.value?.trim() || '',
+        inquiryPhone: document.getElementById('form-prop-inquiry-phone')?.value.trim() || '8489996852',
+        listedBy: document.getElementById('form-prop-contact-name')?.value.trim() || 'Thanjai Property'
+      };
+
+      if (editingPropertyId) {
+        updateProperty(editingPropertyId, formData);
+        showToast(`Property ${editingPropertyId} updated successfully!`, 'ri-checkbox-circle-fill');
+      } else {
+        addProperty(formData);
+        showToast('New property listing published!', 'ri-checkbox-circle-fill');
+      }
+
+      currentViewMode = 'list';
+      editingPropertyId = null;
+      formImagesList = [];
+      formVideoFileUrl = '';
+      refreshPropertiesView();
     };
-
-    if (editingPropertyId) {
-      updateProperty(editingPropertyId, formData);
-      showToast(`Property ${editingPropertyId} updated successfully!`, 'ri-checkbox-circle-fill');
-    } else {
-      addProperty(formData);
-      showToast('New property listing published!', 'ri-checkbox-circle-fill');
-    }
-
-    currentViewMode = 'list';
-    editingPropertyId = null;
-    formImagesList = [];
-    formVideoFileUrl = '';
-    refreshPropertiesView();
-  });
+  }
 }
 
 function parseCoordinate(coordStr, defaultVal) {

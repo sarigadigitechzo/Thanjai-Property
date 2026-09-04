@@ -1,6 +1,8 @@
 import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showAlertModal, showConfirmModal } from '../utils/toast.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
+import { canViewAllLeads, filterLeadsForActiveUser, getActiveAdminUser } from '../utils/adminUsersStore.js';
+
 export function renderLeadDetailView(id) {
   const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
   const lead = leads.find(l => l.id == id);
@@ -12,6 +14,23 @@ export function renderLeadDetailView(id) {
         <button class="os-btn-secondary" onclick="window.location.hash='leads'">Back to Leads</button>
       </div>
     `;
+  }
+
+  const activeUser = getActiveAdminUser();
+  if (activeUser && !canViewAllLeads(activeUser)) {
+    const userFiltered = filterLeadsForActiveUser([lead], activeUser);
+    if (userFiltered.length === 0) {
+      return `
+        <div style="padding: 60px 20px; text-align: center; max-width: 500px; margin: 40px auto; background: var(--os-white); border: var(--os-border-thin); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft);">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 16px;">
+            <i class="ri-lock-2-line"></i>
+          </div>
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; color: var(--os-dark);">Access Restricted</h2>
+          <p style="font-size: 0.9rem; color: var(--os-gray-500); line-height: 1.5; margin-bottom: 24px;">This lead is assigned to another staff member. You only have access to view leads directly assigned to your account.</p>
+          <button class="os-btn-primary" onclick="window.location.hash='leads'" style="background: var(--os-luxury-orange); border-color: var(--os-luxury-orange);"><i class="ri-arrow-left-line"></i> Back to My Leads</button>
+        </div>
+      `;
+    }
   }
 
   // Sanitize notes and timeline (convert strings to arrays to prevent .map crashes)

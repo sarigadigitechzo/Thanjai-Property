@@ -1,8 +1,27 @@
-import { getAdminUsers } from '../utils/adminUsersStore.js';
+import { getAdminUsers, getActiveAdminUser, canViewAllLeads } from '../utils/adminUsersStore.js';
 import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showAlertModal } from '../utils/toast.js';
 import { addAuditLog } from '../utils/siteImagesStore.js';
 import { getProperties } from '../utils/propertiesStore.js';
+
+function filterVisitsForActiveUser(visits = []) {
+  if (!Array.isArray(visits)) return [];
+  const active = getActiveAdminUser();
+  if (!active || canViewAllLeads(active)) return visits;
+
+  const activeName = (active.fullName || active.name || '').trim().toLowerCase();
+  const activeFirstName = activeName.split(' ')[0];
+
+  return visits.filter(v => {
+    if (!v) return false;
+    const assigned = (v.assignedTo || '').trim().toLowerCase();
+    if (!assigned || assigned === '—' || assigned === '-' || assigned === 'unassigned' || assigned === 'none') return false;
+    if (assigned === activeName || assigned === activeFirstName) return true;
+    if (activeName && (assigned.includes(activeName) || activeName.includes(assigned))) return true;
+    if (activeFirstName && activeFirstName.length >= 3 && (assigned.includes(activeFirstName) || activeFirstName.includes(assigned))) return true;
+    return false;
+  });
+}
 
 export function renderSiteVisitsView() {
   const adminStaff = getAdminUsers().filter(u => u.status === 'Active' || !u.status);
@@ -137,6 +156,17 @@ export function renderSiteVisitsView() {
 }
 
 export async function initSiteVisitsView() {
+  // Populate dynamic Admin Staff in dropdown
+  const assignedSelect = document.getElementById('sv-assigned-to');
+  if (assignedSelect) {
+    const activeUsers = getAdminUsers().filter(u => u.status === 'Active' || !u.status);
+    if (activeUsers.length > 0) {
+      assignedSelect.innerHTML = activeUsers.map(u => 
+        `<option value="${u.fullName} (${u.role || 'Staff'})">${u.fullName} (${u.role || 'Staff'})</option>`
+      ).join('');
+    }
+  }
+
   // --- Storage & Dynamic Rendering ---
   let visits = [];
   try {
@@ -155,7 +185,7 @@ export async function initSiteVisitsView() {
         let assignedTo = v.assignedTo || 'Vijayaraghavan';
         try { 
           if(v.notes) { 
-            const n = JSON.parse(v.notes); 
+            const n = typeof v.notes === 'string' ? JSON.parse(v.notes) : v.notes; 
             clientName = n.clientName || clientName; 
             property = n.property || property; 
             assignedTo = n.assignedTo || assignedTo;
@@ -181,9 +211,9 @@ export async function initSiteVisitsView() {
     console.error('API Error:', error);
     visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
   }
+
   // Populate dynamic DB Leads in Client datalist
-  fetch('/api.php/leads')
-    .then(res => res.json())
+  fetchFromAPI('/leads')
     .then(leads => {
       const clientDatalist = document.getElementById('client-datalist');
       if (clientDatalist && Array.isArray(leads) && leads.length > 0) {
@@ -200,8 +230,7 @@ export async function initSiteVisitsView() {
     }).catch(e => {});
 
   // Populate dynamic DB Properties in Property datalist
-  fetch('/api.php/properties')
-    .then(res => res.json())
+  fetchFromAPI('/properties')
     .then(props => {
       const propDatalist = document.getElementById('property-datalist');
       if (propDatalist && Array.isArray(props) && props.length > 0) {
@@ -292,12 +321,13 @@ export async function initSiteVisitsView() {
   const agendaContainer = document.getElementById('agenda-side-container');
 
   const updateCalendarDots = () => {
+    const visibleVisits = filterVisitsForActiveUser(visits);
     const days = document.querySelectorAll('.cal-day:not(.muted)');
     days.forEach(day => {
       const dayNum = day.dataset.day;
       const monthStr = monthNames[currentMonth];
       // Only show dots for the current month and year
-      const hasVisit = visits.some(v => parseInt(v.date) === parseInt(dayNum) && v.month === monthStr);
+      const hasVisit = visibleVisits.some(v => parseInt(v.date) === parseInt(dayNum) && v.month === monthStr);
       if (hasVisit) {
         day.classList.add('has-event');
       } else {
@@ -310,10 +340,8 @@ export async function initSiteVisitsView() {
     if (!agendaContainer) return;
     const monthStr = monthNames[currentMonth];
     
-    // Use the initialized visits, wait for it if needed (assuming visits is global inside initSiteVisitsView)
-    // No need to fetch from localStorage since we fetched from API on init.
-    
-    const dayVisits = visits.filter(v => parseInt(v.date) === parseInt(day) && v.month === monthStr);
+    const visibleVisits = filterVisitsForActiveUser(visits);
+    const dayVisits = visibleVisits.filter(v => parseInt(v.date) === parseInt(day) && v.month === monthStr);
     
     let html = `<h2 class="agenda-title">Visits for <span>${day} ${monthStr}</span></h2>`;
     

@@ -1,6 +1,8 @@
 import { getPropertyById, getProperties } from '../utils/propertiesStore.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 import { showToast } from '../utils/toast.js';
+import { filterLeadsForActiveUser } from '../utils/adminUsersStore.js';
+import { mapLeadFromAPI } from './LeadsView.js';
 
 export function renderPipelineBoardView() {
   return `
@@ -89,7 +91,8 @@ export function initPipelineBoardView() {
     fetchFromAPI('/leads').then(apiLeads => {
       if (apiLeads && Array.isArray(apiLeads) && apiLeads.length > 0) {
         const localLeads = getLeads();
-        apiLeads.forEach(apiL => {
+        const mapped = apiLeads.map(mapLeadFromAPI);
+        mapped.forEach(apiL => {
           const matchingLocal = localLeads.find(locL => 
             (locL.id && String(locL.id) === String(apiL.id)) ||
             (locL.phone && String(locL.phone).replace(/\D/g, '') === String(apiL.phone).replace(/\D/g, '')) ||
@@ -103,9 +106,9 @@ export function initPipelineBoardView() {
             }
           }
         });
-        saveLeads(apiLeads);
+        saveLeads(mapped);
         leads.length = 0;
-        leads.push(...apiLeads);
+        leads.push(...mapped);
         renderBoard();
       }
     }).catch(e => {});
@@ -125,9 +128,10 @@ export function initPipelineBoardView() {
 
   function renderBoard() {
     board.innerHTML = '';
+    const userLeads = filterLeadsForActiveUser(leads);
 
     STAGES.forEach(stage => {
-      const stageLeads = leads.filter(l => l.status === stage.id);
+      const stageLeads = userLeads.filter(l => l.status === stage.id);
 
       const colDiv = document.createElement('div');
       colDiv.className = 'pipeline-col';

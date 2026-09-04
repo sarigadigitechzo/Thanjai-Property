@@ -1,12 +1,17 @@
 import { getProperties } from '../utils/propertiesStore.js';
 import { getRegisteredUsers } from '../utils/userAuthStore.js';
+import { filterLeadsForActiveUser, canViewAllLeads, getActiveAdminUser } from '../utils/adminUsersStore.js';
+import { fetchFromAPI } from '../utils/api.js';
 
 export function renderDashboardView() {
   const activePropertiesCount = getProperties().length;
   const users = getRegisteredUsers();
-  const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+  const activeUser = getActiveAdminUser() || JSON.parse(localStorage.getItem('thanjai_active_user')) || { fullName: 'Admin' };
+  const rawLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+  const leads = filterLeadsForActiveUser(rawLeads, activeUser);
+  const isSuperOrAll = canViewAllLeads(activeUser);
   const storedTotal = parseInt(localStorage.getItem('thanjai_total_leads_count') || '12505', 10);
-  const totalLeads = Math.max(leads.length, storedTotal || 0);
+  const totalLeads = isSuperOrAll ? Math.max(rawLeads.length, storedTotal || 0) : leads.length;
   
   // Calculate new leads today
   const now = new Date();
@@ -44,7 +49,6 @@ export function renderDashboardView() {
   const flexSv = Math.max(svPct, 10);
   const flexReg = Math.max(regPct, 10);
 
-  const activeUser = JSON.parse(localStorage.getItem('thanjai_active_user')) || { fullName: 'Admin' };
   const firstName = (activeUser.fullName || activeUser.name || 'Admin').split(' ')[0];
 
   return `
@@ -403,10 +407,12 @@ export function initDashboardListeners() {
   });
 
   // Fetch Live MySQL Database Stats
-  fetch('/api.php/leads?stats=1')
-    .then(res => res.json())
+  fetchFromAPI('/leads?stats=1')
     .then(stats => {
-      if (stats && typeof stats.totalLeads === 'number') {
+      const activeAdmin = getActiveAdminUser();
+      const isFullAdmin = canViewAllLeads(activeAdmin);
+
+      if (stats && isFullAdmin && typeof stats.totalLeads === 'number') {
         localStorage.setItem('thanjai_total_leads_count', stats.totalLeads);
         const totalEl = document.getElementById('kpi-total-leads');
         const todayEl = document.getElementById('kpi-new-today');
@@ -472,8 +478,7 @@ export function initDashboardListeners() {
     }).catch(e => {});
 
   // Fetch Live MySQL Registered Portal Users
-  fetch('/api.php/portal_users')
-    .then(res => res.json())
+  fetchFromAPI('/portal_users')
     .then(users => {
       if (Array.isArray(users) && users.length > 0) {
         const countBadge = document.getElementById('portal-users-header-count');

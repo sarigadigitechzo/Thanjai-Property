@@ -53,7 +53,7 @@ document.addEventListener('click', (e) => {
 import { initPropertiesStore } from './utils/propertiesStore.js';
 import { initBlogStore } from './utils/blogStore.js';
 import { initSiteImagesStore } from './utils/siteImagesStore.js';
-import { initAdminUsersStore } from './utils/adminUsersStore.js';
+import { initAdminUsersStore, getActiveAdminUser, normalizeAdminUser } from './utils/adminUsersStore.js';
 import { initUsersStore } from './utils/userAuthStore.js';
 import { initPopupsStore } from './utils/popupsStore.js';
 
@@ -72,22 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const navItems = document.querySelectorAll('.nav-item');
 
   // Read active logged-in staff user and their module permissions
-  let activeAdminUser = null;
-  try {
-    const rawActive = localStorage.getItem('thanjai_active_user');
-    if (rawActive) {
-      activeAdminUser = JSON.parse(rawActive);
-      const allAdmins = JSON.parse(localStorage.getItem('thanjai_admin_users')) || [];
-      const stillExists = allAdmins.find(a => a.email === activeAdminUser.email);
-      if (!stillExists) {
-        activeAdminUser = null;
-        localStorage.removeItem('thanjai_active_user');
-      } else {
-        activeAdminUser = stillExists;
-        localStorage.setItem('thanjai_active_user', JSON.stringify(stillExists));
-      }
-    }
-  } catch (e) {}
+  let activeAdminUser = getActiveAdminUser();
 
   // Guard check: Render inline login if not authenticated
   if (!activeAdminUser) {
@@ -232,10 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // User is authenticated, reveal the dashboard UI
   document.getElementById('os-app').style.display = 'flex';
 
-  const isSuperAdmin = activeAdminUser.role === 'Super Admin' || activeAdminUser.roleCode === 'superadmin' || activeAdminUser.email === 'admin@realrest.example';
+  const isSuperAdmin = activeAdminUser.role === 'Super Admin' || activeAdminUser.roleCode === 'superadmin' || activeAdminUser.email === 'admin@realrest.example' || activeAdminUser.email === 'admin@thanjaiproperty.com' || activeAdminUser.email === 'vijayaraghavan@thanjaiproperty.com';
   const allowedModules = (Array.isArray(activeAdminUser.allowedModules) && activeAdminUser.allowedModules.length > 0)
     ? activeAdminUser.allowedModules
-    : null; // null means full access
+    : (isSuperAdmin ? null : []);
 
   // Filter sidebar navigation items based on allowedModules
   navItems.forEach(item => {

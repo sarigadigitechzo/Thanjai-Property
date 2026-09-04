@@ -77,13 +77,28 @@ export function renderLeadsView() {
         </div>
 
         <div class="os-custom-select" id="filter-staff" style="flex: 0 0 auto; min-width: 105px;">
-          <div class="select-value">All staff</div>
-          <i class="ri-arrow-down-s-line"></i>
-          <div class="select-dropdown">
-            <div class="select-option selected">All staff</div>
 ${(() => {
+              const activeUser = getActiveAdminUser();
+              const isSuperOrAll = canViewAllLeads(activeUser);
+
+              if (!isSuperOrAll && activeUser) {
+                const currentName = activeUser.fullName || activeUser.name || 'My Assigned Leads';
+                return `
+                  <div class="select-value">${currentName}</div>
+                  <i class="ri-lock-line" style="font-size: 0.85rem; color: var(--os-gray-400);"></i>
+                  <div class="select-dropdown">
+                    <div class="select-option selected">${currentName}</div>
+                  </div>
+                `;
+              }
+
               const adminUsers = JSON.parse(localStorage.getItem('thanjai_admin_users')) || [];
-              let html = '';
+              let html = `
+                <div class="select-value">All staff</div>
+                <i class="ri-arrow-down-s-line"></i>
+                <div class="select-dropdown">
+                  <div class="select-option selected">All staff</div>
+              `;
               if (adminUsers.length > 0) {
                 adminUsers.filter(u => u.status === 'Active').forEach(u => {
                   html += `<div class="select-option">${u.fullName}</div>`;
@@ -91,9 +106,9 @@ ${(() => {
               } else {
                 html += `<div class="select-option" style="color:var(--os-gray-400);">No staff found</div>`;
               }
+              html += `</div>`;
               return html;
             })()}
-          </div>
         </div>
 
         <div class="os-custom-select" id="filter-date" style="flex: 0 0 auto; min-width: 120px;">
@@ -378,12 +393,13 @@ ${(() => {
 import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showConfirmModal, showAlertModal } from '../utils/toast.js';
 import { addAuditLog } from '../utils/siteImagesStore.js';
+import { filterLeadsForActiveUser, getActiveAdminUser, canViewAllLeads } from '../utils/adminUsersStore.js';
 let cachedLeads = [];
 let currentPage = 1;
 let pageSize = 25;
 
 // Reusable mapping function: converts raw DB row → rich lead object
-function mapLeadFromAPI(l) {
+export function mapLeadFromAPI(l) {
   let mobile = l.phone || l.mobile || '';
   let budget = l.budget || l.budgetMax || '';
   let type = l.requirement || l.propertyType || l.type || 'Residential Plot';
@@ -531,7 +547,7 @@ function formatCurrency(val) {
 function renderTable() {
   const tbody = document.getElementById('leads-table-body');
   if (!tbody) return;
-  let leads = getLeads();
+  let leads = filterLeadsForActiveUser(getLeads());
   
   // Apply filters
   const searchEl = document.getElementById('filter-search');
@@ -581,7 +597,17 @@ function renderTable() {
       if (fStatus !== 'All statuses' && lead.status !== fStatus) return false;
       if (fSource !== 'All sources' && lead.source !== fSource) return false;
       if (fType !== 'All property types' && lead.type !== fType) return false;
-      if (fStaff !== 'All staff' && lead.assignTo !== fStaff) return false;
+      // Staff filter dropdown (only applied for Super Admins / full access users who can filter across staff)
+      const activeAdmin = getActiveAdminUser();
+      if (canViewAllLeads(activeAdmin)) {
+        if (fStaff && fStaff !== 'All staff') {
+          const staffNorm = fStaff.toLowerCase().trim();
+          const leadAssigned = (lead.assignTo || lead.assignedTo || '').toLowerCase().trim();
+          if (leadAssigned !== staffNorm && !leadAssigned.includes(staffNorm) && !staffNorm.includes(leadAssigned)) {
+            return false;
+          }
+        }
+      }
       
       // Date Filter
       if (fDate !== 'All Time') {
@@ -1332,7 +1358,7 @@ function bindLeadEvents() {
 
   if (exportBtn) {
     exportBtn.addEventListener('click', () => {
-      const leads = getLeads();
+      const leads = filterLeadsForActiveUser(getLeads());
       if (leads.length === 0) {
         showAlertModal({
           title: 'Export Notice',

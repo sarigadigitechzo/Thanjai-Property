@@ -1,4 +1,5 @@
 import { initiateRegistration, verifyOTPAndActivate, loginUser, getPendingOTPUser, updateUserPassword, sendOtpEmail, sendCredentialsEmail, initUsersStore } from './utils/userAuthStore.js';
+import { initAdminUsersStore } from './utils/adminUsersStore.js';
 import { installGlobalPopupShield } from './utils/toast.js';
 
 installGlobalPopupShield();
@@ -259,7 +260,10 @@ export async function initLogin() {
   const app = document.getElementById('login-app');
   if (!app) return;
 
-  await initUsersStore().catch(() => {});
+  await Promise.all([
+    initUsersStore().catch(() => {}),
+    initAdminUsersStore().catch(() => {})
+  ]);
 
   const path = window.location.pathname.toLowerCase();
   const hash = window.location.hash.slice(1).toLowerCase();

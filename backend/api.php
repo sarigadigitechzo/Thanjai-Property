@@ -191,6 +191,17 @@ function renCol($conn, $t, $o, $n, $d) {
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 )");
 
+@$conn->query("CREATE TABLE IF NOT EXISTS `site_visits` (
+  `id` varchar(255) PRIMARY KEY,
+  `leadId` varchar(255) DEFAULT NULL,
+  `propertyId` varchar(255) DEFAULT NULL,
+  `visitDate` varchar(100) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'Scheduled',
+  `assignedTo` varchar(255) DEFAULT NULL,
+  `notes` longtext DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
+)");
+
 @$conn->query("CREATE TABLE IF NOT EXISTS `partners` (
   `id` varchar(255) PRIMARY KEY,
   `name` varchar(255) DEFAULT NULL,
@@ -396,11 +407,14 @@ if (!empty($_GET['resource'])) {
     
     if ($apiIndex !== -1) {
         $resource = $path_parts[$apiIndex + 1] ?? '';
-        $id = $path_parts[$apiIndex + 2] ?? null;
+        $id = $path_parts[$apiIndex + 2] ?? ($_GET['id'] ?? null);
     } else if (count($path_parts) > 0) {
         $resource = $path_parts[0];
-        $id = $path_parts[1] ?? null;
+        $id = $path_parts[1] ?? ($_GET['id'] ?? null);
     }
+}
+if (!$id && !empty($_GET['id'])) {
+    $id = $_GET['id'];
 }
 
 if (empty($resource) && $method === 'POST') {
@@ -778,17 +792,65 @@ elseif ($resource === 'leads') {
     }
     elseif ($method === 'PUT') {
         $data = json_decode(file_get_contents("php://input"), true);
-        $targetId = $id ?: ($data['id'] ?? '');
-        $status = $data['status'] ?? 'New Lead';
+        $targetId = $id ?: ($data['id'] ?? ($_GET['id'] ?? ''));
         $phone = $data['phone'] ?? $data['mobile'] ?? '';
         $name = $data['name'] ?? '';
-        $assignedTo = $data['assignedTo'] ?? $data['assignTo'] ?? 'Unassigned';
-        $timeline = is_string($data['timeline'] ?? null) ? $data['timeline'] : json_encode($data['timeline'] ?? []);
-        
-        $stmt = $conn->prepare("UPDATE leads SET status=?, assignedTo=?, timeline=? WHERE id=? OR (phone=? AND phone != '') OR (name=? AND name != '')");
-        $stmt->bind_param("ssssss", $status, $assignedTo, $timeline, $targetId, $phone, $name);
-        $stmt->execute();
-        echo json_encode(["message" => "Lead status updated in database successfully"]);
+        $assignedTo = $data['assignedTo'] ?? $data['assignTo'] ?? null;
+        $status = $data['status'] ?? null;
+        $timeline = isset($data['timeline']) ? (is_string($data['timeline']) ? $data['timeline'] : json_encode($data['timeline'])) : null;
+
+        $updates = [];
+        if ($assignedTo !== null) {
+            $updates[] = "`assignedTo` = '" . $conn->real_escape_string($assignedTo) . "'";
+        }
+        if ($status !== null) {
+            $updates[] = "`status` = '" . $conn->real_escape_string($status) . "'";
+        }
+        if ($timeline !== null) {
+            $updates[] = "`timeline` = '" . $conn->real_escape_string($timeline) . "'";
+        }
+        if (isset($data['budget']) || isset($data['budgetMax'])) {
+            $bVal = $data['budget'] ?? $data['budgetMax'];
+            $updates[] = "`budget` = '" . $conn->real_escape_string($bVal) . "'";
+        }
+        if (isset($data['requirement']) || isset($data['type'])) {
+            $rVal = $data['requirement'] ?? $data['type'];
+            $updates[] = "`requirement` = '" . $conn->real_escape_string($rVal) . "'";
+        }
+        if (isset($data['location']) || isset($data['area'])) {
+            $lVal = $data['location'] ?? $data['area'];
+            $updates[] = "`location` = '" . $conn->real_escape_string($lVal) . "'";
+        }
+        if (isset($data['notes'])) {
+            $nVal = is_string($data['notes']) ? $data['notes'] : json_encode($data['notes']);
+            $updates[] = "`notes` = '" . $conn->real_escape_string($nVal) . "'";
+        }
+        if (isset($data['followup']) || isset($data['followUpDate'])) {
+            $fVal = $data['followup'] ?? $data['followUpDate'];
+            $updates[] = "`followup` = '" . $conn->real_escape_string($fVal) . "'";
+        }
+
+        if (count($updates) > 0) {
+            $setClause = implode(', ', $updates);
+            $whereParts = [];
+            if ($targetId) {
+                $whereParts[] = "`id` = '" . $conn->real_escape_string($targetId) . "'";
+            }
+            if ($phone) {
+                $whereParts[] = "(`phone` = '" . $conn->real_escape_string($phone) . "' OR `whatsapp` = '" . $conn->real_escape_string($phone) . "')";
+            }
+            if ($name && !$targetId && !$phone) {
+                $whereParts[] = "`name` = '" . $conn->real_escape_string($name) . "'";
+            }
+
+            if (count($whereParts) > 0) {
+                $whereClause = implode(' OR ', $whereParts);
+                $sql = "UPDATE `leads` SET $setClause WHERE $whereClause";
+                $conn->query($sql);
+            }
+        }
+
+        echo json_encode(["message" => "Lead updated in database successfully", "assignedTo" => $assignedTo]);
         exit();
     }
     elseif ($method === 'DELETE' && $id) {
@@ -1817,20 +1879,31 @@ elseif ($resource === 'property_sync' || $resource === 'website_property_sync' |
 
 elseif ($resource === 'site_visits') {
     if ($method === 'GET') {
-        $result = $conn->query("SELECT * FROM site_visits");
+        $result = $conn->query("SELECT * FROM site_visits ORDER BY visitDate ASC");
         $rows = [];
-        while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        if ($result) {
+            while($row = $result->fetch_assoc()) { $rows[] = $row; }
+        }
         echo json_encode($rows);
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        
+        if (!$data) {
+            $data = $_POST;
+        }
+        $id = !empty($data['id']) ? $data['id'] : 'SV-' . time();
+        $leadId = !empty($data['leadId']) ? $data['leadId'] : '';
+        $propertyId = !empty($data['propertyId']) ? $data['propertyId'] : '';
+        $visitDate = !empty($data['visitDate']) ? $data['visitDate'] : date('Y-m-d H:i:s');
+        $status = !empty($data['status']) ? $data['status'] : 'Scheduled';
+        $assignedTo = !empty($data['assignedTo']) ? $data['assignedTo'] : '';
+        $notes = !empty($data['notes']) ? (is_string($data['notes']) ? $data['notes'] : json_encode($data['notes'])) : '';
         
         try {
-            $stmt = $conn->prepare("INSERT INTO site_visits (id, leadId, propertyId, visitDate, status, assignedTo, notes) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->bind_param("sssssss", $data['id'], $data['leadId'], $data['propertyId'], $data['visitDate'], $data['status'], $data['assignedTo'], $data['notes']);
+            $stmt = $conn->prepare("INSERT INTO site_visits (id, leadId, propertyId, visitDate, status, assignedTo, notes) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE leadId=VALUES(leadId), propertyId=VALUES(propertyId), visitDate=VALUES(visitDate), status=VALUES(status), assignedTo=VALUES(assignedTo), notes=VALUES(notes)");
+            $stmt->bind_param("sssssss", $id, $leadId, $propertyId, $visitDate, $status, $assignedTo, $notes);
             if ($stmt->execute()) {
-                echo json_encode(["message" => "Created successfully"]);
+                echo json_encode(["message" => "Created successfully", "id" => $id]);
             } else {
                 http_response_code(500);
                 echo json_encode(["error" => "Database error: " . $stmt->error]);
@@ -1840,17 +1913,28 @@ elseif ($resource === 'site_visits') {
             echo json_encode(["error" => "Fatal Exception: " . $e->getMessage()]);
         }
     }
-    elseif ($method === 'PUT' && $id) {
+    elseif ($method === 'PUT') {
         $data = json_decode(file_get_contents("php://input"), true);
+        $targetId = $id ? $id : (!empty($data['id']) ? $data['id'] : '');
+        $leadId = !empty($data['leadId']) ? $data['leadId'] : '';
+        $propertyId = !empty($data['propertyId']) ? $data['propertyId'] : '';
+        $visitDate = !empty($data['visitDate']) ? $data['visitDate'] : date('Y-m-d H:i:s');
+        $status = !empty($data['status']) ? $data['status'] : 'Scheduled';
+        $assignedTo = !empty($data['assignedTo']) ? $data['assignedTo'] : '';
+        $notes = !empty($data['notes']) ? (is_string($data['notes']) ? $data['notes'] : json_encode($data['notes'])) : '';
         
-        
-        $stmt = $conn->prepare("UPDATE site_visits SET leadId=?, propertyId=?, visitDate=?, status=?, assignedTo=?, notes=? WHERE id=?");
-        $stmt->bind_param("sssssss", $data['leadId'], $data['propertyId'], $data['visitDate'], $data['status'], $data['assignedTo'], $data['notes'], $id);
-        if ($stmt->execute()) {
-            echo json_encode(["message" => "Updated successfully"]);
+        if ($targetId) {
+            $stmt = $conn->prepare("UPDATE site_visits SET leadId=?, propertyId=?, visitDate=?, status=?, assignedTo=?, notes=? WHERE id=?");
+            $stmt->bind_param("sssssss", $leadId, $propertyId, $visitDate, $status, $assignedTo, $notes, $targetId);
+            if ($stmt->execute()) {
+                echo json_encode(["message" => "Updated successfully"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["error" => "Database error: " . $stmt->error]);
+            }
         } else {
-            http_response_code(500);
-            echo json_encode(["error" => "Database error: " . $stmt->error]);
+            http_response_code(400);
+            echo json_encode(["error" => "Missing visit ID"]);
         }
     }
     elseif ($method === 'DELETE' && $id) {

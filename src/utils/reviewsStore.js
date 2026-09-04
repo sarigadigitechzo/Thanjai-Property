@@ -1,6 +1,7 @@
 // src/utils/reviewsStore.js - Store interface for Google Reviews & Testimonials
 import { INITIAL_TESTIMONIALS, GOOGLE_RATING_SUMMARY } from '../data/testimonials.js';
 import { addAuditLog } from './siteImagesStore.js';
+import { fetchFromAPI } from './api.js';
 
 const STORAGE_KEY = 'thanjai_testimonials_v3';
 const VERSION_KEY = 'thanjai_testimonials_version';
@@ -64,22 +65,19 @@ let reviewsCache = loadReviewsFromStorage();
 
 async function syncWithRemoteAPI() {
   try {
-    const res = await fetch('/api.php/reviews');
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        const existing = getReviews();
-        const combined = [...data.map(normalizeReview)];
-        existing.forEach(r => {
-          if (!combined.some(c => c.id === r.id || (c.name === r.name && c.reviewText === r.reviewText))) {
-            combined.push(r);
-          }
-        });
-        reviewsCache = combined;
-        saveReviewsToStorage(reviewsCache);
-        window.dispatchEvent(new CustomEvent('reviewsUpdated'));
-        return;
-      }
+    const data = await fetchFromAPI('/reviews');
+    if (Array.isArray(data) && data.length > 0) {
+      const existing = getReviews();
+      const combined = [...data.map(normalizeReview)];
+      existing.forEach(r => {
+        if (!combined.some(c => c.id === r.id || (c.name === r.name && c.reviewText === r.reviewText))) {
+          combined.push(r);
+        }
+      });
+      reviewsCache = combined;
+      saveReviewsToStorage(reviewsCache);
+      window.dispatchEvent(new CustomEvent('reviewsUpdated'));
+      return;
     }
   } catch (err) {
     console.warn('[ReviewsStore] Background sync notice:', err);
@@ -125,9 +123,8 @@ export function addReview(reviewData) {
   reviewsCache = reviews;
   saveReviewsToStorage(reviewsCache);
 
-  fetch('/api.php/reviews', {
+  fetchFromAPI('/reviews', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(normalized)
   }).catch(() => {});
 
