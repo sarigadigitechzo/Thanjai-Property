@@ -273,7 +273,7 @@ addCol($conn, 'leads', 'source', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'requirement', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'timeline', 'longtext DEFAULT NULL');
 addCol($conn, 'leads', 'followup', 'varchar(255) DEFAULT NULL');
-addCol($conn, 'leads', 'assignedTo', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'leads', 'assignedTo', "varchar(255) DEFAULT 'Unassigned'");
 addCol($conn, 'leads', 'notes', 'longtext DEFAULT NULL');
 addCol($conn, 'leads', 'location', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'leads', 'budget', 'varchar(255) DEFAULT NULL');
@@ -283,8 +283,10 @@ addCol($conn, 'properties', 'inquiriesCount', 'int DEFAULT 0');
 addCol($conn, 'properties', 'builtUpArea', 'varchar(100) DEFAULT NULL');
 addCol($conn, 'properties', 'posterRole', 'varchar(100) DEFAULT "Individual Owner"');
 
-@$conn->query("ALTER TABLE leads MODIFY COLUMN timeline LONGTEXT");
-@$conn->query("ALTER TABLE leads MODIFY COLUMN notes LONGTEXT");
+@$conn->query("ALTER TABLE `leads` ADD COLUMN IF NOT EXISTS `assignedTo` varchar(255) DEFAULT 'Unassigned'");
+@$conn->query("ALTER TABLE `leads` MODIFY COLUMN `timeline` LONGTEXT");
+@$conn->query("ALTER TABLE `leads` MODIFY COLUMN `notes` LONGTEXT");
+@$conn->query("UPDATE `leads` SET `assignedTo` = 'Unassigned' WHERE `assignedTo` IS NULL OR `assignedTo` = '' OR `assignedTo` = '-' OR `assignedTo` = '—'");
 addCol($conn, 'leads', 'whatsapp', 'varchar(50) DEFAULT NULL');
 
 addCol($conn, 'blog_posts', 'slug', 'varchar(255) DEFAULT NULL');
@@ -807,6 +809,9 @@ elseif ($resource === 'leads') {
     }
     elseif ($method === 'PUT') {
         $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data) {
+            $data = $_POST;
+        }
         $targetId = $id ?: ($data['id'] ?? ($_GET['id'] ?? ''));
         $phone = $data['phone'] ?? $data['mobile'] ?? '';
         $name = $data['name'] ?? '';
@@ -816,10 +821,10 @@ elseif ($resource === 'leads') {
 
         $updates = [];
         if ($assignedTo !== null) {
-            $updates[] = "`assignedTo` = '" . $conn->real_escape_string($assignedTo) . "'";
+            $updates[] = "`assignedTo` = '" . $conn->real_escape_string(trim($assignedTo)) . "'";
         }
         if ($status !== null) {
-            $updates[] = "`status` = '" . $conn->real_escape_string($status) . "'";
+            $updates[] = "`status` = '" . $conn->real_escape_string(trim($status)) . "'";
         }
         if ($timeline !== null) {
             $updates[] = "`timeline` = '" . $conn->real_escape_string($timeline) . "'";
@@ -845,6 +850,7 @@ elseif ($resource === 'leads') {
             $updates[] = "`followup` = '" . $conn->real_escape_string($fVal) . "'";
         }
 
+        $affected = 0;
         if (count($updates) > 0) {
             $setClause = implode(', ', $updates);
             $whereParts = [];
@@ -861,18 +867,26 @@ elseif ($resource === 'leads') {
                     $whereParts[] = "`whatsapp` LIKE '%" . $conn->real_escape_string($tenDigit) . "%'";
                 }
             }
-            if ($name && !$targetId) {
+            if ($name) {
                 $whereParts[] = "`name` = '" . $conn->real_escape_string($name) . "'";
             }
 
             if (count($whereParts) > 0) {
                 $whereClause = implode(' OR ', $whereParts);
                 $sql = "UPDATE `leads` SET $setClause WHERE $whereClause";
-                $conn->query($sql);
+                $res = $conn->query($sql);
+                if ($res) {
+                    $affected = $conn->affected_rows;
+                }
             }
         }
 
-        echo json_encode(["message" => "Lead updated in database successfully", "assignedTo" => $assignedTo]);
+        echo json_encode([
+            "message" => "Lead updated in database successfully", 
+            "assignedTo" => $assignedTo,
+            "affectedRows" => $affected,
+            "targetId" => $targetId
+        ]);
         exit();
     }
     elseif ($method === 'DELETE' && $id) {
