@@ -506,16 +506,14 @@ window.addEventListener('storage', (e) => {
   }
 });
 
-// Initial Load & Render
+// Initial Load & Render - Render immediately with cached/seed data, then background fetch
+isAppReady = true;
+updateSeoMetadata(currentRoute);
+renderApp();
+
 initApp().then(() => {
-  isAppReady = true;
-  updateSeoMetadata(currentRoute);
   renderApp();
 }).catch((err) => {
-  console.error("Critical error starting app:", err);
-  // Fallback to ensure spinner hides even if initialization fails
-  isAppReady = true;
-  updateSeoMetadata(currentRoute);
-  renderApp();
+  console.error("Background sync error:", err);
 });
 
