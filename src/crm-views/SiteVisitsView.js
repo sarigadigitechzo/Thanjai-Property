@@ -123,11 +123,11 @@ export function renderSiteVisitsView() {
           <div class="form-group" style="margin-bottom: 16px;">
             <label style="font-weight: 700; font-size: 0.88rem; color: var(--os-dark, #1e293b); display: block; margin-bottom: 8px;">Visit Purpose & Type *</label>
             <div style="display: flex; gap: 10px;">
-              <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #fff5eb; border: 1.5px solid #eb5e28; border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 700; color: #eb5e28;">
+              <label id="sv-type-card-tour" style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #fff5eb; border: 1.5px solid #eb5e28; border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 700; color: #eb5e28; transition: all 0.2s ease;">
                 <input type="radio" name="sv-visit-type" value="Customer Property Tour" checked style="accent-color: #eb5e28;" />
                 <span>👥 Customer Property Tour</span>
               </label>
-              <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 700; color: #475569;">
+              <label id="sv-type-card-inspection" style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 700; color: #475569; transition: all 0.2s ease;">
                 <input type="radio" name="sv-visit-type" value="Staff Site Pre-Inspection" style="accent-color: #eb5e28;" />
                 <span>🔍 Staff Pre-Inspection</span>
               </label>
@@ -577,6 +577,56 @@ export async function initSiteVisitsView() {
     }
   };
 
+  // Toggle Client Name requirement based on Visit Type
+  const svTypeRadios = document.querySelectorAll('input[name="sv-visit-type"]');
+  const svClientLabel = document.getElementById('sv-client-label');
+  const svClientInput = document.getElementById('sv-client-name');
+  const cardTour = document.getElementById('sv-type-card-tour');
+  const cardInspection = document.getElementById('sv-type-card-inspection');
+
+  const updateVisitTypeUI = () => {
+    const selectedType = document.querySelector('input[name="sv-visit-type"]:checked')?.value || 'Customer Property Tour';
+    const isPreInspection = selectedType === 'Staff Site Pre-Inspection' || selectedType.includes('Pre-Inspection');
+
+    if (isPreInspection) {
+      if (svClientLabel) svClientLabel.innerHTML = 'Client Name / Lead <span style="font-weight: normal; color: #64748b; font-size: 0.8rem;">(Optional for Pre-Inspection)</span>';
+      if (svClientInput) {
+        svClientInput.placeholder = 'Optional: Select associated lead or leave blank...';
+        svClientInput.removeAttribute('required');
+      }
+      if (cardTour) {
+        cardTour.style.background = '#f8fafc';
+        cardTour.style.borderColor = '#cbd5e1';
+        cardTour.style.color = '#475569';
+      }
+      if (cardInspection) {
+        cardInspection.style.background = '#fff5eb';
+        cardInspection.style.borderColor = '#eb5e28';
+        cardInspection.style.color = '#eb5e28';
+      }
+    } else {
+      if (svClientLabel) svClientLabel.innerHTML = 'Client Name / Lead *';
+      if (svClientInput) {
+        svClientInput.placeholder = 'Type or select client name / ID...';
+        svClientInput.setAttribute('required', 'required');
+      }
+      if (cardTour) {
+        cardTour.style.background = '#fff5eb';
+        cardTour.style.borderColor = '#eb5e28';
+        cardTour.style.color = '#eb5e28';
+      }
+      if (cardInspection) {
+        cardInspection.style.background = '#f8fafc';
+        cardInspection.style.borderColor = '#cbd5e1';
+        cardInspection.style.color = '#475569';
+      }
+    }
+  };
+
+  svTypeRadios.forEach(radio => {
+    radio.addEventListener('change', updateVisitTypeUI);
+  });
+
   document.getElementById('sv-client-name')?.addEventListener('input', checkPastVisitHistory);
   document.getElementById('sv-property')?.addEventListener('input', checkPastVisitHistory);
 
@@ -592,6 +642,7 @@ export async function initSiteVisitsView() {
         const min = String(selD.getMinutes()).padStart(2, '0');
         dtInput.value = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
       }
+      updateVisitTypeUI();
       checkPastVisitHistory();
       svModal.classList.add('show');
     });
@@ -608,13 +659,23 @@ export async function initSiteVisitsView() {
       let datetime = document.getElementById('sv-datetime').value;
       const assignedTo = document.getElementById('sv-assigned-to')?.value || 'Vijayaraghavan (Super Admin)';
       const visitType = document.querySelector('input[name="sv-visit-type"]:checked')?.value || 'Customer Property Tour';
+      const isPreInspection = visitType === 'Staff Site Pre-Inspection' || visitType.includes('Pre-Inspection');
       const statusVal = document.getElementById('sv-status-select')?.value || 'Scheduled';
       const outcomeNotes = document.getElementById('sv-outcome-notes')?.value.trim() || '';
 
-      if (!rawClient) {
+      if (!rawClient && !isPreInspection) {
         showAlertModal({
           title: 'Client Name Required',
-          message: 'Please enter or select a <strong>Client Name / Lead</strong> for the site visit.',
+          message: 'Please enter or select a <strong>Client Name / Lead</strong> for the customer site visit.',
+          type: 'warning'
+        });
+        return;
+      }
+
+      if (!rawProp) {
+        showAlertModal({
+          title: 'Property Required',
+          message: 'Please enter or select a <strong>Property</strong> for the site visit.',
           type: 'warning'
         });
         return;
@@ -629,8 +690,11 @@ export async function initSiteVisitsView() {
       }
 
       let cleanClientName = rawClient;
-      let clientPhone = 'Site Visit';
-      if (rawClient.includes('[ID:') || rawClient.includes(']')) {
+      let clientPhone = isPreInspection ? 'Internal Inspection' : 'Site Visit';
+
+      if (!cleanClientName && isPreInspection) {
+        cleanClientName = 'Staff Pre-Inspection';
+      } else if (rawClient.includes('[ID:') || rawClient.includes(']')) {
         const afterBracket = rawClient.split(']')[1] || rawClient;
         const phoneMatch = afterBracket.match(/\(([^)]+)\)/);
         if (phoneMatch) {
