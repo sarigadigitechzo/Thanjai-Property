@@ -40,6 +40,26 @@ function renCol($conn, $t, $o, $n, $d) {
     } catch (\Throwable $e) {}
 }
 
+@$conn->query("CREATE TABLE IF NOT EXISTS `leads` (
+  `id` varchar(100) PRIMARY KEY,
+  `name` varchar(255) NOT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `whatsapp` varchar(50) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `source` varchar(100) DEFAULT 'Manual',
+  `status` varchar(100) DEFAULT 'New Lead',
+  `budget` varchar(100) DEFAULT NULL,
+  `requirement` varchar(255) DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `timeline` longtext DEFAULT NULL,
+  `assignedTo` varchar(255) DEFAULT 'Unassigned',
+  `notes` longtext DEFAULT NULL,
+  `followup` varchar(100) DEFAULT '—',
+  `propertyId` varchar(100) DEFAULT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+)");
+
 @$conn->query("CREATE TABLE IF NOT EXISTS `properties` (
   `id` varchar(50) PRIMARY KEY,
   `title` varchar(255) NOT NULL,
@@ -782,6 +802,9 @@ elseif ($resource === 'leads') {
         }
 
         $insertedCount = 0;
+        $lastInsertedId = null;
+        $dbError = null;
+
         foreach ($leadsArray as $data) {
             if (!is_array($data) || empty($data['name'])) continue;
             $lId = strval($data['id'] ?? ('L-' . time() . '-' . rand(100, 999)));
@@ -803,9 +826,19 @@ elseif ($resource === 'leads') {
             $stmt->bind_param("sssssssssssssss", $lId, $name, $phone, $whatsapp, $email, $source, $status, $budget, $requirement, $location, $timeline, $assignedTo, $notes, $followup, $propertyId);
             if ($stmt->execute()) {
                 $insertedCount++;
+                $lastInsertedId = $lId;
+            } else {
+                $dbError = $stmt->error ?: $conn->error;
             }
         }
-        echo json_encode(["message" => "Processed $insertedCount leads successfully", "count" => $insertedCount]);
+
+        if ($insertedCount > 0) {
+            echo json_encode(["message" => "Processed $insertedCount leads successfully", "count" => $insertedCount, "id" => $lastInsertedId]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["error" => "Failed to insert lead into database: " . ($dbError ?: "Invalid data")]);
+        }
+        exit();
     }
     elseif ($method === 'PUT') {
         $data = json_decode(file_get_contents("php://input"), true);

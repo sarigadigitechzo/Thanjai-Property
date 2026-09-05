@@ -1165,21 +1165,41 @@ function bindLeadEvents() {
           : `Created new lead ${name} (${mobile}) with requirement ${requirementStr} in ${locationStr}.`
       });
 
-      renderTable();
-      closeModal();
-      showToast(idField ? `Lead "${name}" updated!` : `New lead "${name}" added!`, 'ri-checkbox-circle-fill');
+      // Direct database sync with immediate feedback
+      const originalText = saveBtn.textContent;
+      saveBtn.textContent = 'Saving...';
+      saveBtn.disabled = true;
 
-      // Then sync to DB in background
-      const url = idField ? '/leads/' + idField : '/leads';
-      fetchFromAPI(url, {
-        method: idField ? 'PUT' : 'POST',
-        body: JSON.stringify(leadData)
-      }).then(async () => {
+      try {
+        const url = idField ? '/leads/' + encodeURIComponent(idField) : '/leads';
+        const res = await fetchFromAPI(url, {
+          method: idField ? 'PUT' : 'POST',
+          body: JSON.stringify(leadData)
+        });
+
+        if (res && res.id && !idField) {
+          leadData.id = res.id;
+        }
+
         const fresh = await fetchFromAPI('/leads');
-        if (fresh && Array.isArray(fresh)) saveLeads(fresh.map(mapLeadFromAPI));
-      }).catch(err => {
-        console.warn('DB sync failed, saved locally only:', err);
-      });
+        if (fresh && Array.isArray(fresh)) {
+          saveLeads(fresh.map(mapLeadFromAPI));
+        } else {
+          saveLeads(existingLeads);
+        }
+
+        renderTable();
+        closeModal();
+        showToast(idField ? `Lead "${name}" updated in database!` : `New lead "${name}" added to database!`, 'ri-checkbox-circle-fill');
+      } catch (err) {
+        console.error('Database save error:', err);
+        renderTable();
+        closeModal();
+        showToast(`Saved locally (Sync error: ${err.message})`, 'ri-alert-line');
+      } finally {
+        saveBtn.textContent = originalText;
+        saveBtn.disabled = false;
+      }
     });
   }
 
