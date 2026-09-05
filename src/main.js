@@ -165,197 +165,204 @@ function navigateToRoute(route, pushState = true) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-let isAppReady = false;
+let isAppReady = true;
 
 // Primary Render Engine
 function renderApp() {
-  const appContainer = document.getElementById('app');
+  try {
+    const appContainer = document.getElementById('app');
+    if (!appContainer) {
+      console.warn("Thanjai Property: #app container not yet found in DOM.");
+      return;
+    }
 
-  if (!isAppReady) {
+    const allProperties = getPublicProperties();
+    const selectedModalProperty = appState.selectedPropertyId 
+      ? allProperties.find(p => p.id === appState.selectedPropertyId) 
+      : null;
+
+    let mainContentHtml = '';
+
+    switch (currentRoute) {
+      case 'our-story':
+        mainContentHtml = renderOurStoryView(() => navigateToRoute('discover'));
+        break;
+
+      case 'discover':
+        mainContentHtml = renderDiscoverView(
+          discoverState,
+          (propId) => {
+            discoverState.selectedPropertyId = propId;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            renderApp();
+          },
+          () => navigateToRoute('contact')
+        );
+        break;
+
+      case 'blog':
+        mainContentHtml = renderBlogView(
+          blogState,
+          (postId) => {
+            blogState.selectedPostId = postId;
+            renderApp();
+          },
+          () => navigateToRoute('contact')
+        );
+        break;
+
+      case 'contact':
+        mainContentHtml = renderContactView();
+        break;
+
+      case 'terms':
+        mainContentHtml = renderTermsView();
+        break;
+
+      case 'privacy':
+        mainContentHtml = renderPrivacyView();
+        break;
+
+      case 'home':
+      default:
+        mainContentHtml = `
+          <main>
+            ${renderHero()}
+            ${renderHomePropertyShowcase(allProperties, openModalPropertyDetail, () => navigateToRoute('discover'))}
+            ${renderExploreSection(openPostModal)}
+            ${renderLocationExplorer()}
+            ${renderCategoryCarousel()}
+            ${renderLuxuryTransition()}
+            ${renderBlogSection(() => navigateToRoute('blog'), (postId) => openBlogArticle(postId))}
+            ${renderHomeContactBanner(() => navigateToRoute('contact'))}
+          </main>
+        `;
+        break;
+    }
+
     appContainer.innerHTML = `
       ${renderNavbar(currentRoute, navigateToRoute)}
-      <main style="min-height: 75vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #faf8f5;">
-         <i class="ri-loader-4-line" style="font-size: 3rem; color: #eb5e28; animation: spin 1s linear infinite;"></i>
-         <div style="margin-top: 16px; font-size: 1.1rem; font-weight: 700; color: #4A5568; letter-spacing: 0.5px;">Loading Thanjai Property...</div>
-         <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
-      </main>
+      
+      ${mainContentHtml}
+
       ${renderFooter()}
       ${renderMobileBottomNav()}
+
+      <!-- Dynamic Overlay Modals -->
+      <div id="modal-slot">
+        ${selectedModalProperty ? renderPropertyDetailModal(selectedModalProperty) : ''}
+        ${appState.isPostModalOpen ? renderPostPropertyModal() : ''}
+        ${appState.scheduleModalData ? renderScheduleVisitModal(appState.scheduleModalData) : ''}
+        ${renderWriteReviewModal()}
+      </div>
     `;
-    return;
+
+    // Attach navbar & footer global link listeners safely
+    try {
+      initNavbarListeners(navigateToRoute, openSavedView);
+      document.getElementById('nav-post-property-btn')?.addEventListener('click', openPostModal);
+    } catch (e) {
+      console.warn("Navbar listeners init warning:", e);
+    }
+
+    // Attach Page-Specific Listeners safely
+    try {
+      switch (currentRoute) {
+        case 'our-story':
+          initOurStoryListeners(() => navigateToRoute('discover'));
+          break;
+
+        case 'discover':
+          initDiscoverListeners(
+            discoverState,
+            (newState) => {
+              discoverState = newState;
+              renderApp();
+            },
+            (propId) => {
+              discoverState.selectedPropertyId = propId;
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              renderApp();
+            },
+            () => navigateToRoute('contact')
+          );
+          break;
+
+        case 'blog':
+          initBlogListeners(
+            blogState,
+            (newState) => {
+              blogState = newState;
+              renderApp();
+            },
+            (postIdOrSlug) => {
+              if (!postIdOrSlug) {
+                blogState.selectedPostId = null;
+              } else {
+                const post = getBlogPostByIdOrSlug(postIdOrSlug);
+                const slug = post ? (post.slug || post.id) : postIdOrSlug;
+                blogState.selectedPostId = slug;
+              }
+              navigateToRoute('blog');
+            },
+            () => navigateToRoute('contact')
+          );
+          break;
+
+        case 'contact':
+          initContactListeners();
+          break;
+
+        case 'terms':
+          initTermsListeners();
+          break;
+
+        case 'privacy':
+          initPrivacyListeners();
+          break;
+
+        case 'home':
+        default:
+          initHeroListeners(handleHeroSearch);
+          initHomePropertyShowcaseListeners(openModalPropertyDetail, () => {
+            discoverState.selectedPropertyId = null;
+            navigateToRoute('discover');
+          });
+          initExploreSectionListeners(openPostModal);
+          initLocationExplorerListeners(handleLocationSelect);
+          initCategoryCarouselListeners(handleCategorySelect);
+          initLuxuryTransitionListeners();
+          initTestimonialsListeners();
+          initBlogSectionListeners(() => navigateToRoute('blog'), (postId) => openBlogArticle(postId));
+          initHomeContactBannerListeners(() => navigateToRoute('contact'));
+          break;
+      }
+    } catch (e) {
+      console.warn("View listeners init warning:", e);
+    }
+
+    try {
+      initMobileBottomNavListeners(openPostModal, openSavedView);
+
+      // Modal listeners if active
+      if (selectedModalProperty) {
+        initPropertyDetailModalListeners(selectedModalProperty, closeModalPropertyDetail);
+      }
+      if (appState.isPostModalOpen) {
+        initPostPropertyModalListeners(closePostModal);
+      }
+      if (appState.scheduleModalData) {
+        initScheduleVisitModalListeners(closeScheduleModal);
+      }
+
+      // Mount Write Review Modal listener
+      initWriteReviewModalListeners();
+    } catch (e) {
+      console.warn("Modal listeners init warning:", e);
+    }
+  } catch (err) {
+    console.error("Critical renderApp error:", err);
   }
-  const allProperties = getPublicProperties();
-  const selectedModalProperty = appState.selectedPropertyId 
-    ? allProperties.find(p => p.id === appState.selectedPropertyId) 
-    : null;
-
-  let mainContentHtml = '';
-
-  switch (currentRoute) {
-    case 'our-story':
-      mainContentHtml = renderOurStoryView(() => navigateToRoute('discover'));
-      break;
-
-    case 'discover':
-      mainContentHtml = renderDiscoverView(
-        discoverState,
-        (propId) => {
-          discoverState.selectedPropertyId = propId;
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          renderApp();
-        },
-        () => navigateToRoute('contact')
-      );
-      break;
-
-    case 'blog':
-      mainContentHtml = renderBlogView(
-        blogState,
-        (postId) => {
-          blogState.selectedPostId = postId;
-          renderApp();
-        },
-        () => navigateToRoute('contact')
-      );
-      break;
-
-    case 'contact':
-      mainContentHtml = renderContactView();
-      break;
-
-    case 'terms':
-      mainContentHtml = renderTermsView();
-      break;
-
-    case 'privacy':
-      mainContentHtml = renderPrivacyView();
-      break;
-
-    case 'home':
-    default:
-      mainContentHtml = `
-        <main>
-          ${renderHero()}
-          ${renderHomePropertyShowcase(allProperties, openModalPropertyDetail, () => navigateToRoute('discover'))}
-          ${renderExploreSection(openPostModal)}
-          ${renderLocationExplorer()}
-          ${renderCategoryCarousel()}
-          ${renderLuxuryTransition()}
-          ${renderBlogSection(() => navigateToRoute('blog'), (postId) => openBlogArticle(postId))}
-          ${renderHomeContactBanner(() => navigateToRoute('contact'))}
-        </main>
-      `;
-      break;
-  }
-
-  appContainer.innerHTML = `
-    ${renderNavbar(currentRoute, navigateToRoute)}
-    
-    ${mainContentHtml}
-
-    ${renderFooter()}
-    ${renderMobileBottomNav()}
-
-    <!-- Dynamic Overlay Modals -->
-    <div id="modal-slot">
-      ${selectedModalProperty ? renderPropertyDetailModal(selectedModalProperty) : ''}
-      ${appState.isPostModalOpen ? renderPostPropertyModal() : ''}
-      ${appState.scheduleModalData ? renderScheduleVisitModal(appState.scheduleModalData) : ''}
-      ${renderWriteReviewModal()}
-    </div>
-  `;
-
-  // Attach navbar & footer global link listeners
-  initNavbarListeners(navigateToRoute, openSavedView);
-  document.getElementById('nav-post-property-btn')?.addEventListener('click', openPostModal);
-
-  // Attach Page-Specific Listeners
-  switch (currentRoute) {
-    case 'our-story':
-      initOurStoryListeners(() => navigateToRoute('discover'));
-      break;
-
-    case 'discover':
-      initDiscoverListeners(
-        discoverState,
-        (newState) => {
-          discoverState = newState;
-          renderApp();
-        },
-        (propId) => {
-          discoverState.selectedPropertyId = propId;
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          renderApp();
-        },
-        () => navigateToRoute('contact')
-      );
-      break;
-
-    case 'blog':
-      initBlogListeners(
-        blogState,
-        (newState) => {
-          blogState = newState;
-          renderApp();
-        },
-        (postIdOrSlug) => {
-          if (!postIdOrSlug) {
-            blogState.selectedPostId = null;
-          } else {
-            const post = getBlogPostByIdOrSlug(postIdOrSlug);
-            const slug = post ? (post.slug || post.id) : postIdOrSlug;
-            blogState.selectedPostId = slug;
-          }
-          navigateToRoute('blog');
-        },
-        () => navigateToRoute('contact')
-      );
-      break;
-
-    case 'contact':
-      initContactListeners();
-      break;
-
-    case 'terms':
-      initTermsListeners();
-      break;
-
-    case 'privacy':
-      initPrivacyListeners();
-      break;
-
-    case 'home':
-    default:
-      initHeroListeners(handleHeroSearch);
-      initHomePropertyShowcaseListeners(openModalPropertyDetail, () => {
-        discoverState.selectedPropertyId = null;
-        navigateToRoute('discover');
-      });
-      initExploreSectionListeners(openPostModal);
-      initLocationExplorerListeners(handleLocationSelect);
-      initCategoryCarouselListeners(handleCategorySelect);
-      initLuxuryTransitionListeners();
-      initTestimonialsListeners();
-      initBlogSectionListeners(() => navigateToRoute('blog'), (postId) => openBlogArticle(postId));
-      initHomeContactBannerListeners(() => navigateToRoute('contact'));
-      break;
-  }
-
-  initMobileBottomNavListeners(openPostModal, openSavedView);
-
-  // Modal listeners if active
-  if (selectedModalProperty) {
-    initPropertyDetailModalListeners(selectedModalProperty, closeModalPropertyDetail);
-  }
-  if (appState.isPostModalOpen) {
-    initPostPropertyModalListeners(closePostModal);
-  }
-  if (appState.scheduleModalData) {
-    initScheduleVisitModalListeners(closeScheduleModal);
-  }
-
-  // Mount Write Review Modal listener
-  initWriteReviewModalListeners();
 }
 
 // Handlers
@@ -507,13 +514,22 @@ window.addEventListener('storage', (e) => {
 });
 
 // Initial Load & Render - Render immediately with cached/seed data, then background fetch
-isAppReady = true;
-updateSeoMetadata(currentRoute);
-renderApp();
-
-initApp().then(() => {
+function boot() {
+  isAppReady = true;
+  updateSeoMetadata(currentRoute);
   renderApp();
-}).catch((err) => {
-  console.error("Background sync error:", err);
-});
+
+  initApp().then(() => {
+    renderApp();
+  }).catch((err) => {
+    console.warn("Background sync error:", err);
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}
+
 

@@ -468,6 +468,8 @@ export async function initLeadsView(searchQuery = null) {
     if (data && Array.isArray(data)) {
       const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
       const mapped = data.map(mapLeadFromAPI);
+      
+      // Preserve local status and assignments
       mapped.forEach(apiL => {
         const matchingLocal = localLeads.find(locL => 
           (locL.id && String(locL.id) === String(apiL.id)) ||
@@ -482,7 +484,28 @@ export async function initLeadsView(searchQuery = null) {
           }
         }
       });
-      cachedLeads = mapped;
+
+      // Find any local leads that are NOT yet in the MySQL database
+      const dbIds = new Set(mapped.map(l => String(l.id)));
+      const dbPhones = new Set(mapped.map(l => String(l.phone || '').replace(/\D/g, '')).filter(Boolean));
+      
+      const missingFromDB = localLeads.filter(locL => {
+        if (!locL || !locL.id) return false;
+        const idMatch = dbIds.has(String(locL.id));
+        const cleanPhone = String(locL.phone || locL.mobile || '').replace(/\D/g, '');
+        const phoneMatch = cleanPhone && dbPhones.has(cleanPhone);
+        return !idMatch && !phoneMatch;
+      });
+
+      if (missingFromDB.length > 0) {
+        console.log(`[AutoSync] Found ${missingFromDB.length} local leads not in MySQL. Syncing to database...`);
+        fetchFromAPI('/leads', {
+          method: 'POST',
+          body: JSON.stringify(missingFromDB)
+        }).catch(err => console.warn('[AutoSync Error]', err));
+      }
+
+      cachedLeads = [...missingFromDB, ...mapped];
       saveLeads(cachedLeads);
     }
   } catch (err) {
