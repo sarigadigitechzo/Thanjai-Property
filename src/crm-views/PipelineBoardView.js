@@ -106,9 +106,26 @@ export function initPipelineBoardView() {
             }
           }
         });
-        saveLeads(mapped);
+        let deletedList = [];
+        try { deletedList = JSON.parse(localStorage.getItem('thanjai_deleted_leads')) || []; } catch(e) {}
+        const deletedIds = new Set(deletedList.map(d => String(d.id || d.leadId)));
+        const deletedPhones = new Set(deletedList.map(d => String(d.phone || '')).filter(Boolean));
+        const deletedNames = new Set(deletedList.map(d => String(d.name || '').trim().toLowerCase()).filter(Boolean));
+
+        const filteredMapped = mapped.filter(apiL => {
+          if (!apiL) return false;
+          const lIdStr = String(apiL.id);
+          const cleanPhone = String(apiL.phone || apiL.mobile || '').replace(/\D/g, '');
+          const cleanName = String(apiL.name || '').trim().toLowerCase();
+          if (deletedIds.has(lIdStr)) return false;
+          if (cleanPhone && deletedPhones.has(cleanPhone)) return false;
+          if (cleanName && deletedNames.has(cleanName)) return false;
+          return true;
+        });
+
+        saveLeads(filteredMapped);
         leads.length = 0;
-        leads.push(...mapped);
+        leads.push(...filteredMapped);
         renderBoard();
       }
     }).catch(e => {});

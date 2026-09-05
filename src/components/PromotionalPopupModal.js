@@ -25,17 +25,66 @@ export function initPromotionalPopups() {
       transition: opacity 0.35s ease;
     `;
     modalOverlay.innerHTML = `
+      <style>
+        #promo-popup-card.layout-split {
+          max-width: 680px !important;
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: stretch !important;
+        }
+        #promo-popup-card.layout-split #promo-popup-img-wrap {
+          flex: 1 1 45% !important;
+          min-width: 250px !important;
+          max-width: 310px !important;
+          min-height: 360px !important;
+          max-height: 480px !important;
+          height: auto !important;
+          background: #0f172a !important;
+        }
+        #promo-popup-card.layout-split #promo-popup-img {
+          width: 100% !important;
+          height: 100% !important;
+          max-height: 480px !important;
+          object-fit: contain !important;
+        }
+        #promo-popup-card.layout-split #promo-popup-content-wrap {
+          flex: 1.2 !important;
+          padding: 26px 28px !important;
+          display: flex !important;
+          flex-direction: column !important;
+          justify-content: center !important;
+        }
+        @media (max-width: 640px) {
+          #promo-popup-card.layout-split {
+            flex-direction: column !important;
+            max-width: 440px !important;
+            max-height: 90vh !important;
+          }
+          #promo-popup-card.layout-split #promo-popup-img-wrap {
+            max-width: 100% !important;
+            min-height: 220px !important;
+            max-height: 320px !important;
+          }
+          #promo-popup-card.layout-split #promo-popup-content-wrap {
+            padding: 18px 20px 22px 20px !important;
+          }
+        }
+      </style>
+
       <div id="promo-popup-card" style="
         background: #ffffff;
         border-radius: 20px;
         max-width: 440px;
         width: 100%;
-        overflow: hidden;
+        max-height: 90vh;
+        overflow-y: auto;
         box-shadow: 0 25px 50px -12px rgba(0,0,0,0.35);
         transform: translateY(20px) scale(0.95);
-        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.3s ease;
         position: relative;
         border: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        flex-direction: column;
       ">
         <!-- Close Button -->
         <button id="promo-popup-close-btn" style="
@@ -59,9 +108,9 @@ export function initPromotionalPopups() {
           ✕
         </button>
 
-        <!-- Top Banner Image & Glowing Badge -->
-        <div style="position: relative; height: 180px; background: #0f172a; overflow: hidden;">
-          <img id="promo-popup-img" src="" alt="Offer" style="width: 100%; height: 100%; object-fit: cover;" />
+        <!-- Top Banner Image & Glowing Badge (Full Cover for Landscape) -->
+        <div id="promo-popup-img-wrap" style="position: relative; width: 100%; min-height: 160px; max-height: 260px; background: #0f172a; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
+          <img id="promo-popup-img" src="" alt="Offer" style="width: 100%; height: 100%; max-height: 260px; object-fit: cover; background: #0f172a; display: block;" />
           
           <span id="promo-popup-badge" style="
             position: absolute;
@@ -76,16 +125,22 @@ export function initPromotionalPopups() {
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             letter-spacing: 0.5px;
             text-transform: uppercase;
+            z-index: 2;
           ">
             🎉 FESTIVE OFFER
           </span>
         </div>
 
-        <!-- Popup Body -->
-        <div style="padding: 20px 22px 24px 22px;">
+        <!-- Popup Body with Warm Luxury Gradient and Refined Typography -->
+        <div id="promo-popup-content-wrap" style="padding: 22px 24px 26px 24px; flex: 1; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(145deg, #ffffff 0%, #fffcf8 100%);">
+          <!-- Campaign Category Tag -->
+          <div id="promo-popup-type-tag" style="display: inline-flex; align-items: center; gap: 6px; background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; width: fit-content;">
+            <i class="ri-sparkling-fill" style="font-size: 0.76rem;"></i> <span id="promo-popup-type-text">Festival & Seasonal</span>
+          </div>
+
           <h2 id="promo-popup-title" style="
             color: #0f172a;
-            font-size: 1.25rem;
+            font-size: 1.28rem;
             font-weight: 800;
             margin: 0 0 8px 0;
             line-height: 1.35;
@@ -105,7 +160,7 @@ export function initPromotionalPopups() {
             border-radius: 12px;
             padding: 12px 14px;
             margin-bottom: 18px;
-            display: flex;
+            display: none;
             flex-direction: column;
             gap: 8px;
           "></div>
@@ -200,8 +255,11 @@ function showPopupAtIndex(index) {
   const card = document.getElementById('promo-popup-card');
   if (!modalOverlay || !card) return;
 
+  const imgWrap = document.getElementById('promo-popup-img-wrap');
   const imgEl = document.getElementById('promo-popup-img');
   const badgeEl = document.getElementById('promo-popup-badge');
+  const typeTagEl = document.getElementById('promo-popup-type-tag');
+  const typeTextEl = document.getElementById('promo-popup-type-text');
   const titleEl = document.getElementById('promo-popup-title');
   const subtitleEl = document.getElementById('promo-popup-subtitle');
   const highlightsEl = document.getElementById('promo-popup-highlights');
@@ -209,13 +267,68 @@ function showPopupAtIndex(index) {
   const ctaText = document.getElementById('promo-popup-cta-text');
   const ctaIcon = document.getElementById('promo-popup-cta-icon');
 
-  if (imgEl) imgEl.src = p.image || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
+  const applyFrontendLayout = (isSplit) => {
+    if (isSplit) {
+      card.classList.add('layout-split');
+      if (imgEl) {
+        imgEl.style.objectFit = 'contain';
+        imgEl.style.width = '100%';
+        imgEl.style.height = '100%';
+      }
+    } else {
+      card.classList.remove('layout-split');
+      if (imgEl) {
+        imgEl.style.objectFit = 'cover';
+        imgEl.style.width = '100%';
+        imgEl.style.height = '100%';
+      }
+    }
+  };
+
+  const selectedLayout = p.layout || 'auto';
+  if (selectedLayout === 'split') {
+    applyFrontendLayout(true);
+  } else if (selectedLayout === 'stacked') {
+    applyFrontendLayout(false);
+  } else {
+    // Auto detect aspect ratio
+    if (p.image && p.image.trim()) {
+      const testImg = new Image();
+      testImg.onload = () => {
+        if (testImg.naturalHeight > testImg.naturalWidth * 1.05) {
+          applyFrontendLayout(true);
+        } else {
+          applyFrontendLayout(false);
+        }
+      };
+      testImg.onerror = () => applyFrontendLayout(false);
+      testImg.src = p.image.trim();
+    } else {
+      applyFrontendLayout(false);
+    }
+  }
+
+  if (p.image && p.image.trim()) {
+    if (imgWrap) imgWrap.style.display = 'flex';
+    if (imgEl) imgEl.src = p.image.trim();
+  } else {
+    if (imgWrap) imgWrap.style.display = 'none';
+  }
+
   if (badgeEl) badgeEl.textContent = p.badge || 'PROMOTION';
+  if (typeTagEl && typeTextEl) {
+    if (p.type && p.type.trim()) {
+      typeTextEl.textContent = p.type.trim();
+      typeTagEl.style.display = 'inline-flex';
+    } else {
+      typeTagEl.style.display = 'none';
+    }
+  }
   if (titleEl) titleEl.textContent = p.title;
   if (subtitleEl) subtitleEl.textContent = p.subtitle || '';
 
   if (highlightsEl) {
-    const highlights = Array.isArray(p.highlights) ? p.highlights : [];
+    const highlights = Array.isArray(p.highlights) ? p.highlights.filter(h => h && h.trim()) : [];
     if (highlights.length > 0) {
       highlightsEl.style.display = 'flex';
       highlightsEl.innerHTML = highlights.map(h => `
@@ -226,24 +339,30 @@ function showPopupAtIndex(index) {
       `).join('');
     } else {
       highlightsEl.style.display = 'none';
+      highlightsEl.innerHTML = '';
     }
   }
 
-  if (ctaText) ctaText.textContent = p.ctaText || 'Claim Offer on WhatsApp';
-
-  if (ctaIcon) {
-    if (p.ctaType === 'whatsapp') ctaIcon.className = 'ri-whatsapp-fill';
-    else if (p.ctaType === 'site_visit') ctaIcon.className = 'ri-calendar-check-fill';
-    else if (p.ctaType === 'call') ctaIcon.className = 'ri-phone-fill';
-    else ctaIcon.className = 'ri-arrow-right-up-line';
-  }
-
-  // CTA Click Action
+  // Conditional CTA Button Rendering
   if (ctaBtn) {
-    ctaBtn.onclick = () => {
-      handleCTAClick(p);
-      closeCurrentPopup();
-    };
+    if (p.ctaType === 'none' || !p.ctaType) {
+      ctaBtn.style.display = 'none';
+    } else {
+      ctaBtn.style.display = 'flex';
+      if (ctaText) ctaText.textContent = p.ctaText || 'Claim Offer on WhatsApp';
+
+      if (ctaIcon) {
+        if (p.ctaType === 'whatsapp') ctaIcon.className = 'ri-whatsapp-fill';
+        else if (p.ctaType === 'site_visit') ctaIcon.className = 'ri-calendar-check-fill';
+        else if (p.ctaType === 'call') ctaIcon.className = 'ri-phone-fill';
+        else ctaIcon.className = 'ri-arrow-right-up-line';
+      }
+
+      ctaBtn.onclick = () => {
+        handleCTAClick(p);
+        closeCurrentPopup();
+      };
+    }
   }
 
   // Smooth Slide-in Animation

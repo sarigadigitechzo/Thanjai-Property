@@ -66,6 +66,22 @@ export function renderLeadDetailView(id) {
     saveAndSyncLeads(leads, id);
   }
 
+  // Load site visits and inspections related to this lead
+  let leadVisits = [];
+  try {
+    const allVisits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
+    leadVisits = allVisits.filter(v => {
+      if (!v) return false;
+      const vLeadId = String(v.leadId || '');
+      const vClientName = String(v.clientName || v.leadName || '');
+      const lId = String(lead.id || '');
+      const lName = String(lead.name || '');
+      if (vLeadId && (vLeadId === lId || vLeadId === lId.replace('LEAD-', '') || (lName && vLeadId.toLowerCase().includes(lName.toLowerCase())))) return true;
+      if (vClientName && lName && (vClientName.toLowerCase().includes(lName.toLowerCase()) || lName.toLowerCase().includes(vClientName.toLowerCase()))) return true;
+      return false;
+    });
+  } catch (err) {}
+
   const formatCurrency = (val) => val ? '₹' + parseInt(val).toLocaleString('en-IN') : '—';
 
   const formatLeadCreatedDate = (leadObj) => {
@@ -279,11 +295,12 @@ ${(() => {
           </div>
 
           <div class="os-card" style="background: var(--os-white); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft); overflow: hidden;">
-            <div class="ld-tabs" style="display: flex; border-bottom: 1px solid var(--os-gray-200); padding: 0 16px;">
-              <div class="ld-tab active" data-target="pane-timeline" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: #ea580c; border-bottom: 2px solid #ea580c; cursor: pointer;">Activity timeline</div>
-              <div class="ld-tab" data-target="pane-whatsapp" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer;">WhatsApp (${(lead.timeline && lead.timeline.filter(e => e.type === 'whatsapp').length) || 0})</div>
-              <div class="ld-tab" data-target="pane-partner" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer;">Partner shares (0)</div>
-              <div class="ld-tab" data-target="pane-pipeline" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer;">Pipeline history</div>
+            <div class="ld-tabs" style="display: flex; border-bottom: 1px solid var(--os-gray-200); padding: 0 16px; overflow-x: auto;">
+              <div class="ld-tab active" data-target="pane-timeline" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: #ea580c; border-bottom: 2px solid #ea580c; cursor: pointer; white-space: nowrap;">Activity timeline</div>
+              <div class="ld-tab" data-target="pane-whatsapp" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer; white-space: nowrap;">WhatsApp (${(lead.timeline && lead.timeline.filter(e => e.type === 'whatsapp').length) || 0})</div>
+              <div class="ld-tab" data-target="pane-visits" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer; white-space: nowrap;">Site Visits & Inspections (${leadVisits.length})</div>
+              <div class="ld-tab" data-target="pane-partner" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer; white-space: nowrap;">Partner shares (0)</div>
+              <div class="ld-tab" data-target="pane-pipeline" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer; white-space: nowrap;">Pipeline history</div>
             </div>
             
             <div class="ld-tab-content" style="padding: 24px;">
@@ -316,6 +333,60 @@ ${(() => {
                     <div style="text-align: right; font-size: 0.75rem; color: #6b7280; margin-top: 4px;">${new Date(event.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})} <span style="color: #16a34a; font-weight: bold; margin-left: 4px;">✓</span></div>
                   </div>
                 `).join('')}
+                `}
+              </div>
+
+              <!-- Site Visits & Inspections Tab -->
+              <div class="ld-tab-pane" id="pane-visits" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                  <div>
+                    <h3 style="font-size: 1rem; font-weight: 700; color: var(--os-dark); margin: 0;">Site Visits & Inspections</h3>
+                    <p style="font-size: 0.8rem; color: var(--os-gray-500); margin: 2px 0 0 0;">Customer tours and staff site pre-inspections for this lead</p>
+                  </div>
+                  <button class="os-btn-primary" id="btn-tab-schedule-visit" style="font-size: 0.82rem; padding: 6px 14px; background: var(--os-luxury-orange); border: none; border-radius: 6px; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 6px;"><i class="ri-add-line"></i> Schedule Visit</button>
+                </div>
+                ${leadVisits.length === 0 ? `
+                  <div style="padding: 32px 20px; text-align: center; background: #f8fafc; border-radius: 8px; border: 1px dashed var(--os-border-light);">
+                    <i class="ri-calendar-event-line" style="font-size: 2rem; color: var(--os-gray-400); margin-bottom: 8px; display: block;"></i>
+                    <p style="color: var(--os-gray-500); font-size: 0.9rem; margin-bottom: 12px;">No site visits scheduled for this customer yet.</p>
+                    <button class="os-btn-primary" id="btn-empty-schedule-visit" style="font-size: 0.85rem; padding: 6px 16px; background: var(--os-luxury-orange); border: none; color: #fff; border-radius: 6px; cursor: pointer;">Schedule First Visit</button>
+                  </div>
+                ` : `
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${leadVisits.map(v => {
+                      const isPreInspection = (v.visitType === 'Staff Site Pre-Inspection' || (v.property && v.property.includes('Pre-Inspection')));
+                      const typeBadge = isPreInspection
+                        ? `<span style="background: #f3e8ff; color: #7e22ce; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;"><i class="ri-search-eye-line"></i> Staff Pre-Inspection</span>`
+                        : `<span style="background: #ffedd5; color: #c2410c; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;"><i class="ri-user-star-line"></i> Customer Tour</span>`;
+                      const statusBadge = (v.status === 'Completed')
+                        ? `<span style="background: #dcfce7; color: #15803d; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;">Completed</span>`
+                        : (v.status === 'Cancelled' ? `<span style="background: #fee2e2; color: #b91c1c; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;">Cancelled</span>`
+                        : `<span style="background: #e0f2fe; color: #0369a1; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;">${v.status || 'Scheduled'}</span>`);
+                      
+                      const dateDisplay = v.date ? `${v.date} ${v.month || ''}, ${v.hours || ''}:${v.mins || '00'} ${v.ampm || ''}` : (v.visitDate || 'Scheduled');
+
+                      return `
+                        <div style="background: #f8fafc; border: 1px solid var(--os-border-light); border-radius: 8px; padding: 14px 16px;">
+                          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                              ${typeBadge}
+                              ${statusBadge}
+                              <span style="font-weight: 700; font-size: 0.92rem; color: var(--os-dark);"><i class="ri-calendar-line" style="color: var(--os-luxury-orange);"></i> ${dateDisplay}</span>
+                            </div>
+                            <span style="font-size: 0.8rem; color: var(--os-gray-500);"><i class="ri-user-follow-line"></i> ${v.assignedTo || lead.assignTo || 'Assigned Staff'}</span>
+                          </div>
+                          <div style="font-size: 0.88rem; color: var(--os-dark); margin-bottom: 6px;">
+                            <i class="ri-map-pin-2-line" style="color: var(--os-luxury-orange);"></i> <strong>Property:</strong> ${v.property || v.propertyId || 'General Requirement'}
+                          </div>
+                          ${v.outcome ? `
+                            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; margin-top: 8px; font-size: 0.85rem; color: #334155;">
+                              <strong>Outcome / Inspection Findings:</strong> ${v.outcome}
+                            </div>
+                          ` : ''}
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
                 `}
               </div>
 
@@ -439,21 +510,41 @@ ${(() => {
       </div>
     </div>
     <div class="os-modal-overlay" id="schedule-visit-modal">
-      <div class="os-modal-card" style="max-width: 450px;">
+      <div class="os-modal-card" style="max-width: 480px;">
         <div class="os-modal-header">
-          <h2>Schedule site visit</h2>
+          <h2>Schedule site visit / inspection</h2>
           <button class="os-modal-close" id="close-schedule-modal"><i class="ri-close-line"></i></button>
         </div>
         <div class="os-modal-body">
-          <div class="form-group">
-            <label>Visit date & time *</label>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; display: block; color: var(--os-dark);">Visit Type *</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--os-border-light); border-radius: 8px; cursor: pointer; background: #fff;">
+                <input type="radio" name="crm-sv-type" value="Customer Property Tour" checked style="accent-color: var(--os-luxury-orange);" />
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--os-dark);">👥 Customer Tour</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--os-border-light); border-radius: 8px; cursor: pointer; background: #fff;">
+                <input type="radio" name="crm-sv-type" value="Staff Site Pre-Inspection" style="accent-color: #8b5cf6;" />
+                <span style="font-size: 0.85rem; font-weight: 600; color: var(--os-dark);">🔍 Pre-Inspection</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; display: block; color: var(--os-dark);">Visit date & time *</label>
             <input type="datetime-local" id="crm-sv-datetime" class="os-input" style="width: 100%;" />
           </div>
-          <p style="font-size: 0.85rem; color: var(--os-gray-500); margin-top: 16px;">This sends the site visit confirmation WhatsApp to the client with this date/time.</p>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; display: block; color: var(--os-dark);">Assigned Staff Specialist</label>
+            <input type="text" id="crm-sv-staff" class="os-input" value="${lead.assignTo || lead.assignedTo || 'Unassigned'}" style="width: 100%;" />
+          </div>
+          <div class="form-group">
+            <label style="font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; display: block; color: var(--os-dark);">Inspection / Visit Notes</label>
+            <textarea id="crm-sv-notes" class="os-input" rows="2" placeholder="Key aspects to check, property requirements, or client preferences..." style="width: 100%; resize: vertical;"></textarea>
+          </div>
         </div>
         <div class="os-modal-footer">
           <button class="os-btn-secondary" id="cancel-schedule-modal">Cancel</button>
-          <button class="os-btn-primary" id="confirm-schedule-modal" style="background: #fdba74; border-color: #fdba74; color: #fff;">Confirm & send</button>
+          <button class="os-btn-primary" id="confirm-schedule-modal" style="background: var(--os-luxury-orange); border-color: var(--os-luxury-orange); color: #fff;"><i class="ri-calendar-check-line"></i> Confirm & Schedule</button>
         </div>
       </div>
     </div>
@@ -631,25 +722,38 @@ export function initLeadDetailView(id) {
 
   const scheduleModal = document.getElementById('schedule-visit-modal');
   const btnSchedule = document.getElementById('btn-schedule-visit');
+  const btnTabSchedule = document.getElementById('btn-tab-schedule-visit');
+  const btnEmptySchedule = document.getElementById('btn-empty-schedule-visit');
   const closeSchedule = document.getElementById('close-schedule-modal');
   const cancelSchedule = document.getElementById('cancel-schedule-modal');
   const confirmSchedule = document.getElementById('confirm-schedule-modal');
 
-  if (btnSchedule) btnSchedule.addEventListener('click', () => scheduleModal.classList.add('show'));
+  const openSchedModal = () => {
+    if (scheduleModal) scheduleModal.classList.add('show');
+  };
+
+  if (btnSchedule) btnSchedule.addEventListener('click', openSchedModal);
+  if (btnTabSchedule) btnTabSchedule.addEventListener('click', openSchedModal);
+  if (btnEmptySchedule) btnEmptySchedule.addEventListener('click', openSchedModal);
   if (closeSchedule) closeSchedule.addEventListener('click', () => scheduleModal.classList.remove('show'));
   if (cancelSchedule) cancelSchedule.addEventListener('click', () => scheduleModal.classList.remove('show'));
   if (confirmSchedule) {
     confirmSchedule.addEventListener('click', () => {
       const datetime = document.getElementById('crm-sv-datetime').value;
       if (!datetime) {
-        alert("Please select a date and time.");
+        showToast("Please select a visit date and time.", "warning");
         return;
       }
 
+      const selectedTypeEl = document.querySelector('input[name="crm-sv-type"]:checked');
+      const visitType = selectedTypeEl ? selectedTypeEl.value : 'Customer Property Tour';
+      const staffVal = (document.getElementById('crm-sv-staff')?.value || '').trim() || lead.assignTo || lead.assignedTo || 'Unassigned';
+      const notesVal = (document.getElementById('crm-sv-notes')?.value || '').trim();
+
       // Fetch lead info
       const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const lead = leads.find(l => l.id == id);
-      if (!lead) return;
+      const currentLead = leads.find(l => l.id == id) || lead;
+      if (!currentLead) return;
 
       const dateObj = new Date(datetime);
       const day = dateObj.getDate().toString();
@@ -658,47 +762,58 @@ export function initLeadDetailView(id) {
       hours = hours % 12 || 12;
       const mins = dateObj.getMinutes().toString().padStart(2, '0');
       
-      const propertyText = (lead.area || '') + ' ' + (lead.type || '');
+      const propertyText = (currentLead.area || '') + ' ' + (currentLead.type || '');
       
       const visitData = {
         id: 'SV-' + Date.now(),
-        leadId: lead.name,
+        leadId: currentLead.id || currentLead.name,
         propertyId: propertyText.trim() || 'TBD',
         visitDate: datetime.replace('T', ' ') + ':00',
         status: 'Scheduled',
-        assignedTo: lead.assignTo || 'Unassigned',
-        notes: JSON.stringify({ clientName: lead.name, property: propertyText.trim() || 'TBD', phone: lead.mobile })
+        assignedTo: staffVal,
+        visitType: visitType,
+        outcome: notesVal ? `[${visitType}] Notes: ${notesVal}` : `[${visitType}] Scheduled`,
+        notes: JSON.stringify({ clientName: currentLead.name, property: propertyText.trim() || 'TBD', phone: currentLead.mobile, visitType, notes: notesVal })
       };
 
-      import('../utils/api.js').then(({ fetchFromAPI }) => {
-        fetchFromAPI('/site_visits', {
-          method: 'POST',
-          body: JSON.stringify(visitData)
-        }).then(() => {
-          scheduleModal.classList.remove('show');
-          alert("Visit scheduled successfully! You can view it in the Site Visits Planner.");
-          
-          // Also save locally as fallback/cache update
-          let visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
-          const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-          visits.push({
-            id: visitData.id,
-            date: day,
-            month: monthNames[dateObj.getMonth()],
-            hours: hours.toString(),
-            mins: mins,
-            ampm: ampm,
-            clientName: lead.name,
-            phone: lead.mobile || 'New Visit',
-            property: propertyText.trim() || 'TBD',
-            isNew: true
-          });
-          localStorage.setItem('thanjai_visits', JSON.stringify(visits));
-        }).catch(err => {
-          console.error("Failed to schedule visit", err);
-          alert("Failed to schedule visit: " + err.message);
-        });
+      fetchFromAPI('/site_visits', {
+        method: 'POST',
+        body: JSON.stringify(visitData)
+      }).catch(err => console.warn("API site visit save:", err));
+
+      // Always save locally to thanjai_visits
+      let visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      visits.push({
+        id: visitData.id,
+        date: day,
+        month: monthNames[dateObj.getMonth()],
+        hours: hours.toString(),
+        mins: mins,
+        ampm: ampm,
+        clientName: currentLead.name,
+        phone: currentLead.mobile || 'Site Visit',
+        property: propertyText.trim() || 'TBD',
+        assignedTo: staffVal,
+        visitType: visitType,
+        outcome: notesVal,
+        status: 'Scheduled',
+        isNew: true
       });
+      localStorage.setItem('thanjai_visits', JSON.stringify(visits));
+
+      scheduleModal.classList.remove('show');
+      showToast(`${visitType} scheduled for ${currentLead.name}!`, 'success');
+
+      // Re-render the detail view to reflect new visit
+      const osContent = document.getElementById('os-content');
+      if (osContent) {
+        osContent.innerHTML = renderLeadDetailView(id);
+        initLeadDetailView(id);
+        // Switch to visits tab automatically
+        const visitsTab = document.querySelector('.ld-tab[data-target="pane-visits"]');
+        if (visitsTab) visitsTab.click();
+      }
     });
   }
 

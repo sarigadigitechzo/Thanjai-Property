@@ -485,27 +485,26 @@ export async function initLeadsView(searchQuery = null) {
         }
       });
 
-      // Find any local leads that are NOT yet in the MySQL database
-      const dbIds = new Set(mapped.map(l => String(l.id)));
-      const dbPhones = new Set(mapped.map(l => String(l.phone || '').replace(/\D/g, '')).filter(Boolean));
-      
-      const missingFromDB = localLeads.filter(locL => {
-        if (!locL || !locL.id) return false;
-        const idMatch = dbIds.has(String(locL.id));
-        const cleanPhone = String(locL.phone || locL.mobile || '').replace(/\D/g, '');
-        const phoneMatch = cleanPhone && dbPhones.has(cleanPhone);
-        return !idMatch && !phoneMatch;
+      // Filter out any locally deleted leads from database results
+      let deletedList = [];
+      try { deletedList = JSON.parse(localStorage.getItem('thanjai_deleted_leads')) || []; } catch(e) {}
+      const deletedIds = new Set(deletedList.map(d => String(d.id || d.leadId)));
+      const deletedPhones = new Set(deletedList.map(d => String(d.phone || '')).filter(Boolean));
+      const deletedNames = new Set(deletedList.map(d => String(d.name || '').trim().toLowerCase()).filter(Boolean));
+
+      const filteredMapped = mapped.filter(apiL => {
+        if (!apiL) return false;
+        const lIdStr = String(apiL.id);
+        const cleanPhone = String(apiL.phone || apiL.mobile || '').replace(/\D/g, '');
+        const cleanName = String(apiL.name || '').trim().toLowerCase();
+
+        if (deletedIds.has(lIdStr)) return false;
+        if (cleanPhone && deletedPhones.has(cleanPhone)) return false;
+        if (cleanName && deletedNames.has(cleanName)) return false;
+        return true;
       });
 
-      if (missingFromDB.length > 0) {
-        console.log(`[AutoSync] Found ${missingFromDB.length} local leads not in MySQL. Syncing to database...`);
-        fetchFromAPI('/leads', {
-          method: 'POST',
-          body: JSON.stringify(missingFromDB)
-        }).catch(err => console.warn('[AutoSync Error]', err));
-      }
-
-      cachedLeads = [...missingFromDB, ...mapped];
+      cachedLeads = filteredMapped;
       saveLeads(cachedLeads);
     }
   } catch (err) {
@@ -1499,9 +1498,60 @@ function bindLeadEvents() {
           confirmIcon: 'ri-delete-bin-line',
           isDanger: true,
           onConfirm: () => {
-            // Always delete locally first so UI responds immediately
-            const newLeads = leads.filter(l => String(l.id) !== String(id));
+            const cleanDelPhone = (lead.phone || lead.mobile || '').replace(/\D/g, '');
+            const cleanDelName = (lead.name || '').trim().toLowerCase();
+
+            // 1. Remove from in-memory cached leads
+            const currentLeads = getLeads();
+            const newLeads = currentLeads.filter(l => {
+              if (!l) return false;
+              if (String(l.id) === String(id) || (lead.id && String(l.id) === String(lead.id))) return false;
+              if (cleanDelPhone && cleanDelPhone.length >= 7) {
+                const lPhone = String(l.phone || l.mobile || '').replace(/\D/g, '');
+                if (lPhone && (lPhone.includes(cleanDelPhone) || cleanDelPhone.includes(lPhone))) return false;
+              }
+              if (cleanDelName && cleanDelName.length > 2) {
+                const lName = String(l.name || '').trim().toLowerCase();
+                if (lName === cleanDelName) return false;
+              }
+              return true;
+            });
             saveLeads(newLeads);
+
+            // 2. Ensure localStorage is immediately scrubbed
+            try {
+              let storedLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+              storedLeads = storedLeads.filter(l => {
+                if (!l) return false;
+                if (String(l.id) === String(id) || (lead.id && String(l.id) === String(lead.id))) return false;
+                if (cleanDelPhone && cleanDelPhone.length >= 7) {
+                  const lPhone = String(l.phone || l.mobile || '').replace(/\D/g, '');
+                  if (lPhone && (lPhone.includes(cleanDelPhone) || cleanDelPhone.includes(lPhone))) return false;
+                }
+                if (cleanDelName && cleanDelName.length > 2) {
+                  const lName = String(l.name || '').trim().toLowerCase();
+                  if (lName === cleanDelName) return false;
+                }
+                return true;
+              });
+              localStorage.setItem('thanjai_leads', JSON.stringify(storedLeads));
+            } catch (err) {}
+
+            // 3. Add to persistent deleted blacklist
+            try {
+              let deletedLeads = JSON.parse(localStorage.getItem('thanjai_deleted_leads')) || [];
+              deletedLeads.push({
+                id: String(id),
+                leadId: String(lead.id || id),
+                phone: cleanDelPhone,
+                name: cleanDelName,
+                deletedAt: new Date().toISOString()
+              });
+              if (deletedLeads.length > 500) deletedLeads = deletedLeads.slice(-500);
+              localStorage.setItem('thanjai_deleted_leads', JSON.stringify(deletedLeads));
+            } catch (err) {}
+
+            // 4. Immediately update table view
             renderTable();
 
             addAuditLog({
@@ -1510,11 +1560,29 @@ function bindLeadEvents() {
               details: `Permanently removed lead record ${lead.name} (${lead.phone || lead.mobile || 'No Phone'}) from CRM pipeline.`
             });
 
-            showToast(`Lead "${lead.name}" deleted`, 'ri-checkbox-circle-fill');
+            showToast(`Lead "${lead.name}" deleted successfully`, 'ri-checkbox-circle-fill');
 
-            // Then sync delete to DB in background
-            fetchFromAPI('/leads/' + id, { method: 'DELETE' })
-              .catch(err => console.warn('DB delete sync failed:', err));
+            // 5. Sync delete to MySQL database in background
+            const deletePayload = {
+              id: String(id),
+              leadId: String(lead.id || id),
+              phone: lead.phone || lead.mobile || '',
+              name: lead.name || ''
+            };
+            const queryParams = new URLSearchParams({
+              id: String(id),
+              phone: lead.phone || lead.mobile || '',
+              name: lead.name || ''
+            }).toString();
+
+            fetchFromAPI('/leads?' + queryParams, {
+              method: 'DELETE',
+              body: JSON.stringify(deletePayload)
+            }).then(res => {
+              console.log('[DB Delete Success]', res);
+            }).catch(err => {
+              console.warn('[DB Delete Warning]', err);
+            });
           }
         });
       }

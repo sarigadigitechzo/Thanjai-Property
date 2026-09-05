@@ -250,18 +250,19 @@ export function renderPopupsView() {
 
             <!-- CTA Action Row & Dynamic Target Input -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-              <div class="form-group">
+              <div class="form-group" id="cta-btn-text-container">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">CTA Button Text</label>
                 <input type="text" id="popup-input-cta-text" class="popup-text-input" value="Claim Festive Offer on WhatsApp" />
               </div>
 
-              <div class="form-group">
+              <div class="form-group" id="cta-btn-action-container">
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">CTA Button Action</label>
                 <select id="popup-input-cta-type" class="popup-select-input">
                   <option value="whatsapp">💬 Open WhatsApp</option>
                   <option value="call">📞 Phone Direct Call</option>
                   <option value="site_visit">📅 Book Site Visit</option>
                   <option value="link">🔗 Open Custom Link / URL</option>
+                  <option value="none">🚫 No Button (Informational Only)</option>
                 </select>
               </div>
             </div>
@@ -284,6 +285,16 @@ export function renderPopupsView() {
                 <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">End Date (Optional)</label>
                 <input type="date" id="popup-input-end-date" class="popup-text-input" />
               </div>
+            </div>
+
+            <!-- Layout Selector -->
+            <div class="form-group">
+              <label style="font-size: 0.84rem; font-weight: 700; color: #1e293b; display: block; margin-bottom: 6px;">Popup Layout Style</label>
+              <select id="popup-input-layout" class="popup-select-input">
+                <option value="auto" selected>🤖 Auto Detect (Side-by-Side for Vertical, Top Banner for Landscape)</option>
+                <option value="split">↔️ Side-by-Side Split (Best for Vertical / Tall Flyers)</option>
+                <option value="stacked">↕️ Top Banner Stacked (Best for Landscape Images)</option>
+              </select>
             </div>
 
             <!-- Delay, Frequency, and Status Row -->
@@ -325,31 +336,27 @@ export function renderPopupsView() {
             </div>
 
             <!-- The Clean Preview Card -->
-            <div id="popup-live-preview-box" style="width: 100%; max-width: 380px; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; position: sticky; top: 10px;">
+            <div id="popup-live-preview-box" style="width: 100%; max-width: 380px; background: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; position: sticky; top: 10px; display: flex; flex-direction: column; transition: all 0.3s ease;">
               <!-- Image Banner with Badge -->
-              <div style="position: relative; height: 170px; background: #0f172a; overflow: hidden;">
-                <img id="preview-img" src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80" style="width: 100%; height: 100%; object-fit: cover;" />
-                <span id="preview-badge" style="position: absolute; top: 12px; left: 12px; background: #eb5e28; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); text-transform: uppercase;">
+              <div id="preview-img-wrapper" style="position: relative; width: 100%; min-height: 160px; max-height: 220px; background: #0f172a; overflow: hidden; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease;">
+                <img id="preview-img" src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80" style="width: 100%; height: 100%; max-height: 220px; object-fit: cover; background: #0f172a; display: block;" />
+                <span id="preview-badge" style="position: absolute; top: 12px; left: 12px; background: #eb5e28; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); text-transform: uppercase; z-index: 2;">
                   🎉 FESTIVE OFFER
                 </span>
-                <span style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                <span style="position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,0.5); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; z-index: 2;">
                   ✕
                 </span>
               </div>
 
-              <!-- Content Body with Title at Top of Content -->
-              <div style="padding: 18px 20px 22px 20px;">
-                <h3 id="preview-title" style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; line-height: 1.35; font-family: 'DM Serif Display', Georgia, serif;">🌾 Grand Festive Property Mela 2026</h3>
-                <p id="preview-subtitle" style="font-size: 0.84rem; color: #64748b; margin: 0 0 14px 0; line-height: 1.45;">Special limited-time booking discount on DTCP & RERA approved residential plots in Thanjavur & Trichy Road.</p>
-                
-                <div id="preview-highlights-list" style="display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px;">
-                  <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155;">
-                    <i class="ri-checkbox-circle-fill" style="color: #10b981; font-size: 0.95rem;"></i> <span>Spot Patta Transfer & 0% Brokerage</span>
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155;">
-                    <i class="ri-checkbox-circle-fill" style="color: #10b981; font-size: 0.95rem;"></i> <span>Ready for immediate villa construction</span>
-                  </div>
+              <!-- Content Body with Category Tag and Refined Typography -->
+              <div id="preview-content-wrapper" style="padding: 20px 22px; flex: 1; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(145deg, #ffffff 0%, #fffcf8 100%);">
+                <div id="preview-type-tag" style="display: inline-flex; align-items: center; gap: 6px; background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; width: fit-content;">
+                  <i class="ri-sparkling-fill" style="font-size: 0.76rem;"></i> <span id="preview-type-text">Festival & Seasonal</span>
                 </div>
+                <h3 id="preview-title" style="font-size: 1.18rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; line-height: 1.35; font-family: 'DM Serif Display', Georgia, serif;">🌾 Grand Festive Property Mela 2026</h3>
+                <p id="preview-subtitle" style="font-size: 0.85rem; color: #64748b; margin: 0 0 14px 0; line-height: 1.45;">Special limited-time booking discount on DTCP & RERA approved residential plots in Thanjavur & Trichy Road.</p>
+                
+                <div id="preview-highlights-list" style="display: none; flex-direction: column; gap: 7px; margin-bottom: 16px;"></div>
 
                 <button id="preview-cta-btn" style="width: 100%; background: #eb5e28; color: #fff; border: none; padding: 11px 16px; border-radius: 10px; font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 6px 16px rgba(235,94,40,0.3);">
                   <i id="preview-cta-icon" class="ri-whatsapp-fill"></i> <span id="preview-cta-text">Claim Festive Offer on WhatsApp</span>
@@ -442,12 +449,12 @@ export function initPopupsView() {
         <div class="popup-card hover-lift" style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.04); display: flex; flex-direction: column;">
           
           <!-- Card Thumbnail -->
-          <div style="position: relative; height: 160px; background: #0f172a; overflow: hidden;">
+          <div style="position: relative; height: 160px; background: #0f172a; overflow: hidden; display: flex; align-items: center; justify-content: center;">
             <img src="${imageSrc}" style="width: 100%; height: 100%; object-fit: cover;" />
-            <span style="position: absolute; top: 12px; left: 12px; background: #eb5e28; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.25);">
+            <span style="position: absolute; top: 12px; left: 12px; background: #eb5e28; color: #fff; font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); z-index: 2;">
               ${p.badge || 'OFFER'}
             </span>
-            <div style="position: absolute; top: 12px; right: 12px; background: ${stateObj.bg}; color: ${stateObj.color}; font-size: 0.74rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="position: absolute; top: 12px; right: 12px; background: ${stateObj.bg}; color: ${stateObj.color}; font-size: 0.74rem; font-weight: 800; padding: 4px 12px; border-radius: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 2;">
               ${stateObj.label}
             </div>
           </div>
@@ -472,7 +479,7 @@ export function initPopupsView() {
             <!-- Meta info -->
             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; color: #64748b; margin-bottom: 14px; border-top: 1px solid #f1f5f9; padding-top: 10px;">
               <span><i class="ri-timer-line"></i> Delay: ${p.delaySeconds || 3}s</span>
-              <span><i class="ri-link"></i> ${p.ctaType === 'whatsapp' ? 'WhatsApp' : (p.ctaType === 'call' ? 'Phone Call' : (p.ctaType === 'site_visit' ? 'Site Visit' : 'Custom Link'))}</span>
+              <span><i class="ri-link"></i> ${p.ctaType === 'whatsapp' ? 'WhatsApp' : (p.ctaType === 'call' ? 'Phone Call' : (p.ctaType === 'site_visit' ? 'Site Visit' : (p.ctaType === 'none' ? 'No Button' : 'Custom Link')))}</span>
             </div>
 
             <!-- Actions Bar -->
@@ -574,6 +581,7 @@ export function initPopupsView() {
   const inputType = document.getElementById('popup-input-type');
   const inputBadge = document.getElementById('popup-input-badge');
   const inputImage = document.getElementById('popup-input-image');
+  const inputLayout = document.getElementById('popup-input-layout');
   const inputHighlights = document.getElementById('popup-input-highlights');
   const inputCtaText = document.getElementById('popup-input-cta-text');
   const inputCtaType = document.getElementById('popup-input-cta-type');
@@ -584,6 +592,18 @@ export function initPopupsView() {
 
   const updateCtaFields = () => {
     const action = inputCtaType?.value || 'whatsapp';
+    const ctaTextContainer = document.getElementById('cta-btn-text-container');
+    const ctaTargetContainer = document.getElementById('cta-target-container');
+
+    if (action === 'none') {
+      if (ctaTextContainer) ctaTextContainer.style.display = 'none';
+      if (ctaTargetContainer) ctaTargetContainer.style.display = 'none';
+      return;
+    } else {
+      if (ctaTextContainer) ctaTextContainer.style.display = 'block';
+      if (ctaTargetContainer) ctaTargetContainer.style.display = 'block';
+    }
+
     if (!ctaTargetLabel || !inputCtaValue || !ctaTargetHint) return;
 
     if (action === 'whatsapp') {
@@ -614,8 +634,52 @@ export function initPopupsView() {
     }
   };
 
+  const applyPreviewLayout = (layoutMode) => {
+    const previewBox = document.getElementById('popup-live-preview-box');
+    const imgWrapper = document.getElementById('preview-img-wrapper');
+    const imgEl = document.getElementById('preview-img');
+    const contentWrapper = document.getElementById('preview-content-wrapper');
+    if (!previewBox || !imgWrapper || !contentWrapper) return;
+
+    if (layoutMode === 'split') {
+      previewBox.style.flexDirection = 'row';
+      previewBox.style.maxWidth = '520px';
+      imgWrapper.style.width = '210px';
+      imgWrapper.style.minWidth = '190px';
+      imgWrapper.style.maxWidth = '230px';
+      imgWrapper.style.minHeight = '320px';
+      imgWrapper.style.maxHeight = '440px';
+      if (imgEl) {
+        imgEl.style.objectFit = 'contain';
+        imgEl.style.maxHeight = '440px';
+        imgEl.style.height = '100%';
+        imgEl.style.width = '100%';
+      }
+      contentWrapper.style.padding = '20px 22px';
+    } else {
+      previewBox.style.flexDirection = 'column';
+      previewBox.style.maxWidth = '380px';
+      imgWrapper.style.width = '100%';
+      imgWrapper.style.minWidth = '100%';
+      imgWrapper.style.maxWidth = '100%';
+      imgWrapper.style.minHeight = '160px';
+      imgWrapper.style.maxHeight = '220px';
+      if (imgEl) {
+        imgEl.style.objectFit = 'cover';
+        imgEl.style.maxHeight = '220px';
+        imgEl.style.height = '100%';
+        imgEl.style.width = '100%';
+      }
+      contentWrapper.style.padding = '18px 20px 22px 20px';
+    }
+  };
+
   inputCtaType?.addEventListener('change', () => {
     updateCtaFields();
+    updateLivePreview();
+  });
+
+  inputLayout?.addEventListener('change', () => {
     updateLivePreview();
   });
 
@@ -623,38 +687,73 @@ export function initPopupsView() {
     const titleEl = document.getElementById('preview-title');
     const subtitleEl = document.getElementById('preview-subtitle');
     const badgeEl = document.getElementById('preview-badge');
+    const typeTextEl = document.getElementById('preview-type-text');
     const imgEl = document.getElementById('preview-img');
     const ctaTextEl = document.getElementById('preview-cta-text');
     const ctaIconEl = document.getElementById('preview-cta-icon');
+    const previewCtaBtn = document.getElementById('preview-cta-btn');
     const highlightsListEl = document.getElementById('preview-highlights-list');
 
     if (titleEl) titleEl.textContent = inputTitle.value.trim() || '🌾 Your Offer Title Here';
     if (subtitleEl) subtitleEl.textContent = inputSubtitle.value.trim() || 'Short attractive description of your special discount or project launch.';
     if (badgeEl) badgeEl.textContent = inputBadge.value.trim() || 'OFFER';
-    if (imgEl && inputImage.value.trim()) imgEl.src = inputImage.value.trim();
+    if (typeTextEl) typeTextEl.textContent = inputType?.value.trim() || 'Festival & Seasonal';
+
+    const imgSrc = inputImage.value.trim();
+    if (imgEl && imgSrc) {
+      imgEl.src = imgSrc;
+    }
+
+    // Determine layout: manual or auto aspect ratio detection
+    const selectedLayout = inputLayout?.value || 'auto';
+    if (selectedLayout === 'split') {
+      applyPreviewLayout('split');
+    } else if (selectedLayout === 'stacked') {
+      applyPreviewLayout('stacked');
+    } else {
+      // Auto-detect
+      if (imgSrc) {
+        const testImg = new Image();
+        testImg.onload = () => {
+          if (testImg.naturalHeight > testImg.naturalWidth * 1.05) {
+            applyPreviewLayout('split');
+          } else {
+            applyPreviewLayout('stacked');
+          }
+        };
+        testImg.onerror = () => applyPreviewLayout('stacked');
+        testImg.src = imgSrc;
+      } else {
+        applyPreviewLayout('stacked');
+      }
+    }
+
     if (ctaTextEl) ctaTextEl.textContent = inputCtaText.value.trim() || 'Claim Offer on WhatsApp';
 
-    if (ctaIconEl && inputCtaType) {
-      if (inputCtaType.value === 'whatsapp') ctaIconEl.className = 'ri-whatsapp-fill';
-      else if (inputCtaType.value === 'call') ctaIconEl.className = 'ri-phone-fill';
-      else if (inputCtaType.value === 'site_visit') ctaIconEl.className = 'ri-calendar-check-fill';
-      else ctaIconEl.className = 'ri-arrow-right-up-line';
+    if (inputCtaType && inputCtaType.value === 'none') {
+      if (previewCtaBtn) previewCtaBtn.style.display = 'none';
+    } else {
+      if (previewCtaBtn) previewCtaBtn.style.display = 'flex';
+      if (ctaIconEl && inputCtaType) {
+        if (inputCtaType.value === 'whatsapp') ctaIconEl.className = 'ri-whatsapp-fill';
+        else if (inputCtaType.value === 'call') ctaIconEl.className = 'ri-phone-fill';
+        else if (inputCtaType.value === 'site_visit') ctaIconEl.className = 'ri-calendar-check-fill';
+        else ctaIconEl.className = 'ri-arrow-right-up-line';
+      }
     }
 
     if (highlightsListEl) {
       const lines = (inputHighlights.value || '').split('\n').map(l => l.trim()).filter(l => l);
       if (lines.length > 0) {
+        highlightsListEl.style.display = 'flex';
         highlightsListEl.innerHTML = lines.map(line => `
           <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155;">
             <i class="ri-checkbox-circle-fill" style="color: #10b981; font-size: 0.95rem;"></i> <span>${line}</span>
           </div>
         `).join('');
       } else {
-        highlightsListEl.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #334155;">
-            <i class="ri-checkbox-circle-fill" style="color: #10b981; font-size: 0.95rem;"></i> <span>Spot Patta Transfer & 0% Brokerage</span>
-          </div>
-        `;
+        highlightsListEl.style.display = 'none';
+        highlightsListEl.innerHTML = '';
       }
     }
   };
@@ -684,7 +783,8 @@ export function initPopupsView() {
     inputType.value = 'Festival & Seasonal';
     inputBadge.value = '🎉 FESTIVE OFFER';
     inputImage.value = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80';
-    inputHighlights.value = 'Spot Patta Transfer & 0% Brokerage\nReady for immediate villa construction\nSpecial ₹50,000 spot booking cashback';
+    if (inputLayout) inputLayout.value = 'auto';
+    inputHighlights.value = '';
     inputCtaText.value = 'Claim Festive Offer on WhatsApp';
     inputCtaType.value = 'whatsapp';
     inputCtaValue.value = '+91 84899 96852';
@@ -709,6 +809,7 @@ export function initPopupsView() {
     inputType.value = p.type || 'Festival & Seasonal';
     inputBadge.value = p.badge || 'PROMOTION';
     inputImage.value = p.image || '';
+    if (inputLayout) inputLayout.value = p.layout || 'auto';
     inputHighlights.value = Array.isArray(p.highlights) ? p.highlights.join('\n') : '';
     inputCtaText.value = p.ctaText || 'Claim Festive Offer on WhatsApp';
     inputCtaType.value = p.ctaType || 'whatsapp';
@@ -748,6 +849,7 @@ export function initPopupsView() {
 
     const editId = document.getElementById('edit-popup-id').value;
     const highlights = inputHighlights.value.split('\n').map(l => l.trim()).filter(l => l);
+    const ctaTypeVal = inputCtaType.value;
 
     const payload = {
       title: title,
@@ -755,10 +857,11 @@ export function initPopupsView() {
       type: inputType.value.trim() || 'Custom Deal',
       badge: inputBadge.value.trim() || 'OFFER',
       image: inputImage.value.trim(),
+      layout: inputLayout ? inputLayout.value : 'auto',
       highlights: highlights,
-      ctaText: inputCtaText.value.trim() || 'Claim Offer on WhatsApp',
-      ctaType: inputCtaType.value,
-      ctaValue: inputCtaValue.value.trim() || '+91 84899 96852',
+      ctaText: ctaTypeVal === 'none' ? '' : (inputCtaText.value.trim() || 'Claim Offer on WhatsApp'),
+      ctaType: ctaTypeVal,
+      ctaValue: ctaTypeVal === 'none' ? '' : (inputCtaValue.value.trim() || '+91 84899 96852'),
       startDate: document.getElementById('popup-input-start-date').value,
       endDate: document.getElementById('popup-input-end-date').value,
       delaySeconds: parseInt(document.getElementById('popup-input-delay').value) || 3,

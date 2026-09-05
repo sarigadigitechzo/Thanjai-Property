@@ -218,9 +218,14 @@ function renCol($conn, $t, $o, $n, $d) {
   `visitDate` varchar(100) DEFAULT NULL,
   `status` varchar(50) DEFAULT 'Scheduled',
   `assignedTo` varchar(255) DEFAULT NULL,
+  `visitType` varchar(100) DEFAULT 'Customer Tour',
+  `outcome` text DEFAULT NULL,
   `notes` longtext DEFAULT NULL,
   `createdAt` datetime DEFAULT CURRENT_TIMESTAMP
 )");
+@$conn->query("ALTER TABLE `site_visits` ADD COLUMN IF NOT EXISTS `visitType` varchar(100) DEFAULT 'Customer Tour'");
+@$conn->query("ALTER TABLE `site_visits` ADD COLUMN IF NOT EXISTS `outcome` text DEFAULT NULL");
+
 
 @$conn->query("CREATE TABLE IF NOT EXISTS `partners` (
   `id` varchar(255) PRIMARY KEY,
@@ -706,6 +711,11 @@ elseif ($resource === 'leads') {
                 SELECT 
                   CASE 
                     WHEN assignedTo LIKE '%Maheshwari%' OR notes LIKE '%Maheshwari%' THEN 'Maheshwari'
+                    WHEN assignedTo LIKE '%Esther%' OR notes LIKE '%Esther%' THEN 'Esther'
+                    WHEN assignedTo LIKE '%Venkat%' OR notes LIKE '%Venkat%' THEN 'Venkat'
+                    WHEN assignedTo LIKE '%Vignesh%' OR notes LIKE '%Vignesh%' THEN 'Vignesh'
+                    WHEN assignedTo LIKE '%Vetri%' OR notes LIKE '%Vetri%' THEN 'Vetri Thunaivan'
+                    WHEN assignedTo LIKE '%Aishwarya%' OR notes LIKE '%Aishwarya%' THEN 'Aishwarya R.'
                     WHEN assignedTo LIKE '%Kavitha%' OR notes LIKE '%Kavitha%' THEN 'Kavitha'
                     WHEN assignedTo LIKE '%Arun%' OR notes LIKE '%Arun%' THEN 'Arun'
                     WHEN assignedTo LIKE '%Priya%' OR notes LIKE '%Priya%' THEN 'Priya'
@@ -724,23 +734,65 @@ elseif ($resource === 'leads') {
             $staffMap = [];
             if ($resStaff) {
                 while ($r = $resStaff->fetch_assoc()) {
-                    $staffMap[$r['staff']] = ["total" => intval($r['total']), "converted" => intval($r['converted'])];
+                    $staffMap[$r['staff']] = ["total" => intval($r['total']), "converted" => intval($r['converted']), "siteVisits" => 0];
                 }
             }
             // Ensure Maheshwari has at least 114 assigned leads and reduce Unassigned accordingly
             $mCount = isset($staffMap['Maheshwari']) ? $staffMap['Maheshwari']['total'] : 0;
             if ($mCount < 114) {
                 $diff = 114 - $mCount;
-                $staffMap['Maheshwari'] = ["total" => 114, "converted" => isset($staffMap['Maheshwari']) ? $staffMap['Maheshwari']['converted'] : 0];
+                $staffMap['Maheshwari'] = ["total" => 114, "converted" => isset($staffMap['Maheshwari']) ? $staffMap['Maheshwari']['converted'] : 0, "siteVisits" => 0];
                 if (isset($staffMap['Unassigned']) && $staffMap['Unassigned']['total'] >= $diff) {
                     $staffMap['Unassigned']['total'] -= $diff;
                 }
             }
+
+            // Aggregate site visits per staff (ONLY count COMPLETED site visits)
+            $resVisits = $conn->query("
+                SELECT 
+                  CASE 
+                    WHEN assignedTo LIKE '%Maheshwari%' OR notes LIKE '%Maheshwari%' THEN 'Maheshwari'
+                    WHEN assignedTo LIKE '%Esther%' OR notes LIKE '%Esther%' THEN 'Esther'
+                    WHEN assignedTo LIKE '%Venkat%' OR notes LIKE '%Venkat%' THEN 'Venkat'
+                    WHEN assignedTo LIKE '%Vignesh%' OR notes LIKE '%Vignesh%' THEN 'Vignesh'
+                    WHEN assignedTo LIKE '%Vetri%' OR notes LIKE '%Vetri%' THEN 'Vetri Thunaivan'
+                    WHEN assignedTo LIKE '%Aishwarya%' OR notes LIKE '%Aishwarya%' THEN 'Aishwarya R.'
+                    WHEN assignedTo LIKE '%Kavitha%' OR notes LIKE '%Kavitha%' THEN 'Kavitha'
+                    WHEN assignedTo LIKE '%Arun%' OR notes LIKE '%Arun%' THEN 'Arun'
+                    WHEN assignedTo LIKE '%Priya%' OR notes LIKE '%Priya%' THEN 'Priya'
+                    WHEN assignedTo LIKE '%Vijay%' OR notes LIKE '%Vijay%' THEN 'Vijayaraghavan'
+                    WHEN assignedTo IS NOT NULL AND TRIM(assignedTo) != '' AND TRIM(assignedTo) != 'Unassigned'
+                    THEN TRIM(assignedTo)
+                    ELSE 'Unassigned'
+                  END as staff,
+                  COUNT(*) as visitCount
+                FROM site_visits 
+                WHERE status = 'Completed' OR status LIKE '%complete%'
+                GROUP BY staff
+            ");
+            if ($resVisits) {
+                while ($rv = $resVisits->fetch_assoc()) {
+                    $sName = $rv['staff'];
+                    $vCnt = intval($rv['visitCount']);
+                    if (isset($staffMap[$sName])) {
+                        $staffMap[$sName]['siteVisits'] = $vCnt;
+                    } else {
+                        $staffMap[$sName] = ["total" => 0, "converted" => 0, "siteVisits" => $vCnt];
+                    }
+                }
+            }
+
             $staffList = [];
             foreach ($staffMap as $sName => $sData) {
-                $staffList[] = ["staff" => $sName, "total" => $sData['total'], "converted" => $sData['converted']];
+                $staffList[] = [
+                    "staff" => $sName, 
+                    "total" => $sData['total'], 
+                    "converted" => $sData['converted'],
+                    "siteVisits" => isset($sData['siteVisits']) ? $sData['siteVisits'] : 0
+                ];
             }
             usort($staffList, function($a, $b) { return $b['total'] - $a['total']; });
+
 
             // 4. Monthly Trend (Guaranteed 12-Month Array Jan to Dec)
             $whereMonthly = "WHERE createdAt IS NOT NULL AND createdAt != ''";
@@ -922,11 +974,36 @@ elseif ($resource === 'leads') {
         ]);
         exit();
     }
-    elseif ($method === 'DELETE' && $id) {
-        $stmt = $conn->prepare("DELETE FROM leads WHERE id=?");
-        $stmt->bind_param("s", $id);
-        $stmt->execute();
-        echo json_encode(["message" => "Lead deleted successfully"]);
+    elseif ($method === 'DELETE') {
+        $raw = json_decode(file_get_contents("php://input"), true);
+        $targetId = $id ?: ($_GET['id'] ?? ($_POST['id'] ?? ($raw['id'] ?? null)));
+        $phone = $_GET['phone'] ?? ($_POST['phone'] ?? ($raw['phone'] ?? ($raw['mobile'] ?? null)));
+        $name = $_GET['name'] ?? ($_POST['name'] ?? ($raw['name'] ?? null));
+
+        if ($targetId || $phone || $name) {
+            $cleanPhone = preg_replace('/\D/', '', $phone ?: ($targetId ?: ''));
+            if (strlen($cleanPhone) >= 7) {
+                $phonePattern = '%' . substr($cleanPhone, -10) . '%';
+            } else {
+                $phonePattern = '___NO_MATCH___';
+            }
+            $tIdParam = $targetId ?: '___NO_MATCH___';
+            $nameParam = ($name && strlen(trim($name)) > 1) ? trim($name) : '___NO_MATCH___';
+
+            $stmt = $conn->prepare("DELETE FROM leads WHERE id=? OR phone LIKE ? OR whatsapp LIKE ? OR name=?");
+            $stmt->bind_param("ssss", $tIdParam, $phonePattern, $phonePattern, $nameParam);
+            $stmt->execute();
+            echo json_encode([
+                "message" => "Lead deleted successfully",
+                "affected" => $stmt->affected_rows,
+                "targetId" => $targetId
+            ]);
+            exit();
+        } else {
+            http_response_code(400);
+            echo json_encode(["error" => "No lead identifier provided for deletion"]);
+            exit();
+        }
     }
 }
 
@@ -1966,11 +2043,13 @@ elseif ($resource === 'site_visits') {
         $visitDate = !empty($data['visitDate']) ? $data['visitDate'] : date('Y-m-d H:i:s');
         $status = !empty($data['status']) ? $data['status'] : 'Scheduled';
         $assignedTo = !empty($data['assignedTo']) ? $data['assignedTo'] : '';
+        $visitType = !empty($data['visitType']) ? $data['visitType'] : 'Customer Tour';
+        $outcome = !empty($data['outcome']) ? $data['outcome'] : '';
         $notes = !empty($data['notes']) ? (is_string($data['notes']) ? $data['notes'] : json_encode($data['notes'])) : '';
         
         try {
-            $stmt = $conn->prepare("INSERT INTO site_visits (id, leadId, propertyId, visitDate, status, assignedTo, notes) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE leadId=VALUES(leadId), propertyId=VALUES(propertyId), visitDate=VALUES(visitDate), status=VALUES(status), assignedTo=VALUES(assignedTo), notes=VALUES(notes)");
-            $stmt->bind_param("sssssss", $id, $leadId, $propertyId, $visitDate, $status, $assignedTo, $notes);
+            $stmt = $conn->prepare("INSERT INTO site_visits (id, leadId, propertyId, visitDate, status, assignedTo, visitType, outcome, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE leadId=VALUES(leadId), propertyId=VALUES(propertyId), visitDate=VALUES(visitDate), status=VALUES(status), assignedTo=VALUES(assignedTo), visitType=VALUES(visitType), outcome=VALUES(outcome), notes=VALUES(notes)");
+            $stmt->bind_param("sssssssss", $id, $leadId, $propertyId, $visitDate, $status, $assignedTo, $visitType, $outcome, $notes);
             if ($stmt->execute()) {
                 echo json_encode(["message" => "Created successfully", "id" => $id]);
             } else {
@@ -1985,21 +2064,30 @@ elseif ($resource === 'site_visits') {
     elseif ($method === 'PUT') {
         $data = json_decode(file_get_contents("php://input"), true);
         $targetId = $id ? $id : (!empty($data['id']) ? $data['id'] : '');
-        $leadId = !empty($data['leadId']) ? $data['leadId'] : '';
-        $propertyId = !empty($data['propertyId']) ? $data['propertyId'] : '';
-        $visitDate = !empty($data['visitDate']) ? $data['visitDate'] : date('Y-m-d H:i:s');
-        $status = !empty($data['status']) ? $data['status'] : 'Scheduled';
-        $assignedTo = !empty($data['assignedTo']) ? $data['assignedTo'] : '';
-        $notes = !empty($data['notes']) ? (is_string($data['notes']) ? $data['notes'] : json_encode($data['notes'])) : '';
-        
         if ($targetId) {
-            $stmt = $conn->prepare("UPDATE site_visits SET leadId=?, propertyId=?, visitDate=?, status=?, assignedTo=?, notes=? WHERE id=?");
-            $stmt->bind_param("sssssss", $leadId, $propertyId, $visitDate, $status, $assignedTo, $notes, $targetId);
-            if ($stmt->execute()) {
-                echo json_encode(["message" => "Updated successfully"]);
+            $updates = [];
+            if (isset($data['status'])) $updates[] = "`status` = '" . $conn->real_escape_string($data['status']) . "'";
+            if (isset($data['outcome'])) $updates[] = "`outcome` = '" . $conn->real_escape_string($data['outcome']) . "'";
+            if (!empty($data['assignedTo'])) $updates[] = "`assignedTo` = '" . $conn->real_escape_string($data['assignedTo']) . "'";
+            if (!empty($data['visitType'])) $updates[] = "`visitType` = '" . $conn->real_escape_string($data['visitType']) . "'";
+            if (!empty($data['leadId'])) $updates[] = "`leadId` = '" . $conn->real_escape_string($data['leadId']) . "'";
+            if (!empty($data['propertyId'])) $updates[] = "`propertyId` = '" . $conn->real_escape_string($data['propertyId']) . "'";
+            if (!empty($data['visitDate'])) $updates[] = "`visitDate` = '" . $conn->real_escape_string($data['visitDate']) . "'";
+            if (isset($data['notes'])) {
+                $nStr = is_string($data['notes']) ? $data['notes'] : json_encode($data['notes']);
+                $updates[] = "`notes` = '" . $conn->real_escape_string($nStr) . "'";
+            }
+
+            if (!empty($updates)) {
+                $sql = "UPDATE site_visits SET " . implode(", ", $updates) . " WHERE id = '" . $conn->real_escape_string($targetId) . "'";
+                if ($conn->query($sql)) {
+                    echo json_encode(["message" => "Updated successfully", "id" => $targetId]);
+                } else {
+                    http_response_code(500);
+                    echo json_encode(["error" => "Database error: " . $conn->error]);
+                }
             } else {
-                http_response_code(500);
-                echo json_encode(["error" => "Database error: " . $stmt->error]);
+                echo json_encode(["message" => "No changes provided"]);
             }
         } else {
             http_response_code(400);

@@ -113,19 +113,35 @@ export function renderSiteVisitsView() {
 
     <!-- Modals -->
     <div class="os-modal-overlay" id="site-visits-schedule-modal" style="overflow-y: auto;">
-      <div class="os-modal-card" style="max-width: 480px; margin: 40px auto;">
+      <div class="os-modal-card" style="max-width: 520px; margin: 30px auto;">
         <div class="os-modal-header">
-          <h2>Schedule site visit</h2>
+          <h2>Schedule Site Visit / Inspection</h2>
           <button class="os-modal-close" id="close-sv-modal"><i class="ri-close-line"></i></button>
         </div>
         <div class="os-modal-body">
+          <!-- Visit Type Selector -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-weight: 700; font-size: 0.88rem; color: var(--os-dark, #1e293b); display: block; margin-bottom: 8px;">Visit Purpose & Type *</label>
+            <div style="display: flex; gap: 10px;">
+              <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #fff5eb; border: 1.5px solid #eb5e28; border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 700; color: #eb5e28;">
+                <input type="radio" name="sv-visit-type" value="Customer Property Tour" checked style="accent-color: #eb5e28;" />
+                <span>👥 Customer Property Tour</span>
+              </label>
+              <label style="flex: 1; display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 700; color: #475569;">
+                <input type="radio" name="sv-visit-type" value="Staff Site Pre-Inspection" style="accent-color: #eb5e28;" />
+                <span>🔍 Staff Pre-Inspection</span>
+              </label>
+            </div>
+          </div>
+
           <div class="form-group" style="margin-bottom: 16px; position: relative;">
-            <label>Client name / Lead *</label>
+            <label id="sv-client-label">Client Name / Lead *</label>
             <input type="text" id="sv-client-name" list="client-datalist" class="os-input" placeholder="Type or select client name / ID..." style="width: 100%; background: #ffffff; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;" required />
             <datalist id="client-datalist">
               ${clientOptionsHtml}
             </datalist>
           </div>
+
           <div class="form-group" style="margin-bottom: 16px; position: relative;">
             <label>Property *</label>
             <input type="text" id="sv-property" list="property-datalist" class="os-input" placeholder="Type or select property title / ID..." style="width: 100%; background: #ffffff; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;" required />
@@ -133,17 +149,42 @@ export function renderSiteVisitsView() {
               ${propertyOptionsHtml}
             </datalist>
           </div>
-          <div class="form-group" style="margin-bottom: 16px;">
-            <label>Visit date & time *</label>
-            <input type="datetime-local" id="sv-datetime" class="os-input" style="width: 100%;" required />
+
+          <!-- Dynamic Past Visit History Notification -->
+          <div id="sv-past-history-alert" style="display: none; padding: 10px 14px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 0.82rem; color: #1e40af; margin-bottom: 16px;">
+            <i class="ri-history-line" style="margin-right: 4px; font-weight: 700;"></i>
+            <span id="sv-past-history-text"></span>
           </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+            <div class="form-group">
+              <label>Visit Date & Time *</label>
+              <input type="datetime-local" id="sv-datetime" class="os-input" style="width: 100%;" required />
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="sv-status-select" class="os-input" style="width: 100%; background: #ffffff; cursor: pointer; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;">
+                <option value="Scheduled" selected>🗓️ Scheduled</option>
+                <option value="Completed">✅ Completed</option>
+                <option value="Rescheduled">🔄 Rescheduled</option>
+                <option value="Cancelled">❌ Cancelled</option>
+              </select>
+            </div>
+          </div>
+
           <div class="form-group" style="margin-bottom: 16px;">
             <label>Assign to Admin Staff *</label>
             <select id="sv-assigned-to" class="os-input" style="width: 100%; background: #ffffff; cursor: pointer; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px;">
               ${adminOptions}
             </select>
           </div>
-          <p style="font-size: 0.85rem; color: var(--os-gray-500); margin-top: 12px;">The assigned admin staff will receive the visit reminder in their dashboard schedule.</p>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label>Inspection Notes / Customer Feedback (Optional)</label>
+            <textarea id="sv-outcome-notes" class="os-input" rows="2" placeholder="e.g. Verified road width and boundary markers, or customer loved corner plot..." style="width: 100%; padding: 10px 14px; border: 1px solid var(--os-border-color, #cbd5e1); border-radius: 8px; resize: vertical; font-size: 0.88rem;"></textarea>
+          </div>
+
+          <p style="font-size: 0.82rem; color: var(--os-gray-500); margin-top: 8px;">The assigned staff will see this site visit and its performance record in their dashboard.</p>
         </div>
         <div class="os-modal-footer">
           <button class="os-btn-secondary" id="cancel-sv-modal">Cancel</button>
@@ -183,12 +224,16 @@ export async function initSiteVisitsView() {
         let clientName = v.leadId;
         let property = v.propertyId;
         let assignedTo = v.assignedTo || 'Vijayaraghavan';
+        let visitType = v.visitType || 'Customer Property Tour';
+        let outcome = v.outcome || '';
         try { 
           if(v.notes) { 
             const n = typeof v.notes === 'string' ? JSON.parse(v.notes) : v.notes; 
             clientName = n.clientName || clientName; 
             property = n.property || property; 
             assignedTo = n.assignedTo || assignedTo;
+            visitType = n.visitType || visitType;
+            outcome = n.outcome || outcome;
           } 
         } catch(e){}
 
@@ -203,7 +248,9 @@ export async function initSiteVisitsView() {
           phone: 'Site Visit',
           property: property,
           assignedTo: assignedTo,
-          status: v.status
+          visitType: visitType,
+          outcome: outcome,
+          status: v.status || 'Scheduled'
         };
       });
     }
@@ -242,8 +289,6 @@ export async function initSiteVisitsView() {
         propDatalist.innerHTML = opts;
       }
     }).catch(e => {});
-
-
 
   const today = new Date();
   let currentMonth = today.getMonth(); // 0-indexed
@@ -348,34 +393,53 @@ export async function initSiteVisitsView() {
     if (dayVisits.length === 0) {
       html += `<p style="color: var(--os-gray-500); padding: 20px 0;">No visits scheduled for this date.</p>`;
     } else {
-      // sort by AM/PM then hour (rough)
       dayVisits.forEach(v => {
+        const isPreInspection = (v.visitType && v.visitType.includes('Inspection'));
+        const typeBadge = isPreInspection 
+          ? `<span style="background: #f3e8ff; color: #7e22ce; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #e9d5ff;"><i class="ri-search-eye-line"></i> Staff Pre-Inspection</span>`
+          : `<span style="background: #fff5eb; color: #eb5e28; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #fed7aa;"><i class="ri-user-heart-line"></i> Customer Tour</span>`;
+        
+        const isCompleted = v.status === 'Completed';
+        const statusBadge = isCompleted
+          ? `<span style="background: #ecfdf5; color: #047857; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #a7f3d0;"><i class="ri-checkbox-circle-fill"></i> Completed</span>`
+          : `<span style="background: #eff6ff; color: #1d4ed8; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #bfdbfe;"><i class="ri-time-line"></i> ${v.status || 'Scheduled'}</span>`;
+
         html += `
-          <div class="visit-card hover-lift" style="border-left: 4px solid #eb5e28;">
+          <div class="visit-card hover-lift" style="border-left: 4px solid ${isPreInspection ? '#9333ea' : '#eb5e28'}; margin-bottom: 14px;">
             <div class="v-time">
               <div class="v-hour">${v.hours}:${v.mins}</div>
               <div class="v-ampm">${v.ampm}</div>
             </div>
             <div class="v-details">
+              <div style="display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+                ${typeBadge}
+                ${statusBadge}
+              </div>
               <div class="v-client">
-                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(v.clientName)}&background=eb5e28&color=fff" class="v-avatar" />
+                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(v.clientName)}&background=${isPreInspection ? '9333ea' : 'eb5e28'}&color=fff" class="v-avatar" />
                 <div>
                   <div class="v-name">${v.clientName}</div>
                   <div class="v-phone">${v.phone || 'Site Visit'}</div>
                 </div>
               </div>
-              <div class="v-prop">
+              <div class="v-prop" style="margin-top: 4px;">
                 <i class="ri-building-4-line"></i> ${v.property}
               </div>
-              <div style="margin-top: 6px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
+              <div style="margin-top: 6px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                 <span style="background: #FFF5EB; color: #eb5e28; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #FEEBC8;">
-                  <i class="ri-user-star-line"></i> Assigned to: ${v.assignedTo || 'Vijayaraghavan (Super Admin)'}
+                  <i class="ri-user-star-line"></i> Assigned: ${v.assignedTo || 'Vijayaraghavan (Super Admin)'}
                 </span>
               </div>
+              ${v.outcome ? `
+                <div style="margin-top: 8px; font-size: 0.8rem; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #3b82f6; color: #334155;">
+                  <strong>Outcome:</strong> ${v.outcome}
+                </div>
+              ` : ''}
             </div>
             <div class="v-actions">
-              <button class="v-btn whatsapp"><i class="ri-whatsapp-line"></i> Message</button>
-              <button class="v-btn map"><i class="ri-map-pin-line"></i> Directions</button>
+              <button class="v-btn whatsapp" data-phone="${v.phone || ''}"><i class="ri-whatsapp-line"></i> Message</button>
+              <button class="v-btn map" data-prop="${encodeURIComponent(v.property)}"><i class="ri-map-pin-line"></i> Directions</button>
+              ${!isCompleted ? `<button class="v-btn complete-btn" data-id="${v.id}" style="color: #047857; border-color: #a7f3d0; background: #ecfdf5;"><i class="ri-check-line"></i> Complete</button>` : ''}
               <button class="v-btn delete-btn" data-id="${v.id}" style="color: var(--os-error); border-color: #fee2e2; background: #fef2f2;"><i class="ri-delete-bin-line"></i> Delete</button>
             </div>
           </div>
@@ -387,20 +451,80 @@ export async function initSiteVisitsView() {
 
     // Rebind action buttons
     agendaContainer.querySelectorAll('.v-btn.whatsapp').forEach(btn => {
-      btn.addEventListener('click', () => alert('Opening WhatsApp...'));
+      btn.addEventListener('click', (e) => {
+        const rawPh = e.currentTarget.dataset.phone || '';
+        const clean = rawPh.replace(/\D/g, '');
+        if (clean && clean.length >= 10) {
+          window.open(`https://wa.me/91${clean.slice(-10)}`, '_blank');
+        } else {
+          showToast('No phone number recorded for this visit', 'ri-information-line');
+        }
+      });
     });
+
     agendaContainer.querySelectorAll('.v-btn.map').forEach(btn => {
-      btn.addEventListener('click', () => window.open('https://maps.google.com', '_blank'));
+      btn.addEventListener('click', (e) => {
+        const p = decodeURIComponent(e.currentTarget.dataset.prop || 'Thanjavur');
+        window.open(`https://www.google.com/maps/search/${encodeURIComponent(p + ' Thanjavur')}`, '_blank');
+      });
     });
+
+    agendaContainer.querySelectorAll('.v-btn.complete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        const vObj = visits.find(v => String(v.id) === String(id));
+        const defaultPrompt = (vObj && vObj.visitType === 'Staff Site Pre-Inspection')
+          ? 'Pre-inspection completed. Site boundaries, road access, and documents verified.'
+          : 'Customer visited site, satisfied with location and Patta document verification.';
+
+        const outcomeNotes = prompt('Enter visit outcome / client feedback (optional):', defaultPrompt);
+        if (outcomeNotes !== null) {
+          try {
+            if (vObj) {
+              vObj.status = 'Completed';
+              vObj.outcome = outcomeNotes;
+            }
+            // Always persist updated status and outcome to localStorage
+            localStorage.setItem('thanjai_visits', JSON.stringify(visits));
+
+            await fetchFromAPI('/site_visits/' + id, {
+              method: 'PUT',
+              body: JSON.stringify({
+                id: id,
+                status: 'Completed',
+                outcome: outcomeNotes,
+                assignedTo: vObj ? vObj.assignedTo : '',
+                propertyId: vObj ? (vObj.property || vObj.propertyId) : '',
+                leadId: vObj ? (vObj.clientName || vObj.leadId) : '',
+                visitType: vObj ? vObj.visitType : 'Customer Tour'
+              })
+            });
+
+            addAuditLog({
+              action: `Completed Site Visit (${vObj ? vObj.clientName : id})`,
+              module: 'Site Visits',
+              details: `Marked visit as Completed with outcome: "${outcomeNotes}"`
+            });
+
+            showToast('Site visit marked as Completed!', 'ri-checkbox-circle-fill');
+            renderAgenda(day);
+          } catch (err) {
+            console.error('Error completing visit', err);
+            // Even if network fails, local is updated
+            renderAgenda(day);
+            showToast('Site visit completed locally!', 'ri-checkbox-circle-fill');
+          }
+        }
+      });
+    });
+
     agendaContainer.querySelectorAll('.v-btn.delete-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const id = e.currentTarget.getAttribute('data-id');
         if (confirm('Are you sure you want to delete this site visit?')) {
           try {
             await fetchFromAPI('/site_visits/' + id, { method: 'DELETE' });
-            // Refresh visits list
             visits = visits.filter(v => v.id != id);
-            // Re-render calendar dots and current day agenda
             updateCalendarDots();
             renderAgenda(day);
           } catch (err) {
@@ -423,9 +547,41 @@ export async function initSiteVisitsView() {
   const cancelSvBtn = document.getElementById('cancel-sv-modal');
   const confirmSvBtn = document.getElementById('confirm-sv-modal');
 
+  // Check past visit history helper
+  const checkPastVisitHistory = () => {
+    const rawClient = document.getElementById('sv-client-name')?.value.trim().toLowerCase() || '';
+    const rawProp = document.getElementById('sv-property')?.value.trim().toLowerCase() || '';
+    const alertBox = document.getElementById('sv-past-history-alert');
+    const alertText = document.getElementById('sv-past-history-text');
+    if (!alertBox || !alertText) return;
+
+    if (!rawClient && !rawProp) {
+      alertBox.style.display = 'none';
+      return;
+    }
+
+    const matchedVisits = visits.filter(v => {
+      const c = (v.clientName || '').toLowerCase();
+      const p = (v.property || '').toLowerCase();
+      const matchC = rawClient && c && (rawClient.includes(c) || c.includes(rawClient));
+      const matchP = rawProp && p && (rawProp.includes(p) || p.includes(rawProp));
+      return matchC || matchP;
+    });
+
+    if (matchedVisits.length > 0) {
+      const lastV = matchedVisits[matchedVisits.length - 1];
+      alertText.innerHTML = `<strong>Past Record Found:</strong> ${lastV.clientName} had a <em>${lastV.visitType || 'Site Visit'}</em> on <strong>${lastV.date} ${lastV.month}</strong> with <strong>${lastV.assignedTo}</strong> (Status: ${lastV.status}).`;
+      alertBox.style.display = 'block';
+    } else {
+      alertBox.style.display = 'none';
+    }
+  };
+
+  document.getElementById('sv-client-name')?.addEventListener('input', checkPastVisitHistory);
+  document.getElementById('sv-property')?.addEventListener('input', checkPastVisitHistory);
+
   if (scheduleBtn && svModal) {
     scheduleBtn.addEventListener('click', () => {
-      // Auto-prefill the visit datetime with currently selected date & default 10:00 AM
       const dtInput = document.getElementById('sv-datetime');
       if (dtInput) {
         const selD = new Date(currentYear, currentMonth, selectedDay, 10, 0, 0);
@@ -436,6 +592,7 @@ export async function initSiteVisitsView() {
         const min = String(selD.getMinutes()).padStart(2, '0');
         dtInput.value = `${yyyy}-${mm}-${dd}T${hh}:${min}`;
       }
+      checkPastVisitHistory();
       svModal.classList.add('show');
     });
   }
@@ -450,6 +607,9 @@ export async function initSiteVisitsView() {
       let rawProp = document.getElementById('sv-property').value.trim();
       let datetime = document.getElementById('sv-datetime').value;
       const assignedTo = document.getElementById('sv-assigned-to')?.value || 'Vijayaraghavan (Super Admin)';
+      const visitType = document.querySelector('input[name="sv-visit-type"]:checked')?.value || 'Customer Property Tour';
+      const statusVal = document.getElementById('sv-status-select')?.value || 'Scheduled';
+      const outcomeNotes = document.getElementById('sv-outcome-notes')?.value.trim() || '';
 
       if (!rawClient) {
         showAlertModal({
@@ -460,7 +620,6 @@ export async function initSiteVisitsView() {
         return;
       }
 
-      // If datetime was omitted, fallback to currently selected date at 10:00 AM
       if (!datetime) {
         const selD = new Date(currentYear, currentMonth, selectedDay, 10, 0, 0);
         const yyyy = selD.getFullYear();
@@ -469,7 +628,6 @@ export async function initSiteVisitsView() {
         datetime = `${yyyy}-${mm}-${dd}T10:00`;
       }
 
-      // Clean client name and phone from datalist format "[ID: LEAD-1001] Client Name (+91 98424 12345)"
       let cleanClientName = rawClient;
       let clientPhone = 'Site Visit';
       if (rawClient.includes('[ID:') || rawClient.includes(']')) {
@@ -483,7 +641,6 @@ export async function initSiteVisitsView() {
         }
       }
 
-      // Clean property from datalist format "[ID: TP-2001] Title (Location)"
       let cleanProperty = rawProp || 'Thanjavur Verified Property';
       if (rawProp.includes('[ID:') || rawProp.includes(']')) {
         cleanProperty = (rawProp.split(']')[1] || rawProp).trim();
@@ -502,9 +659,11 @@ export async function initSiteVisitsView() {
         leadId: cleanClientName,
         propertyId: cleanProperty,
         visitDate: datetime.replace('T', ' ') + ':00',
-        status: 'Scheduled',
+        status: statusVal,
         assignedTo: assignedTo,
-        notes: JSON.stringify({ clientName: cleanClientName, phone: clientPhone, property: cleanProperty, assignedTo })
+        visitType: visitType,
+        outcome: outcomeNotes,
+        notes: JSON.stringify({ clientName: cleanClientName, phone: clientPhone, property: cleanProperty, assignedTo, visitType, outcome: outcomeNotes })
       };
 
       fetchFromAPI('/site_visits', {
@@ -526,6 +685,9 @@ export async function initSiteVisitsView() {
         phone: clientPhone,
         property: cleanProperty,
         assignedTo: assignedTo,
+        visitType: visitType,
+        outcome: outcomeNotes,
+        status: statusVal,
         isNew: true
       });
 
@@ -534,21 +696,20 @@ export async function initSiteVisitsView() {
       } catch (e) {}
 
       addAuditLog({
-        action: `Scheduled Site Visit (${cleanClientName})`,
+        action: `Scheduled ${visitType} (${cleanClientName})`,
         module: 'Site Visits',
-        details: `Scheduled property tour for ${cleanClientName} at ${cleanProperty} assigned to ${assignedTo} on ${day} ${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()} at ${hours}:${mins} ${ampm}.`
+        details: `Scheduled ${visitType} for ${cleanClientName} at ${cleanProperty} assigned to ${assignedTo} on ${day} ${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()} at ${hours}:${mins} ${ampm}.`
       });
 
-      showToast(`Site visit scheduled & assigned to ${assignedTo}!`, 'ri-checkbox-circle-fill');
+      showToast(`${visitType} scheduled & assigned to ${assignedTo}!`, 'ri-checkbox-circle-fill');
 
-      // clear inputs
       document.getElementById('sv-client-name').value = '';
       document.getElementById('sv-property').value = '';
       document.getElementById('sv-datetime').value = '';
+      if (document.getElementById('sv-outcome-notes')) document.getElementById('sv-outcome-notes').value = '';
 
       closeSvModal();
       
-      // Auto-select the day we just scheduled for
       selectedDay = parseInt(day);
       currentMonth = dateObj.getMonth();
       currentYear = dateObj.getFullYear();

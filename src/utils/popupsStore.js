@@ -58,6 +58,7 @@ export async function addPopup(popupData) {
     type: popupData.type || 'festival',
     badge: popupData.badge || 'PROMOTIONAL',
     image: popupData.image || '',
+    layout: popupData.layout || 'auto',
     highlights: Array.isArray(popupData.highlights) ? popupData.highlights : [],
     ctaText: popupData.ctaText || 'Claim Offer on WhatsApp',
     ctaType: popupData.ctaType || 'whatsapp',
