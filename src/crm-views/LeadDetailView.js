@@ -2,7 +2,7 @@ import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showAlertModal, showConfirmModal } from '../utils/toast.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 import { canViewAllLeads, filterLeadsForActiveUser, getActiveAdminUser } from '../utils/adminUsersStore.js';
-import { getLeads, initLeadsView } from './LeadsView.js';
+import { getLeads, saveLeads, initLeadsView } from './LeadsView.js';
 
 export function renderLeadDetailView(id) {
   const leads = getLeads() || [];
@@ -2192,6 +2192,9 @@ export async function initLeadDetailView(id) {
 }
 
 async function saveAndSyncLeads(leads, changedLeadId = null) {
+  if (Array.isArray(leads)) {
+    saveLeads(leads);
+  }
   if (changedLeadId) {
     const lead = leads.find(l => l.id == changedLeadId);
     if (lead) {

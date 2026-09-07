@@ -60,6 +60,9 @@ function renCol($conn, $t, $o, $n, $d) {
   `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 )");
 
+@$conn->query("ALTER TABLE `leads` ADD COLUMN `country` varchar(100) DEFAULT NULL");
+@$conn->query("ALTER TABLE `leads` ADD COLUMN `city` varchar(100) DEFAULT NULL");
+
 @$conn->query("CREATE TABLE IF NOT EXISTS `properties` (
   `id` varchar(50) PRIMARY KEY,
   `title` varchar(255) NOT NULL,
@@ -962,30 +965,36 @@ elseif ($resource === 'leads') {
         $affected = 0;
         if (count($updates) > 0) {
             $setClause = implode(', ', $updates);
-            $whereParts = [];
             if ($targetId) {
-                $whereParts[] = "`id` = '" . $conn->real_escape_string($targetId) . "'";
-            }
-            if ($phone) {
-                $cleanDigits = preg_replace('/\D/', '', $phone);
-                $whereParts[] = "`phone` = '" . $conn->real_escape_string($phone) . "'";
-                $whereParts[] = "`whatsapp` = '" . $conn->real_escape_string($phone) . "'";
-                if (strlen($cleanDigits) >= 10) {
-                    $tenDigit = substr($cleanDigits, -10);
-                    $whereParts[] = "`phone` LIKE '%" . $conn->real_escape_string($tenDigit) . "%'";
-                    $whereParts[] = "`whatsapp` LIKE '%" . $conn->real_escape_string($tenDigit) . "%'";
-                }
-            }
-            if ($name) {
-                $whereParts[] = "`name` = '" . $conn->real_escape_string($name) . "'";
-            }
-
-            if (count($whereParts) > 0) {
-                $whereClause = implode(' OR ', $whereParts);
-                $sql = "UPDATE `leads` SET $setClause WHERE $whereClause";
+                $sql = "UPDATE `leads` SET $setClause WHERE `id` = '" . $conn->real_escape_string($targetId) . "'";
                 $res = $conn->query($sql);
                 if ($res) {
                     $affected = $conn->affected_rows;
+                }
+            }
+            if ($affected === 0) {
+                $whereParts = [];
+                if ($phone) {
+                    $cleanDigits = preg_replace('/\D/', '', $phone);
+                    $whereParts[] = "`phone` = '" . $conn->real_escape_string($phone) . "'";
+                    $whereParts[] = "`whatsapp` = '" . $conn->real_escape_string($phone) . "'";
+                    if (strlen($cleanDigits) >= 7) {
+                        $tenDigit = substr($cleanDigits, -10);
+                        $whereParts[] = "`phone` LIKE '%" . $conn->real_escape_string($tenDigit) . "%'";
+                        $whereParts[] = "`whatsapp` LIKE '%" . $conn->real_escape_string($tenDigit) . "%'";
+                    }
+                }
+                if ($name) {
+                    $whereParts[] = "`name` = '" . $conn->real_escape_string($name) . "'";
+                }
+
+                if (count($whereParts) > 0) {
+                    $whereClause = implode(' OR ', $whereParts);
+                    $sql = "UPDATE `leads` SET $setClause WHERE $whereClause";
+                    $res = $conn->query($sql);
+                    if ($res) {
+                        $affected = $conn->affected_rows;
+                    }
                 }
             }
         }

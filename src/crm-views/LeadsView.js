@@ -504,8 +504,11 @@ export function getLeads() {
   return cachedLeads;
 }
 
-function saveLeads(leads) {
+export function saveLeads(leads) {
   cachedLeads = leads;
+  try {
+    localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+  } catch (e) {}
 }
 
 function formatCurrency(val) {
