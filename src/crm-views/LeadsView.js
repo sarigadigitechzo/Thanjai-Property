@@ -576,11 +576,39 @@ function renderTable() {
           if (!str.includes(qClean)) return false;
         }
       }
-      // Dropdowns
-      if (fStatus !== 'All statuses' && lead.status !== fStatus) return false;
-      if (fSource !== 'All sources' && lead.source !== fSource) return false;
-      if (fType !== 'All property types' && lead.type !== fType) return false;
-      // Staff filter dropdown (only applied for Super Admins / full access users who can filter across staff)
+      // Dropdowns - Status Filter Normalization
+      if (fStatus && fStatus !== 'All statuses') {
+        const fLow = fStatus.toLowerCase().trim();
+        const lLow = (lead.status || '').toLowerCase().trim();
+
+        if (fLow === 'new' || fLow === 'new lead') {
+          if (lLow !== 'new' && lLow !== 'new lead' && !lLow.startsWith('new')) return false;
+        } else if (fLow === 'contacted') {
+          if (!lLow.includes('contacted')) return false;
+        } else if (fLow === 'property shared') {
+          if (!lLow.includes('property') && !lLow.includes('shared')) return false;
+        } else if (fLow === 'follow up') {
+          if (!lLow.includes('follow')) return false;
+        } else if (fLow === 'interested') {
+          if (!lLow.includes('interested')) return false;
+        } else if (fLow === 'negotiation') {
+          if (!lLow.includes('negotiation')) return false;
+        } else if (fLow === 'converted') {
+          if (!lLow.includes('converted')) return false;
+        } else {
+          if (lLow !== fLow && !lLow.includes(fLow) && !fLow.includes(lLow)) return false;
+        }
+      }
+
+      if (fSource && fSource !== 'All sources') {
+        const srcLow = fSource.toLowerCase().trim();
+        const lSrcLow = (lead.source || '').toLowerCase().trim();
+        if (lSrcLow !== srcLow && !lSrcLow.includes(srcLow) && !srcLow.includes(lSrcLow)) return false;
+      }
+
+      if (fType && fType !== 'All property types' && lead.type !== fType) return false;
+
+      // Staff filter dropdown
       const activeAdmin = getActiveAdminUser();
       if (canViewAllLeads(activeAdmin)) {
         if (fStaff && fStaff !== 'All staff') {
@@ -592,14 +620,24 @@ function renderTable() {
         }
       }
       
-      // Date Filter
-      if (fDate !== 'All Time') {
+      // Date Filter Normalization
+      if (fDate && fDate !== 'All Time') {
         let leadDate = null;
         const rawDate = lead.createdAt || lead.created_at || lead.date || lead.created;
         if (rawDate) {
           if (typeof rawDate === 'number') leadDate = new Date(rawDate);
-          else if (!isNaN(Number(rawDate))) leadDate = new Date(Number(rawDate));
-          else leadDate = new Date(String(rawDate));
+          else if (!isNaN(Number(rawDate)) && Number(rawDate) > 1000000) leadDate = new Date(Number(rawDate));
+          else {
+            const dStr = String(rawDate).trim();
+            leadDate = new Date(dStr);
+            if (isNaN(leadDate.getTime())) {
+              const parts = dStr.split(/[-/\s:]/);
+              if (parts.length >= 3) {
+                if (parts[0].length === 4) leadDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                else if (parts[2].length === 4) leadDate = new Date(parts[2], parts[1] - 1, parts[0]);
+              }
+            }
+          }
         }
 
         const now = new Date();
@@ -623,7 +661,7 @@ function renderTable() {
             return false;
           }
         } else {
-          // Handles 'Custom Range' and formatted custom date strings like '01 Sep - 03 Sep'
+          // Handles 'Custom Range' and custom dates
           if (!leadDate || isNaN(leadDate.getTime())) return false;
           if (startDateVal) {
             const sDate = new Date(startDateVal);
