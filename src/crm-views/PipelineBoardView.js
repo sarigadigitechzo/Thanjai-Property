@@ -177,6 +177,14 @@ export function initPipelineBoardView() {
   function renderBoard() {
     board.innerHTML = '';
     leads.forEach(normalizeLeadStatus);
+    leads.sort((a, b) => {
+      const timeA = typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt || 0).getTime();
+      const timeB = typeof b.createdAt === 'number' ? b.createdAt : new Date(b.createdAt || 0).getTime();
+      if (!isNaN(timeA) && !isNaN(timeB) && timeA !== timeB) {
+        return timeB - timeA;
+      }
+      return 0;
+    });
     const userLeads = filterLeadsForActiveUser(leads);
 
     STAGES.forEach(stage => {
