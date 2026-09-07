@@ -45,11 +45,25 @@ const STAGES = [
 let boardLeadsCache = [];
 
 function getLeads() {
-  return boardLeadsCache;
+  if (!boardLeadsCache || boardLeadsCache.length === 0) {
+    try {
+      const stored = localStorage.getItem('thanjai_leads');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          boardLeadsCache = parsed.map(l => (l && l.mobile !== undefined) ? l : mapLeadFromAPI(l));
+        }
+      }
+    } catch(e) {}
+  }
+  return boardLeadsCache || [];
 }
 
 function saveLeads(leads) {
   boardLeadsCache = leads;
+  try {
+    localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+  } catch(e) {}
 }
 
 function formatCurrency(val, propId = null) {
@@ -87,6 +101,7 @@ export function initPipelineBoardView() {
   if (!board) return;
 
   let leads = getLeads();
+  renderBoard();
 
   // Async load fresh leads from live PHP API backend while preserving local status updates
   try {
@@ -133,20 +148,35 @@ export function initPipelineBoardView() {
     }).catch(e => {});
   } catch (err) {}
 
-  // Normalize old statuses to new pipeline stages if needed
-  leads.forEach(lead => {
-    if (!STAGES.find(s => s.id === lead.status)) {
-      if (lead.status === 'New') lead.status = 'New Lead';
-      else if (lead.status === 'Contacted') lead.status = 'Initial Contact';
-      else if (lead.status === 'Follow Up') lead.status = 'Follow Up Pending';
-      else if (lead.status === 'Interested') lead.status = 'Requirement Analysis';
-      else if (lead.status === 'Converted') lead.status = 'Registration';
-      else lead.status = 'New Lead'; // default
+  function normalizeLeadStatus(lead) {
+    if (!lead) return;
+    const rawStatus = (lead.status || '').trim();
+    if (STAGES.find(s => s.id.toLowerCase() === rawStatus.toLowerCase())) {
+      const match = STAGES.find(s => s.id.toLowerCase() === rawStatus.toLowerCase());
+      lead.status = match.id;
+      return;
     }
-  });
+
+    const sLower = rawStatus.toLowerCase();
+    if (sLower.includes('new')) lead.status = 'New Lead';
+    else if (sLower.includes('contact') || sLower.includes('initial')) lead.status = 'Initial Contact';
+    else if (sLower.includes('requirement') || sLower.includes('analysis') || sLower.includes('interest')) lead.status = 'Requirement Analysis';
+    else if (sLower.includes('match')) lead.status = 'Property Matching';
+    else if (sLower.includes('share') && sLower.includes('partner')) lead.status = 'Shared To Partner (use Share to partner)';
+    else if (sLower.includes('share') || sLower.includes('property shared')) lead.status = 'Property Shared';
+    else if (sLower.includes('follow')) lead.status = 'Follow Up Pending';
+    else if (sLower.includes('visit') && sLower.includes('schedule')) lead.status = 'Site Visit Scheduled';
+    else if (sLower.includes('visit') && (sLower.includes('complete') || sLower.includes('done'))) lead.status = 'Site Visit Completed';
+    else if (sLower.includes('negotiat') || sLower.includes('price')) lead.status = 'Negotiation';
+    else if (sLower.includes('loan') || sLower.includes('bank')) lead.status = 'Bank Loan';
+    else if (sLower.includes('register') || sLower.includes('convert') || sLower.includes('sold') || sLower.includes('buy')) lead.status = 'Registration';
+    else if (sLower.includes('lost') || sLower.includes('close') || sLower.includes('cancel') || sLower.includes('drop')) lead.status = 'Lost Closed';
+    else lead.status = 'New Lead';
+  }
 
   function renderBoard() {
     board.innerHTML = '';
+    leads.forEach(normalizeLeadStatus);
     const userLeads = filterLeadsForActiveUser(leads);
 
     STAGES.forEach(stage => {
