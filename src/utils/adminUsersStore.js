@@ -316,10 +316,9 @@ export function filterLeadsForActiveUser(leads = [], user = null) {
     const assigned = (lead.assignTo || lead.assignedTo || '').trim().toLowerCase();
     const assignedEmail = (lead.assignedEmail || lead.staffEmail || '').trim().toLowerCase();
     
-    // Ignore unassigned markers - staff should NEVER see unassigned leads unless explicitly assigned
+    // Allow unassigned / newly created leads to be visible to all staff members so team can view & process them
     if (!assigned || assigned === '—' || assigned === '-' || assigned === 'unassigned' || assigned === 'none') {
-      if (assignedEmail && assignedEmail === activeEmail) return true;
-      return false;
+      return true;
     }
 
     if (assignedEmail && assignedEmail === activeEmail) return true;
