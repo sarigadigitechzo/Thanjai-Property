@@ -723,6 +723,55 @@ ${(() => {
 export async function initLeadDetailView(id) {
   try {
     await initLeadsView();
+    try {
+      const apiVisits = await fetchFromAPI('/site_visits');
+      if (apiVisits && Array.isArray(apiVisits)) {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const parsedVisits = apiVisits.map(v => {
+          const vd = new Date(v.visitDate || v.createdAt || Date.now());
+          const hours = vd.getHours();
+          const mins = vd.getMinutes().toString().padStart(2, '0');
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const h12 = hours % 12 || 12;
+
+          let clientName = v.leadId || '';
+          let property = v.propertyId || '';
+          let assignedTo = v.assignedTo || 'Unassigned';
+          let visitType = v.visitType || 'Customer Property Tour';
+          let outcome = v.outcome || '';
+          let notesVal = '';
+          try { 
+            if (v.notes) { 
+              const n = typeof v.notes === 'string' && v.notes.startsWith('{') ? JSON.parse(v.notes) : v.notes; 
+              clientName = n.clientName || clientName; 
+              property = n.property || property; 
+              assignedTo = n.assignedTo || assignedTo;
+              visitType = n.visitType || visitType;
+              notesVal = n.notes || notesVal;
+            } 
+          } catch(e){}
+
+          return {
+            id: v.id,
+            leadId: v.leadId,
+            date: vd.getDate().toString(),
+            month: monthNames[vd.getMonth()],
+            hours: h12.toString().padStart(2, '0'),
+            mins: mins,
+            ampm: ampm,
+            clientName: clientName,
+            phone: v.phone || 'Site Visit',
+            property: property,
+            assignedTo: assignedTo,
+            visitType: visitType,
+            outcome: outcome || notesVal,
+            status: v.status || 'Scheduled'
+          };
+        });
+        localStorage.setItem('thanjai_visits', JSON.stringify(parsedVisits));
+      }
+    } catch(err) {}
+
     const contentEl = document.getElementById('os-content');
     if (contentEl) {
       contentEl.innerHTML = renderLeadDetailView(id);
