@@ -6,19 +6,51 @@ import { getLeads, saveLeads, initLeadsView } from './LeadsView.js';
 
 export function renderLeadDetailView(id) {
   const leads = getLeads() || [];
-  const lead = leads.find(l => 
-    String(l.id) === String(id) || 
-    String(l.id).toLowerCase() === String(id).toLowerCase() || 
-    (l.id && String(l.id).replace(/\D/g, '') === String(id).replace(/\D/g, ''))
-  );
-  
+  const cleanTargetId = decodeURIComponent(String(id || '')).trim();
+  const cleanTargetLower = cleanTargetId.toLowerCase();
+  const targetDigits = cleanTargetId.replace(/\D/g, '');
+
+  let lead = leads.find(l => {
+    if (!l) return false;
+    const lIdStr = String(l.id || '').trim();
+    if (lIdStr === cleanTargetId || lIdStr.toLowerCase() === cleanTargetLower) return true;
+    if (targetDigits && targetDigits.length >= 2) {
+      const lDigits = lIdStr.replace(/\D/g, '');
+      if (lDigits === targetDigits) return true;
+    }
+    const lPhone = String(l.phone || l.mobile || '').replace(/\D/g, '');
+    if (targetDigits && targetDigits.length >= 7 && lPhone.includes(targetDigits)) return true;
+    return false;
+  });
+
   if (!lead) {
-    return `
-      <div id="lead-detail-loader" data-lead-id="${id}" style="padding: 60px 20px; text-align: center;">
-        <div class="os-spinner" style="margin: 0 auto 16px; border: 3px solid rgba(235,94,40,0.2); border-top-color: var(--os-luxury-orange); border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite;"></div>
-        <p style="color: var(--os-gray-500); font-weight: 600; font-size: 0.95rem;">Loading Lead Details...</p>
-      </div>
-    `;
+    lead = {
+      id: id,
+      name: 'Lead ' + id,
+      phone: '',
+      mobile: '',
+      whatsapp: '',
+      email: '',
+      country: 'India',
+      city: 'Thanjavur',
+      area: 'Thanjavur',
+      location: 'Thanjavur',
+      budgetMin: '',
+      budgetMax: '',
+      budget: '',
+      bedrooms: '',
+      notes: [],
+      timeline: [],
+      type: 'Residential Plot',
+      propertyType: 'Residential Plot',
+      requirement: 'Residential Plot',
+      source: 'CRM',
+      assignTo: 'Unassigned',
+      assignedTo: 'Unassigned',
+      status: 'New Lead',
+      followup: '—',
+      createdAt: Date.now()
+    };
   }
 
   const activeUser = getActiveAdminUser();
@@ -689,17 +721,13 @@ ${(() => {
 }
 
 export async function initLeadDetailView(id) {
-  const loader = document.getElementById('lead-detail-loader');
-  if (loader || !getLeads() || getLeads().length === 0) {
-    try {
-      await initLeadsView();
-      const contentEl = document.getElementById('os-content');
-      const currentLoader = document.getElementById('lead-detail-loader');
-      if (contentEl && currentLoader) {
-        contentEl.innerHTML = renderLeadDetailView(id);
-      }
-    } catch(e) {}
-  }
+  try {
+    await initLeadsView();
+    const contentEl = document.getElementById('os-content');
+    if (contentEl) {
+      contentEl.innerHTML = renderLeadDetailView(id);
+    }
+  } catch(e) {}
 
   const shareDropdownWrap = document.getElementById('partner-share-dropdown');
   const shareDropdownOptions = document.getElementById('partner-share-options');
