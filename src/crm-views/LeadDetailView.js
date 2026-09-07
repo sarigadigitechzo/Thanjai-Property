@@ -2,16 +2,21 @@ import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showAlertModal, showConfirmModal } from '../utils/toast.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 import { canViewAllLeads, filterLeadsForActiveUser, getActiveAdminUser } from '../utils/adminUsersStore.js';
+import { getLeads, initLeadsView } from './LeadsView.js';
 
 export function renderLeadDetailView(id) {
-  const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-  const lead = leads.find(l => l.id == id);
+  const leads = getLeads() || [];
+  const lead = leads.find(l => 
+    String(l.id) === String(id) || 
+    String(l.id).toLowerCase() === String(id).toLowerCase() || 
+    (l.id && String(l.id).replace(/\D/g, '') === String(id).replace(/\D/g, ''))
+  );
   
   if (!lead) {
     return `
-      <div style="padding: 40px; text-align: center;">
-        <h2>Lead not found</h2>
-        <button class="os-btn-secondary" onclick="window.location.hash='leads'">Back to Leads</button>
+      <div id="lead-detail-loader" data-lead-id="${id}" style="padding: 60px 20px; text-align: center;">
+        <div class="os-spinner" style="margin: 0 auto 16px; border: 3px solid rgba(235,94,40,0.2); border-top-color: var(--os-luxury-orange); border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite;"></div>
+        <p style="color: var(--os-gray-500); font-weight: 600; font-size: 0.95rem;">Loading Lead Details...</p>
       </div>
     `;
   }
@@ -683,7 +688,18 @@ ${(() => {
   `;
 }
 
-export function initLeadDetailView(id) {
+export async function initLeadDetailView(id) {
+  const loader = document.getElementById('lead-detail-loader');
+  if (loader || !getLeads() || getLeads().length === 0) {
+    try {
+      await initLeadsView();
+      const contentEl = document.getElementById('os-content');
+      if (contentEl && (window.location.hash || '').includes(`lead/${id}`)) {
+        contentEl.innerHTML = renderLeadDetailView(id);
+      }
+    } catch(e) {}
+  }
+
   const shareDropdownWrap = document.getElementById('partner-share-dropdown');
   const shareDropdownOptions = document.getElementById('partner-share-options');
   if (shareDropdownWrap && shareDropdownOptions) {
@@ -751,8 +767,8 @@ export function initLeadDetailView(id) {
       const notesVal = (document.getElementById('crm-sv-notes')?.value || '').trim();
 
       // Fetch lead info
-      const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const currentLead = leads.find(l => l.id == id) || lead;
+      const leads = getLeads() || [];
+      const currentLead = leads.find(l => String(l.id) === String(id)) || lead;
       if (!currentLead) return;
 
       const dateObj = new Date(datetime);
@@ -852,8 +868,8 @@ export function initLeadDetailView(id) {
       const notes = document.getElementById('share-partner-notes')?.value || '';
       const sendWa = document.getElementById('share-partner-wa')?.checked ?? true;
       
-      const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const currentLead = leads.find(l => String(l.id) === String(id));
+      const leads = getLeads() || [];
+      const currentLead = leads.find(l => String(l.id) === String(id)) || lead;
       if (!currentLead) return;
 
       let sharedLeadsData = JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {};
@@ -1565,8 +1581,8 @@ export function initLeadDetailView(id) {
     const options = templateSelect.querySelectorAll('.select-option');
     options.forEach(opt => {
       opt.addEventListener('click', () => {
-        const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-        const currentLead = leads.find(l => l.id == id) || {};
+        const leads = getLeads() || [];
+        const currentLead = leads.find(l => String(l.id) === String(id)) || lead || {};
         const key = getCampaignKey(opt.innerText.trim());
         renderTemplateParamsFields(key, currentLead);
       });
@@ -1575,8 +1591,8 @@ export function initLeadDetailView(id) {
 
   if (btnWA) {
     btnWA.addEventListener('click', () => {
-      const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const currentLead = leads.find(l => l.id == id) || {};
+      const leads = getLeads() || [];
+      const currentLead = leads.find(l => String(l.id) === String(id)) || lead || {};
       const currentTemplateText = document.querySelector('#wa-tab-template .os-custom-select .select-value')?.innerText.trim() || 'Welcome message';
       renderTemplateParamsFields(getCampaignKey(currentTemplateText), currentLead);
       waModal.classList.add('show');
@@ -1588,10 +1604,10 @@ export function initLeadDetailView(id) {
   
   if (confirmWA) {
     confirmWA.addEventListener('click', async () => {
-      let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const idx = leads.findIndex(l => l.id == id);
-      const lead = leads[idx];
-      if (!lead) return;
+      let leads = getLeads() || [];
+      const idx = leads.findIndex(l => String(l.id) === String(id));
+      const leadMatch = leads[idx] || lead;
+      if (!leadMatch) return;
 
       const isCustom = document.querySelector('.wa-tab-btn[data-tab="custom"]').classList.contains('active');
       let campaignName = '';
@@ -1778,8 +1794,8 @@ export function initLeadDetailView(id) {
         return;
       }
       
-      let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const idx = leads.findIndex(l => l.id == id);
+      let leads = getLeads() || [];
+      const idx = leads.findIndex(l => String(l.id) === String(id));
       if (idx !== -1) {
         const oldStatus = leads[idx].status || 'New Lead';
         leads[idx].status = 'FOLLOW_UP_PENDING';
@@ -1822,8 +1838,8 @@ export function initLeadDetailView(id) {
       const text = noteInput.value.trim();
       if (!text) return;
       
-      let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const idx = leads.findIndex(l => l.id == id);
+      let leads = getLeads() || [];
+      const idx = leads.findIndex(l => String(l.id) === String(id));
       if (idx !== -1) {
         if (!leads[idx].notes) leads[idx].notes = [];
         leads[idx].notes.unshift({
@@ -1848,8 +1864,8 @@ export function initLeadDetailView(id) {
       if (!btn) return;
       
       const noteIndex = parseInt(btn.dataset.index, 10);
-      let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const idx = leads.findIndex(l => l.id == id);
+      let leads = getLeads() || [];
+      const idx = leads.findIndex(l => String(l.id) === String(id));
       if (idx === -1 || !leads[idx].notes) return;
       
       const action = btn.dataset.action;
@@ -1968,10 +1984,10 @@ export function initLeadDetailView(id) {
 
   if (btnFindMatches) {
     btnFindMatches.addEventListener('click', () => {
-      const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+      const allProps = getProperties() || [];
       
-      const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const currentLead = leads.find(l => l.id == id);
+      const leads = getLeads() || [];
+      const currentLead = leads.find(l => String(l.id) === String(id)) || lead;
       if (!currentLead) return;
 
       const typeFilter = currentLead.type ? currentLead.type.toLowerCase() : '';
@@ -2007,8 +2023,8 @@ export function initLeadDetailView(id) {
         return;
       }
 
-      let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      const idx = leads.findIndex(l => l.id == id);
+      let leads = getLeads() || [];
+      const idx = leads.findIndex(l => String(l.id) === String(id));
       
       if (idx !== -1) {
         leads[idx] = {
@@ -2095,8 +2111,8 @@ export function initLeadDetailView(id) {
         }
         select.classList.remove('open');
 
-        // Persist to localStorage if it's the Assign To or Stage dropdown
-        let leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+        // Persist to in-memory store if it's the Assign To or Stage dropdown
+        let leads = getLeads() || [];
         const idx = leads.findIndex(l => l.id == id);
         if (idx !== -1) {
           if (select.id === 'ld-assign-dropdown') {
