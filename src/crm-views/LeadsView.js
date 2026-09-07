@@ -468,21 +468,7 @@ export async function initLeadsView(searchQuery = null) {
     if (data && Array.isArray(data)) {
       const mapped = data.map(mapLeadFromAPI);
       
-      // Preserve local status and assignments
-      mapped.forEach(apiL => {
-        const matchingLocal = localLeads.find(locL => 
-          (locL.id && String(locL.id) === String(apiL.id)) ||
-          (locL.phone && String(locL.phone).replace(/\D/g, '') === String(apiL.phone).replace(/\D/g, '')) ||
-          (locL.name && String(locL.name).trim().toLowerCase() === String(apiL.name).trim().toLowerCase())
-        );
-        if (matchingLocal) {
-          if (matchingLocal.status) apiL.status = matchingLocal.status;
-          if (matchingLocal.assignTo && matchingLocal.assignTo !== 'Unassigned') {
-            apiL.assignTo = matchingLocal.assignTo;
-            apiL.assignedTo = matchingLocal.assignTo;
-          }
-        }
-      });
+
 
       // Filter out any locally deleted leads from database results
       let deletedList = [];
@@ -533,7 +519,7 @@ export async function initLeadsView(searchQuery = null) {
   renderTable();
 }
 
-function getLeads() {
+export function getLeads() {
   return cachedLeads;
 }
 

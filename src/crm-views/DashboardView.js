@@ -2,12 +2,13 @@ import { getProperties } from '../utils/propertiesStore.js';
 import { getRegisteredUsers } from '../utils/userAuthStore.js';
 import { filterLeadsForActiveUser, canViewAllLeads, getActiveAdminUser } from '../utils/adminUsersStore.js';
 import { fetchFromAPI } from '../utils/api.js';
+import { getLeads } from './LeadsView.js';
 
 export function renderDashboardView() {
   const activePropertiesCount = getProperties().length;
   const users = getRegisteredUsers();
   const activeUser = getActiveAdminUser() || JSON.parse(localStorage.getItem('thanjai_active_user')) || { fullName: 'Admin' };
-  const rawLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+  const rawLeads = getLeads() || [];
   const leads = filterLeadsForActiveUser(rawLeads, activeUser);
   const isSuperOrAll = canViewAllLeads(activeUser);
   const storedTotal = parseInt(localStorage.getItem('thanjai_total_leads_count') || '12505', 10);
