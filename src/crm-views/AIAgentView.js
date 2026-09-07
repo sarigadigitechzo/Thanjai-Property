@@ -113,9 +113,13 @@ export function initAIAgentView() {
     historyScreen.scrollTop = historyScreen.scrollHeight;
 
     try {
-      // Gather context
-      const propertiesContext = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
-      const leadsContext = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      // Gather context from live store & API
+      const propertiesContext = getProperties() || [];
+      let leadsContext = [];
+      try {
+        const liveData = await fetchFromAPI('/leads');
+        if (Array.isArray(liveData)) leadsContext = liveData;
+      } catch (e) {}
 
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 1200));

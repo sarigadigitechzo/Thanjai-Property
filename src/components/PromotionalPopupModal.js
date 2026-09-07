@@ -431,12 +431,6 @@ async function recordPopupLeadInCRM(p) {
       ]
     };
 
-    // Save to local storage
-    const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-    localLeads.unshift(newLead);
-    localStorage.setItem('thanjai_leads', JSON.stringify(localLeads));
-    window.dispatchEvent(new Event('storage'));
-
     // Sync to MySQL API
     await fetchFromAPI('/leads', {
       method: 'POST',

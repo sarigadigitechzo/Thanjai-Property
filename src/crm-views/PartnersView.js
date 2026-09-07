@@ -613,15 +613,11 @@ export async function initPartnersView() {
   const openShareLeadsModal = async () => {
     if (!activePartnerId) return;
 
-    // Fetch CRM pipeline leads
+    // Fetch CRM pipeline leads directly from API
     try {
-      crmLeadsList = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      if (!Array.isArray(crmLeadsList) || crmLeadsList.length === 0) {
-        const apiLeads = await fetchFromAPI('/leads');
-        if (apiLeads && Array.isArray(apiLeads)) {
-          crmLeadsList = apiLeads;
-          localStorage.setItem('thanjai_leads', JSON.stringify(crmLeadsList));
-        }
+      const apiLeads = await fetchFromAPI('/leads');
+      if (apiLeads && Array.isArray(apiLeads)) {
+        crmLeadsList = apiLeads;
       }
     } catch (e) {
       crmLeadsList = [];

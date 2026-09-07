@@ -138,13 +138,6 @@ export function initScheduleVisitModalListeners(onClose) {
     }
 
     try {
-      const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      localLeads.unshift(newLead);
-      localStorage.setItem('thanjai_leads', JSON.stringify(localLeads));
-      window.dispatchEvent(new Event('storage'));
-    } catch (err) {}
-
-    try {
       await fetchFromAPI('/leads', {
         method: 'POST',
         body: JSON.stringify(newLead)

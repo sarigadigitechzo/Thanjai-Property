@@ -42,12 +42,14 @@ const STAGES = [
   { id: 'Lost Closed', name: 'LOST CLOSED', emailIcon: false }
 ];
 
+let boardLeadsCache = [];
+
 function getLeads() {
-  return JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+  return boardLeadsCache;
 }
 
 function saveLeads(leads) {
-  localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+  boardLeadsCache = leads;
 }
 
 function formatCurrency(val, propId = null) {

@@ -413,7 +413,6 @@ export function initDashboardListeners() {
       const isFullAdmin = canViewAllLeads(activeAdmin);
 
       if (stats && isFullAdmin && typeof stats.totalLeads === 'number') {
-        localStorage.setItem('thanjai_total_leads_count', stats.totalLeads);
         const totalEl = document.getElementById('kpi-total-leads');
         const todayEl = document.getElementById('kpi-new-today');
         const dueEl = document.getElementById('kpi-followups-due');

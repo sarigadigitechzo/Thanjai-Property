@@ -568,23 +568,15 @@ export function initContactSectionListeners() {
       ]
     };
 
-    // Save to localStorage
-    try {
-      let existingLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      existingLeads.unshift(newLead);
-      localStorage.setItem('thanjai_leads', JSON.stringify(existingLeads));
-      window.dispatchEvent(new Event('storage')); 
-    } catch (e) {
-      console.error('Error saving lead to storage:', e);
-    }
-
     // Save to MySQL backend
     try {
       await fetchFromAPI('/leads', {
         method: 'POST',
         body: JSON.stringify(newLead)
       });
-    } catch (e) {}
+    } catch (err) {
+      console.warn('[API Save Lead Notice]', err);
+    }
 
     // Log to WhatsApp Logs
     try {

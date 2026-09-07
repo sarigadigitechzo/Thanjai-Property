@@ -1453,7 +1453,6 @@ function bindModalPreviewListeners() {
         date: new Date().toISOString()
       });
       
-      localStorage.setItem('thanjai_leads', JSON.stringify(leads));
       window.dispatchEvent(new CustomEvent('leadsUpdated'));
       
       if (window.showToast) window.showToast('Property shared via WhatsApp successfully!', 'success');

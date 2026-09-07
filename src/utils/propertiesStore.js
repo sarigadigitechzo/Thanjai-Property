@@ -43,11 +43,7 @@ function loadPropertiesFromStorage() {
 }
 
 function savePropertiesToStorage(props) {
-  try {
-    localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(props));
-  } catch (e) {
-    console.error("Failed saving properties to localStorage", e);
-  }
+  // Pure in-memory cache, no localStorage write
 }
 
 // Synchronously populate propertiesCache on module load so UI gets data on very first render

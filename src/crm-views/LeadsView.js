@@ -539,11 +539,6 @@ function getLeads() {
 
 function saveLeads(leads) {
   cachedLeads = leads;
-  try {
-    localStorage.setItem('thanjai_leads', JSON.stringify(leads.slice(0, 100)));
-  } catch (err) {
-    console.warn('LocalStorage quota notice:', err);
-  }
 }
 
 function formatCurrency(val) {
@@ -1517,24 +1512,7 @@ function bindLeadEvents() {
             });
             saveLeads(newLeads);
 
-            // 2. Ensure localStorage is immediately scrubbed
-            try {
-              let storedLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-              storedLeads = storedLeads.filter(l => {
-                if (!l) return false;
-                if (String(l.id) === String(id) || (lead.id && String(l.id) === String(lead.id))) return false;
-                if (cleanDelPhone && cleanDelPhone.length >= 7) {
-                  const lPhone = String(l.phone || l.mobile || '').replace(/\D/g, '');
-                  if (lPhone && (lPhone.includes(cleanDelPhone) || cleanDelPhone.includes(lPhone))) return false;
-                }
-                if (cleanDelName && cleanDelName.length > 2) {
-                  const lName = String(l.name || '').trim().toLowerCase();
-                  if (lName === cleanDelName) return false;
-                }
-                return true;
-              });
-              localStorage.setItem('thanjai_leads', JSON.stringify(storedLeads));
-            } catch (err) {}
+            // 2. Local scrub completed (in-memory)
 
             // 3. Add to persistent deleted blacklist
             try {

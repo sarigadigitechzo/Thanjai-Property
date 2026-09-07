@@ -388,15 +388,7 @@ export function initPropertyDetailModalListeners(property, onClose) {
       incrementPropertyInquiryCount(property.id);
     } catch(err) {}
 
-    // 1. Save to localStorage
-    try {
-      const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      localLeads.unshift(newLead);
-      localStorage.setItem('thanjai_leads', JSON.stringify(localLeads));
-      window.dispatchEvent(new Event('storage'));
-    } catch (err) {}
-
-    // 2. Save Lead to MySQL backend
+    // Save Lead to MySQL backend
     try {
       await fetchFromAPI('/leads', {
         method: 'POST',
@@ -583,15 +575,7 @@ export function openPropertyInquiryFormModal(property) {
       incrementPropertyInquiryCount(property.id);
     } catch(err) {}
 
-    // 2. Save Lead to localStorage
-    try {
-      const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-      localLeads.unshift(newLead);
-      localStorage.setItem('thanjai_leads', JSON.stringify(localLeads));
-      window.dispatchEvent(new Event('storage'));
-    } catch (err) {}
-
-    // 3. Save Lead to MySQL backend
+    // Save Lead to MySQL backend
     try {
       await fetchFromAPI('/leads', {
         method: 'POST',
