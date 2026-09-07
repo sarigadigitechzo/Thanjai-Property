@@ -694,7 +694,8 @@ export async function initLeadDetailView(id) {
     try {
       await initLeadsView();
       const contentEl = document.getElementById('os-content');
-      if (contentEl && (window.location.hash || '').includes(`lead/${id}`)) {
+      const currentLoader = document.getElementById('lead-detail-loader');
+      if (contentEl && currentLoader) {
         contentEl.innerHTML = renderLeadDetailView(id);
       }
     } catch(e) {}
