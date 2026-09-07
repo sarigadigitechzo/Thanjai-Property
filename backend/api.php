@@ -905,6 +905,30 @@ elseif ($resource === 'leads') {
         $timeline = isset($data['timeline']) ? (is_string($data['timeline']) ? $data['timeline'] : json_encode($data['timeline'])) : null;
 
         $updates = [];
+        if (isset($data['name']) && trim($data['name']) !== '') {
+            $updates[] = "`name` = '" . $conn->real_escape_string(trim($data['name'])) . "'";
+        }
+        if (isset($data['email'])) {
+            $updates[] = "`email` = '" . $conn->real_escape_string(trim($data['email'])) . "'";
+        }
+        if (isset($data['phone']) || isset($data['mobile'])) {
+            $pVal = trim($data['phone'] ?? $data['mobile']);
+            if ($pVal !== '') {
+                $updates[] = "`phone` = '" . $conn->real_escape_string($pVal) . "'";
+            }
+        }
+        if (isset($data['whatsapp']) && trim($data['whatsapp']) !== '') {
+            $updates[] = "`whatsapp` = '" . $conn->real_escape_string(trim($data['whatsapp'])) . "'";
+        }
+        if (isset($data['country']) && trim($data['country']) !== '') {
+            $updates[] = "`country` = '" . $conn->real_escape_string(trim($data['country'])) . "'";
+        }
+        if (isset($data['city']) && trim($data['city']) !== '') {
+            $updates[] = "`city` = '" . $conn->real_escape_string(trim($data['city'])) . "'";
+        }
+        if (isset($data['source']) && trim($data['source']) !== '') {
+            $updates[] = "`source` = '" . $conn->real_escape_string(trim($data['source'])) . "'";
+        }
         if ($assignedTo !== null) {
             $updates[] = "`assignedTo` = '" . $conn->real_escape_string(trim($assignedTo)) . "'";
         }
