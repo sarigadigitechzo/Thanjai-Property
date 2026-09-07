@@ -64,26 +64,16 @@ export async function initPropertiesStore() {
         const resolvedOwnerName = (remoteP.ownerName || remoteP.owner_name || (resolvedAdType === 'paid' ? 'Verified Owner' : 'Thanjai Property'));
         const resolvedOwnerPhone = (remoteP.ownerPhone || remoteP.owner_phone || (resolvedAdType === 'paid' ? '8489996852' : '8489996852'));
         
-        const localMatch = propertiesCache.find(lp => lp && lp.id === remoteP.id);
-        const resolvedFacing = remoteP.facing || (localMatch ? localMatch.facing : '') || remoteP.address || '';
-        const resolvedRoad = remoteP.road || (localMatch ? localMatch.road : '');
-        const resolvedTaluk = remoteP.taluk || (localMatch ? localMatch.taluk : '');
-        const resolvedArea = remoteP.area || (localMatch ? localMatch.area : '');
-        const resolvedDistrict = remoteP.district || (localMatch ? localMatch.district : '');
-        const resolvedInquiryPhone = remoteP.inquiryPhone || (localMatch ? localMatch.inquiryPhone : '8489996852');
-        const resolvedApproval = (remoteP.approval && String(remoteP.approval).trim()) 
-          ? String(remoteP.approval).trim() 
-          : (localMatch && localMatch.approval ? localMatch.approval : '');
+        const resolvedFacing = remoteP.facing || remoteP.address || '';
+        const resolvedRoad = remoteP.road || '';
+        const resolvedTaluk = remoteP.taluk || '';
+        const resolvedArea = remoteP.area || '';
+        const resolvedDistrict = remoteP.district || '';
+        const resolvedInquiryPhone = remoteP.inquiryPhone || '8489996852';
+        const resolvedApproval = (remoteP.approval && String(remoteP.approval).trim()) ? String(remoteP.approval).trim() : '';
 
-        let resolvedFeatures = remoteP.features;
-        if ((!resolvedFeatures || (Array.isArray(resolvedFeatures) && resolvedFeatures.length === 0)) && localMatch && Array.isArray(localMatch.features) && localMatch.features.length > 0) {
-          resolvedFeatures = localMatch.features;
-        }
-
-        let resolvedImages = remoteP.images;
-        if ((!resolvedImages || (Array.isArray(resolvedImages) && resolvedImages.length === 0)) && localMatch && Array.isArray(localMatch.images) && localMatch.images.length > 0) {
-          resolvedImages = localMatch.images;
-        }
+        const resolvedFeatures = remoteP.features || [];
+        const resolvedImages = remoteP.images || [];
 
         return normalizePropertyRecord({
           ...remoteP,

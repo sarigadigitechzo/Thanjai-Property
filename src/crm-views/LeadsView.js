@@ -466,7 +466,6 @@ export async function initLeadsView(searchQuery = null) {
   try {
     const data = await fetchFromAPI('/leads');
     if (data && Array.isArray(data)) {
-      const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
       const mapped = data.map(mapLeadFromAPI);
       
       // Preserve local status and assignments
@@ -509,7 +508,7 @@ export async function initLeadsView(searchQuery = null) {
     }
   } catch (err) {
     console.error('API Error:', err);
-    cachedLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+    cachedLeads = cachedLeads || [];
   }
   
   // Call init logic that binds events
