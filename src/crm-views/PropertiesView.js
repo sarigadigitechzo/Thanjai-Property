@@ -1,6 +1,7 @@
 import { getProperties, addProperty, updateProperty, deleteProperty, resetPropertiesToDefault, formatPropertySize } from '../utils/propertiesStore.js';
 import { addAuditLog } from '../utils/siteImagesStore.js';
 import { showToast } from '../utils/toast.js';
+import { getLeads } from './LeadsView.js';
 
 let activeSearch = '';
 let activeTypeFilter = 'all';
@@ -845,7 +846,11 @@ function renderAdminPropertyPreviewModal(prop) {
             <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; color: #1a202c;">Share via CRM</h3>
             <p style="margin: 0 0 20px 0; font-size: 0.9rem; color: #4a5568;">Select a lead to send this property directly via WhatsApp.</p>
             
-            <select id="wa-share-lead-select" style="width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; margin-bottom: 16px; font-size: 0.95rem; outline: none;"></select>
+            <div style="position: relative; margin-bottom: 12px; text-align: left;">
+              <input type="text" id="wa-share-lead-search" placeholder="Type lead name or phone (e.g. sa)..." style="width: 100%; padding: 10px 12px 10px 36px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 0.9rem; outline: none; box-sizing: border-box; background: #fff;">
+              <i class="ri-search-line" style="position: absolute; left: 12px; top: 11px; color: #a0aec0; font-size: 0.95rem;"></i>
+            </div>
+            <select id="wa-share-lead-select" style="width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; margin-bottom: 16px; font-size: 0.95rem; outline: none; box-sizing: border-box; background: #fff;"></select>
             
             <div style="display: flex; gap: 12px;">
               <button id="wa-share-cancel-btn" style="flex: 1; padding: 10px; background: #edf2f7; color: #4a5568; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
@@ -1454,17 +1459,50 @@ function bindModalPreviewListeners() {
   modalCloseBtn?.addEventListener('click', handleClosePreview);
 
   modalShareWaBtn?.addEventListener('click', () => {
-    const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-    waShareSelect.innerHTML = leads.map(l => `<option value="${l.id}">${l.name} (${l.mobile || l.whatsapp || 'No Phone'})</option>`).join('');
-    
-    if (leads.length === 0) {
-      waShareSelect.innerHTML = '<option value="">No leads available</option>';
-      waShareConfirmBtn.disabled = true;
-    } else {
-      waShareConfirmBtn.disabled = false;
+    const rawLeads = getLeads();
+    const leads = (rawLeads && rawLeads.length > 0) ? rawLeads : (JSON.parse(localStorage.getItem('thanjai_leads')) || []);
+    const searchInput = document.getElementById('wa-share-lead-search');
+    if (searchInput) searchInput.value = '';
+
+    const populateOptions = (filterQuery = '') => {
+      const q = filterQuery.trim().toLowerCase();
+      let filtered = leads;
+      if (q) {
+        filtered = leads.filter(l => {
+          if (!l) return false;
+          const name = String(l.name || '').toLowerCase();
+          const phone = String(l.phone || l.mobile || l.whatsapp || '').toLowerCase();
+          return name.startsWith(q) || name.includes(q) || phone.includes(q);
+        });
+      }
+
+      if (filtered.length === 0) {
+        waShareSelect.innerHTML = '<option value="">No matching leads found</option>';
+        waShareConfirmBtn.disabled = true;
+      } else {
+        waShareSelect.innerHTML = filtered.map(l => 
+          `<option value="${l.id}">${l.name} (${l.mobile || l.phone || l.whatsapp || 'No Phone'})</option>`
+        ).join('');
+        // Pre-select 1st lead automatically
+        if (filtered[0] && filtered[0].id) {
+          waShareSelect.value = filtered[0].id;
+        }
+        waShareConfirmBtn.disabled = false;
+      }
+    };
+
+    populateOptions('');
+
+    if (searchInput) {
+      searchInput.oninput = (e) => {
+        populateOptions(e.target.value);
+      };
     }
 
     waShareOverlay.style.display = 'flex';
+    setTimeout(() => {
+      if (searchInput) searchInput.focus();
+    }, 100);
   });
 
   waShareCancelBtn?.addEventListener('click', () => {
@@ -1473,88 +1511,111 @@ function bindModalPreviewListeners() {
 
   waShareConfirmBtn?.addEventListener('click', async () => {
     const leadId = waShareSelect.value;
-    if (!leadId) return;
+    if (!leadId) {
+      if (window.showToast) window.showToast('Please select a lead', 'warning');
+      return;
+    }
     
     const id = modalShareWaBtn.dataset.id;
-    const prop = getProperties().find(p => p.id === id);
-    if (!prop) return;
+    const prop = getProperties().find(p => String(p.id) === String(id));
+    if (!prop) {
+      if (window.showToast) window.showToast('Property not found', 'error');
+      return;
+    }
 
-    const leads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
-    const lead = leads.find(l => l.id === leadId);
-    if (!lead) return;
+    const rawLeads = getLeads();
+    const leads = (rawLeads && rawLeads.length > 0) ? rawLeads : (JSON.parse(localStorage.getItem('thanjai_leads')) || []);
+    const lead = leads.find(l => l && String(l.id) === String(leadId));
+    if (!lead) {
+      if (window.showToast) window.showToast('Selected lead not found', 'error');
+      return;
+    }
 
-    let rawPhone = lead.whatsapp || lead.mobile;
+    let rawPhone = lead.phone || lead.mobile || lead.whatsapp;
     if (!rawPhone) {
       alert('This lead has no phone number.');
       return;
     }
 
-    let phone = rawPhone.replace(/\D/g, '');
-    if (phone.length === 10) phone = '91' + phone;
-
-    const provider = localStorage.getItem('thanjai_wa_provider') || 'aisensy';
-    const apiUrl = provider === 'smartping' 
-      ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
-      : 'https://backend.aisensy.com/campaign/t1/api/v2';
-
-    if (provider === 'smartping' && !phone.startsWith('+')) {
-      phone = '+' + phone;
-    }
+    let cleanPhone = String(rawPhone).replace(/\D/g, '');
+    if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
 
     const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
-    if (!apiKey) {
-      alert('Please go to Settings > Integrations and paste your WhatsApp API Key first.');
-      return;
-    }
+    const messageText = `Hello ${lead.name || 'Client'},\n\nCheck out this property: ${prop.title}\nLocation: ${prop.location}\nPrice: ${prop.priceFormatted || ('₹ ' + prop.price)}\n\nFor more details, contact Thanjai Property.`;
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
 
-    const originalHtml = waShareConfirmBtn.innerHTML;
-    waShareConfirmBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i>';
-    waShareConfirmBtn.disabled = true;
+    if (apiKey) {
+      const provider = localStorage.getItem('thanjai_wa_provider') || 'aisensy';
+      const apiUrl = provider === 'smartping' 
+        ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
+        : 'https://backend.aisensy.com/campaign/t1/api/v2';
 
-    try {
-      const payload = {
-        apiKey: apiKey,
-        campaignName: 'initial_contact_intro',
-        destination: phone,
-        userName: lead.name || "Client",
-        templateParams: [lead.name || "Client", prop.title, prop.location, prop.priceFormatted || prop.price]
-      };
-      
-      const propImg = (prop.images && prop.images.length > 0) 
-        ? prop.images[0] 
-        : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+      let phoneForApi = cleanPhone;
+      if (provider === 'smartping' && !phoneForApi.startsWith('+')) {
+        phoneForApi = '+' + phoneForApi;
+      }
+
+      const originalHtml = waShareConfirmBtn.innerHTML;
+      waShareConfirmBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i>';
+      waShareConfirmBtn.disabled = true;
+
+      try {
+        const payload = {
+          apiKey: apiKey,
+          campaignName: 'initial_contact_intro',
+          destination: phoneForApi,
+          userName: lead.name || "Client",
+          templateParams: [lead.name || "Client", prop.title, prop.location, prop.priceFormatted || prop.price]
+        };
         
-      payload.media = { url: propImg, filename: "property.jpg" };
-      payload.mediaUrl = propImg;
+        const propImg = (prop.images && prop.images.length > 0) 
+          ? prop.images[0] 
+          : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+          
+        payload.media = { url: propImg, filename: "property.jpg" };
+        payload.mediaUrl = propImg;
 
-      const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(`[${provider.toUpperCase()}] ${data.message || data.error || JSON.stringify(data)}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(`[${provider.toUpperCase()}] ${data.message || data.error || JSON.stringify(data)}`);
 
-      if (!lead.timeline) lead.timeline = [];
-      lead.timeline.unshift({
-        type: 'whatsapp',
-        message: `WhatsApp sent: Property - ${prop.title}`,
-        author: localStorage.getItem('thanjai_active_user') ? JSON.parse(localStorage.getItem('thanjai_active_user')).fullName : 'System',
-        date: new Date().toISOString()
-      });
-      
-      window.dispatchEvent(new CustomEvent('leadsUpdated'));
-      
-      if (window.showToast) window.showToast('Property shared via WhatsApp successfully!', 'success');
+        if (!lead.timeline) lead.timeline = [];
+        lead.timeline.unshift({
+          type: 'whatsapp',
+          message: `WhatsApp sent: Property - ${prop.title}`,
+          author: localStorage.getItem('thanjai_active_user') ? JSON.parse(localStorage.getItem('thanjai_active_user')).fullName : 'System',
+          date: new Date().toISOString()
+        });
+        
+        window.dispatchEvent(new CustomEvent('leadsUpdated'));
+        
+        if (window.showToast) window.showToast('Property shared via WhatsApp successfully!', 'success');
+        waShareOverlay.style.display = 'none';
+        
+      } catch (e) {
+        console.error(e);
+        const opened = window.open(waUrl, '_blank');
+        if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+          window.location.href = waUrl;
+        }
+        if (window.showToast) window.showToast('Opening WhatsApp...', 'info');
+        waShareOverlay.style.display = 'none';
+      } finally {
+        waShareConfirmBtn.innerHTML = originalHtml;
+        waShareConfirmBtn.disabled = false;
+      }
+    } else {
+      const opened = window.open(waUrl, '_blank');
+      if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+        window.location.href = waUrl;
+      }
+      if (window.showToast) window.showToast('Opening WhatsApp...', 'info');
       waShareOverlay.style.display = 'none';
-      
-    } catch (e) {
-      console.error(e);
-      alert('Failed to send WhatsApp message: ' + e.message);
-    } finally {
-      waShareConfirmBtn.innerHTML = originalHtml;
-      waShareConfirmBtn.disabled = false;
     }
   });
 
