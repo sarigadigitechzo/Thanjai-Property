@@ -5052,7 +5052,7 @@ a.contact-panel-row-value:hover {
 }
 
 /* --------------------------------------------------------------------------
-   GOOGLE REVIEWS & TESTIMONIALS MARQUEE (100% Seamless Glitch-Free)
+   GOOGLE REVIEWS & TESTIMONIALS MARQUEE (100% Seamless Glitch-Free Two-Direction)
    -------------------------------------------------------------------------- */
 .testimonials-marquee-wrapper {
   overflow: hidden;
@@ -5073,20 +5073,38 @@ a.contact-panel-row-value:hover {
   gap: 24px;
   padding-right: 24px;
   flex-shrink: 0;
-  animation: marqueeContinuous 40s linear infinite;
   will-change: transform;
+}
+
+/* Left-moving track (Row 1): 85s slow, comfortable reading pace */
+.testimonials-marquee-group.marquee-left {
+  animation: marqueeContinuousLeft 85s linear infinite;
+}
+
+/* Right-moving track (Row 2): 85s slow, comfortable reading pace in opposite direction */
+.testimonials-marquee-group.marquee-right {
+  animation: marqueeContinuousRight 85s linear infinite;
 }
 
 .testimonials-marquee-wrapper:hover .testimonials-marquee-group {
   animation-play-state: paused;
 }
 
-@keyframes marqueeContinuous {
+@keyframes marqueeContinuousLeft {
   0% {
     transform: translateX(0);
   }
   100% {
     transform: translateX(-100%);
+  }
+}
+
+@keyframes marqueeContinuousRight {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0);
   }
 }
 
@@ -5115,8 +5133,9 @@ a.contact-panel-row-value:hover {
 }
 
 @media (max-width: 640px) {
-  .testimonials-marquee-group {
-    animation-duration: 28s;
+  .testimonials-marquee-group.marquee-left,
+  .testimonials-marquee-group.marquee-right {
+    animation-duration: 60s;
     gap: 16px;
     padding-right: 16px;
   }

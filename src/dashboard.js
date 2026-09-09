@@ -19,7 +19,7 @@ import { renderStatCounterView } from './crm-views/StatCounterView.js';
 import { renderSettingsView, initSettingsView } from './crm-views/SettingsView.js';
 import { renderAdminUsersView, initAdminUsersView } from './crm-views/AdminUsersView.js';
 import { renderPopupsView, initPopupsView } from './crm-views/PopupsView.js';
-import { renderReviewsView, initReviewsListeners } from './crm-views/ReviewsView.js';
+import { renderReviewsView, initReviewsListeners, setReviewsSearchQuery } from './crm-views/ReviewsView.js';
 import { renderHowToUseView, initHowToUseListeners } from './crm-views/HowToUseView.js';
 import { showToast, installGlobalPopupShield } from './utils/toast.js';
 import { openPropertyModalById } from './components/PropertyDetailModal.js';
@@ -506,7 +506,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeNav = document.querySelector('.nav-item.active');
       const currentView = activeNav ? activeNav.dataset.view : '';
 
-      if (currentView === 'properties') {
+      if (currentView === 'reviews' || currentView === 'testimonials') {
+        // Stay within Google Reviews section and filter reviews directly
+        setReviewsSearchQuery(q);
+        const reviewSearchEl = document.getElementById('reviews-search-input');
+        if (reviewSearchEl && reviewSearchEl !== input) {
+          reviewSearchEl.value = q;
+        }
+        loadView('reviews');
+      } else if (currentView === 'properties') {
         refreshPropertiesView();
       } else if (currentView !== 'leads') {
         // If user starts typing a Property ID or query from another view, switch to Properties Inventory

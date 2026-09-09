@@ -72,27 +72,106 @@ const TN_DISTRICTS_TALUKS = {
   'Nilgiris': ['Udhagamandalam (Ooty)', 'Coonoor', 'Gudalur', 'Kotagiri', 'Kundah', 'Pandalur']
 };
 
+const DEFAULT_KNOWN_ROADS = [
+  'Medical College Road', 'Trichy Road', 'Pudukkottai Road', 'Madhakottai Road',
+  'Nanjikottai Road', 'Villar Road', 'Pattukottai Bypass', 'Mariyamman Kovil Road',
+  'Srinivasapuram', 'Reddipalayam Road', 'Kumbakonam Bypass'
+];
+
+function getAllKnownRoads() {
+  const list = [...DEFAULT_KNOWN_ROADS];
+  try {
+    const props = getProperties() || [];
+    props.forEach(p => {
+      const r = (p.road || '').trim();
+      if (r && r.toLowerCase() !== 'other road' && r.toLowerCase() !== 'other' && !list.some(item => item.toLowerCase() === r.toLowerCase())) {
+        list.push(r);
+      }
+    });
+  } catch (e) {}
+  return list;
+}
+
+function getAllDistrictsList() {
+  const baseDistricts = Object.keys(TN_DISTRICTS_TALUKS);
+  const list = [...baseDistricts];
+  try {
+    const props = getProperties() || [];
+    props.forEach(p => {
+      const d = (p.district || '').trim();
+      if (d && d.toLowerCase() !== '__other__' && d.toLowerCase() !== 'other' && !list.some(item => item.toLowerCase() === d.toLowerCase())) {
+        list.push(d);
+      }
+    });
+  } catch (e) {}
+  return list;
+}
+
+const DEFAULT_USER_SOURCES = [
+  'Direct Website Submission',
+  'WhatsApp Enquiry',
+  'Phone Call Inquiry',
+  'Walk-in Client',
+  'Facebook / Instagram Ads',
+  'Google Search / Ads',
+  'Referral / Broker Network',
+  'Office Staff Listing'
+];
+
+function getAllKnownUserSources() {
+  const sources = [...DEFAULT_USER_SOURCES];
+  try {
+    const props = getProperties() || [];
+    props.forEach(p => {
+      const src = (p.userSource || p.source || '').trim();
+      if (src && src.toLowerCase() !== '__other__' && src.toLowerCase() !== 'other' && !sources.some(s => s.toLowerCase() === src.toLowerCase())) {
+        sources.push(src);
+      }
+    });
+  } catch (e) {}
+  return sources;
+}
+
 function getTaluksForDistrict(districtName) {
-  if (!districtName) return TN_DISTRICTS_TALUKS['Thanjavur'];
+  if (!districtName) return TN_DISTRICTS_TALUKS['Thanjavur'] || ['Thanjavur', 'Kumbakonam', 'Pattukkottai', 'Orathanadu', 'Thiruvaiyaru'];
   const raw = String(districtName).trim();
-  if (TN_DISTRICTS_TALUKS[raw]) return TN_DISTRICTS_TALUKS[raw];
-
-  const clean = raw.toLowerCase();
-  if (clean === 'trichy' || clean.includes('trichy') || clean.includes('tiruchirappalli')) {
-    return TN_DISTRICTS_TALUKS['Tiruchirappalli (Trichy)'];
-  }
-  if (clean.includes('kumbakonam')) {
-    return ['Kumbakonam', 'Thanjavur', 'Papanasam', 'Thiruvidaimarudur', 'Pattukkottai', 'Orathanadu', 'Thiruvaiyaru', 'Budalur', 'Peravurani'];
-  }
-
-  for (const [dist, taluks] of Object.entries(TN_DISTRICTS_TALUKS)) {
-    const distClean = dist.toLowerCase();
-    if (distClean === clean || clean.includes(distClean) || distClean.includes(clean)) {
-      return taluks;
+  let baseTaluks = [];
+  if (TN_DISTRICTS_TALUKS[raw]) {
+    baseTaluks = [...TN_DISTRICTS_TALUKS[raw]];
+  } else {
+    const clean = raw.toLowerCase();
+    if (clean === 'trichy' || clean.includes('trichy') || clean.includes('tiruchirappalli')) {
+      baseTaluks = [...(TN_DISTRICTS_TALUKS['Tiruchirappalli (Trichy)'] || [])];
+    } else if (clean.includes('kumbakonam')) {
+      baseTaluks = ['Kumbakonam', 'Thanjavur', 'Papanasam', 'Thiruvidaimarudur', 'Pattukkottai', 'Orathanadu', 'Thiruvaiyaru', 'Budalur', 'Peravurani'];
+    } else {
+      for (const [dist, taluks] of Object.entries(TN_DISTRICTS_TALUKS)) {
+        const distClean = dist.toLowerCase();
+        if (distClean === clean || clean.includes(distClean) || distClean.includes(clean)) {
+          baseTaluks = [...taluks];
+          break;
+        }
+      }
+      if (baseTaluks.length === 0) {
+        baseTaluks = ['Thanjavur', 'Kumbakonam', 'Pattukkottai', 'Orathanadu', 'Thiruvaiyaru'];
+      }
     }
   }
 
-  return ['Thanjavur', 'Kumbakonam', 'Pattukkottai', 'Orathanadu', 'Thiruvaiyaru'];
+  const result = [...baseTaluks];
+  try {
+    const props = getProperties() || [];
+    props.forEach(p => {
+      const pDist = (p.district || '').trim().toLowerCase();
+      if (pDist === raw.toLowerCase() || (raw.toLowerCase().includes(pDist) && pDist.length > 3)) {
+        const t = (p.taluk || '').trim();
+        if (t && t.toLowerCase() !== '__other__' && t.toLowerCase() !== 'other' && !result.some(item => item.toLowerCase() === t.toLowerCase())) {
+          result.push(t);
+        }
+      }
+    });
+  } catch (e) {}
+  return result;
 }
 
 function compressImageFile(file, maxWidth = 1000, maxHeight = 800, quality = 0.75) {
@@ -802,18 +881,17 @@ function renderFullPagePropertyForm(prop) {
   const talukList = getTaluksForDistrict(activeDistrict);
   const activeTaluk = prop?.taluk || talukList[0] || 'Thanjavur';
   const isCustomTaluk = !talukList.includes(activeTaluk);
-  const isCustomDistrict = !Object.keys(TN_DISTRICTS_TALUKS).includes(activeDistrict);
+  const allDistricts = getAllDistrictsList();
+  const isCustomDistrict = !allDistricts.includes(activeDistrict);
 
-  const knownRoads = [
-    'Medical College Road', 'Trichy Road', 'Pudukkottai Road', 'Madhakottai Road',
-    'Nanjikottai Road', 'Villar Road', 'Pattukottai Bypass', 'Mariyamman Kovil Road',
-    'Srinivasapuram', 'Reddipalayam Road', 'Kumbakonam Bypass'
-  ];
+  const knownRoads = getAllKnownRoads();
   const activeRoad = prop?.road || '';
   const isOtherRoad = activeRoad && !knownRoads.includes(activeRoad);
 
   const activePosterRole = prop?.posterRole || prop?.userRole || 'Individual Owner';
+  const allUserSources = getAllKnownUserSources();
   const activeUserSource = prop?.userSource || prop?.source || 'Direct Website Submission';
+  const isCustomUserSource = activeUserSource && !allUserSources.some(s => s.toLowerCase() === activeUserSource.toLowerCase());
 
   return `
     <div class="view-enter full-page-property-form-container" style="padding-bottom: 60px;">
@@ -910,7 +988,7 @@ function renderFullPagePropertyForm(prop) {
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">District *</label>
                 <select id="form-prop-district-select" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
-                  ${Object.keys(TN_DISTRICTS_TALUKS).map(d => `<option value="${d}" ${activeDistrict === d ? 'selected' : ''}>${d}</option>`).join('')}
+                  ${allDistricts.map(d => `<option value="${d}" ${activeDistrict === d ? 'selected' : ''}>${d}</option>`).join('')}
                   <option value="__other__" ${isCustomDistrict ? 'selected' : ''}>Other District / State...</option>
                 </select>
                 <input type="text" id="form-prop-district" value="${activeDistrict}" placeholder="Type district name..." style="width: 100%; margin-top: 6px; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box; display: ${isCustomDistrict ? 'block' : 'none'};" />
@@ -1034,10 +1112,16 @@ function renderFullPagePropertyForm(prop) {
                 </select>
               </div>
 
-              <!-- User Source (Freeform Input) -->
+              <!-- User Source (Dynamic Dropdown with Other Option) -->
               <div>
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">User Source</label>
-                <input type="text" id="form-prop-user-source" value="${activeUserSource}" placeholder="e.g. Direct Website Submission, WhatsApp Enquiry, Facebook Ads, Walk-in..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                <select id="form-prop-user-source-select" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
+                  ${allUserSources.map(src => `<option value="${src}" ${(!isCustomUserSource && activeUserSource.toLowerCase() === src.toLowerCase()) ? 'selected' : ''}>${src}</option>`).join('')}
+                  <option value="__other__" ${isCustomUserSource ? 'selected' : ''}>Other (Enter New Source)...</option>
+                </select>
+                <div id="form-prop-user-source-custom-wrapper" style="margin-top: 8px; display: ${isCustomUserSource ? 'block' : 'none'};">
+                  <input type="text" id="form-prop-user-source-custom" value="${isCustomUserSource ? activeUserSource : ''}" placeholder="Enter new custom source (e.g. Newspaper Ad, Trade Expo...)" style="width: 100%; padding: 10px 14px; font-size: 0.88rem; border-radius: 8px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                </div>
               </div>
 
               <div>
@@ -1156,7 +1240,7 @@ function renderFullPagePropertyForm(prop) {
               <div style="border-top: 1px solid #f0f4f8; padding-top: 18px; display: flex; flex-direction: column; gap: 14px;">
                 <div>
                   <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Primary Image URL</label>
-                  <input type="url" id="form-prop-img-main" value="${isEdit && prop?.images && prop.images[0] ? prop.images[0] : ''}" placeholder="https://images.unsplash.com/photo-..." style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+                  <input type="text" id="form-prop-img-main" value="${isEdit && prop?.images && prop.images[0] ? prop.images[0] : ''}" placeholder="https://images.unsplash.com/photo-... or /default-property.jpg" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
                 </div>
 
                 <div>
@@ -1206,22 +1290,29 @@ function renderFullPagePropertyForm(prop) {
 function renderUploadedImagesGallery() {
   if (!formImagesList || formImagesList.length === 0) return '';
 
-  return formImagesList.map((imgUrl, index) => `
-    <div class="img-preview-thumb-item" style="
-      position: relative; width: 130px; height: 105px; border-radius: 14px; overflow: hidden; border: 1px solid #cbd5e0; background: #111; flex-shrink: 0;
-    ">
-      <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
-      
-      <!-- Red Delete Button -->
-      <button type="button" class="delete-uploaded-img-btn" data-index="${index}" title="Remove photo" style="
-        position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%;
-        background: rgba(229, 62, 62, 0.9); color: #ffffff; border: none; font-size: 0.9rem;
-        display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      ">
-        <i class="ri-close-line"></i>
-      </button>
-    </div>
-  `).join('');
+  return formImagesList
+    .map((imgUrl, index) => {
+      const cleanUrl = String(imgUrl || '').trim();
+      if (!cleanUrl) return '';
+      return `
+        <div class="img-preview-thumb-item" style="
+          position: relative; width: 130px; height: 105px; border-radius: 14px; overflow: hidden; border: 1px solid #cbd5e0; background: #1a202c; flex-shrink: 0;
+        ">
+          <img src="${cleanUrl}" alt="Property photo ${index + 1}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.opacity='0.2'" />
+          
+          <!-- Red Delete Button -->
+          <button type="button" class="delete-uploaded-img-btn" data-index="${index}" title="Remove photo" style="
+            position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; border-radius: 50%;
+            background: rgba(229, 62, 62, 0.9); color: #ffffff; border: none; font-size: 0.9rem;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+          ">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+      `;
+    })
+    .filter(Boolean)
+    .join('');
 }
 
 function filterPropertiesList(list) {
@@ -1868,6 +1959,23 @@ function initPropertyFormListeners() {
     }
   });
 
+  // User Source Dynamic Change Listener (Show text box on "__other__")
+  const userSourceSelect = document.getElementById('form-prop-user-source-select');
+  const userSourceCustomWrapper = document.getElementById('form-prop-user-source-custom-wrapper');
+  const userSourceCustomInput = document.getElementById('form-prop-user-source-custom');
+  userSourceSelect?.addEventListener('change', () => {
+    if (userSourceSelect.value === '__other__') {
+      if (userSourceCustomWrapper) {
+        userSourceCustomWrapper.style.display = 'block';
+        userSourceCustomInput?.focus();
+      }
+    } else {
+      if (userSourceCustomWrapper) {
+        userSourceCustomWrapper.style.display = 'none';
+      }
+    }
+  });
+
   document.getElementById('use-my-location-btn')?.addEventListener('click', () => {
     if ('geolocation' in navigator) {
       showToast('Fetching current GPS coordinates...', 'ri-compass-line');
@@ -1914,16 +2022,30 @@ function initPropertyFormListeners() {
     if (mapPickerContainer) mapPickerContainer.style.display = 'none';
   });
 
-  // Primary Image URL input listener for live preview sync
+  // Primary Image URL input listener for preview sync (syncs on change/blur, avoiding keystroke duplication)
   const mainImgInput = document.getElementById('form-prop-img-main');
-  mainImgInput?.addEventListener('input', () => {
-    const val = mainImgInput.value.trim();
-    if (val && !formImagesList.includes(val)) {
-      formImagesList.unshift(val);
-      formImagesList = [...new Set(formImagesList)];
-      refreshGalleryPreviewGrid();
+  const syncMainImageWithGallery = () => {
+    const val = mainImgInput ? mainImgInput.value.trim() : '';
+    if (val) {
+      if (formImagesList.length > 0) {
+        if (formImagesList[0] !== val) {
+          formImagesList = formImagesList.filter(img => img !== val);
+          formImagesList.unshift(val);
+        }
+      } else {
+        formImagesList.push(val);
+      }
+    } else {
+      if (formImagesList.length > 0) {
+        formImagesList.shift();
+      }
     }
-  });
+    formImagesList = [...new Set(formImagesList.filter(Boolean))];
+    refreshGalleryPreviewGrid();
+  };
+
+  mainImgInput?.addEventListener('change', syncMainImageWithGallery);
+  mainImgInput?.addEventListener('blur', syncMainImageWithGallery);
 
   // Gallery Photos File Input Listener with Canvas Compression
   const galleryFileInput = document.getElementById('form-prop-gallery-file-input');
@@ -2008,25 +2130,32 @@ function initPropertyFormListeners() {
       const area = document.getElementById('form-prop-area')?.value.trim() || '';
       
       const roadSelectVal = document.getElementById('form-prop-road')?.value || '';
+      const customRoadVal = document.getElementById('form-prop-road-custom')?.value.trim() || '';
       const road = roadSelectVal === 'Other Road' 
-        ? (document.getElementById('form-prop-road-custom')?.value.trim() || 'Other Road') 
+        ? (customRoadVal || 'Other Road') 
         : roadSelectVal;
 
       const distSelectVal = document.getElementById('form-prop-district-select')?.value || '';
+      const customDistVal = document.getElementById('form-prop-district')?.value.trim() || '';
       const district = distSelectVal === '__other__' 
-        ? (document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur') 
-        : (distSelectVal || document.getElementById('form-prop-district')?.value.trim() || 'Thanjavur');
+        ? (customDistVal || 'Thanjavur') 
+        : (distSelectVal || customDistVal || 'Thanjavur');
 
       const talukSelectVal = document.getElementById('form-prop-taluk-select')?.value || '';
+      const customTalukVal = document.getElementById('form-prop-taluk')?.value.trim() || '';
       const taluk = talukSelectVal === '__other__' 
-        ? (document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur') 
-        : (talukSelectVal || document.getElementById('form-prop-taluk')?.value.trim() || 'Thanjavur');
+        ? (customTalukVal || 'Thanjavur') 
+        : (talukSelectVal || customTalukVal || 'Thanjavur');
 
       const facing = document.getElementById('form-prop-facing')?.value.trim() || '';
       const size = document.getElementById('form-prop-size')?.value.trim();
       const builtUpArea = document.getElementById('form-prop-builtup-size')?.value.trim() || '';
       const posterRole = document.getElementById('form-prop-poster-role')?.value || 'Individual Owner';
-      const userSource = document.getElementById('form-prop-user-source')?.value.trim() || 'Direct Website Submission';
+      const userSourceSelectVal = document.getElementById('form-prop-user-source-select')?.value || '';
+      const customUserSourceVal = document.getElementById('form-prop-user-source-custom')?.value.trim() || '';
+      const userSource = userSourceSelectVal === '__other__' 
+        ? (customUserSourceVal || 'Direct Website Submission') 
+        : (userSourceSelectVal || customUserSourceVal || document.getElementById('form-prop-user-source')?.value.trim() || 'Direct Website Submission');
 
       const bedrooms = document.getElementById('form-prop-bedrooms')?.value;
       const bathrooms = document.getElementById('form-prop-bathrooms')?.value;

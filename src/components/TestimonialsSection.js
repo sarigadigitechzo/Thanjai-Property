@@ -62,6 +62,12 @@ export function renderTestimonialsSection() {
   const summary = getGoogleSummary();
   const reviews = getApprovedReviews();
 
+  const half = Math.ceil(reviews.length / 2);
+  const row1Reviews = reviews.slice(0, half);
+  const row2Reviews = reviews.slice(half);
+  const list1 = row1Reviews.length > 0 ? row1Reviews : reviews;
+  const list2 = row2Reviews.length > 0 ? row2Reviews : reviews;
+
   return `
     <section class="testimonials-section" id="google-reviews-section" style="
       padding: 90px 0 100px 0;
@@ -129,16 +135,33 @@ export function renderTestimonialsSection() {
         </div>
       </div>
 
-      <!-- AUTO-SCROLLING MARQUEE TRACK (100% SEAMLESS INFINITE TICKER) -->
-      <div class="testimonials-marquee-wrapper" style="width: 100%; position: relative; overflow: hidden; padding: 12px 0;">
-        <div class="testimonials-marquee-track">
-          <div class="testimonials-marquee-group">
-            ${renderReviewCards(reviews)}
-          </div>
-          <div class="testimonials-marquee-group" aria-hidden="true">
-            ${renderReviewCards(reviews)}
+      <!-- AUTO-SCROLLING MARQUEE TRACKS (TWO-SIDED / TWO-DIRECTION SLOW & SMOOTH) -->
+      <div style="display: flex; flex-direction: column; gap: 20px; width: 100%; position: relative; overflow: hidden; padding: 12px 0;">
+        
+        <!-- ROW 1: Moves Smoothly to the LEFT -->
+        <div class="testimonials-marquee-wrapper">
+          <div class="testimonials-marquee-track">
+            <div class="testimonials-marquee-group marquee-left">
+              ${renderReviewCards(list1)}
+            </div>
+            <div class="testimonials-marquee-group marquee-left" aria-hidden="true">
+              ${renderReviewCards(list1)}
+            </div>
           </div>
         </div>
+
+        <!-- ROW 2: Moves Smoothly to the RIGHT -->
+        <div class="testimonials-marquee-wrapper">
+          <div class="testimonials-marquee-track">
+            <div class="testimonials-marquee-group marquee-right">
+              ${renderReviewCards(list2)}
+            </div>
+            <div class="testimonials-marquee-group marquee-right" aria-hidden="true">
+              ${renderReviewCards(list2)}
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- INLINE USER SUBMISSION MODAL (CLEAN 1-5 STARS, NAME & COMMENTS) -->

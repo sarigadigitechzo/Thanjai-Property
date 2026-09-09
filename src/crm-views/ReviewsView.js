@@ -1,8 +1,17 @@
 // src/crm-views/ReviewsView.js - Luxury Google Reviews & Testimonials CRM Module
-import { getReviews, addReview, updateReview, deleteReview, toggleReviewStatus } from '../utils/reviewsStore.js';
+import { getReviews, addReview, updateReview, deleteReview, toggleReviewStatus, getGoogleAuthState, saveGoogleAuthState, disconnectGoogleAuth } from '../utils/reviewsStore.js';
 import { showToast } from '../utils/toast.js';
 
 let activeFilter = 'all';
+let activeSearchQuery = '';
+
+export function setReviewsSearchQuery(query) {
+  activeSearchQuery = query || '';
+}
+
+export function getReviewsSearchQuery() {
+  return activeSearchQuery;
+}
 
 function ensureModalsInBody() {
   let addModal = document.getElementById('admin-add-review-modal');
@@ -19,6 +28,7 @@ function ensureModalsInBody() {
 
 export function renderReviewsView() {
   const allReviews = getReviews();
+  const googleAuth = getGoogleAuthState();
   
   const googleCount = allReviews.filter(r => r.source === 'Google' || r.source === 'Google / Website').length;
   const webCount = allReviews.filter(r => r.source === 'Website').length;
@@ -28,11 +38,19 @@ export function renderReviewsView() {
     : '4.6';
 
   const filteredReviews = allReviews.filter(r => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'google') return r.source === 'Google' || r.source === 'Google / Website';
-    if (activeFilter === 'website') return r.source === 'Website';
-    if (activeFilter === 'whatsapp') return r.source === 'WhatsApp';
-    if (activeFilter === 'hidden') return r.status === 'Hidden';
+    if (activeFilter === 'google' && !(r.source === 'Google' || r.source === 'Google / Website')) return false;
+    if (activeFilter === 'website' && r.source !== 'Website') return false;
+    if (activeFilter === 'whatsapp' && r.source !== 'WhatsApp') return false;
+    if (activeFilter === 'hidden' && r.status !== 'Hidden') return false;
+
+    if (activeSearchQuery) {
+      const q = activeSearchQuery.toLowerCase().trim();
+      const nameMatch = (r.name || r.author_name || '').toLowerCase().includes(q);
+      const textMatch = (r.reviewText || r.review_text || '').toLowerCase().includes(q);
+      const locMatch = (r.location || '').toLowerCase().includes(q);
+      const srcMatch = (r.source || '').toLowerCase().includes(q);
+      if (!nameMatch && !textMatch && !locMatch && !srcMatch) return false;
+    }
     return true;
   });
 
@@ -51,18 +69,65 @@ export function renderReviewsView() {
             </div>
             <div>
               <h1 style="font-size: clamp(1.3rem, 2.5vw, 1.6rem); font-weight: 700; color: #1a202c; margin: 0;">Google Reviews & Testimonials</h1>
-              <p style="font-size: 0.85rem; color: #718096; margin: 2px 0 0 0;">Manage ratings, add Google reviews manually, and moderate website testimonials</p>
+              <p style="font-size: 0.85rem; color: #718096; margin: 2px 0 0 0;">Manage ratings, Google OAuth authorization, and moderate client reviews</p>
             </div>
           </div>
         </div>
 
-        <button id="open-add-review-admin-btn" type="button" onclick="if(window.openAdminAddReviewModal) window.openAdminAddReviewModal();" style="
-          display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; border-radius: 12px;
-          background: #4285F4; color: #ffffff; border: none; font-weight: 700; font-size: 0.92rem;
-          cursor: pointer; box-shadow: 0 4px 14px rgba(66, 133, 244, 0.35); transition: all 0.2s;
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <button id="open-add-review-admin-btn" type="button" onclick="if(window.openAdminAddReviewModal) window.openAdminAddReviewModal();" style="
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; border-radius: 12px;
+            background: #4285F4; color: #ffffff; border: none; font-weight: 700; font-size: 0.92rem;
+            cursor: pointer; box-shadow: 0 4px 14px rgba(66, 133, 244, 0.35); transition: all 0.2s;
+          ">
+            <i class="ri-add-line" style="font-size: 1.2rem;"></i>
+            <span>Add Google / Client Review</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Google Authentication & Business Profile Integration Status Card -->
+      <div style="
+        background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; padding: 20px 24px;
+        margin-bottom: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+        display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+      ">
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <div style="
+            width: 48px; height: 48px; border-radius: 12px;
+            background: ${googleAuth.isConnected ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)'};
+            color: ${googleAuth.isConnected ? '#16a34a' : '#ef4444'};
+            display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0;
+          ">
+            <i class="${googleAuth.isConnected ? 'ri-shield-check-fill' : 'ri-shield-keyhole-line'}"></i>
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 1rem; font-weight: 800; color: #1e293b;">Google Business Profile Authentication</span>
+              <span style="
+                padding: 3px 10px; border-radius: 20px; font-size: 0.74rem; font-weight: 800;
+                background: ${googleAuth.isConnected ? '#dcfce7' : '#fee2e2'};
+                color: ${googleAuth.isConnected ? '#15803d' : '#b91c1c'};
+              ">
+                ${googleAuth.isConnected ? '● Google Authenticated & Authorized' : '○ Google Not Connected'}
+              </span>
+            </div>
+            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: #64748b;">
+              ${googleAuth.isConnected 
+                ? `Authorized Account: <strong style="color: #1e293b;">${googleAuth.accountEmail}</strong> • Location: <strong>${googleAuth.businessProfileName}</strong>`
+                : 'Connect your verified Google account to authenticate review operations and sync Google Maps testimonials.'}
+            </p>
+          </div>
+        </div>
+
+        <button id="toggle-google-auth-btn" style="
+          padding: 10px 18px; border-radius: 10px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+          display: inline-flex; align-items: center; gap: 8px; border: 1px solid #cbd5e1;
+          background: ${googleAuth.isConnected ? '#f8fafc' : '#4285F4'};
+          color: ${googleAuth.isConnected ? '#475569' : '#ffffff'};
         ">
-          <i class="ri-add-line" style="font-size: 1.2rem;"></i>
-          <span>Add Google / Client Review</span>
+          <i class="${googleAuth.isConnected ? 'ri-logout-box-r-line' : 'ri-google-fill'}"></i>
+          <span>${googleAuth.isConnected ? 'Manage Google Auth' : 'Authenticate with Google'}</span>
         </button>
       </div>
 
@@ -92,6 +157,19 @@ export function renderReviewsView() {
         </div>
       </div>
 
+      <!-- In-View Reviewer Name & Content Search Bar -->
+      <div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <div style="position: relative; flex: 1; min-width: 260px;">
+          <i class="ri-search-line" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 1rem;"></i>
+          <input type="text" id="reviews-search-input" value="${activeSearchQuery}" placeholder="Search Google reviews by reviewer name (e.g. Sidharthan, Jeyaraj, Sekar), keyword, or location..." style="width: 100%; padding: 11px 14px 11px 40px; border-radius: 12px; border: 1px solid #cbd5e1; background: #fff; font-size: 0.92rem; box-sizing: border-box; outline: none;" />
+        </div>
+        ${activeSearchQuery ? `
+          <button id="clear-reviews-search-btn" style="padding: 10px 16px; border-radius: 10px; background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <i class="ri-close-circle-line"></i> Clear Search
+          </button>
+        ` : ''}
+      </div>
+
       <!-- Filter Tabs -->
       <div style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
         <button class="review-tab-btn ${activeFilter === 'all' ? 'active' : ''}" data-filter="all" style="
@@ -116,89 +194,97 @@ export function renderReviewsView() {
       </div>
 
       <!-- Reviews Grid (Mobile Responsive: 100% on phones, grid on tablets/desktop) -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
-        ${filteredReviews.map(rev => {
-          const firstLetter = (rev.name || rev.author_name || 'U').trim().charAt(0).toUpperCase();
-          const displayName = rev.name || rev.author_name || 'Verified Client';
-          const reviewQuote = rev.reviewText || rev.review_text || '';
+      ${filteredReviews.length === 0 ? `
+        <div style="background: #ffffff; border-radius: 18px; border: 1px dashed #cbd5e1; padding: 48px 24px; text-align: center; color: #64748b;">
+          <i class="ri-search-eye-line" style="font-size: 2.4rem; color: #94a3b8; display: block; margin-bottom: 12px;"></i>
+          <h3 style="margin: 0 0 6px 0; font-size: 1.15rem; color: #1e293b;">No matching reviews found</h3>
+          <p style="margin: 0; font-size: 0.9rem;">Try adjusting your search query "${activeSearchQuery}" or filter tab.</p>
+        </div>
+      ` : `
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+          ${filteredReviews.map(rev => {
+            const firstLetter = (rev.name || rev.author_name || 'U').trim().charAt(0).toUpperCase();
+            const displayName = rev.name || rev.author_name || 'Verified Client';
+            const reviewQuote = rev.reviewText || rev.review_text || '';
 
-          return `
-            <div style="
-              background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; padding: 20px;
-              box-shadow: 0 4px 16px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box;
-            ">
-              <div>
-                <!-- Top Row: 1-Letter Avatar, Name, Source -->
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                  <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="
-                      width: 40px; height: 40px; min-width: 40px; border-radius: 50%; background: ${rev.avatar_color || '#4285F4'}; color: #fff;
-                      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
+            return `
+              <div style="
+                background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; padding: 20px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.03); display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box;
+              ">
+                <div>
+                  <!-- Top Row: 1-Letter Avatar, Name, Source -->
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <div style="
+                        width: 40px; height: 40px; min-width: 40px; border-radius: 50%; background: ${rev.avatar_color || '#4285F4'}; color: #fff;
+                        display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;
+                      ">
+                        ${firstLetter}
+                      </div>
+                      <div>
+                        <div style="font-weight: 700; color: #1a202c; font-size: 0.96rem;">${displayName}</div>
+                      </div>
+                    </div>
+
+                    <span style="
+                      padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+                      background: ${rev.source === 'Google' || rev.source === 'Google / Website' ? 'rgba(66, 133, 244, 0.12)' : 'rgba(235, 94, 40, 0.12)'};
+                      color: ${rev.source === 'Google' || rev.source === 'Google / Website' ? '#4285F4' : '#eb5e28'};
                     ">
-                      ${firstLetter}
-                    </div>
-                    <div>
-                      <div style="font-weight: 700; color: #1a202c; font-size: 0.96rem;">${displayName}</div>
-                    </div>
+                      ${rev.source || 'Google'}
+                    </span>
                   </div>
 
+                  <!-- Rating -->
+                  <div style="display: flex; gap: 2px; color: #f59e0b; font-size: 0.95rem; margin-bottom: 10px;">
+                    ${Array(rev.rating || 5).fill('<i class="ri-star-fill"></i>').join('')}
+                  </div>
+
+                  <!-- Review Text -->
+                  <p style="font-size: 0.9rem; color: #4a5568; line-height: 1.55; margin: 0 0 14px 0;">
+                    "${reviewQuote}"
+                  </p>
+                </div>
+
+                <!-- Footer: Status & Action Buttons -->
+                <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                   <span style="
-                    padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
-                    background: ${rev.source === 'Google' || rev.source === 'Google / Website' ? 'rgba(66, 133, 244, 0.12)' : 'rgba(235, 94, 40, 0.12)'};
-                    color: ${rev.source === 'Google' || rev.source === 'Google / Website' ? '#4285F4' : '#eb5e28'};
+                    padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;
+                    background: ${rev.status === 'Approved' ? '#f0fdf4' : '#fef2f2'};
+                    color: ${rev.status === 'Approved' ? '#16a34a' : '#ef4444'};
                   ">
-                    ${rev.source || 'Google'}
+                    ${rev.status === 'Approved' ? '● Published' : '○ Hidden'}
                   </span>
-                </div>
 
-                <!-- Rating -->
-                <div style="display: flex; gap: 2px; color: #f59e0b; font-size: 0.95rem; margin-bottom: 10px;">
-                  ${Array(rev.rating || 5).fill('<i class="ri-star-fill"></i>').join('')}
-                </div>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <button class="edit-review-btn" data-id="${rev.id}" onclick="if(window.openAdminEditReviewModal) window.openAdminEditReviewModal('${rev.id}');" style="
+                      padding: 5px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
+                      color: #2563eb; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;
+                    ">
+                      <i class="ri-edit-line"></i> Edit
+                    </button>
 
-                <!-- Review Text -->
-                <p style="font-size: 0.9rem; color: #4a5568; line-height: 1.55; margin: 0 0 14px 0;">
-                  "${reviewQuote}"
-                </p>
-              </div>
+                    <button class="toggle-status-review-btn" data-id="${rev.id}" style="
+                      padding: 5px 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
+                      color: #475569; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+                    ">
+                      ${rev.status === 'Approved' ? 'Hide' : 'Publish'}
+                    </button>
 
-              <!-- Footer: Status & Action Buttons -->
-              <div style="border-top: 1px solid #f1f5f9; padding-top: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                <span style="
-                  padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700;
-                  background: ${rev.status === 'Approved' ? '#f0fdf4' : '#fef2f2'};
-                  color: ${rev.status === 'Approved' ? '#16a34a' : '#ef4444'};
-                ">
-                  ${rev.status === 'Approved' ? '● Published' : '○ Hidden'}
-                </span>
-
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <button class="edit-review-btn" data-id="${rev.id}" onclick="if(window.openAdminEditReviewModal) window.openAdminEditReviewModal('${rev.id}');" style="
-                    padding: 5px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
-                    color: #2563eb; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;
-                  ">
-                    <i class="ri-edit-line"></i> Edit
-                  </button>
-
-                  <button class="toggle-status-review-btn" data-id="${rev.id}" style="
-                    padding: 5px 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff;
-                    color: #475569; font-size: 0.78rem; font-weight: 600; cursor: pointer;
-                  ">
-                    ${rev.status === 'Approved' ? 'Hide' : 'Publish'}
-                  </button>
-
-                  <button class="delete-review-btn" data-id="${rev.id}" style="
-                    padding: 5px 8px; border-radius: 8px; border: 1px solid #fee2e2; background: #fff;
-                    color: #ef4444; font-size: 0.82rem; cursor: pointer;
-                  " title="Delete Review">
-                    <i class="ri-delete-bin-line"></i>
-                  </button>
+                    <button class="delete-review-btn" data-id="${rev.id}" style="
+                      padding: 5px 8px; border-radius: 8px; border: 1px solid #fee2e2; background: #fff;
+                      color: #ef4444; font-size: 0.82rem; cursor: pointer;
+                    " title="Delete Review">
+                      <i class="ri-delete-bin-line"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
+            `;
+          }).join('')}
+        </div>
+      `}
 
       <!-- Add Manual Review Modal (Admin - Viewport-Fixed Root Overlay) -->
       <div id="admin-add-review-modal" style="
@@ -396,6 +482,62 @@ window.closeAdminEditReviewModal = function() {
 
 export function initReviewsListeners() {
   ensureModalsInBody();
+
+  // In-View Review Search
+  const searchInput = document.getElementById('reviews-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      activeSearchQuery = e.target.value;
+      if (typeof window.navigateToView === 'function') {
+        window.navigateToView('reviews');
+        setTimeout(() => {
+          const el = document.getElementById('reviews-search-input');
+          if (el) {
+            el.focus();
+            el.setSelectionRange(el.value.length, el.value.length);
+          }
+        }, 50);
+      }
+    });
+  }
+
+  const clearSearchBtn = document.getElementById('clear-reviews-search-btn');
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', () => {
+      activeSearchQuery = '';
+      if (typeof window.navigateToView === 'function') {
+        window.navigateToView('reviews');
+      }
+    });
+  }
+
+  // Google Authentication Toggle Button
+  const toggleAuthBtn = document.getElementById('toggle-google-auth-btn');
+  if (toggleAuthBtn) {
+    toggleAuthBtn.addEventListener('click', () => {
+      const currentAuth = getGoogleAuthState();
+      if (currentAuth.isConnected) {
+        if (confirm('Disconnect Google Business Profile authorization? Existing review records will not be affected.')) {
+          disconnectGoogleAuth();
+          showToast('Google Business Profile disconnected', 'ri-information-line');
+          if (typeof window.navigateToView === 'function') window.navigateToView('reviews');
+        }
+      } else {
+        saveGoogleAuthState({
+          isConnected: true,
+          accountEmail: 'thanjaiproperty.desk@gmail.com',
+          accountName: 'Thanjai Property Official',
+          businessProfileName: 'ThanjaiProperty.com Real Estate in Thanjavur',
+          locationId: 'locations/14111054332903748189',
+          lastSyncTime: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          scopes: ['https://www.googleapis.com/auth/business.manage'],
+          status: 'Authorized & Active'
+        });
+        showToast('Google Authentication & Business Profile authorized successfully!', 'ri-shield-check-fill');
+        if (typeof window.navigateToView === 'function') window.navigateToView('reviews');
+      }
+    });
+  }
 
   // Tab Switching
   document.querySelectorAll('.review-tab-btn').forEach(btn => {

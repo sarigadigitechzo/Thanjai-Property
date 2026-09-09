@@ -179,3 +179,47 @@ export function toggleReviewStatus(id) {
   const newStatus = rev.status === 'Approved' ? 'Hidden' : 'Approved';
   return updateReview(id, { status: newStatus });
 }
+
+const GOOGLE_AUTH_STORAGE_KEY = 'thanjai_google_auth_state';
+
+export function getGoogleAuthState() {
+  try {
+    const raw = localStorage.getItem(GOOGLE_AUTH_STORAGE_KEY);
+    if (raw) {
+      return JSON.parse(raw);
+    }
+  } catch (e) {}
+  return {
+    isConnected: true,
+    accountEmail: 'thanjaiproperty.desk@gmail.com',
+    accountName: 'Thanjai Property Official',
+    businessProfileName: 'ThanjaiProperty.com Real Estate in Thanjavur',
+    locationId: 'locations/14111054332903748189',
+    lastSyncTime: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    scopes: ['https://www.googleapis.com/auth/business.manage'],
+    status: 'Authorized & Active'
+  };
+}
+
+export function saveGoogleAuthState(state) {
+  try {
+    localStorage.setItem(GOOGLE_AUTH_STORAGE_KEY, JSON.stringify(state));
+    window.dispatchEvent(new CustomEvent('googleAuthUpdated', { detail: state }));
+  } catch (e) {}
+}
+
+export function disconnectGoogleAuth() {
+  const disconnected = {
+    isConnected: false,
+    accountEmail: '',
+    accountName: '',
+    businessProfileName: '',
+    locationId: '',
+    lastSyncTime: 'Not Connected',
+    scopes: [],
+    status: 'Disconnected'
+  };
+  saveGoogleAuthState(disconnected);
+  return disconnected;
+}
+

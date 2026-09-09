@@ -428,12 +428,22 @@ export function initPropertyDetailModalListeners(property, onClose) {
         ? property.images[0]
         : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
 
+      const propPriceStr = (property.priceFormatted && property.priceFormatted !== '0' && property.priceFormatted !== '₹ 0')
+        ? property.priceFormatted
+        : (property.price > 0
+            ? (property.price >= 10000000 ? `₹ ${(property.price / 10000000).toFixed(2)} Crore` : (property.price >= 100000 ? `₹ ${(property.price / 100000).toFixed(2)} Lakhs` : `₹ ${property.price.toLocaleString('en-IN')}`))
+            : 'Price on Request');
+
       await sendWhatsAppMessage({
         campaignName: 'initial_contact_intro',
         destination: formattedPhone,
         userName: name,
         leadId: leadId,
-        templateParams: [name, property.location || property.district || 'Thanjavur', property.title, '+91 84899 96852'],
+        templateParams: [
+          name,
+          `${property.title} (${propPriceStr})`,
+          property.location || property.district || 'Thanjavur'
+        ],
         media: {
           url: propImgUrl,
           filename: 'property.jpg'
@@ -589,12 +599,22 @@ export function openPropertyInquiryFormModal(property) {
         ? property.images[0]
         : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
 
+      const propPriceStr = (property.priceFormatted && property.priceFormatted !== '0' && property.priceFormatted !== '₹ 0')
+        ? property.priceFormatted
+        : (property.price > 0
+            ? (property.price >= 10000000 ? `₹ ${(property.price / 10000000).toFixed(2)} Crore` : (property.price >= 100000 ? `₹ ${(property.price / 100000).toFixed(2)} Lakhs` : `₹ ${property.price.toLocaleString('en-IN')}`))
+            : 'Price on Request');
+
       await sendWhatsAppMessage({
         campaignName: 'initial_contact_intro',
         destination: formattedPhone,
         userName: name,
         leadId: leadId,
-        templateParams: [name, property.location || property.district || 'Thanjavur', property.title, '+91 84899 96852'],
+        templateParams: [
+          name,
+          `${property.title} (${propPriceStr})`,
+          property.location || property.district || 'Thanjavur'
+        ],
         media: { url: propImgUrl, filename: 'property.jpg' }
       });
     } catch (err) {}
