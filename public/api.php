@@ -42,9 +42,6 @@ foreach ($envPaths as $envPath) {
 $conn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName);
 if ($conn->connect_error) {
     $conn = @new mysqli('localhost', $dbUser, $dbPass, $dbName);
-    if ($conn->connect_error) {
-        $conn = @new mysqli('localhost', $dbUser, 'q-i_$^HnE{OnhY%E', $dbName);
-    }
 }
 
 if ($conn->connect_error) {
