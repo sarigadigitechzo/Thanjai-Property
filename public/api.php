@@ -13,7 +13,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-$conn = @new mysqli("localhost", "thanjaiproperty_thanjaiproperty", "q-i_$^HnE{OnhY%E", "thanjaiproperty_crm");
+$dbHost = 'localhost';
+$dbUser = 'thanjaiproperty_thanjaiproperty';
+$dbPass = 'p+4a(V7ib=U~.#De';
+$dbName = 'thanjaiproperty_crm';
+
+$envPaths = [__DIR__ . '/.env', __DIR__ . '/backend/.env', __DIR__ . '/../backend/.env', __DIR__ . '/../.env'];
+foreach ($envPaths as $envPath) {
+    if (file_exists($envPath)) {
+        $envLines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($envLines as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, '#') === 0) continue;
+            if (strpos($line, '=') !== false) {
+                list($key, $val) = explode('=', $line, 2);
+                $key = trim($key);
+                $val = trim($val, " \t\n\r\0\x0B\"'");
+                if ($key === 'DB_HOST' && $val) $dbHost = $val;
+                if ($key === 'DB_USER' && $val) $dbUser = $val;
+                if ($key === 'DB_PASSWORD' && $val) $dbPass = $val;
+                if ($key === 'DB_NAME' && $val) $dbName = $val;
+            }
+        }
+        break;
+    }
+}
+
+$conn = @new mysqli($dbHost, $dbUser, $dbPass, $dbName);
+if ($conn->connect_error) {
+    $conn = @new mysqli('localhost', $dbUser, $dbPass, $dbName);
+    if ($conn->connect_error) {
+        $conn = @new mysqli('localhost', $dbUser, 'q-i_$^HnE{OnhY%E', $dbName);
+    }
+}
+
 if ($conn->connect_error) {
     http_response_code(500);
     echo json_encode(["error" => "Database Connection failed: " . $conn->connect_error]);
