@@ -1659,6 +1659,11 @@ export function initPropertiesViewListeners() {
     refreshPropertiesView();
   });
 
+  document.getElementById('props-adtype-filter')?.addEventListener('change', (e) => {
+    activeAdTypeFilter = e.target.value;
+    refreshPropertiesView();
+  });
+
   document.getElementById('props-maxprice-filter')?.addEventListener('change', (e) => {
     activeMaxPriceFilter = e.target.value;
     refreshPropertiesView();
