@@ -679,10 +679,10 @@ export function initReviewsListeners() {
 
   // Delete Buttons
   document.querySelectorAll('.delete-review-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.dataset.id;
       if (id && confirm('Are you sure you want to delete this review?')) {
-        deleteReview(id);
+        await deleteReview(id);
         showToast('Review deleted', 'ri-delete-bin-line');
         if (typeof window.navigateToView === 'function') {
           window.navigateToView('reviews');

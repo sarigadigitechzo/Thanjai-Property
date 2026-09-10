@@ -292,7 +292,8 @@ export function renderLeadDetailView(id) {
   const rawTimeline = Array.isArray(lead.timeline) ? lead.timeline : [];
   const unifiedActivities = [];
 
-  // 1. Existing lead timeline events
+  // 1. Existing lead timeline events (with deduplication)
+  const seenTimelineKeys = new Set();
   rawTimeline.forEach(evt => {
     if (!evt) return;
     const msg = evt.message || evt.action || evt.text || (typeof evt === 'string' ? evt : 'Lead activity recorded');
@@ -300,10 +301,20 @@ export function renderLeadDetailView(id) {
     const rawD = evt.date || evt.timestamp || evt.createdAt || lead.createdAt;
     const d = new Date(rawD);
     const validDate = isNaN(d.getTime()) ? new Date(lead.createdAt || Date.now()) : d;
+
+    const evtType = evt.type || (msg.toLowerCase().includes('whatsapp') ? 'whatsapp' : (msg.toLowerCase().includes('partner') ? 'partner' : (msg.toLowerCase().includes('visit') ? 'visit' : 'activity')));
+
+    if (evtType === 'visit') {
+      const visitKey = (evt.id || evt.visitId || msg).toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (seenTimelineKeys.has(visitKey)) return;
+      seenTimelineKeys.add(visitKey);
+    }
+
     unifiedActivities.push({
-      id: evt.id || `act-${Math.random()}`,
-      type: evt.type || (msg.toLowerCase().includes('whatsapp') ? 'whatsapp' : (msg.toLowerCase().includes('partner') ? 'partner' : (msg.toLowerCase().includes('visit') ? 'visit' : 'activity'))),
+      id: evt.id || evt.visitId || `act-${Math.random()}`,
+      type: evtType,
       message: msg,
+      details: evt.details || '',
       author: author,
       date: validDate,
       dateFormatted: validDate.toLocaleString('en-GB', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
@@ -311,19 +322,33 @@ export function renderLeadDetailView(id) {
     });
   });
 
-  // 2. Site visits events (auto-merge into timeline)
+  // 2. Site visits events (auto-merge into timeline only if not already represented)
   leadVisits.forEach(v => {
     if (!v) return;
     const visitDateStr = v.date ? `${v.date} ${v.month || ''}, ${v.hours || ''}:${v.mins || '00'} ${v.ampm || ''}` : (v.visitDate || 'Scheduled');
     const vType = v.visitType || (v.property && v.property.includes('Pre-Inspection') ? 'Staff Site Pre-Inspection' : 'Customer Property Tour');
     const statusText = v.status === 'Completed' ? 'Completed' : (v.status === 'Cancelled' ? 'Cancelled' : 'Scheduled');
     const visitMsg = `${vType} [${statusText}]: ${v.property || 'Property Tour'} (${visitDateStr})`;
-    
-    // Avoid duplicates if already present in timeline
-    const isDup = unifiedActivities.some(a => a.type === 'visit' && (a.message.includes(visitDateStr) || (v.id && String(a.original?.id) === String(v.id))));
+
+    const vIdStr = String(v.id || '');
+    const isDup = unifiedActivities.some(a => {
+      if (a.type !== 'visit') return false;
+      if (vIdStr && (String(a.id) === vIdStr || String(a.original?.id) === vIdStr || String(a.original?.visitId) === vIdStr)) return true;
+      const aMsg = (a.message || '').toLowerCase();
+      const propClean = (v.property || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (propClean && aMsg.replace(/[^a-z0-9]/g, '').includes(propClean)) return true;
+      return false;
+    });
+
     if (!isDup) {
-      let visitD = v.visitDate ? new Date(v.visitDate) : (v.createdAt ? new Date(v.createdAt) : new Date());
-      if (isNaN(visitD.getTime())) visitD = new Date();
+      let visitD;
+      const rawDateVal = v.createdAt || v.visitDateRaw || v.visitDate;
+      if (rawDateVal) {
+        visitD = new Date(rawDateVal);
+      }
+      if (!visitD || isNaN(visitD.getTime())) {
+        visitD = new Date(lead.createdAt || lead.created_at || Date.now());
+      }
       unifiedActivities.push({
         id: v.id || `visit-${Math.random()}`,
         type: 'visit',
@@ -1176,7 +1201,10 @@ export async function initLeadDetailView(id) {
             assignedTo: assignedTo,
             visitType: visitType,
             outcome: outcome || notesVal,
-            status: v.status || 'Scheduled'
+            status: v.status || 'Scheduled',
+            createdAt: v.createdAt || v.created_at || v.visitDate || new Date().toISOString(),
+            visitDate: v.visitDate || null,
+            visitDateRaw: v.visitDate || null
           };
         });
         localStorage.setItem('thanjai_visits', JSON.stringify(parsedVisits));
@@ -1289,8 +1317,10 @@ export async function initLeadDetailView(id) {
       // Always save locally to thanjai_visits
       let visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const nowIso = new Date().toISOString();
       visits.push({
         id: visitData.id,
+        visitId: visitData.id,
         leadId: currentLead.id,
         date: day,
         month: monthNames[dateObj.getMonth()],
@@ -1304,6 +1334,9 @@ export async function initLeadDetailView(id) {
         visitType: visitType,
         outcome: notesVal,
         status: 'Scheduled',
+        createdAt: nowIso,
+        visitDate: visitData.visitDate,
+        visitDateRaw: visitData.visitDate,
         isNew: true
       });
       localStorage.setItem('thanjai_visits', JSON.stringify(visits));
@@ -1312,11 +1345,14 @@ export async function initLeadDetailView(id) {
       const visitDateFormatted = `${day} ${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}, ${hours}:${mins} ${ampm}`;
       if (!currentLead.timeline) currentLead.timeline = [];
       currentLead.timeline.unshift({
+        id: visitData.id,
+        visitId: visitData.id,
         type: 'visit',
         message: `${visitType} scheduled: ${propertyText.trim() || 'Property'} (${visitDateFormatted})`,
         details: notesVal ? `Notes: ${notesVal}` : '',
         author: staffVal,
-        date: new Date().toISOString()
+        date: nowIso,
+        createdAt: nowIso
       });
       saveAndSyncLeads(leads, id);
 

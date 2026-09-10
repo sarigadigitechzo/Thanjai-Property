@@ -6,6 +6,36 @@ import { fetchFromAPI } from './api.js';
 const STORAGE_KEY = 'thanjai_testimonials_v3';
 const VERSION_KEY = 'thanjai_testimonials_version';
 const CURRENT_VERSION = '2.3';
+const DELETED_KEY = 'thanjai_deleted_reviews_v1';
+
+function getDeletedReviewSignatures() {
+  try {
+    const raw = localStorage.getItem(DELETED_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return new Set(parsed);
+    }
+  } catch (e) {}
+  return new Set();
+}
+
+function addDeletedReviewSignature(sig) {
+  if (!sig) return;
+  const set = getDeletedReviewSignatures();
+  set.add(String(sig));
+  try {
+    localStorage.setItem(DELETED_KEY, JSON.stringify(Array.from(set)));
+  } catch (e) {}
+}
+
+function isReviewDeleted(review) {
+  if (!review) return true;
+  const set = getDeletedReviewSignatures();
+  if (review.id && set.has(String(review.id))) return true;
+  const sig = `${review.name || ''}||${review.reviewText || ''}`;
+  if (sig !== '||' && set.has(sig)) return true;
+  return false;
+}
 
 function normalizeReview(r) {
   return {
@@ -37,7 +67,7 @@ function loadReviewsFromStorage() {
     const version = localStorage.getItem(VERSION_KEY);
     if (version !== CURRENT_VERSION) {
       localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
-      const normalizedInit = INITIAL_TESTIMONIALS.map(normalizeReview);
+      const normalizedInit = INITIAL_TESTIMONIALS.map(normalizeReview).filter(r => !isReviewDeleted(r));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedInit));
       return normalizedInit;
     }
@@ -46,14 +76,14 @@ function loadReviewsFromStorage() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map(normalizeReview);
+        return parsed.map(normalizeReview).filter(r => !isReviewDeleted(r));
       }
     }
   } catch (e) {
     console.warn('[ReviewsStore] Error reading from storage:', e);
   }
 
-  const defaultList = INITIAL_TESTIMONIALS.map(normalizeReview);
+  const defaultList = INITIAL_TESTIMONIALS.map(normalizeReview).filter(r => !isReviewDeleted(r));
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultList));
     localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
@@ -68,12 +98,21 @@ async function syncWithRemoteAPI() {
     const data = await fetchFromAPI('/reviews');
     if (Array.isArray(data) && data.length > 0) {
       const existing = getReviews();
-      const combined = [...data.map(normalizeReview)];
+      const combined = [];
+
+      data.forEach(r => {
+        const norm = normalizeReview(r);
+        if (!isReviewDeleted(norm)) {
+          combined.push(norm);
+        }
+      });
+
       existing.forEach(r => {
-        if (!combined.some(c => c.id === r.id || (c.name === r.name && c.reviewText === r.reviewText))) {
+        if (!isReviewDeleted(r) && !combined.some(c => c.id === r.id || (c.name === r.name && c.reviewText === r.reviewText))) {
           combined.push(r);
         }
       });
+
       reviewsCache = combined;
       saveReviewsToStorage(reviewsCache);
       window.dispatchEvent(new CustomEvent('reviewsUpdated'));
@@ -90,7 +129,8 @@ if (typeof window !== 'undefined') {
 
 function saveReviewsToStorage(reviews) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reviews));
+    const validReviews = (reviews || []).filter(r => !isReviewDeleted(r));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(validReviews));
   } catch (e) {
     console.warn('[ReviewsStore] Error saving to storage:', e);
   }
@@ -100,7 +140,7 @@ export function getReviews() {
   if (!reviewsCache || reviewsCache.length === 0) {
     reviewsCache = loadReviewsFromStorage();
   }
-  return [...reviewsCache];
+  return [...reviewsCache].filter(r => !isReviewDeleted(r));
 }
 
 export function getApprovedReviews() {
@@ -148,9 +188,8 @@ export function updateReview(id, updatedFields) {
   reviewsCache = reviews;
   saveReviewsToStorage(reviewsCache);
 
-  fetch(`/api.php/reviews/${id}`, {
+  fetchFromAPI(`/reviews/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(reviews[idx])
   }).catch(() => {});
 
@@ -158,15 +197,37 @@ export function updateReview(id, updatedFields) {
   return reviews[idx];
 }
 
-export function deleteReview(id) {
+export async function deleteReview(id) {
   const reviews = getReviews();
-  const filtered = reviews.filter(r => r.id !== id);
+  const revToDelete = reviews.find(r => r.id === id);
+
+  if (revToDelete) {
+    addDeletedReviewSignature(revToDelete.id);
+    if (revToDelete.name && revToDelete.reviewText) {
+      addDeletedReviewSignature(`${revToDelete.name}||${revToDelete.reviewText}`);
+    }
+  } else if (id) {
+    addDeletedReviewSignature(id);
+  }
+
+  const filtered = reviews.filter(r => r.id !== id && !isReviewDeleted(r));
   reviewsCache = filtered;
   saveReviewsToStorage(reviewsCache);
 
-  fetch(`/api.php/reviews/${id}`, {
-    method: 'DELETE'
-  }).catch(() => {});
+  try {
+    await fetchFromAPI(`/reviews/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    });
+  } catch (err) {
+    console.warn('[ReviewsStore] Error calling delete API:', err);
+  }
+
+  addAuditLog({
+    timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+    action: `Deleted Review (${id})`,
+    module: 'Reviews & Testimonials',
+    details: `Permanently deleted review ${id}.`
+  });
 
   window.dispatchEvent(new CustomEvent('reviewsUpdated', { detail: { id, action: 'delete' } }));
   return true;
