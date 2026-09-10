@@ -45,6 +45,7 @@ function cleanUrlRewritePlugin() {
 }
 
 export default defineConfig({
+  base: './',
   plugins: [adminLinkPlugin(), cleanUrlRewritePlugin()],
   server: {
     open: '/admin-dashboard'

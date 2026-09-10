@@ -450,6 +450,7 @@ export function mapLeadFromAPI(l) {
     propertyType: type,
     requirement: type,
     source: detectedSource,
+    priority: l.priority || 'Medium',
     assignTo: l.assignedTo || l.assignTo || 'Unassigned',
     assignedTo: l.assignedTo || l.assignTo || 'Unassigned',
     status: l.status || 'New Lead',
@@ -518,6 +519,7 @@ export async function initLeadsView(searchQuery = null) {
           );
           if (matchingLocal) {
             if (matchingLocal.status) apiL.status = matchingLocal.status;
+            if (matchingLocal.priority) apiL.priority = matchingLocal.priority;
             if (matchingLocal.assignTo && matchingLocal.assignTo !== 'Unassigned') {
               apiL.assignTo = matchingLocal.assignTo;
               apiL.assignedTo = matchingLocal.assignTo;
