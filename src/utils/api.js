@@ -1,10 +1,10 @@
 // api.js - Centralized fetch wrapper for PHP backend with resilient master relay fallback
 
-const MASTER_API_URL = 'https://thanjaiproperty.com/api.php';
+const MASTER_API_URL = 'https://thanjaiproperty.com/backend/api.php';
 
 const PRIMARY_API_BASE_URL = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
   ? MASTER_API_URL
-  : (typeof window !== 'undefined' ? '/api.php' : MASTER_API_URL);
+  : (typeof window !== 'undefined' ? '/backend/api.php' : MASTER_API_URL);
 
 function buildApiUrl(baseUrl, endpoint, isGet) {
   let url = baseUrl;
