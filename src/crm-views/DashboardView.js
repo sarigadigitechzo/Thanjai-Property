@@ -2,9 +2,8 @@ import { getProperties } from '../utils/propertiesStore.js';
 import { getRegisteredUsers } from '../utils/userAuthStore.js';
 import { filterLeadsForActiveUser, canViewAllLeads, getActiveAdminUser } from '../utils/adminUsersStore.js';
 import { fetchFromAPI } from '../utils/api.js';
-import { getLeads } from './LeadsView.js';
-import { getCachedStats, saveCachedStats } from '../utils/leadsDb.js';
 import { getLeads, consolidateLeadsByBuyer } from './LeadsView.js';
+import { getCachedStats, saveCachedStats } from '../utils/leadsDb.js';
 
 export function renderDashboardView() {
   const activePropertiesCount = getProperties().length;
