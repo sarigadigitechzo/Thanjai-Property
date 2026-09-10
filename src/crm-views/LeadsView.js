@@ -394,9 +394,23 @@ import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showConfirmModal, showAlertModal } from '../utils/toast.js';
 import { addAuditLog } from '../utils/siteImagesStore.js';
 import { filterLeadsForActiveUser, getActiveAdminUser, canViewAllLeads } from '../utils/adminUsersStore.js';
+import { getLeadsFromIDB, saveLeadsToIDB } from '../utils/leadsDb.js';
 let cachedLeads = [];
 let currentPage = 1;
 let pageSize = 25;
+
+// Global initial store loader from IndexedDB
+export async function initLeadsStore() {
+  if (cachedLeads && cachedLeads.length > 0) return cachedLeads;
+  try {
+    const idbLeads = await getLeadsFromIDB();
+    if (idbLeads && Array.isArray(idbLeads) && idbLeads.length > 0) {
+      cachedLeads = idbLeads;
+      return cachedLeads;
+    }
+  } catch (e) {}
+  return getLeads();
+}
 
 // Reusable mapping function: converts raw DB row → rich lead object
 export function mapLeadFromAPI(l) {
@@ -463,21 +477,11 @@ function tryParseJSON(str) {
 
 // Data Store Initializer
 export async function initLeadsView(searchQuery = null) {
-  try {
-    const data = await fetchFromAPI('/leads');
-    if (data && Array.isArray(data)) {
-      const mapped = data.map(mapLeadFromAPI);
-      
-
-
-      cachedLeads = mapped;
-      saveLeads(cachedLeads);
-    }
-  } catch (err) {
-    console.error('API Error:', err);
-    cachedLeads = cachedLeads || [];
+  // 1. Instant populate from memory or IndexedDB without network blocking
+  if (!cachedLeads || cachedLeads.length === 0) {
+    await initLeadsStore();
   }
-  
+
   // Call init logic that binds events
   bindLeadEvents();
 
@@ -497,15 +501,35 @@ export async function initLeadsView(searchQuery = null) {
     if (searchEl) searchEl.value = targetQuery;
   }
 
+  // Render table immediately with cached/restored leads
   renderTable();
+
+  // 2. Non-blocking background network fetch for live server sync
+  try {
+    fetchFromAPI('/leads').then(data => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        const mapped = data.map(mapLeadFromAPI);
+        cachedLeads = mapped;
+        saveLeads(cachedLeads);
+        renderTable();
+      }
+    }).catch(err => {
+      console.warn('Background leads sync notice:', err);
+    });
+  } catch (err) {
+    console.error('API Error:', err);
+  }
 }
 
 export function getLeads() {
+  if (cachedLeads && cachedLeads.length > 0) {
+    return cachedLeads;
+  }
   try {
     const stored = localStorage.getItem('thanjai_leads');
     if (stored) {
       const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         cachedLeads = parsed;
         return cachedLeads;
       }
@@ -517,8 +541,12 @@ export function getLeads() {
 export function saveLeads(leads) {
   cachedLeads = leads;
   try {
-    localStorage.setItem('thanjai_leads', JSON.stringify(leads));
+    // Only save up to first 100 leads to localStorage to avoid QuotaExceededError
+    const subset = Array.isArray(leads) ? leads.slice(0, 100) : [];
+    localStorage.setItem('thanjai_leads', JSON.stringify(subset));
   } catch (e) {}
+  // Persist full dataset cleanly into IndexedDB
+  saveLeadsToIDB(leads);
 }
 
 function formatCurrency(val) {

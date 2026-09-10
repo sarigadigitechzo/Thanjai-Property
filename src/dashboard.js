@@ -1,6 +1,6 @@
 import { renderDashboardView, initDashboardListeners } from './crm-views/DashboardView.js';
 import { renderLeadsView, initLeadsView } from './crm-views/LeadsView.js';
-import { renderPropertiesView, initPropertiesListeners, resetPropertiesViewMode, setPropertiesSearchFilter, refreshPropertiesView } from './crm-views/PropertiesView.js';
+import { renderPropertiesView, initPropertiesListeners, resetPropertiesViewMode, setPropertiesSearchFilter, refreshPropertiesView, renderPropertiesGridOnly } from './crm-views/PropertiesView.js';
 import { renderSiteVisitsView, initSiteVisitsView } from './crm-views/SiteVisitsView.js';
 import { renderPipelineBoardView, initPipelineBoardView } from './crm-views/PipelineBoardView.js';
 import { renderPartnersView, initPartnersView } from './crm-views/PartnersView.js';
@@ -56,10 +56,12 @@ import { initSiteImagesStore } from './utils/siteImagesStore.js';
 import { initAdminUsersStore, getActiveAdminUser, normalizeAdminUser } from './utils/adminUsersStore.js';
 import { initUsersStore } from './utils/userAuthStore.js';
 import { initPopupsStore } from './utils/popupsStore.js';
+import { initLeadsStore } from './crm-views/LeadsView.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Sync remote stores in background without blocking instant UI rendering
+  // Sync and warm local stores in background without blocking instant UI rendering
   Promise.all([
+    initLeadsStore(),
     initPropertiesStore(),
     initBlogStore(),
     initSiteImagesStore(),
@@ -520,7 +522,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         loadView('reviews');
       } else if (currentView === 'properties') {
-        refreshPropertiesView();
+        renderPropertiesGridOnly();
       } else if (currentView !== 'leads') {
         // If user starts typing a Property ID or query from another view, switch to Properties Inventory
         navigateTo('properties');

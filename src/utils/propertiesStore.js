@@ -70,6 +70,8 @@ export async function initPropertiesStore() {
 
         const resolvedFeatures = remoteP.features || [];
         const resolvedImages = remoteP.images || [];
+        const resolvedPublishTarget = String(remoteP.publishTarget || remoteP.publish_target || remoteP.visibility || 'public').toLowerCase().trim() === 'crm_only' ? 'crm_only' : 'public';
+        const resolvedApprovalStatus = remoteP.approvalStatus || remoteP.approval_status || (remoteP.approval === 'Approved' ? 'Approved' : (remoteP.status === 'Pending Approval' ? 'Pending Approval' : 'Approved'));
 
         return normalizePropertyRecord({
           ...remoteP,
@@ -80,6 +82,8 @@ export async function initPropertiesStore() {
           district: resolvedDistrict,
           inquiryPhone: resolvedInquiryPhone,
           approval: resolvedApproval,
+          approvalStatus: resolvedApprovalStatus,
+          publishTarget: resolvedPublishTarget,
           features: resolvedFeatures,
           images: resolvedImages,
           adType: resolvedAdType,
@@ -530,8 +534,21 @@ function normalizePropertyRecord(p) {
     }
   }
 
-  const numPrice = typeof p.price === 'number' ? p.price : (parseFloat(p.price) || 0);
+  let numPrice = typeof p.price === 'number' ? p.price : (parseFloat(p.price) || 0);
   let formattedPrice = (typeof p.priceFormatted === 'string') ? p.priceFormatted.trim() : (p.priceFormatted || '');
+
+  // If numPrice is small (e.g. 1.42, 50, 68.60) and formattedPrice indicates Crore or Lakhs, normalize numPrice to full INR
+  if (formattedPrice) {
+    const fLower = formattedPrice.toLowerCase();
+    if ((fLower.includes('crore') || fLower.includes('cr')) && numPrice < 1000) {
+      const extracted = parseFloat(fLower.replace(/[^\d.]/g, '')) || numPrice;
+      if (extracted > 0) numPrice = Math.round(extracted * 10000000);
+    } else if ((fLower.includes('lakh') || fLower.includes('lac')) && numPrice < 10000) {
+      const extracted = parseFloat(fLower.replace(/[^\d.]/g, '')) || numPrice;
+      if (extracted > 0) numPrice = Math.round(extracted * 100000);
+    }
+  }
+
   if (!formattedPrice || formattedPrice === '0' || formattedPrice === '₹ 0' || formattedPrice === '₹' || (numPrice > 0 && formattedPrice === 'Price on Request')) {
     if (numPrice >= 10000000) {
       formattedPrice = `₹ ${(numPrice / 10000000).toFixed(2)} Crore`;
@@ -654,4 +671,35 @@ function getCategoryLabel(type) {
     case 'Other': return 'Real Estate Property';
     default: return type || 'Real Estate Property';
   }
+}
+
+export function getNumericPropertyPrice(prop) {
+  if (!prop) return 0;
+  let p = prop.price;
+  if (typeof p === 'number' && p >= 10000) {
+    return p;
+  }
+  const priceStr = String(prop.priceFormatted || prop.price || '').toLowerCase().trim();
+  if (!priceStr || priceStr.includes('request') || priceStr.includes('contact') || priceStr === '0' || priceStr === '₹ 0') {
+    return (typeof p === 'number' && p >= 10000) ? p : 0;
+  }
+  if (priceStr.includes('crore') || priceStr.includes('cr')) {
+    const num = parseFloat(priceStr.replace(/[^\d.]/g, ''));
+    if (!isNaN(num) && num > 0) {
+      return num < 1000 ? Math.round(num * 10000000) : Math.round(num);
+    }
+  }
+  if (priceStr.includes('lakh') || priceStr.includes('lac')) {
+    const num = parseFloat(priceStr.replace(/[^\d.]/g, ''));
+    if (!isNaN(num) && num > 0) {
+      return num < 10000 ? Math.round(num * 100000) : Math.round(num);
+    }
+  }
+  const num = parseFloat(priceStr.replace(/[^\d.]/g, ''));
+  if (!isNaN(num) && num > 0) {
+    if (num < 100 && (priceStr.includes('crore') || priceStr.includes('cr'))) return Math.round(num * 10000000);
+    if (num < 1000 && (priceStr.includes('lakh') || priceStr.includes('lac'))) return Math.round(num * 100000);
+    return Math.round(num);
+  }
+  return typeof p === 'number' ? p : (parseFloat(p) || 0);
 }

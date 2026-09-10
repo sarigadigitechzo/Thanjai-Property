@@ -1,4 +1,4 @@
-import { getProperties, addProperty, updateProperty, deleteProperty, resetPropertiesToDefault, formatPropertySize } from '../utils/propertiesStore.js';
+import { getProperties, addProperty, updateProperty, deleteProperty, resetPropertiesToDefault, formatPropertySize, getNumericPropertyPrice } from '../utils/propertiesStore.js';
 import { addAuditLog } from '../utils/siteImagesStore.js';
 import { showToast } from '../utils/toast.js';
 import { getLeads } from './LeadsView.js';
@@ -216,6 +216,30 @@ function compressImageFile(file, maxWidth = 1000, maxHeight = 800, quality = 0.7
   });
 }
 
+export function renderPropertiesGridContent(filtered = [], allLeads = []) {
+  if (filtered.length === 0) {
+    return `
+      <div style="
+        background: #ffffff; border-radius: 16px; padding: 60px 20px; text-align: center; border: 1px solid #e2e8f0;
+      ">
+        <i class="ri-building-line" style="font-size: 3rem; color: #a0aec0; margin-bottom: 12px; display: block;"></i>
+        <h3 style="font-size: 1.1rem; color: #2d3748; margin-bottom: 6px;">No Properties Match Your Filters</h3>
+        <p style="font-size: 0.88rem; color: #718096; margin-bottom: 16px;">Try adjusting your search term, category, status, or price parameters.</p>
+        <button class="os-btn-primary" id="empty-add-prop-btn" style="padding: 10px 20px; font-size: 0.88rem; border-radius: 8px; background: var(--color-orange, #eb5e28); color: #fff; border: none; font-weight: 700; cursor: pointer;">
+          + Add New Property Listing
+        </button>
+      </div>
+    `;
+  }
+  return `
+    <div style="
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;
+    ">
+      ${filtered.map(p => renderPropertyCard(p, allLeads)).join('')}
+    </div>
+  `;
+}
+
 export function renderPropertiesView() {
   try {
     const allProperties = getProperties() || [];
@@ -226,7 +250,8 @@ export function renderPropertiesView() {
     }
 
     const filtered = filterPropertiesList(allProperties);
-    const allLeads = (JSON.parse(localStorage.getItem('thanjai_leads')) || []);
+    const rawLeads = getLeads();
+    const allLeads = (rawLeads && rawLeads.length > 0) ? rawLeads : (JSON.parse(localStorage.getItem('thanjai_leads')) || []);
 
   return `
     <div class="view-enter properties-view-container" style="padding-bottom: 40px; position: relative;">
@@ -324,33 +349,20 @@ export function renderPropertiesView() {
         </select>
 
         <select id="props-maxprice-filter" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; font-size: 0.88rem; color: #4a5568;">
-          <option value="all" ${activeMaxPriceFilter === 'all' ? 'selected' : ''}>Max price</option>
-          <option value="5000000" ${activeMaxPriceFilter === '5000000' ? 'selected' : ''}>₹ 50 Lakhs</option>
-          <option value="15000000" ${activeMaxPriceFilter === '15000000' ? 'selected' : ''}>₹ 1.5 Crore</option>
-          <option value="30000000" ${activeMaxPriceFilter === '30000000' ? 'selected' : ''}>₹ 3 Crore</option>
-          <option value="50000000" ${activeMaxPriceFilter === '50000000' ? 'selected' : ''}>₹ 5 Crore+</option>
+          <option value="all" ${activeMaxPriceFilter === 'all' ? 'selected' : ''}>Max price (All)</option>
+          <option value="3000000" ${activeMaxPriceFilter === '3000000' ? 'selected' : ''}>Under ₹ 30 Lakhs</option>
+          <option value="5000000" ${activeMaxPriceFilter === '5000000' ? 'selected' : ''}>Under ₹ 50 Lakhs</option>
+          <option value="10000000" ${activeMaxPriceFilter === '10000000' ? 'selected' : ''}>Under ₹ 1 Crore</option>
+          <option value="15000000" ${activeMaxPriceFilter === '15000000' ? 'selected' : ''}>Under ₹ 1.5 Crore</option>
+          <option value="30000000" ${activeMaxPriceFilter === '30000000' ? 'selected' : ''}>Under ₹ 3 Crore</option>
+          <option value="50000000" ${activeMaxPriceFilter === '50000000' ? 'selected' : ''}>Under ₹ 5 Crore</option>
         </select>
       </div>
 
-      <!-- Properties Grid -->
-      ${filtered.length === 0 ? `
-        <div style="
-          background: #ffffff; border-radius: 16px; padding: 60px 20px; text-align: center; border: 1px solid #e2e8f0;
-        ">
-          <i class="ri-building-line" style="font-size: 3rem; color: #a0aec0; margin-bottom: 12px; display: block;"></i>
-          <h3 style="font-size: 1.1rem; color: #2d3748; margin-bottom: 6px;">No Properties Match Your Filters</h3>
-          <p style="font-size: 0.88rem; color: #718096; margin-bottom: 16px;">Try adjusting your search term, category, status, or price parameters.</p>
-          <button class="os-btn-primary" id="empty-add-prop-btn" style="padding: 10px 20px; font-size: 0.88rem; border-radius: 8px; background: var(--color-orange, #eb5e28); color: #fff; border: none; font-weight: 700; cursor: pointer;">
-            + Add New Property Listing
-          </button>
-        </div>
-      ` : `
-        <div style="
-          display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;
-        ">
-          ${filtered.map(p => renderPropertyCard(p, allLeads)).join('')}
-        </div>
-      `}
+      <!-- Properties Grid Wrapper -->
+      <div id="props-cards-grid-wrapper">
+        ${renderPropertiesGridContent(filtered, allLeads)}
+      </div>
 
     </div>
   `;
@@ -1360,7 +1372,7 @@ function renderUploadedImagesGallery() {
 
 function filterPropertiesList(list) {
   if (!Array.isArray(list)) return [];
-  return list.filter(prop => {
+  const filtered = list.filter(prop => {
     if (!prop) return false;
 
     const q = activeSearch ? activeSearch.toLowerCase().trim() : '';
@@ -1458,14 +1470,14 @@ function filterPropertiesList(list) {
 
     // 5. Ad Type Filter
     if (activeAdTypeFilter && activeAdTypeFilter !== 'all') {
-      const isPaid = (prop.adType === 'paid');
+      const isPaid = String(prop.adType || '').toLowerCase().trim() === 'paid';
       if (activeAdTypeFilter === 'paid' && !isPaid) return false;
       if (activeAdTypeFilter === 'free' && isPaid) return false;
     }
 
     // 6. Visibility Filter (Public Website vs CRM Only)
     if (activeVisibilityFilter && activeVisibilityFilter !== 'all') {
-      const pVis = (prop.publishTarget || prop.visibility || 'public').toLowerCase().trim();
+      const pVis = String(prop.publishTarget || prop.visibility || 'public').toLowerCase().trim();
       if (activeVisibilityFilter === 'crm_only' && pVis !== 'crm_only') return false;
       if (activeVisibilityFilter === 'public' && pVis === 'crm_only') return false;
     }
@@ -1473,12 +1485,23 @@ function filterPropertiesList(list) {
     // 7. Max Price Filter
     if (activeMaxPriceFilter && activeMaxPriceFilter !== 'all') {
       const maxP = parseFloat(activeMaxPriceFilter);
-      const propP = prop.price || 0;
-      if (propP > maxP) return false;
+      const propP = getNumericPropertyPrice(prop);
+      if (propP <= 0 || propP > maxP) return false;
     }
 
     return true;
   });
+
+  // When Max Price filter is active, sort results in descending order by price (closest to max price first)
+  if (activeMaxPriceFilter && activeMaxPriceFilter !== 'all') {
+    return filtered.sort((a, b) => {
+      const priceA = getNumericPropertyPrice(a);
+      const priceB = getNumericPropertyPrice(b);
+      return priceB - priceA;
+    });
+  }
+
+  return filtered;
 }
 
 function bindModalPreviewListeners() {
@@ -1670,6 +1693,155 @@ function bindModalPreviewListeners() {
   });
 }
 
+export function bindPropertyCardsListeners() {
+  // Empty state add property button
+  document.getElementById('empty-add-prop-btn')?.addEventListener('click', () => {
+    editingPropertyId = null;
+    previewPropertyId = null;
+    activeMediaIndex = 0;
+    formImagesList = [];
+    formVideoFileUrl = '';
+    currentViewMode = 'form';
+    refreshPropertiesView();
+  });
+
+  // Edit Buttons
+  document.querySelectorAll('.edit-prop-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (id) {
+        previewPropertyId = null;
+        activeMediaIndex = 0;
+        editingPropertyId = id;
+        currentViewMode = 'form';
+        refreshPropertiesView();
+      }
+    });
+  });
+
+  // Preview Admin Property Details Modal Buttons
+  document.querySelectorAll('.view-website-prop-btn').forEach(btn => {
+    btn.setAttribute('title', 'Preview property details');
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (id) {
+        previewPropertyId = id;
+        activeMediaIndex = 0;
+        refreshPropertiesView();
+      }
+    });
+  });
+
+  // Delete Buttons (CUSTOM PROFESSIONAL CONFIRMATION MODAL)
+  document.querySelectorAll('.delete-prop-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const targetProp = getProperties().find(p => p.id === id);
+      showAdminDeleteConfirmModal(id, targetProp?.title || '', () => {
+        if (previewPropertyId === id) previewPropertyId = null;
+        activeMediaIndex = 0;
+        deleteProperty(id);
+        showToast(`Property ${id} deleted from inventory.`, 'ri-delete-bin-line');
+        renderPropertiesGridOnly();
+      });
+    });
+  });
+
+  // Quick Approve Button
+  document.querySelectorAll('.quick-approve-prop-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (id) {
+        updateProperty(id, { status: 'Available', availability: 'Available', approvalStatus: 'Approved' });
+        showToast(`Property ${id} approved & published live to website!`, 'ri-checkbox-circle-fill');
+        renderPropertiesGridOnly();
+      }
+    });
+  });
+
+  // Clickable Inquiries Badge Listener
+  document.querySelectorAll('.prop-inquiries-badge').forEach(badge => {
+    badge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const propId = badge.dataset.propid;
+      if (propId) {
+        window.location.hash = `#leads?prop=${encodeURIComponent(propId)}`;
+      }
+    });
+  });
+
+  // Quick Status Select Dropdown
+  document.querySelectorAll('.quick-status-select').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const id = sel.dataset.id;
+      const newStatus = e.target.value;
+      if (id && newStatus) {
+        if (newStatus === 'Available') {
+          updateProperty(id, { status: 'Available', availability: 'Available', approvalStatus: 'Approved' });
+          showToast(`Property ${id} approved & published live!`, 'ri-checkbox-circle-fill');
+        } else if (newStatus === 'Pending Approval') {
+          updateProperty(id, { status: 'Pending Approval', availability: 'Pending Approval', approvalStatus: 'Pending Approval' });
+          showToast(`Property ${id} set to Pending Approval.`, 'ri-time-line');
+        } else {
+          updateProperty(id, { status: newStatus, availability: newStatus });
+          showToast(`Property ${id} status updated to ${newStatus}`, 'ri-checkbox-circle-fill');
+        }
+        renderPropertiesGridOnly();
+      }
+    });
+  });
+
+  // Quick Ad Type Select Dropdown (Free Ad vs Paid Ad)
+  document.querySelectorAll('.quick-adtype-select').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const id = sel.dataset.id;
+      const newAdType = e.target.value;
+      if (id && newAdType) {
+        updateProperty(id, { adType: newAdType });
+        if (newAdType === 'paid') {
+          showToast(`Property ${id} updated to Paid Ad! Direct Owner details & call links enabled.`, 'ri-vip-crown-fill');
+        } else {
+          showToast(`Property ${id} updated to Free Ad (Thanjai Property Desk +91 84899 96852).`, 'ri-shield-user-fill');
+        }
+        renderPropertiesGridOnly();
+      }
+    });
+  });
+
+  // Quick Visibility Select Dropdown (Public Website vs CRM Only)
+  document.querySelectorAll('.quick-visibility-select').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const id = sel.dataset.id;
+      const newVisibility = e.target.value;
+      if (id && newVisibility) {
+        updateProperty(id, { publishTarget: newVisibility });
+        if (newVisibility === 'crm_only') {
+          showToast(`Property ${id} set to CRM / Referral Only (Hidden from public website).`, 'ri-lock-2-line');
+        } else {
+          showToast(`Property ${id} published live to public website & CRM!`, 'ri-global-line');
+        }
+        renderPropertiesGridOnly();
+      }
+    });
+  });
+}
+
+export function renderPropertiesGridOnly() {
+  const gridWrapper = document.getElementById('props-cards-grid-wrapper');
+  if (!gridWrapper) {
+    refreshPropertiesView();
+    return;
+  }
+  const allProps = getProperties() || [];
+  const filtered = filterPropertiesList(allProps);
+  const rawLeads = getLeads();
+  const allLeads = (rawLeads && rawLeads.length > 0) ? rawLeads : (JSON.parse(localStorage.getItem('thanjai_leads')) || []);
+  
+  gridWrapper.innerHTML = renderPropertiesGridContent(filtered, allLeads);
+  bindPropertyCardsListeners();
+}
+
 export function initPropertiesViewListeners() {
   if (currentViewMode === 'form') {
     initPropertyFormListeners();
@@ -1681,31 +1853,50 @@ export function initPropertiesViewListeners() {
     bindModalPreviewListeners();
   }
 
-  // Search Input
-  document.getElementById('props-search-input')?.addEventListener('input', (e) => {
-    activeSearch = e.target.value;
-    refreshPropertiesView();
-  });
+  // Search Input - Real-time filtering without destroying input element / losing cursor focus
+  const searchInp = document.getElementById('props-search-input');
+  if (searchInp) {
+    searchInp.addEventListener('input', (e) => {
+      activeSearch = e.target.value;
+      renderPropertiesGridOnly();
+    });
+    searchInp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        activeSearch = e.target.value;
+        renderPropertiesGridOnly();
+      }
+    });
+  }
 
   // Filters
   document.getElementById('props-type-filter')?.addEventListener('change', (e) => {
     activeTypeFilter = e.target.value;
-    refreshPropertiesView();
+    renderPropertiesGridOnly();
   });
 
   document.getElementById('props-category-filter')?.addEventListener('change', (e) => {
     activeCategoryFilter = e.target.value;
-    refreshPropertiesView();
+    renderPropertiesGridOnly();
   });
 
   document.getElementById('props-status-filter')?.addEventListener('change', (e) => {
     activeStatusFilter = e.target.value;
-    refreshPropertiesView();
+    renderPropertiesGridOnly();
+  });
+
+  document.getElementById('props-adtype-filter')?.addEventListener('change', (e) => {
+    activeAdTypeFilter = e.target.value;
+    renderPropertiesGridOnly();
+  });
+
+  document.getElementById('props-visibility-filter')?.addEventListener('change', (e) => {
+    activeVisibilityFilter = e.target.value;
+    renderPropertiesGridOnly();
   });
 
   document.getElementById('props-maxprice-filter')?.addEventListener('change', (e) => {
     activeMaxPriceFilter = e.target.value;
-    refreshPropertiesView();
+    renderPropertiesGridOnly();
   });
 
   // Open Full-Page Add Form Button
@@ -1835,125 +2026,8 @@ export function initPropertiesViewListeners() {
   document.getElementById('export-props-csv-btn')?.addEventListener('click', exportFilteredPropertiesToCSV);
   document.getElementById('download-sample-csv-btn')?.addEventListener('click', downloadSamplePropertiesCSV);
 
-  // Edit Buttons
-  document.querySelectorAll('.edit-prop-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      if (id) {
-        previewPropertyId = null;
-        activeMediaIndex = 0;
-        editingPropertyId = id;
-        currentViewMode = 'form';
-        refreshPropertiesView();
-      }
-    });
-  });
-
-  // Preview Admin Property Details Modal Buttons
-  document.querySelectorAll('.view-website-prop-btn').forEach(btn => {
-    btn.setAttribute('title', 'Preview property details');
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      if (id) {
-        previewPropertyId = id;
-        activeMediaIndex = 0;
-        refreshPropertiesView();
-      }
-    });
-  });
-
-  // Delete Buttons (CUSTOM PROFESSIONAL CONFIRMATION MODAL)
-  document.querySelectorAll('.delete-prop-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      const targetProp = getProperties().find(p => p.id === id);
-      showAdminDeleteConfirmModal(id, targetProp?.title || '', () => {
-        if (previewPropertyId === id) previewPropertyId = null;
-        activeMediaIndex = 0;
-        deleteProperty(id);
-        showToast(`Property ${id} deleted from inventory.`, 'ri-delete-bin-line');
-        refreshPropertiesView();
-      });
-    });
-  });
-
-  // Quick Approve Button
-  document.querySelectorAll('.quick-approve-prop-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const id = btn.dataset.id;
-      if (id) {
-        updateProperty(id, { status: 'Available', availability: 'Available', approvalStatus: 'Approved' });
-        showToast(`Property ${id} approved & published live to website!`, 'ri-checkbox-circle-fill');
-        refreshPropertiesView();
-      }
-    });
-  });
-  // Clickable Inquiries Badge Listener
-  document.querySelectorAll('.prop-inquiries-badge').forEach(badge => {
-    badge.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const propId = badge.dataset.propid;
-      if (propId) {
-        window.location.hash = `#leads?prop=${encodeURIComponent(propId)}`;
-      }
-    });
-  });
-
-  // Quick Status Select Dropdown
-  document.querySelectorAll('.quick-status-select').forEach(sel => {
-    sel.addEventListener('change', (e) => {
-      const id = sel.dataset.id;
-      const newStatus = e.target.value;
-      if (id && newStatus) {
-        if (newStatus === 'Available') {
-          updateProperty(id, { status: 'Available', availability: 'Available', approvalStatus: 'Approved' });
-          showToast(`Property ${id} approved & published live!`, 'ri-checkbox-circle-fill');
-        } else if (newStatus === 'Pending Approval') {
-          updateProperty(id, { status: 'Pending Approval', availability: 'Pending Approval', approvalStatus: 'Pending Approval' });
-          showToast(`Property ${id} set to Pending Approval.`, 'ri-time-line');
-        } else {
-          updateProperty(id, { status: newStatus, availability: newStatus });
-          showToast(`Property ${id} status updated to ${newStatus}`, 'ri-checkbox-circle-fill');
-        }
-        refreshPropertiesView();
-      }
-    });
-  });
-
-  // Quick Ad Type Select Dropdown (Free Ad vs Paid Ad)
-  document.querySelectorAll('.quick-adtype-select').forEach(sel => {
-    sel.addEventListener('change', (e) => {
-      const id = sel.dataset.id;
-      const newAdType = e.target.value;
-      if (id && newAdType) {
-        updateProperty(id, { adType: newAdType });
-        if (newAdType === 'paid') {
-          showToast(`Property ${id} updated to Paid Ad! Direct Owner details & call links enabled.`, 'ri-vip-crown-fill');
-        } else {
-          showToast(`Property ${id} updated to Free Ad (Thanjai Property Desk +91 84899 96852).`, 'ri-shield-user-fill');
-        }
-        refreshPropertiesView();
-      }
-    });
-  });
-
-  // Quick Visibility Select Dropdown (Public Website vs CRM Only)
-  document.querySelectorAll('.quick-visibility-select').forEach(sel => {
-    sel.addEventListener('change', (e) => {
-      const id = sel.dataset.id;
-      const newVisibility = e.target.value;
-      if (id && newVisibility) {
-        updateProperty(id, { publishTarget: newVisibility });
-        if (newVisibility === 'crm_only') {
-          showToast(`Property ${id} set to CRM / Referral Only (Hidden from public website).`, 'ri-lock-2-line');
-        } else {
-          showToast(`Property ${id} published live to public website & CRM!`, 'ri-global-line');
-        }
-        refreshPropertiesView();
-      }
-    });
-  });
+  // Bind Card Event Handlers
+  bindPropertyCardsListeners();
 }
 
 function initPropertyFormListeners() {
