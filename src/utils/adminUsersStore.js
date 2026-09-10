@@ -34,6 +34,31 @@ export async function initAdminUsersStore() {
   } catch (error) {}
 }
 
+export const AVAILABLE_CRM_MODULES = [
+  { id: 'dashboard', label: 'Dashboard Overview', icon: 'ri-dashboard-line', group: 'Core Operations' },
+  { id: 'leads', label: 'CRM Pipeline', icon: 'ri-team-line', group: 'Core Operations' },
+  { id: 'properties', label: 'Properties Inventory', icon: 'ri-building-line', group: 'Core Operations' },
+  { id: 'property-approvals', label: 'Property Approvals', icon: 'ri-checkbox-circle-line', group: 'Core Operations' },
+  { id: 'visits', label: 'Site Visits & Appts', icon: 'ri-calendar-event-line', group: 'Core Operations' },
+  { id: 'partners', label: 'Partner Network', icon: 'ri-user-shared-line', group: 'Core Operations' },
+  { id: 'ai', label: 'AI Operating Agent', icon: 'ri-sparkling-line', group: 'AI & Channels' },
+  { id: 'whatsapp', label: 'WhatsApp Log', icon: 'ri-whatsapp-line', group: 'AI & Channels' },
+  { id: 'reviews', label: 'Google Reviews & Testimonials', icon: 'ri-star-line', group: 'AI & Channels' },
+  { id: 'pipeline', label: 'Pipeline Board', icon: 'ri-kanban-view-2', group: 'Analytics & Management' },
+  { id: 'reports', label: 'Reports & Analytics', icon: 'ri-bar-chart-2-line', group: 'Analytics & Management' },
+  { id: 'statcounter', label: 'Statcounter Live Traffic', icon: 'ri-line-chart-line', group: 'Analytics & Management' },
+  { id: 'settings', label: 'General Settings', icon: 'ri-settings-line', group: 'System & Configuration' },
+  { id: 'users', label: 'Portal Users Overview', icon: 'ri-user-settings-line', group: 'System & Configuration' },
+  { id: 'audit', label: 'Audit Log Trail', icon: 'ri-history-line', group: 'System & Configuration' },
+  { id: 'blog-cms', label: 'Blog Posts CMS', icon: 'ri-article-line', group: 'System & Configuration' },
+  { id: 'images', label: 'Website Images Catalog', icon: 'ri-image-line', group: 'System & Configuration' },
+  { id: 'popups', label: 'Alert & Seasonal Popups', icon: 'ri-advertisement-line', group: 'System & Configuration' },
+  { id: 'admin-users', label: 'Admin Staff & Access', icon: 'ri-shield-user-line', group: 'System & Configuration' },
+  { id: 'how-to-use', label: 'How to Use Guide', icon: 'ri-book-read-line', group: 'System & Configuration' }
+];
+
+export const ALL_MODULE_IDS = AVAILABLE_CRM_MODULES.map(m => m.id);
+
 export const DEFAULT_ADMIN_USERS = [
   {
     id: 'ADM-001',
@@ -44,7 +69,7 @@ export const DEFAULT_ADMIN_USERS = [
     role: 'Super Admin',
     roleCode: 'superadmin',
     status: 'Active',
-    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff', 'popups'],
+    allowedModules: [...ALL_MODULE_IDS],
     lastLogin: 'Active Now',
     createdAt: '2026-01-01T00:00:00.000Z'
   },
@@ -57,7 +82,7 @@ export const DEFAULT_ADMIN_USERS = [
     role: 'Super Admin',
     roleCode: 'superadmin',
     status: 'Active',
-    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff', 'popups'],
+    allowedModules: [...ALL_MODULE_IDS],
     lastLogin: 'Active Now',
     createdAt: '2026-01-01T00:00:00.000Z'
   },
@@ -70,7 +95,7 @@ export const DEFAULT_ADMIN_USERS = [
     role: 'Super Admin',
     roleCode: 'superadmin',
     status: 'Active',
-    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'analytics', 'settings', 'portal_users', 'audit', 'blog_posts', 'site_images', 'admin_staff', 'popups'],
+    allowedModules: [...ALL_MODULE_IDS],
     lastLogin: 'Active Now',
     createdAt: '2026-01-01T00:00:00.000Z'
   },
@@ -83,7 +108,7 @@ export const DEFAULT_ADMIN_USERS = [
     role: 'Sales Manager',
     roleCode: 'salesmanager',
     status: 'Active',
-    allowedModules: ['dashboard', 'leads', 'properties', 'approvals', 'visits', 'partners', 'pipeline', 'reports'],
+    allowedModules: ['dashboard', 'leads', 'properties', 'property-approvals', 'visits', 'partners', 'pipeline', 'reports', 'reviews'],
     lastLogin: 'Active Now',
     createdAt: '2026-01-01T00:00:00.000Z'
   }
@@ -284,18 +309,11 @@ export function canViewAllLeads(user = null) {
     return true;
   }
 
-  // All 16 system module checkboxes in Admin Staff management
-  const ALL_SYSTEM_MODULES = [
-    'dashboard', 'leads', 'properties', 'property-approvals', 'visits',
-    'partners', 'ai', 'whatsapp', 'pipeline', 'reports', 'settings',
-    'users', 'audit', 'blog-cms', 'images', 'admin-users'
-  ];
-
   const allowed = Array.isArray(active.allowedModules) ? active.allowedModules : [];
   if (allowed.length === 0) return false;
 
   const normAllowed = allowed.map(m => String(m).toLowerCase().replace(/[-_]/g, ''));
-  const hasEveryModule = ALL_SYSTEM_MODULES.every(mod => normAllowed.includes(mod.replace(/[-_]/g, '')));
+  const hasEveryModule = ALL_MODULE_IDS.every(mod => normAllowed.includes(mod.replace(/[-_]/g, '')));
 
   // ONLY staff who have EVERY SINGLE module checked get full organization-wide CRM lead access
   return hasEveryModule;

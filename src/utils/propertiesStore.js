@@ -163,6 +163,9 @@ export function getProperties() {
 export function getPublicProperties() {
   const all = getProperties();
   return all.filter(p => {
+    if (p.publishTarget === 'crm_only' || p.visibility === 'crm_only') {
+      return false;
+    }
     if (p.approvalStatus === 'Pending Approval' || p.status === 'Pending Approval' || p.approvalStatus === 'Rejected') {
       return false;
     }
@@ -314,7 +317,15 @@ export function addProperty(data) {
 
   const type = data.type || 'Villa';
   const categoryRaw = data.category || 'Sale'; // Sale, Rent, Lease, Commercial, Residential
-  const availability = data.availability || data.status || 'Available'; // Available, Booked, Sold, Rented, Inactive
+  
+  const isPending = data.approvalStatus === 'Pending Approval' || 
+                    data.status === 'Pending Approval' || 
+                    data.availability === 'Pending Approval' || 
+                    data.availability === 'Pending';
+
+  const approvalStatus = isPending ? 'Pending Approval' : (data.approvalStatus || 'Approved');
+  const status = isPending ? 'Pending Approval' : (data.status || data.availability || 'Available');
+  const availability = isPending ? 'Pending Approval' : (data.availability || data.status || 'Available');
 
   const frontEndCat = getFrontEndCategory(type, categoryRaw);
   const purpose = (categoryRaw.toLowerCase() === 'rent' || categoryRaw.toLowerCase() === 'lease') ? 'rent' : 'buy';
@@ -343,12 +354,14 @@ export function addProperty(data) {
     floor: data.floor || null,
     furnishing: data.furnishing && data.furnishing !== 'Not specified' ? data.furnishing : '',
     approval: data.approval || '',
-    status: availability,
+    status: status,
     availability: availability,
+    approvalStatus: approvalStatus,
     latitude: data.latitude || '',
     longitude: data.longitude || '',
     videoUrl: data.videoUrl || '',
     adType: data.adType || 'free',
+    publishTarget: (data.publishTarget || data.visibility || 'public').toLowerCase().trim() === 'crm_only' ? 'crm_only' : 'public',
     ownerName: data.ownerName || '',
     ownerPhone: data.ownerPhone || '',
     inquiryPhone: data.inquiryPhone || '8489996852',
@@ -491,7 +504,15 @@ function normalizePropertyRecord(p) {
 
   const categoryRaw = p.categoryRaw || (p.purpose === 'rent' ? 'Rent' : 'Sale');
   const frontEndCat = getFrontEndCategory(type, categoryRaw);
-  const status = p.status || p.availability || 'Available';
+  
+  const isPending = p.approvalStatus === 'Pending Approval' || 
+                    p.status === 'Pending Approval' || 
+                    p.availability === 'Pending Approval' || 
+                    p.availability === 'Pending';
+
+  const approvalStatus = isPending ? 'Pending Approval' : (p.approvalStatus || (p.status === 'Rejected' ? 'Rejected' : 'Approved'));
+  const status = isPending ? 'Pending Approval' : (p.status || p.availability || 'Available');
+  const availability = isPending ? 'Pending Approval' : (p.availability || p.status || 'Available');
   const purpose = p.purpose || ((categoryRaw.toLowerCase() === 'rent' || categoryRaw.toLowerCase() === 'lease') ? 'rent' : 'buy');
 
   const loc = p.location || 'Thanjavur';
@@ -532,7 +553,8 @@ function normalizePropertyRecord(p) {
     categoryRaw: categoryRaw,
     categoryLabel: p.categoryLabel || getCategoryLabel(type),
     status: status,
-    availability: status,
+    availability: availability,
+    approvalStatus: approvalStatus,
     purpose: purpose,
     inquiriesCount: parseInt(p.inquiriesCount || 0, 10),
     userId: p.userId || null,
@@ -575,6 +597,7 @@ function normalizePropertyRecord(p) {
       return uniqueImgs.length > 0 ? uniqueImgs : ['/default-property.jpg'];
     })(),
     adType: String(p.adType || p.ad_type || p.adTier || p.listingPlan || 'free').toLowerCase().trim(),
+    publishTarget: String(p.publishTarget || p.visibility || p.publish_target || 'public').toLowerCase().trim() === 'crm_only' ? 'crm_only' : 'public',
     ownerName: p.ownerName || p.owner_name || '',
     ownerPhone: p.ownerPhone || p.owner_phone || '',
     inquiryPhone: p.inquiryPhone || p.inquiry_phone || '8489996852',

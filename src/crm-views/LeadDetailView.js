@@ -3,6 +3,97 @@ import { showToast, showAlertModal, showConfirmModal } from '../utils/toast.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 import { canViewAllLeads, filterLeadsForActiveUser, getActiveAdminUser } from '../utils/adminUsersStore.js';
 import { getLeads, saveLeads, initLeadsView } from './LeadsView.js';
+import { getProperties } from '../utils/propertiesStore.js';
+import { openPropertyModalById } from '../components/PropertyDetailModal.js';
+
+export function getInquiredPropertiesForLead(lead, allLeads = []) {
+  const propIdSet = new Set();
+  const allProps = getProperties() || [];
+
+  if (!lead) return [];
+
+  // 1. Direct propertyId / propertyMatch
+  if (lead.propertyId) propIdSet.add(String(lead.propertyId).trim().toUpperCase());
+  if (lead.propertyMatch) propIdSet.add(String(lead.propertyMatch).trim().toUpperCase());
+
+  // 2. Timeline history of this lead
+  const rawTimeline = Array.isArray(lead.timeline) ? lead.timeline : [];
+  rawTimeline.forEach(evt => {
+    const text = typeof evt === 'string' ? evt : (evt.message || evt.note || '');
+    const matches = text.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi);
+    if (matches) {
+      matches.forEach(m => {
+        const idMatch = m.match(/([A-Z]{2}-?\d+)/i);
+        if (idMatch && idMatch[1]) propIdSet.add(idMatch[1].toUpperCase());
+      });
+    }
+  });
+
+  // 3. Notes of this lead
+  const rawNotes = Array.isArray(lead.notes) ? lead.notes : [];
+  rawNotes.forEach(n => {
+    const text = typeof n === 'string' ? n : (n.text || '');
+    const matches = text.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi);
+    if (matches) {
+      matches.forEach(m => {
+        const idMatch = m.match(/([A-Z]{2}-?\d+)/i);
+        if (idMatch && idMatch[1]) propIdSet.add(idMatch[1].toUpperCase());
+      });
+    }
+  });
+
+  // 4. Inquiries from other lead rows with same phone (last 10 digits) or email
+  const leadPhoneDigits = String(lead.phone || lead.mobile || '').replace(/\D/g, '').slice(-10);
+  const leadEmail = String(lead.email || '').trim().toLowerCase();
+
+  if (leadPhoneDigits.length >= 10 || (leadEmail && leadEmail.includes('@'))) {
+    allLeads.forEach(otherLead => {
+      if (!otherLead) return;
+      const otherDigits = String(otherLead.phone || otherLead.mobile || '').replace(/\D/g, '').slice(-10);
+      const otherEmail = String(otherLead.email || '').trim().toLowerCase();
+
+      const isSamePhone = leadPhoneDigits.length >= 10 && otherDigits === leadPhoneDigits;
+      const isSameEmail = leadEmail && otherEmail && leadEmail === otherEmail;
+
+      if (isSamePhone || isSameEmail) {
+        if (otherLead.propertyId) propIdSet.add(String(otherLead.propertyId).trim().toUpperCase());
+        if (otherLead.propertyMatch) propIdSet.add(String(otherLead.propertyMatch).trim().toUpperCase());
+
+        const otherTimeline = Array.isArray(otherLead.timeline) ? otherLead.timeline : [];
+        otherTimeline.forEach(evt => {
+          const text = typeof evt === 'string' ? evt : (evt.message || evt.note || '');
+          const matches = text.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi);
+          if (matches) {
+            matches.forEach(m => {
+              const idMatch = m.match(/([A-Z]{2}-?\d+)/i);
+              if (idMatch && idMatch[1]) propIdSet.add(idMatch[1].toUpperCase());
+            });
+          }
+        });
+      }
+    });
+  }
+
+  // Resolve property objects
+  const results = [];
+  propIdSet.forEach(propId => {
+    const found = allProps.find(p => p.id && (p.id.toUpperCase() === propId || p.id.replace('-', '').toUpperCase() === propId.replace('-', '')));
+    if (found) {
+      results.push(found);
+    } else {
+      results.push({
+        id: propId,
+        title: `Property ${propId}`,
+        priceFormatted: 'Price on Request',
+        location: 'Tamil Nadu',
+        images: ['/default-property.jpg'],
+        type: 'Property'
+      });
+    }
+  });
+
+  return results;
+}
 
 export function renderLeadDetailView(id) {
   const leads = getLeads() || [];
@@ -184,6 +275,8 @@ export function renderLeadDetailView(id) {
      stagesHtml += `          <div class="select-option ${isSelected}" ${style}>${s.label}${waIcon}</div>\n`;
   });
 
+  const inquiredProps = getInquiredPropertiesForLead(lead, leads);
+
   return `
     <div class="lead-detail-page">
       <div class="ld-back-nav" style="margin-bottom: 24px;">
@@ -261,13 +354,17 @@ ${(() => {
                   else if (rawS.includes('PROPERTY') || rawS.includes('VISIT')) displayS = 'PROPERTY INQUIRY';
                   return `<tr><td style="padding: 8px 0; color: var(--os-gray-500);">Source</td><td style="padding: 8px 0; text-align: right; font-weight: 500;"><span style="border: 1px solid var(--os-gray-300); color: var(--os-gray-600); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase;">${displayS}</span></td></tr>`;
                 })()}
-                ${(lead.propertyId || lead.propertyMatch) ? `
+                ${inquiredProps.length > 0 ? `
                   <tr>
-                    <td style="padding: 8px 0; color: var(--os-gray-500);">Property Inquired</td>
+                    <td style="padding: 8px 0; color: var(--os-gray-500); vertical-align: top;">${inquiredProps.length > 1 ? `Properties Inquired (${inquiredProps.length})` : 'Property Inquired'}</td>
                     <td style="padding: 8px 0; text-align: right;">
-                      <span class="prop-id-badge" data-propid="${lead.propertyId || lead.propertyMatch}" style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 3px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Click to view Property Details">
-                        <i class="ri-building-line"></i> ${lead.propertyId || lead.propertyMatch} (View Details)
-                      </span>
+                      <div style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end;">
+                        ${inquiredProps.map(p => `
+                          <span class="prop-id-badge" data-propid="${p.id}" style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 3px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="Click to view ${p.title}">
+                            <i class="ri-building-line"></i> ${p.id}
+                          </span>
+                        `).join('')}
+                      </div>
                     </td>
                   </tr>
                 ` : ''}
@@ -277,6 +374,46 @@ ${(() => {
               </tbody>
             </table>
           </div>
+
+          <!-- Inquired Properties Portfolio Card (Multi-Property Support) -->
+          ${inquiredProps.length > 0 ? `
+            <div class="os-card" style="padding: 20px 24px; background: #ffffff; border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft); border: 1px solid #fed7aa;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 0.95rem; font-weight: 800; color: #9a3412; margin: 0; display: flex; align-items: center; gap: 8px;">
+                  <i class="ri-building-4-fill" style="color: #ea580c;"></i> Inquired Properties (${inquiredProps.length})
+                </h3>
+                <span style="font-size: 0.72rem; font-weight: 800; background: #fff7ed; color: #ea580c; padding: 2px 8px; border-radius: 6px; border: 1px solid #ffedd5;">
+                  ${inquiredProps.length > 1 ? 'Multiple Listings' : 'Single Listing'}
+                </span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                ${inquiredProps.map(p => {
+                  const pImg = Array.isArray(p.images) && p.images[0] ? p.images[0] : (typeof p.images === 'string' ? p.images : '/default-property.jpg');
+                  const pPrice = p.priceFormatted || (p.price ? `₹ ${p.price.toLocaleString('en-IN')}` : 'Price on Request');
+                  return `
+                    <div class="inquired-prop-card" style="display: flex; gap: 12px; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; align-items: center; transition: all 0.2s ease;">
+                      <img src="${pImg}" alt="${p.title}" style="width: 54px; height: 54px; border-radius: 8px; object-fit: cover; flex-shrink: 0; border: 1px solid #cbd5e1;" />
+                      <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <span style="font-size: 0.7rem; font-weight: 800; color: #ea580c; background: #fff7ed; padding: 1px 6px; border-radius: 4px;">${p.id}</span>
+                          <span style="font-size: 0.7rem; font-weight: 700; color: #64748b;">${p.type || 'Property'}</span>
+                        </div>
+                        <h4 style="font-size: 0.85rem; font-weight: 700; color: #1e293b; margin: 3px 0 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.title}">
+                          ${p.title}
+                        </h4>
+                        <div style="font-size: 0.78rem; font-weight: 800; color: #ea580c;">
+                          ${pPrice} <span style="font-size: 0.72rem; font-weight: 600; color: #64748b;">• ${p.location || 'Thanjavur'}</span>
+                        </div>
+                      </div>
+                      <button class="prop-id-badge" data-propid="${p.id}" style="background: #0f172a; color: #ffffff; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;" title="View full property details">
+                        <i class="ri-eye-line"></i> View
+                      </button>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          ` : ''}
 
           <div class="os-card" style="padding: 24px; background: var(--os-white); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft);">
             <h3 style="font-size: 1rem; font-weight: 600; color: var(--os-dark); margin-bottom: 16px;">Set follow-up</h3>
@@ -2260,6 +2397,17 @@ export async function initLeadDetailView(id) {
       if (targetId) {
         const targetPane = document.getElementById(targetId);
         if (targetPane) targetPane.style.display = 'block';
+      }
+    });
+  });
+
+  // Inquired Property modal trigger
+  document.querySelectorAll('.prop-id-badge').forEach(badge => {
+    badge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const pId = badge.dataset.propid;
+      if (pId) {
+        openPropertyModalById(pId);
       }
     });
   });

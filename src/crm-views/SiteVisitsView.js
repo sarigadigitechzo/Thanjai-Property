@@ -79,14 +79,26 @@ export function renderSiteVisitsView() {
 
   return `
     <div class="view-enter">
-      <div class="view-header-flex">
+      <div class="view-header-flex" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
         <div>
-          <h1 class="view-title">Site Visits Planner</h1>
-          <p class="view-subtitle">Coordinate property tours and client meetings.</p>
+          <h1 class="view-title" style="margin: 0; font-size: 1.6rem; font-weight: 800; color: var(--os-charcoal);">Site Visits Planner</h1>
+          <p class="view-subtitle" style="margin: 4px 0 0 0; color: var(--os-gray-400); font-size: 0.9rem;">Coordinate property tours, staff pre-inspections, and field executive performance.</p>
         </div>
-        <div class="header-actions-right">
-          <button class="os-btn-primary" id="btn-open-schedule-visit"><i class="ri-add-line"></i> Schedule Visit</button>
+        <div class="header-actions-right" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <button class="os-btn-secondary" id="btn-export-executive-report" title="Download detailed executive pre-inspection & tour report to CSV" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; font-size: 0.88rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #ffffff; color: #4a5568; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <i class="ri-file-download-line" style="font-size: 1.1rem; color: #eb5e28;"></i>
+            <span>Download Executive Report</span>
+          </button>
+          <button class="os-btn-primary" id="btn-open-schedule-visit" style="display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; font-size: 0.88rem; font-weight: 700; border-radius: 10px; background: #eb5e28; color: #ffffff; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(235,94,40,0.25);">
+            <i class="ri-add-line" style="font-size: 1.15rem;"></i>
+            <span>Schedule Visit</span>
+          </button>
         </div>
+      </div>
+
+      <!-- Real-Time Top Executive Visit Summary KPI Cards -->
+      <div id="executive-stats-kpi-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px;">
+        <!-- Injected dynamically by JS -->
       </div>
 
       <div class="visits-layout">
@@ -108,6 +120,11 @@ export function renderSiteVisitsView() {
         <div class="agenda-side" id="agenda-side-container">
           <!-- Dynamic Content -->
         </div>
+      </div>
+
+      <!-- Working Executives Performance Breakdown Section -->
+      <div id="executive-performance-table-container" style="margin-top: 32px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.03); overflow: hidden;">
+        <!-- Injected dynamically by JS -->
       </div>
     </div>
 
@@ -508,10 +525,12 @@ export async function initSiteVisitsView() {
 
             showToast('Site visit marked as Completed!', 'ri-checkbox-circle-fill');
             renderAgenda(day);
+            renderExecutivePerformanceSummary();
           } catch (err) {
             console.error('Error completing visit', err);
             // Even if network fails, local is updated
             renderAgenda(day);
+            renderExecutivePerformanceSummary();
             showToast('Site visit completed locally!', 'ri-checkbox-circle-fill');
           }
         }
@@ -525,20 +544,357 @@ export async function initSiteVisitsView() {
           try {
             await fetchFromAPI('/site_visits/' + id, { method: 'DELETE' });
             visits = visits.filter(v => v.id != id);
+            try { localStorage.setItem('thanjai_visits', JSON.stringify(visits)); } catch(e) {}
             updateCalendarDots();
             renderAgenda(day);
+            renderExecutivePerformanceSummary();
+            showToast('Site visit removed.', 'ri-delete-bin-line');
           } catch (err) {
             console.error('Failed to delete visit', err);
-            alert('Failed to delete visit');
+            visits = visits.filter(v => v.id != id);
+            try { localStorage.setItem('thanjai_visits', JSON.stringify(visits)); } catch(e) {}
+            updateCalendarDots();
+            renderAgenda(day);
+            renderExecutivePerformanceSummary();
           }
         }
       });
     });
   };
 
+  // --- Executive Performance & Pre-Inspection / Client Tour Metrics ---
+  const computeExecutiveStats = (visitList = []) => {
+    const staffStatsMap = {};
+
+    // Seed known active admin staff
+    try {
+      const adminUsers = getAdminUsers().filter(u => u.status === 'Active' || !u.status);
+      adminUsers.forEach(u => {
+        const key = (u.fullName || u.name || '').trim();
+        if (key) {
+          staffStatsMap[key] = {
+            name: key,
+            role: u.role || 'Staff',
+            avatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(key)}&background=eb5e28&color=fff`,
+            preInspSched: 0,
+            preInspDone: 0,
+            clientTourSched: 0,
+            clientTourDone: 0,
+            totalAssigned: 0,
+            totalCompleted: 0
+          };
+        }
+      });
+    } catch (e) {}
+
+    visitList.forEach(v => {
+      if (!v) return;
+      let rawAssigned = (v.assignedTo || 'Unassigned').trim();
+      const baseName = rawAssigned.replace(/\s*\(.*?\)/, '').trim() || rawAssigned;
+      
+      let targetKey = Object.keys(staffStatsMap).find(k => k.toLowerCase() === baseName.toLowerCase() || k.toLowerCase() === rawAssigned.toLowerCase());
+      if (!targetKey) {
+        targetKey = rawAssigned;
+        staffStatsMap[targetKey] = {
+          name: rawAssigned,
+          role: rawAssigned.includes('Admin') ? 'Super Admin' : rawAssigned.includes('Manager') ? 'Sales Manager' : 'Executive',
+          avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(rawAssigned)}&background=64748b&color=fff`,
+          preInspSched: 0,
+          preInspDone: 0,
+          clientTourSched: 0,
+          clientTourDone: 0,
+          totalAssigned: 0,
+          totalCompleted: 0
+        };
+      }
+
+      const stat = staffStatsMap[targetKey];
+      stat.totalAssigned++;
+
+      const isPreInsp = (v.visitType && v.visitType.toLowerCase().includes('inspection'));
+      const isDone = (v.status === 'Completed');
+
+      if (isPreInsp) {
+        if (isDone) {
+          stat.preInspDone++;
+          stat.totalCompleted++;
+        } else if (v.status !== 'Cancelled') {
+          stat.preInspSched++;
+        }
+      } else {
+        if (isDone) {
+          stat.clientTourDone++;
+          stat.totalCompleted++;
+        } else if (v.status !== 'Cancelled') {
+          stat.clientTourSched++;
+        }
+      }
+    });
+
+    return Object.values(staffStatsMap);
+  };
+
+  const downloadExecutiveVisitsReportCSV = (visitList = []) => {
+    const stats = computeExecutiveStats(visitList);
+    
+    if (stats.length === 0) {
+      showToast('No visit performance data available to export.', 'ri-error-warning-line');
+      return;
+    }
+
+    const headers = [
+      'Staff / Executive Name',
+      'Role',
+      'Pre-Inspections Scheduled',
+      'Pre-Inspections Done',
+      'Client Tours Scheduled',
+      'Client Tours Done',
+      'Total Assigned Visits',
+      'Total Completed Visits',
+      'Completion Rate (%)'
+    ];
+
+    const rows = [headers.join(',')];
+
+    stats.forEach(s => {
+      const rate = s.totalAssigned > 0 ? Math.round((s.totalCompleted / s.totalAssigned) * 100) : 0;
+      const row = [
+        `"${(s.name || '').replace(/"/g, '""')}"`,
+        `"${(s.role || '').replace(/"/g, '""')}"`,
+        `"${s.preInspSched}"`,
+        `"${s.preInspDone}"`,
+        `"${s.clientTourSched}"`,
+        `"${s.clientTourDone}"`,
+        `"${s.totalAssigned}"`,
+        `"${s.totalCompleted}"`,
+        `"${rate}%"`
+      ];
+      rows.push(row.join(','));
+    });
+
+    const csvString = rows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Executive_Site_Visits_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    addAuditLog({
+      action: 'EXPORT_EXECUTIVE_VISITS_REPORT',
+      details: `Downloaded Executive Site Visit & Pre-Inspection Performance Report (${stats.length} executives).`
+    });
+
+    showToast('Executive Site Visit Report downloaded successfully!', 'ri-file-download-line');
+  };
+
+  const renderExecutivePerformanceSummary = () => {
+    const kpiContainer = document.getElementById('executive-stats-kpi-container');
+    const tableContainer = document.getElementById('executive-performance-table-container');
+    const visibleVisits = filterVisitsForActiveUser(visits);
+
+    let totalPreInspSched = 0;
+    let totalPreInspDone = 0;
+    let totalTourSched = 0;
+    let totalTourDone = 0;
+    let totalAllVisits = visibleVisits.length;
+    let totalAllCompleted = 0;
+
+    visibleVisits.forEach(v => {
+      const isPreInsp = (v.visitType && v.visitType.toLowerCase().includes('inspection'));
+      const isDone = (v.status === 'Completed');
+      if (isDone) totalAllCompleted++;
+
+      if (isPreInsp) {
+        if (isDone) totalPreInspDone++;
+        else if (v.status !== 'Cancelled') totalPreInspSched++;
+      } else {
+        if (isDone) totalTourDone++;
+        else if (v.status !== 'Cancelled') totalTourSched++;
+      }
+    });
+
+    const overallRate = totalAllVisits > 0 ? Math.round((totalAllCompleted / totalAllVisits) * 100) : 0;
+
+    if (kpiContainer) {
+      kpiContainer.innerHTML = `
+        <div class="kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <span style="font-size: 0.74rem; font-weight: 800; color: #718096; letter-spacing: 0.05em; text-transform: uppercase;">STAFF PRE-INSPECTIONS</span>
+            <div style="width: 34px; height: 34px; border-radius: 10px; background: #f3e8ff; color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+              <i class="ri-search-eye-line"></i>
+            </div>
+          </div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 6px;">
+            ${totalPreInspDone} <span style="font-size: 0.88rem; font-weight: 600; color: #64748b;">Done</span>
+          </div>
+          <div style="font-size: 0.8rem; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+            <span style="background: #f1f5f9; padding: 2px 8px; border-radius: 6px; color: #475569;">${totalPreInspSched} Scheduled</span>
+            <span>•</span>
+            <span style="color: #9333ea; font-weight: 700;">${totalPreInspSched + totalPreInspDone} Total</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <span style="font-size: 0.74rem; font-weight: 800; color: #718096; letter-spacing: 0.05em; text-transform: uppercase;">CUSTOMER TOURS</span>
+            <div style="width: 34px; height: 34px; border-radius: 10px; background: #fff5eb; color: #eb5e28; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+              <i class="ri-user-heart-line"></i>
+            </div>
+          </div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 6px;">
+            ${totalTourDone} <span style="font-size: 0.88rem; font-weight: 600; color: #64748b;">Done</span>
+          </div>
+          <div style="font-size: 0.8rem; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+            <span style="background: #f1f5f9; padding: 2px 8px; border-radius: 6px; color: #475569;">${totalTourSched} Scheduled</span>
+            <span>•</span>
+            <span style="color: #eb5e28; font-weight: 700;">${totalTourSched + totalTourDone} Total</span>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <span style="font-size: 0.74rem; font-weight: 800; color: #718096; letter-spacing: 0.05em; text-transform: uppercase;">TOTAL COMPLETED</span>
+            <div style="width: 34px; height: 34px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+              <i class="ri-checkbox-circle-line"></i>
+            </div>
+          </div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: #059669; margin-bottom: 6px;">
+            ${totalAllCompleted} <span style="font-size: 0.88rem; font-weight: 600; color: #64748b;">/ ${totalAllVisits} Visits</span>
+          </div>
+          <div style="font-size: 0.8rem; color: #059669; font-weight: 700;">
+            <i class="ri-check-double-line"></i> Verified Field Interactions
+          </div>
+        </div>
+
+        <div class="kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <span style="font-size: 0.74rem; font-weight: 800; color: #718096; letter-spacing: 0.05em; text-transform: uppercase;">OVERALL COMPLETION</span>
+            <div style="width: 34px; height: 34px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+              <i class="ri-line-chart-line"></i>
+            </div>
+          </div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: #2563eb; margin-bottom: 6px;">
+            ${overallRate}%
+          </div>
+          <div style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-top: auto;">
+            <div style="width: ${overallRate}%; height: 100%; background: #2563eb; border-radius: 3px;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    const execStats = computeExecutiveStats(visibleVisits);
+    if (tableContainer) {
+      tableContainer.innerHTML = `
+        <div style="padding: 18px 24px; border-bottom: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+          <div>
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i class="ri-team-line" style="color: #eb5e28;"></i> Working Executives — Pre-Inspection & Client Tour Performance
+            </h3>
+            <p style="font-size: 0.82rem; color: #64748b; margin: 3px 0 0 0;">
+              Live track of pre-inspections and customer property tours scheduled vs completed by each assigned executive.
+            </p>
+          </div>
+          <button id="btn-table-export-report" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+            <i class="ri-download-cloud-line" style="color: #eb5e28;"></i> Download CSV Report
+          </button>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                <th style="padding: 12px 20px; font-weight: 800;">Working Executive</th>
+                <th style="padding: 12px 14px; font-weight: 800; text-align: center;">Pre-Insp Sched</th>
+                <th style="padding: 12px 14px; font-weight: 800; text-align: center;">Pre-Insp Done</th>
+                <th style="padding: 12px 14px; font-weight: 800; text-align: center;">Client Tour Sched</th>
+                <th style="padding: 12px 14px; font-weight: 800; text-align: center;">Client Tour Done</th>
+                <th style="padding: 12px 14px; font-weight: 800; text-align: center;">Total Assigned</th>
+                <th style="padding: 12px 20px; font-weight: 800;">Completion Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${execStats.length === 0 ? `
+                <tr>
+                  <td colspan="7" style="padding: 30px; text-align: center; color: #94a3b8;">
+                    No executive visit assignments recorded yet.
+                  </td>
+                </tr>
+              ` : execStats.map(s => {
+                const rate = s.totalAssigned > 0 ? Math.round((s.totalCompleted / s.totalAssigned) * 100) : 0;
+                const rateColor = rate >= 80 ? '#059669' : rate >= 50 ? '#d97706' : (s.totalAssigned === 0 ? '#94a3b8' : '#e11d48');
+                const rateBg = rate >= 80 ? '#ecfdf5' : rate >= 50 ? '#fffbeb' : (s.totalAssigned === 0 ? '#f1f5f9' : '#fff1f2');
+
+                return `
+                  <tr style="border-bottom: 1px solid #edf2f7; transition: background 0.15s;" onmouseover="this.style.background='#fafaf9'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 12px 20px;">
+                      <div style="display: flex; align-items: center; gap: 12px;">
+                        <img src="${s.avatar}" alt="${s.name}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 1.5px solid #e2e8f0;" />
+                        <div>
+                          <div style="font-weight: 800; color: #1e293b; font-size: 0.88rem;">${s.name}</div>
+                          <div style="font-size: 0.74rem; color: #64748b; font-weight: 600;">${s.role}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="padding: 12px 14px; text-align: center;">
+                      <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; font-weight: 800; font-size: 0.78rem; background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff;">
+                        ${s.preInspSched}
+                      </span>
+                    </td>
+                    <td style="padding: 12px 14px; text-align: center;">
+                      <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; font-weight: 800; font-size: 0.78rem; background: #faf5ff; color: #6b21a8; border: 1px solid #d8b4fe;">
+                        ✅ ${s.preInspDone}
+                      </span>
+                    </td>
+                    <td style="padding: 12px 14px; text-align: center;">
+                      <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; font-weight: 800; font-size: 0.78rem; background: #fff5eb; color: #c2410c; border: 1px solid #fed7aa;">
+                        ${s.clientTourSched}
+                      </span>
+                    </td>
+                    <td style="padding: 12px 14px; text-align: center;">
+                      <span style="display: inline-block; padding: 2px 10px; border-radius: 12px; font-weight: 800; font-size: 0.78rem; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;">
+                        🏆 ${s.clientTourDone}
+                      </span>
+                    </td>
+                    <td style="padding: 12px 14px; text-align: center; font-weight: 800; color: #1e293b; font-size: 0.9rem;">
+                      ${s.totalAssigned}
+                    </td>
+                    <td style="padding: 12px 20px;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="flex: 1; min-width: 70px; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden;">
+                          <div style="width: ${rate}%; height: 100%; background: ${rateColor}; border-radius: 3px;"></div>
+                        </div>
+                        <span style="padding: 2px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; background: ${rateBg}; color: ${rateColor};">
+                          ${rate}%
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      document.getElementById('btn-table-export-report')?.addEventListener('click', () => {
+        downloadExecutiveVisitsReportCSV(visibleVisits);
+      });
+    }
+  };
+
+  // Bind Header Download Button
+  document.getElementById('btn-export-executive-report')?.addEventListener('click', () => {
+    downloadExecutiveVisitsReportCSV(filterVisitsForActiveUser(visits));
+  });
+
   // initial render
   renderCalendar();
   renderAgenda(selectedDay.toString());
+  renderExecutivePerformanceSummary();
 
   // Schedule Visit Modal Logic
   const scheduleBtn = document.getElementById('btn-open-schedule-visit') || document.querySelector('.view-header-flex .os-btn-primary');
@@ -780,6 +1136,7 @@ export async function initSiteVisitsView() {
       
       renderCalendar();
       renderAgenda(selectedDay.toString());
+      renderExecutivePerformanceSummary();
     });
   }
 

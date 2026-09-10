@@ -1,9 +1,53 @@
-import { getAdminUsers, addAdminUser, updateAdminUser, toggleAdminUserStatus, deleteAdminUser } from '../utils/adminUsersStore.js';
+import { getAdminUsers, addAdminUser, updateAdminUser, toggleAdminUserStatus, deleteAdminUser, AVAILABLE_CRM_MODULES } from '../utils/adminUsersStore.js';
 import { showToast, showConfirmModal } from '../utils/toast.js';
 
 let activeSearchQuery = '';
 let activeRoleFilter = 'all';
 let activeStatusFilter = 'all';
+
+function getDiscoveredCRMModules() {
+  const modulesMap = new Map();
+  
+  // 1. Add predefined modules
+  AVAILABLE_CRM_MODULES.forEach(m => {
+    modulesMap.set(m.id, { ...m });
+  });
+
+  // 2. Auto-discover from sidebar nav items if present in DOM
+  try {
+    const navs = document.querySelectorAll('.sidebar-nav .nav-item[data-view]');
+    navs.forEach(nav => {
+      const v = nav.getAttribute('data-view');
+      if (v && !modulesMap.has(v)) {
+        const labelText = nav.textContent.replace(/[^a-zA-Z0-9\s&/]/g, '').trim() || v;
+        const iconEl = nav.querySelector('i');
+        const iconClass = iconEl ? iconEl.className : 'ri-apps-line';
+        modulesMap.set(v, {
+          id: v,
+          label: labelText,
+          icon: iconClass,
+          group: 'Custom Modules'
+        });
+      }
+    });
+  } catch(e) {}
+
+  return Array.from(modulesMap.values());
+}
+
+function renderModuleCheckboxesHTML(selectedModules = null) {
+  const modules = getDiscoveredCRMModules();
+  return modules.map(m => {
+    const isChecked = selectedModules === null || (Array.isArray(selectedModules) && selectedModules.includes(m.id));
+    return `
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: background 0.15s;" onmouseover="this.style.background='#edf2f7'" onmouseout="this.style.background='transparent'">
+        <input type="checkbox" class="staff-module-chk" value="${m.id}" ${isChecked ? 'checked' : ''} style="accent-color: #eb5e28; cursor: pointer;" />
+        <i class="${m.icon || 'ri-checkbox-circle-line'}" style="color: #64748b; font-size: 0.95rem;"></i>
+        <span>${m.label}</span>
+      </label>
+    `;
+  }).join('');
+}
 
 export function renderAdminUsersView() {
   const allStaff = getAdminUsers();
@@ -47,10 +91,6 @@ export function renderAdminUsersView() {
           <button id="add-admin-staff-btn" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; background: linear-gradient(135deg, #eb5e28 0%, #d94e18 100%); color: #ffffff; font-weight: 800; font-size: 0.88rem; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(235,94,40,0.35); transition: transform 0.2s;">
             <i class="ri-user-add-line"></i> + Add New Admin Staff
           </button>
-          
-          <a href="/admin-login.html" target="_blank" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%); color: #ffffff; font-weight: 700; font-size: 0.88rem; cursor: pointer; text-decoration: none; box-shadow: 0 4px 12px rgba(15,23,42,0.25);">
-            <i class="ri-shield-keyhole-line" style="color: #eb5e28;"></i> Open Admin Login Portal
-          </a>
         </div>
       </div>
 
@@ -247,55 +287,8 @@ export function renderAdminUsersView() {
               </div>
             </div>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; max-height: 180px; overflow-y: auto; padding: 10px; background: #f8fafc; border: 1px solid var(--os-border); border-radius: 8px;">
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="dashboard" checked /> Dashboard Overview
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="leads" checked /> CRM Pipeline
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="properties" checked /> Properties Inventory
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="property-approvals" checked /> Property Approvals
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="visits" checked /> Site Visits & Appts
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="partners" checked /> Partner Network
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="ai" checked /> AI Operating Agent
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="whatsapp" checked /> WhatsApp Log
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="pipeline" checked /> Pipeline Board
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="reports" checked /> Reports
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="settings" checked /> Settings
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="users" checked /> Portal Users Overview
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="audit" checked /> Audit Log
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="blog-cms" checked /> Blog Posts CMS
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="images" checked /> Website Images
-              </label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #334155; font-weight: 600; cursor: pointer;">
-                <input type="checkbox" class="staff-module-chk" value="admin-users" checked /> Admin Staff & Access
-              </label>
+            <div id="staff-modules-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; max-height: 190px; overflow-y: auto; padding: 10px; background: #f8fafc; border: 1px solid var(--os-border); border-radius: 8px;">
+              ${renderModuleCheckboxesHTML()}
             </div>
           </div>
 
@@ -377,6 +370,25 @@ export function initAdminUsersView() {
     document.querySelectorAll('.staff-module-chk').forEach(c => c.checked = false);
   });
 
+  // Role dropdown change listener to apply smart presets
+  const roleSelect = document.getElementById('staff-role');
+  roleSelect?.addEventListener('change', (e) => {
+    const r = e.target.value;
+    const allCheckboxes = document.querySelectorAll('.staff-module-chk');
+    if (r === 'Super Admin') {
+      allCheckboxes.forEach(c => c.checked = true);
+    } else if (r === 'Sales Manager') {
+      const managerModules = ['dashboard', 'leads', 'properties', 'property-approvals', 'visits', 'partners', 'pipeline', 'reports', 'reviews', 'whatsapp', 'ai'];
+      allCheckboxes.forEach(c => c.checked = managerModules.includes(c.value));
+    } else if (r === 'Sales Executive') {
+      const execModules = ['dashboard', 'leads', 'properties', 'visits', 'pipeline', 'whatsapp', 'reviews'];
+      allCheckboxes.forEach(c => c.checked = execModules.includes(c.value));
+    } else if (r === 'Property Staff') {
+      const staffModules = ['dashboard', 'properties', 'property-approvals', 'visits', 'images'];
+      allCheckboxes.forEach(c => c.checked = staffModules.includes(c.value));
+    }
+  });
+
   // Modal open for ADD (100% fresh clean inputs)
   addBtn?.addEventListener('click', () => {
     if (!modal) return;
@@ -390,7 +402,15 @@ export function initAdminUsersView() {
     if (togglePassBtn) togglePassBtn.className = 'ri-eye-line';
     document.getElementById('staff-role').value = 'Sales Executive';
     document.getElementById('staff-status').value = 'Active';
-    document.querySelectorAll('.staff-module-chk').forEach(c => c.checked = true);
+
+    const container = document.getElementById('staff-modules-container');
+    const execPreset = ['dashboard', 'leads', 'properties', 'visits', 'pipeline', 'whatsapp', 'reviews'];
+    if (container) {
+      container.innerHTML = renderModuleCheckboxesHTML(execPreset);
+    } else {
+      document.querySelectorAll('.staff-module-chk').forEach(c => c.checked = execPreset.includes(c.value));
+    }
+
     modal.style.display = 'flex';
   });
 
@@ -454,13 +474,18 @@ export function initAdminUsersView() {
       document.getElementById('staff-status').value = target.status;
 
       const allowed = Array.isArray(target.allowedModules) && target.allowedModules.length > 0 ? target.allowedModules : null;
-      document.querySelectorAll('.staff-module-chk').forEach(c => {
-        if (allowed === null) {
-          c.checked = true;
-        } else {
-          c.checked = allowed.includes(c.value);
-        }
-      });
+      const container = document.getElementById('staff-modules-container');
+      if (container) {
+        container.innerHTML = renderModuleCheckboxesHTML(allowed);
+      } else {
+        document.querySelectorAll('.staff-module-chk').forEach(c => {
+          if (allowed === null) {
+            c.checked = true;
+          } else {
+            c.checked = allowed.includes(c.value);
+          }
+        });
+      }
 
       modal.style.display = 'flex';
     });

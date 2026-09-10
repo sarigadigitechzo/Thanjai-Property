@@ -541,10 +541,151 @@ function formatCurrency(val) {
   return '₹ ' + num.toLocaleString('en-IN');
 }
 
+function getLeadPropertyIds(lead, allLeads = []) {
+  const propIdSet = new Set();
+  if (!lead) return [];
+
+  // 1. Direct propertyId / propertyMatch
+  if (lead.propertyId) propIdSet.add(String(lead.propertyId).trim().toUpperCase());
+  if (lead.propertyMatch) propIdSet.add(String(lead.propertyMatch).trim().toUpperCase());
+
+  // 2. Timeline history of this lead
+  const rawTimeline = Array.isArray(lead.timeline) ? lead.timeline : [];
+  rawTimeline.forEach(evt => {
+    const text = typeof evt === 'string' ? evt : (evt.message || evt.note || evt.action || '');
+    const matches = text.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi);
+    if (matches) {
+      matches.forEach(m => {
+        const idMatch = m.match(/([A-Z]{2}-?\d+)/i);
+        if (idMatch && idMatch[1]) propIdSet.add(idMatch[1].toUpperCase());
+      });
+    }
+  });
+
+  // 3. Notes of this lead
+  const rawNotes = Array.isArray(lead.notes) ? lead.notes : [];
+  rawNotes.forEach(n => {
+    const text = typeof n === 'string' ? n : (n.text || '');
+    const matches = text.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi);
+    if (matches) {
+      matches.forEach(m => {
+        const idMatch = m.match(/([A-Z]{2}-?\d+)/i);
+        if (idMatch && idMatch[1]) propIdSet.add(idMatch[1].toUpperCase());
+      });
+    }
+  });
+
+  // 4. Inquiries from other lead rows with same phone (last 10 digits) or email
+  const leadPhoneDigits = String(lead.phone || lead.mobile || '').replace(/\D/g, '').slice(-10);
+  const leadEmail = String(lead.email || '').trim().toLowerCase();
+
+  if (leadPhoneDigits.length >= 10 || (leadEmail && leadEmail.includes('@'))) {
+    allLeads.forEach(otherLead => {
+      if (!otherLead) return;
+      const otherDigits = String(otherLead.phone || otherLead.mobile || '').replace(/\D/g, '').slice(-10);
+      const otherEmail = String(otherLead.email || '').trim().toLowerCase();
+
+      const isSamePhone = leadPhoneDigits.length >= 10 && otherDigits === leadPhoneDigits;
+      const isSameEmail = leadEmail && otherEmail && leadEmail === otherEmail;
+
+      if (isSamePhone || isSameEmail) {
+        if (otherLead.propertyId) propIdSet.add(String(otherLead.propertyId).trim().toUpperCase());
+        if (otherLead.propertyMatch) propIdSet.add(String(otherLead.propertyMatch).trim().toUpperCase());
+
+        const otherTimeline = Array.isArray(otherLead.timeline) ? otherLead.timeline : [];
+        otherTimeline.forEach(evt => {
+          const text = typeof evt === 'string' ? evt : (evt.message || evt.note || evt.action || '');
+          const matches = text.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi);
+          if (matches) {
+            matches.forEach(m => {
+              const idMatch = m.match(/([A-Z]{2}-?\d+)/i);
+              if (idMatch && idMatch[1]) propIdSet.add(idMatch[1].toUpperCase());
+            });
+          }
+        });
+      }
+    });
+  }
+
+  return Array.from(propIdSet);
+}
+
+function consolidateLeadsByBuyer(leadsList) {
+  if (!Array.isArray(leadsList) || leadsList.length === 0) return [];
+  
+  const buyerMap = new Map();
+  const unkeyedLeads = [];
+
+  leadsList.forEach(lead => {
+    if (!lead) return;
+    const phoneDigits = String(lead.phone || lead.mobile || '').replace(/\D/g, '').slice(-10);
+    const email = String(lead.email || '').trim().toLowerCase();
+    
+    let key = null;
+    if (phoneDigits && phoneDigits.length >= 10) {
+      key = `phone_${phoneDigits}`;
+    } else if (email && email.includes('@')) {
+      key = `email_${email}`;
+    }
+
+    if (!key) {
+      unkeyedLeads.push(lead);
+      return;
+    }
+
+    if (!buyerMap.has(key)) {
+      buyerMap.set(key, { ...lead });
+    } else {
+      const existing = buyerMap.get(key);
+      
+      const existingTime = new Date(existing.createdAt || existing.created_at || existing.date || 0).getTime() || 0;
+      const leadTime = new Date(lead.createdAt || lead.created_at || lead.date || 0).getTime() || 0;
+      const isNewer = leadTime >= existingTime;
+
+      const primary = isNewer ? lead : existing;
+      const secondary = isNewer ? existing : lead;
+
+      const merged = {
+        ...secondary,
+        ...primary,
+        id: primary.id || secondary.id,
+        name: primary.name || secondary.name,
+        phone: primary.phone || secondary.phone || primary.mobile || secondary.mobile,
+        mobile: primary.mobile || secondary.mobile || primary.phone || secondary.phone,
+        email: primary.email || secondary.email,
+        type: primary.type || secondary.type,
+        requirement: primary.requirement || secondary.requirement || primary.type || secondary.type,
+        budget: primary.budget || secondary.budget || primary.budgetMax || secondary.budgetMax,
+        budgetMax: primary.budgetMax || secondary.budgetMax || primary.budget || secondary.budget,
+        location: primary.location || secondary.location || primary.area || secondary.area,
+        area: primary.area || secondary.area || primary.location || secondary.location,
+        status: primary.status || secondary.status,
+        assignTo: primary.assignTo || secondary.assignTo || primary.assignedTo || secondary.assignedTo,
+        assignedTo: primary.assignedTo || secondary.assignedTo || primary.assignTo || secondary.assignTo,
+        followup: (primary.followup && primary.followup !== '—') ? primary.followup : secondary.followup,
+        createdAt: primary.createdAt || secondary.createdAt,
+        timeline: [
+          ...(Array.isArray(primary.timeline) ? primary.timeline : []),
+          ...(Array.isArray(secondary.timeline) ? secondary.timeline : [])
+        ],
+        notes: [
+          ...(Array.isArray(primary.notes) ? primary.notes : (primary.notes ? [primary.notes] : [])),
+          ...(Array.isArray(secondary.notes) ? secondary.notes : (secondary.notes ? [secondary.notes] : []))
+        ]
+      };
+
+      buyerMap.set(key, merged);
+    }
+  });
+
+  return [...buyerMap.values(), ...unkeyedLeads];
+}
+
 function renderTable() {
   const tbody = document.getElementById('leads-table-body');
   if (!tbody) return;
-  let leads = filterLeadsForActiveUser(getLeads());
+  const rawAllLeads = filterLeadsForActiveUser(getLeads());
+  let leads = consolidateLeadsByBuyer(rawAllLeads);
   
   // Apply filters
   const searchEl = document.getElementById('filter-search');
@@ -750,15 +891,29 @@ function renderTable() {
     else if (statusTxt.includes('NEGOTIATION')) statusColor = 'badge-orange';
     else if (statusTxt.includes('CONVERTED')) statusColor = 'badge-cyan';
     
-    const propId = lead.propertyId || lead.propertyMatch;
-    let sourceTxt = (lead.source || (propId ? 'PROPERTY INQUIRY' : 'CONTACT ENQUIRY')).toUpperCase();
+    const propIds = getLeadPropertyIds(lead, rawAllLeads);
+    const primaryPropId = propIds[0] || lead.propertyId || lead.propertyMatch;
+    let sourceTxt = (lead.source || (primaryPropId ? 'PROPERTY INQUIRY' : 'CONTACT ENQUIRY')).toUpperCase();
     let propBadgeHtml = '';
-    if (propId) {
+    if (propIds.length === 1) {
       propBadgeHtml = `
         <div style="margin-top: 4px;">
-          <span class="prop-id-badge" data-propid="${propId}" style="background: #ea580c; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);" title="Click to view Property ${propId}">
-            <i class="ri-building-fill"></i> Property ${propId}
+          <span class="prop-id-badge" data-propid="${propIds[0]}" style="background: #ea580c; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);" title="Click to view Property ${propIds[0]}">
+            <i class="ri-building-fill"></i> Property ${propIds[0]}
           </span>
+        </div>
+      `;
+    } else if (propIds.length > 1) {
+      propBadgeHtml = `
+        <div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
+          <span style="background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" title="Multiple Properties Inquired">
+            <i class="ri-stack-line"></i> ${propIds.length} Inquiries
+          </span>
+          ${propIds.map(pId => `
+            <span class="prop-id-badge" data-propid="${pId}" style="background: #ea580c; color: #ffffff; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);" title="Click to view Property ${pId}">
+              <i class="ri-building-fill"></i> ${pId}
+            </span>
+          `).join('')}
         </div>
       `;
     }

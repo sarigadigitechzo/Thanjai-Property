@@ -3,6 +3,7 @@ import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 import { showToast } from '../utils/toast.js';
 import { filterLeadsForActiveUser } from '../utils/adminUsersStore.js';
 import { mapLeadFromAPI } from './LeadsView.js';
+import { openPropertyModalById } from '../components/PropertyDetailModal.js';
 
 export function renderPipelineBoardView() {
   return `
@@ -211,21 +212,43 @@ export function initPipelineBoardView() {
   }
 
   function generateCardHTML(lead) {
-    let propId = lead.propertyId || lead.propertyMatch || '';
-    if (!propId) {
-      const rawTimelineStr = typeof lead.timeline === 'string' ? lead.timeline : JSON.stringify(lead.timeline || []);
-      const rawNotesStr = typeof lead.notes === 'string' ? lead.notes : JSON.stringify(lead.notes || []);
-      const match = rawTimelineStr.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/i) || rawNotesStr.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/i);
-      if (match) propId = match[1].toUpperCase();
+    const propIdSet = new Set();
+    if (lead.propertyId) propIdSet.add(String(lead.propertyId).trim().toUpperCase());
+    if (lead.propertyMatch) propIdSet.add(String(lead.propertyMatch).trim().toUpperCase());
+
+    const rawTimelineStr = typeof lead.timeline === 'string' ? lead.timeline : JSON.stringify(lead.timeline || []);
+    const rawNotesStr = typeof lead.notes === 'string' ? lead.notes : JSON.stringify(lead.notes || []);
+    const fullText = rawTimelineStr + ' ' + rawNotesStr;
+    const matches = fullText.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi);
+    if (matches) {
+      matches.forEach(m => {
+        const idM = m.match(/([A-Z]{2}-?\d+)/i);
+        if (idM && idM[1]) propIdSet.add(idM[1].toUpperCase());
+      });
     }
+
+    const leadPhoneDigits = String(lead.phone || lead.mobile || '').replace(/\D/g, '').slice(-10);
+    if (leadPhoneDigits.length >= 10 && Array.isArray(leads)) {
+      leads.forEach(ol => {
+        if (!ol || ol.id === lead.id) return;
+        const oDigits = String(ol.phone || ol.mobile || '').replace(/\D/g, '').slice(-10);
+        if (oDigits === leadPhoneDigits) {
+          if (ol.propertyId) propIdSet.add(String(ol.propertyId).trim().toUpperCase());
+          if (ol.propertyMatch) propIdSet.add(String(ol.propertyMatch).trim().toUpperCase());
+        }
+      });
+    }
+
+    const propIdList = Array.from(propIdSet);
+    const primaryPropId = propIdList[0] || '';
 
     let budgetStr = '—';
     if (lead.budgetMax || lead.budget) {
-      budgetStr = formatCurrency(lead.budgetMax || lead.budget, propId);
+      budgetStr = formatCurrency(lead.budgetMax || lead.budget, primaryPropId);
     } else if (lead.budgetMin) {
-      budgetStr = `Min ${formatCurrency(lead.budgetMin, propId)}`;
-    } else if (propId) {
-      budgetStr = formatCurrency(null, propId);
+      budgetStr = `Min ${formatCurrency(lead.budgetMin, primaryPropId)}`;
+    } else if (primaryPropId) {
+      budgetStr = formatCurrency(null, primaryPropId);
     }
 
     const priorityClass = (lead.priority || 'Medium').toLowerCase() === 'high' ? 'high' : '';
@@ -233,19 +256,21 @@ export function initPipelineBoardView() {
 
     let rawSource = (lead.source || 'MANUAL').toUpperCase();
     let sourceText = 'CONTACT ENQUIRY';
-    if (propId || rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
+    if (propIdList.length > 0 || rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
       sourceText = 'PROPERTY INQUIRY';
     } else {
       sourceText = 'CONTACT ENQUIRY';
     }
 
     let propBadgeHtml = '';
-    if (propId) {
+    if (propIdList.length > 0) {
       propBadgeHtml = `
-        <div style="margin-top: 8px;">
-          <span class="prop-id-badge" data-propid="${propId}" style="background: #ea580c; color: #ffffff; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.15);" title="Click to view Property ${propId}">
-            <i class="ri-building-fill"></i> Property ${propId}
-          </span>
+        <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">
+          ${propIdList.map(pId => `
+            <span class="prop-id-badge" data-propid="${pId}" style="background: #ea580c; color: #ffffff; padding: 3px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.15);" title="Click to view Property ${pId}">
+              <i class="ri-building-fill"></i> ${pId}
+            </span>
+          `).join('')}
         </div>
       `;
     }
@@ -435,6 +460,17 @@ export function initPipelineBoardView() {
         const newStatus = col.dataset.stage;
         if (leadId && newStatus) {
           updateLeadStatus(leadId, newStatus);
+        }
+      });
+    });
+
+    // 3. Click Property Badge to open property preview modal
+    board.querySelectorAll('.prop-id-badge').forEach(badge => {
+      badge.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pId = badge.dataset.propid;
+        if (pId) {
+          openPropertyModalById(pId);
         }
       });
     });

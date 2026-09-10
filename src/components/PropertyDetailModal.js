@@ -388,6 +388,26 @@ export function initPropertyDetailModalListeners(property, onClose) {
       incrementPropertyInquiryCount(property.id);
     } catch(err) {}
 
+    // Update local storage leads cache
+    try {
+      let localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const matchIdx = localLeads.findIndex(l => {
+        const d = String(l.phone || l.mobile || '').replace(/\D/g, '').slice(-10);
+        return d && d === cleanDigits.slice(-10);
+      });
+      if (matchIdx !== -1) {
+        localLeads[matchIdx].propertyId = property.id;
+        localLeads[matchIdx].type = property.categoryLabel || property.type || localLeads[matchIdx].type;
+        localLeads[matchIdx].budget = property.priceFormatted || String(property.price) || localLeads[matchIdx].budget;
+        localLeads[matchIdx].location = property.location || property.district || localLeads[matchIdx].location;
+        if (!Array.isArray(localLeads[matchIdx].timeline)) localLeads[matchIdx].timeline = [];
+        localLeads[matchIdx].timeline.unshift(...newLead.timeline);
+      } else {
+        localLeads.unshift(newLead);
+      }
+      localStorage.setItem('thanjai_leads', JSON.stringify(localLeads));
+    } catch(err) {}
+
     // Save Lead to MySQL backend
     try {
       await fetchFromAPI('/leads', {
@@ -583,6 +603,26 @@ export function openPropertyInquiryFormModal(property) {
     // 1. Increment Property Inquiry Count (+1)
     try {
       incrementPropertyInquiryCount(property.id);
+    } catch(err) {}
+
+    // Update local storage leads cache
+    try {
+      let localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const matchIdx = localLeads.findIndex(l => {
+        const d = String(l.phone || l.mobile || '').replace(/\D/g, '').slice(-10);
+        return d && d === cleanDigits.slice(-10);
+      });
+      if (matchIdx !== -1) {
+        localLeads[matchIdx].propertyId = property.id;
+        localLeads[matchIdx].type = property.categoryLabel || property.type || localLeads[matchIdx].type;
+        localLeads[matchIdx].budget = property.priceFormatted || String(property.price) || localLeads[matchIdx].budget;
+        localLeads[matchIdx].location = property.location || property.district || localLeads[matchIdx].location;
+        if (!Array.isArray(localLeads[matchIdx].timeline)) localLeads[matchIdx].timeline = [];
+        localLeads[matchIdx].timeline.unshift(...newLead.timeline);
+      } else {
+        localLeads.unshift(newLead);
+      }
+      localStorage.setItem('thanjai_leads', JSON.stringify(localLeads));
     } catch(err) {}
 
     // Save Lead to MySQL backend

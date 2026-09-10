@@ -135,7 +135,7 @@ export function initPostPropertyModalListeners(onClose) {
       listedBy: ownerName || 'Website Submission',
       status: 'Pending Approval',
       approvalStatus: 'Pending Approval',
-      availability: 'Pending'
+      availability: 'Pending Approval'
     });
 
     showToast(`Success! Property ${newProp.id} submitted for review.`, 'ri-checkbox-circle-fill');

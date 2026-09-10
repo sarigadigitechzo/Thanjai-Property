@@ -7,6 +7,7 @@ let activeTypeFilter = 'all';
 let activeCategoryFilter = 'all';
 let activeStatusFilter = 'all';
 let activeAdTypeFilter = 'all';
+let activeVisibilityFilter = 'all';
 let activeMaxPriceFilter = 'all';
 
 let currentViewMode = 'list'; // 'list' or 'form'
@@ -314,6 +315,12 @@ export function renderPropertiesView() {
           <option value="paid" ${activeAdTypeFilter === 'paid' ? 'selected' : ''}>👑 Paid Owner Ads</option>
         </select>
 
+        <select id="props-visibility-filter" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; font-size: 0.88rem; color: #4a5568; font-weight: 600;">
+          <option value="all" ${activeVisibilityFilter === 'all' ? 'selected' : ''}>All Visibility</option>
+          <option value="public" ${activeVisibilityFilter === 'public' ? 'selected' : ''}>🌐 Public Website & CRM</option>
+          <option value="crm_only" ${activeVisibilityFilter === 'crm_only' ? 'selected' : ''}>🔒 CRM / Referral Only</option>
+        </select>
+
         <select id="props-maxprice-filter" style="padding: 8px 14px; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; font-size: 0.88rem; color: #4a5568;">
           <option value="all" ${activeMaxPriceFilter === 'all' ? 'selected' : ''}>Max price</option>
           <option value="5000000" ${activeMaxPriceFilter === '5000000' ? 'selected' : ''}>₹ 50 Lakhs</option>
@@ -432,9 +439,9 @@ function renderPropertyCard(prop, allLeads = []) {
           width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
         " />
         
-        <!-- Ad Type Interactive Select Dropdown Top Left -->
-        <div style="position: absolute; top: 12px; left: 12px; z-index: 2;" title="Change Listing Plan">
-          <select class="quick-adtype-select" data-id="${prop.id}" style="
+        <!-- Ad Type & Visibility Select Dropdowns Top Left -->
+        <div style="position: absolute; top: 12px; left: 12px; z-index: 2; display: flex; flex-direction: column; gap: 6px;">
+          <select class="quick-adtype-select" data-id="${prop.id}" title="Change Listing Plan" style="
             padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800;
             letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; outline: none;
             background: ${prop.adType === 'paid' ? '#EBF8FF' : '#FFF5EB'};
@@ -444,6 +451,18 @@ function renderPropertyCard(prop, allLeads = []) {
           ">
             <option value="free" ${prop.adType !== 'paid' ? 'selected' : ''}>🛡️ FREE AD</option>
             <option value="paid" ${prop.adType === 'paid' ? 'selected' : ''}>👑 PAID AD</option>
+          </select>
+
+          <select class="quick-visibility-select" data-id="${prop.id}" title="Change Listing Visibility" style="
+            padding: 4px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800;
+            letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; outline: none;
+            background: ${prop.publishTarget === 'crm_only' ? '#FAF5FF' : '#F0FDF4'};
+            color: ${prop.publishTarget === 'crm_only' ? '#6B46C1' : '#15803D'};
+            border: 1px solid ${prop.publishTarget === 'crm_only' ? '#D6BCFA' : '#BBF7D0'};
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+          ">
+            <option value="public" ${prop.publishTarget !== 'crm_only' ? 'selected' : ''}>🌐 PUBLIC</option>
+            <option value="crm_only" ${prop.publishTarget === 'crm_only' ? 'selected' : ''}>🔒 CRM ONLY</option>
           </select>
         </div>
 
@@ -460,6 +479,14 @@ function renderPropertyCard(prop, allLeads = []) {
       <!-- Card Body matching Image 2 -->
       <div style="padding: 18px 20px; display: flex; flex-direction: column; flex: 1;">
         
+        <!-- Visibility Badge -->
+        <div style="margin-bottom: 6px;">
+          <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.74rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: ${prop.publishTarget === 'crm_only' ? '#FAF5FF' : '#F0FDF4'}; color: ${prop.publishTarget === 'crm_only' ? '#6B46C1' : '#15803D'}; border: 1px solid ${prop.publishTarget === 'crm_only' ? '#E9D8FD' : '#DCFCE7'};">
+            <i class="${prop.publishTarget === 'crm_only' ? 'ri-lock-2-fill' : 'ri-global-fill'}"></i>
+            <span>${prop.publishTarget === 'crm_only' ? 'CRM / Referral Only (Hidden from Website)' : 'Live on Public Website & CRM'}</span>
+          </span>
+        </div>
+
         <!-- Title -->
         <h3 style="font-size: 1.05rem; font-weight: 700; color: #1a202c; margin: 0 0 4px 0; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
           ${prop.title}
@@ -794,6 +821,7 @@ function renderAdminPropertyPreviewModal(prop) {
             <h4 style="font-size: 0.85rem; font-weight: 800; color: #4A5568; text-transform: uppercase; margin-bottom: 12px;">OWNER & CONTACT DETAILS</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; font-size: 0.9rem;">
               <div><strong>Listing Plan:</strong> <span style="font-weight: 700; color: ${prop.adType === 'paid' ? '#3182CE' : '#C05621'};">${prop.adType === 'paid' ? '👑 Paid Ad' : '🛡️ Free Ad'}</span></div>
+              <div><strong>Listing Visibility:</strong> <span style="font-weight: 700; color: ${prop.publishTarget === 'crm_only' ? '#6B46C1' : '#2F855A'};">${prop.publishTarget === 'crm_only' ? '🔒 CRM & Referral Only' : '🌐 Public Website & CRM'}</span></div>
               <div><strong>Poster Source:</strong> <span style="background: #edf2f7; color: #2d3748; font-weight: 700; padding: 3px 8px; border-radius: 6px; font-size: 0.82rem;">${prop.posterRole || 'Individual Owner'}</span></div>
               <div><strong>Owner / Company Name:</strong> ${prop.ownerName || 'Thanjai Property Owner'}</div>
               <div><strong>Owner Direct Phone (Private):</strong> ${prop.ownerPhone || 'N/A'}</div>
@@ -1075,10 +1103,19 @@ function renderFullPagePropertyForm(prop) {
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Availability *</label>
                 <select id="form-prop-availability" required style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box;">
                   <option value="Available" ${!isEdit || prop?.availability === 'Available' || prop?.status === 'Available' ? 'selected' : ''}>Available</option>
+                  <option value="Pending Approval" ${isEdit && (prop?.availability === 'Pending Approval' || prop?.status === 'Pending Approval' || prop?.approvalStatus === 'Pending Approval') ? 'selected' : ''}>⏳ Pending Approval (Needs Admin Verification)</option>
                   <option value="Booked" ${isEdit && (prop?.availability === 'Booked' || prop?.status === 'Booked') ? 'selected' : ''}>Booked</option>
                   <option value="Sold" ${isEdit && (prop?.availability === 'Sold' || prop?.status === 'Sold') ? 'selected' : ''}>Sold</option>
                   <option value="Rented" ${isEdit && (prop?.availability === 'Rented' || prop?.status === 'Rented') ? 'selected' : ''}>Rented</option>
                   <option value="Inactive" ${isEdit && (prop?.availability === 'Inactive' || prop?.status === 'Inactive') ? 'selected' : ''}>Inactive</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Listing Visibility (Post Target) *</label>
+                <select id="form-prop-publish-target" required style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; box-sizing: border-box; font-weight: 600;">
+                  <option value="public" ${!isEdit || prop?.publishTarget !== 'crm_only' ? 'selected' : ''}>🌐 Publish to Website & CRM (Public)</option>
+                  <option value="crm_only" ${isEdit && prop?.publishTarget === 'crm_only' ? 'selected' : ''}>🔒 CRM & Referral Only (Private / Off-Market)</option>
                 </select>
               </div>
             </div>
@@ -1420,7 +1457,14 @@ function filterPropertiesList(list) {
       if (activeAdTypeFilter === 'free' && isPaid) return false;
     }
 
-    // 6. Max Price Filter
+    // 6. Visibility Filter (Public Website vs CRM Only)
+    if (activeVisibilityFilter && activeVisibilityFilter !== 'all') {
+      const pVis = (prop.publishTarget || prop.visibility || 'public').toLowerCase().trim();
+      if (activeVisibilityFilter === 'crm_only' && pVis !== 'crm_only') return false;
+      if (activeVisibilityFilter === 'public' && pVis === 'crm_only') return false;
+    }
+
+    // 7. Max Price Filter
     if (activeMaxPriceFilter && activeMaxPriceFilter !== 'all') {
       const maxP = parseFloat(activeMaxPriceFilter);
       const propP = prop.price || 0;
@@ -1632,6 +1676,11 @@ export function initPropertiesViewListeners() {
     refreshPropertiesView();
   });
 
+  document.getElementById('props-visibility-filter')?.addEventListener('change', (e) => {
+    activeVisibilityFilter = e.target.value;
+    refreshPropertiesView();
+  });
+
   document.getElementById('props-maxprice-filter')?.addEventListener('change', (e) => {
     activeMaxPriceFilter = e.target.value;
     refreshPropertiesView();
@@ -1696,6 +1745,7 @@ export function initPropertiesViewListeners() {
           const statusIdx = getColIdx(['status', 'availab']);
           const ownerNameIdx = getColIdx(['owner name', 'owner', 'contact name']);
           const ownerPhoneIdx = getColIdx(['owner phone', 'phone', 'mobile']);
+          const visIdx = getColIdx(['visibility', 'publish target', 'target', 'publish']);
           const descIdx = getColIdx(['desc', 'about', 'details']);
 
           let importedCount = 0;
@@ -1722,6 +1772,8 @@ export function initPropertiesViewListeners() {
               const status = val(statusIdx !== -1 ? statusIdx : 11, 'Available');
               const ownerName = val(ownerNameIdx !== -1 ? ownerNameIdx : 12, 'Owner');
               const ownerPhone = val(ownerPhoneIdx !== -1 ? ownerPhoneIdx : 13, '8489996852');
+              const rawVis = val(visIdx !== -1 ? visIdx : -1, 'public').toLowerCase();
+              const publishTarget = rawVis.includes('crm') || rawVis.includes('referral') ? 'crm_only' : 'public';
               const description = val(descIdx !== -1 ? descIdx : 14, `Verified property in ${location}`);
 
               addProperty({
@@ -1740,6 +1792,7 @@ export function initPropertiesViewListeners() {
                 status: status,
                 availability: status,
                 approvalStatus: 'Approved',
+                publishTarget: publishTarget,
                 ownerName: ownerName,
                 ownerPhone: ownerPhone,
                 description: description
@@ -1857,6 +1910,23 @@ export function initPropertiesViewListeners() {
           showToast(`Property ${id} updated to Paid Ad! Direct Owner details & call links enabled.`, 'ri-vip-crown-fill');
         } else {
           showToast(`Property ${id} updated to Free Ad (Thanjai Property Desk +91 84899 96852).`, 'ri-shield-user-fill');
+        }
+        refreshPropertiesView();
+      }
+    });
+  });
+
+  // Quick Visibility Select Dropdown (Public Website vs CRM Only)
+  document.querySelectorAll('.quick-visibility-select').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const id = sel.dataset.id;
+      const newVisibility = e.target.value;
+      if (id && newVisibility) {
+        updateProperty(id, { publishTarget: newVisibility });
+        if (newVisibility === 'crm_only') {
+          showToast(`Property ${id} set to CRM / Referral Only (Hidden from public website).`, 'ri-lock-2-line');
+        } else {
+          showToast(`Property ${id} published live to public website & CRM!`, 'ri-global-line');
         }
         refreshPropertiesView();
       }
@@ -2221,6 +2291,7 @@ function initPropertyFormListeners() {
         furnishing: isRes ? (furnishing || 'Not specified') : 'Not specified',
         status: status,
         availability: status,
+        approvalStatus: status === 'Pending Approval' ? 'Pending Approval' : 'Approved',
         approval: approval || '',
         latitude: latitude,
         longitude: longitude,
@@ -2229,6 +2300,7 @@ function initPropertyFormListeners() {
         features: featuresArray,
         description: description || '',
         adType: document.getElementById('form-prop-ad-type')?.value || 'free',
+        publishTarget: document.getElementById('form-prop-publish-target')?.value || 'public',
         ownerName: document.getElementById('form-prop-owner-company')?.value.trim() || document.getElementById('form-prop-owner-name')?.value?.trim() || '',
         ownerPhone: document.getElementById('form-prop-contact-phone')?.value.trim() || document.getElementById('form-prop-owner-phone')?.value?.trim() || '',
         inquiryPhone: document.getElementById('form-prop-inquiry-phone')?.value.trim() || '8489996852',
@@ -2240,7 +2312,11 @@ function initPropertyFormListeners() {
         showToast(`Property ${editingPropertyId} updated successfully!`, 'ri-checkbox-circle-fill');
       } else {
         addProperty(formData);
-        showToast('New property listing published!', 'ri-checkbox-circle-fill');
+        if (status === 'Pending Approval') {
+          showToast('New property submitted to Approvals Desk for verification!', 'ri-time-line');
+        } else {
+          showToast('New property listing published!', 'ri-checkbox-circle-fill');
+        }
       }
 
       currentViewMode = 'list';
@@ -2376,7 +2452,7 @@ function exportFilteredPropertiesToCSV() {
     return;
   }
 
-  const headers = ['Property ID', 'Title', 'Type', 'Category', 'Price (INR)', 'Location', 'District', 'Address', 'Area Size', 'Bedrooms', 'Bathrooms', 'Furnishing', 'Status', 'Owner Name', 'Owner Phone', 'Created At'];
+  const headers = ['Property ID', 'Title', 'Type', 'Category', 'Price (INR)', 'Location', 'District', 'Address', 'Area Size', 'Bedrooms', 'Bathrooms', 'Furnishing', 'Status', 'Publish Target', 'Owner Name', 'Owner Phone', 'Created At'];
   
   const csvRows = [headers.join(',')];
 
@@ -2395,6 +2471,7 @@ function exportFilteredPropertiesToCSV() {
       `"${p.bathrooms || ''}"`,
       `"${p.furnishing || ''}"`,
       `"${p.status || p.availability || ''}"`,
+      `"${p.publishTarget === 'crm_only' ? 'CRM / Referral Only' : 'Public Website & CRM'}"`,
       `"${(p.ownerName || '').replace(/"/g, '""')}"`,
       `"${p.ownerPhone || ''}"`,
       `"${p.createdAt || ''}"`
@@ -2435,6 +2512,7 @@ function downloadSamplePropertiesCSV() {
     'Bathrooms',
     'Furnishing',
     'Status',
+    'Publish Target',
     'Owner Name',
     'Owner Phone',
     'Description'
@@ -2454,6 +2532,7 @@ function downloadSamplePropertiesCSV() {
       '"4"',
       '"Fully Furnished"',
       '"Available"',
+      '"Public Website & CRM"',
       '"R. Sundaram"',
       '"9585777772"',
       '"Brand new luxury courtyard villa with DTCP approval, modular kitchen, and private borewell."'
@@ -2471,6 +2550,7 @@ function downloadSamplePropertiesCSV() {
       '""',
       '""',
       '"Available"',
+      '"CRM / Referral Only"',
       '"K. Mohan"',
       '"9842412345"',
       '"Prime corner residential plot with 40ft blacktop road, clear Patta, and instant bank loan approval."'

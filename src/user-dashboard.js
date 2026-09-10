@@ -768,7 +768,8 @@ export function renderUserDashboard() {
         userId: user.id,
         userEmail: user.email,
         approvalStatus: isEdit ? (propToEdit.approvalStatus || 'Pending Approval') : 'Pending Approval',
-        status: isEdit ? (propToEdit.status || 'Pending Approval') : 'Pending Approval'
+        status: isEdit ? (propToEdit.status || 'Pending Approval') : 'Pending Approval',
+        availability: isEdit ? (propToEdit.availability || 'Pending Approval') : 'Pending Approval'
       };
 
       if (isEdit) {
