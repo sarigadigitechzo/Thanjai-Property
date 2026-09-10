@@ -4,6 +4,7 @@ import { sendWhatsAppMessage, getActiveWhatsAppApiKey } from '../utils/whatsapp.
 import { canViewAllLeads, filterLeadsForActiveUser, getActiveAdminUser } from '../utils/adminUsersStore.js';
 import { getLeads, saveLeads, initLeadsView } from './LeadsView.js';
 import { getProperties } from '../utils/propertiesStore.js';
+import { addAuditLog } from '../utils/siteImagesStore.js';
 import { openPropertyModalById } from '../components/PropertyDetailModal.js';
 
 export function getInquiredPropertiesForLead(lead, allLeads = []) {
@@ -210,6 +211,45 @@ export function renderLeadDetailView(id) {
     });
   } catch (err) {}
 
+  // Load partner shares related to this lead
+  let leadShares = [];
+  try {
+    let rawShared = JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {};
+    let allSharedList = [];
+    if (Array.isArray(rawShared)) {
+      allSharedList = rawShared;
+    } else if (typeof rawShared === 'object') {
+      Object.values(rawShared).forEach(val => {
+        if (Array.isArray(val)) allSharedList.push(...val);
+        else if (val && typeof val === 'object') allSharedList.push(val);
+      });
+    }
+
+    const partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
+    const lId = String(lead.id || '');
+    const lName = String(lead.name || '').trim().toLowerCase();
+    const lPhone = String(lead.phone || lead.mobile || '').replace(/\D/g, '');
+
+    leadShares = allSharedList.filter(s => {
+      if (!s) return false;
+      const sLeadId = String(s.leadId || '');
+      const sName = String(s.name || '').trim().toLowerCase();
+      const sPhone = String(s.phone || '').replace(/\D/g, '');
+
+      if (sLeadId && (sLeadId === lId || sLeadId === lId.replace('LEAD-', ''))) return true;
+      if (lName && sName && (lName.includes(sName) || sName.includes(lName))) return true;
+      if (lPhone && sPhone && lPhone.length >= 7 && (sPhone.includes(lPhone) || lPhone.includes(sPhone))) return true;
+      return false;
+    }).map(s => {
+      const pMatch = partners.find(p => String(p.id) === String(s.partnerId));
+      return {
+        ...s,
+        partnerCompany: (pMatch && (pMatch.company || pMatch.name)) || s.partnerCompany || 'Channel Partner',
+        partnerType: (pMatch && (pMatch.type || pMatch.role)) || 'Partner'
+      };
+    });
+  } catch (err) {}
+
   const formatCurrency = (val) => val ? '₹' + parseInt(val).toLocaleString('en-IN') : '—';
 
   const formatLeadCreatedDate = (leadObj) => {
@@ -247,6 +287,80 @@ export function renderLeadDetailView(id) {
     }
     return defaultFallback;
   };
+
+  // Construct Unified 360 Activity Timeline
+  const rawTimeline = Array.isArray(lead.timeline) ? lead.timeline : [];
+  const unifiedActivities = [];
+
+  // 1. Existing lead timeline events
+  rawTimeline.forEach(evt => {
+    if (!evt) return;
+    const msg = evt.message || evt.action || evt.text || (typeof evt === 'string' ? evt : 'Lead activity recorded');
+    const author = getTimelineAuthor(evt.author || evt.by || evt.user, lead);
+    const rawD = evt.date || evt.timestamp || evt.createdAt || lead.createdAt;
+    const d = new Date(rawD);
+    const validDate = isNaN(d.getTime()) ? new Date(lead.createdAt || Date.now()) : d;
+    unifiedActivities.push({
+      id: evt.id || `act-${Math.random()}`,
+      type: evt.type || (msg.toLowerCase().includes('whatsapp') ? 'whatsapp' : (msg.toLowerCase().includes('partner') ? 'partner' : (msg.toLowerCase().includes('visit') ? 'visit' : 'activity'))),
+      message: msg,
+      author: author,
+      date: validDate,
+      dateFormatted: validDate.toLocaleString('en-GB', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      original: evt
+    });
+  });
+
+  // 2. Site visits events (auto-merge into timeline)
+  leadVisits.forEach(v => {
+    if (!v) return;
+    const visitDateStr = v.date ? `${v.date} ${v.month || ''}, ${v.hours || ''}:${v.mins || '00'} ${v.ampm || ''}` : (v.visitDate || 'Scheduled');
+    const vType = v.visitType || (v.property && v.property.includes('Pre-Inspection') ? 'Staff Site Pre-Inspection' : 'Customer Property Tour');
+    const statusText = v.status === 'Completed' ? 'Completed' : (v.status === 'Cancelled' ? 'Cancelled' : 'Scheduled');
+    const visitMsg = `${vType} [${statusText}]: ${v.property || 'Property Tour'} (${visitDateStr})`;
+    
+    // Avoid duplicates if already present in timeline
+    const isDup = unifiedActivities.some(a => a.type === 'visit' && (a.message.includes(visitDateStr) || (v.id && String(a.original?.id) === String(v.id))));
+    if (!isDup) {
+      let visitD = v.visitDate ? new Date(v.visitDate) : (v.createdAt ? new Date(v.createdAt) : new Date());
+      if (isNaN(visitD.getTime())) visitD = new Date();
+      unifiedActivities.push({
+        id: v.id || `visit-${Math.random()}`,
+        type: 'visit',
+        message: visitMsg,
+        details: v.outcome ? `Outcome / Notes: ${v.outcome}` : '',
+        author: v.assignedTo || lead.assignTo || 'Site Operations',
+        date: visitD,
+        dateFormatted: visitD.toLocaleString('en-GB', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        original: v
+      });
+    }
+  });
+
+  // 3. Partner shares events (auto-merge into timeline)
+  leadShares.forEach(s => {
+    if (!s) return;
+    const pName = s.partnerCompany || 'Channel Partner';
+    const shareMsg = `Shared requirement with partner "${pName}" (Client contact protected)`;
+    const isDup = unifiedActivities.some(a => a.type === 'partner' && (a.message.includes(pName) || (s.id && String(a.original?.id) === String(s.id))));
+    if (!isDup) {
+      let shareD = s.sharedDate ? new Date(s.sharedDate) : (s.createdAt ? new Date(s.createdAt) : new Date());
+      if (isNaN(shareD.getTime())) shareD = new Date();
+      unifiedActivities.push({
+        id: s.id || `share-${Math.random()}`,
+        type: 'partner',
+        message: shareMsg,
+        details: s.notes ? `Handover note: ${s.notes}` : '',
+        author: s.sharedBy || 'Admin',
+        date: shareD,
+        dateFormatted: shareD.toLocaleString('en-GB', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        original: s
+      });
+    }
+  });
+
+  // Sort activities newest first
+  unifiedActivities.sort((a, b) => b.date.getTime() - a.date.getTime());
   
   const allStages = [
     { label: 'New Lead', wa: false },
@@ -456,15 +570,21 @@ ${(() => {
           
           <div class="os-card" style="padding: 24px; background: var(--os-white); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-              <h3 style="font-size: 1rem; font-weight: 600; color: var(--os-dark);">Matching properties</h3>
-              <button class="os-btn-secondary" id="btn-find-matches" style="font-size: 0.85rem; padding: 4px 12px; height: auto;"><i class="ri-search-line"></i> Find matches</button>
+              <div>
+                <h3 style="font-size: 1rem; font-weight: 700; color: var(--os-dark); margin: 0;">Matching properties</h3>
+                <p style="font-size: 0.8rem; color: var(--os-gray-500); margin: 2px 0 0 0;">Search by Property ID (e.g. TP-7780), name or location and send directly to customer WhatsApp</p>
+              </div>
+              <button class="os-btn-secondary" id="btn-find-matches" style="font-size: 0.85rem; padding: 6px 14px; height: auto; display: flex; align-items: center; gap: 6px;"><i class="ri-sparkling-fill" style="color: #ea580c;"></i> Auto Match</button>
             </div>
-            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
-              <input type="text" class="os-input" id="matching-properties-search" placeholder="Search properties by title, location or description..." style="flex: 1;" />
-              <button class="os-btn-secondary" id="btn-search-matches">Search</button>
+            <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+              <div style="position: relative; flex: 1;">
+                <i class="ri-search-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--os-gray-400); font-size: 0.95rem;"></i>
+                <input type="text" class="os-input" id="matching-properties-search" placeholder="Search by Property ID (e.g. TP-7780), title, location, type..." style="width: 100%; padding-left: 36px;" />
+              </div>
+              <button class="os-btn-secondary" id="btn-search-matches" style="padding: 0 16px; font-weight: 600;">Search</button>
             </div>
             <div id="matching-properties-results">
-              <p style="font-size: 0.9rem; color: var(--os-gray-500); line-height: 1.5;">Click "Find matches" to score current inventory against this lead's requirements, or search properties manually above.</p>
+              <p style="font-size: 0.9rem; color: var(--os-gray-500); line-height: 1.5;">Type a Property ID (e.g. TP-7780) or keyword above, or click "Auto Match" to score inventory against this lead's requirement.</p>
             </div>
           </div>
 
@@ -473,23 +593,52 @@ ${(() => {
               <div class="ld-tab active" data-target="pane-timeline" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: #ea580c; border-bottom: 2px solid #ea580c; cursor: pointer; white-space: nowrap;">Activity timeline</div>
               <div class="ld-tab" data-target="pane-whatsapp" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer; white-space: nowrap;">WhatsApp (${(lead.timeline && lead.timeline.filter(e => e.type === 'whatsapp').length) || 0})</div>
               <div class="ld-tab" data-target="pane-visits" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer; white-space: nowrap;">Site Visits & Inspections (${leadVisits.length})</div>
-              <div class="ld-tab" data-target="pane-partner" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer; white-space: nowrap;">Partner shares (0)</div>
+              <div class="ld-tab" data-target="pane-partner" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer; white-space: nowrap;">Partner shares (${leadShares.length})</div>
               <div class="ld-tab" data-target="pane-pipeline" style="padding: 16px; font-size: 0.9rem; font-weight: 500; color: var(--os-gray-500); cursor: pointer; white-space: nowrap;">Pipeline history</div>
             </div>
             
             <div class="ld-tab-content" style="padding: 24px;">
               
+              <!-- Activity Timeline Tab -->
               <div class="ld-tab-pane" id="pane-timeline" style="display: block;">
-                ${(!lead.timeline || lead.timeline.length === 0) ? '<p style="color: var(--os-gray-400); font-size: 0.9rem;">No activity recorded yet.</p>' : `
+                ${unifiedActivities.length === 0 ? '<p style="color: var(--os-gray-400); font-size: 0.9rem;">No activity recorded yet.</p>' : `
                 <div class="timeline" style="position: relative; padding-left: 20px;">
                   <div style="position: absolute; left: 6px; top: 8px; bottom: 0; width: 2px; background: #fed7aa;"></div>
-                  ${lead.timeline.map(event => `
-                    <div class="timeline-item" style="position: relative; margin-bottom: 24px;">
-                      <div style="position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: ${event.type === 'whatsapp' ? '#16a34a' : '#ea580c'}; border: 2px solid var(--os-white);"></div>
-                      <div style="font-weight: 500; color: ${event.type === 'whatsapp' ? '#16a34a' : 'var(--os-dark)'}; font-size: 0.95rem; margin-bottom: 4px;">${event.message}</div>
-                      <div style="font-size: 0.8rem; color: var(--os-gray-400);">${getTimelineAuthor(event.author, lead)} - ${new Date(event.date).toLocaleString([], {year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</div>
-                    </div>
-                  `).join('')}
+                  ${unifiedActivities.map(act => {
+                    let dotColor = '#ea580c';
+                    let titleColor = 'var(--os-dark)';
+                    let typeBadge = '';
+
+                    if (act.type === 'whatsapp') {
+                      dotColor = '#16a34a';
+                      titleColor = '#16a34a';
+                    } else if (act.type === 'visit') {
+                      dotColor = '#c2410c';
+                      titleColor = '#9a3412';
+                      typeBadge = '<span style="background: #ffedd5; color: #c2410c; font-size: 0.72rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 6px;">Site Visit</span>';
+                    } else if (act.type === 'partner') {
+                      dotColor = '#2563eb';
+                      titleColor = '#1e40af';
+                      typeBadge = '<span style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-left: 6px;">Partner Share</span>';
+                    }
+
+                    return `
+                      <div class="timeline-item" style="position: relative; margin-bottom: 24px;">
+                        <div style="position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: ${dotColor}; border: 2px solid var(--os-white); box-shadow: 0 0 0 2px rgba(0,0,0,0.05);"></div>
+                        <div style="font-weight: 600; color: ${titleColor}; font-size: 0.95rem; margin-bottom: 4px;">
+                          ${act.message} ${typeBadge}
+                        </div>
+                        ${act.details ? `
+                          <div style="font-size: 0.82rem; color: #475569; background: #f8fafc; padding: 4px 10px; border-radius: 4px; border-left: 2px solid ${dotColor}; margin: 4px 0 6px 0;">
+                            ${act.details}
+                          </div>
+                        ` : ''}
+                        <div style="font-size: 0.8rem; color: var(--os-gray-400);">
+                          ${act.author} - ${act.dateFormatted}
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
                 </div>
                 `}
               </div>
@@ -581,8 +730,61 @@ ${(() => {
 
               <!-- Partner shares Tab -->
               <div class="ld-tab-pane" id="pane-partner" style="display: none;">
-                 <p style="color: var(--os-gray-400); font-size: 0.9rem;">No partner shares yet.</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                  <div>
+                    <h3 style="font-size: 1rem; font-weight: 700; color: var(--os-dark); margin: 0;">Partner Network Shares</h3>
+                    <p style="font-size: 0.8rem; color: var(--os-gray-500); margin: 2px 0 0 0;">Qualified requirements transferred to verified channel partners</p>
+                  </div>
+                  <button class="os-btn-primary" id="btn-tab-share-partner" style="font-size: 0.82rem; padding: 6px 14px; background: var(--os-luxury-orange); border: none; border-radius: 6px; color: #fff; cursor: pointer; display: flex; align-items: center; gap: 6px;"><i class="ri-share-forward-line"></i> Share with Partner</button>
+                </div>
+                ${leadShares.length === 0 ? `
+                  <div style="padding: 32px 20px; text-align: center; background: #f8fafc; border-radius: 8px; border: 1px dashed var(--os-border-light);">
+                    <i class="ri-user-shared-line" style="font-size: 2rem; color: var(--os-gray-400); margin-bottom: 8px; display: block;"></i>
+                    <p style="color: var(--os-gray-500); font-size: 0.9rem; margin-bottom: 12px;">No partner shares recorded for this lead yet.</p>
+                    <button class="os-btn-primary" id="btn-empty-share-partner" style="font-size: 0.85rem; padding: 6px 16px; background: var(--os-luxury-orange); border: none; color: #fff; border-radius: 6px; cursor: pointer;">Share with First Partner</button>
+                  </div>
+                ` : `
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${leadShares.map(s => `
+                      <div style="background: #f8fafc; border: 1px solid var(--os-border-light); border-radius: 8px; padding: 14px 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="background: #eff6ff; color: #1d4ed8; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                              <i class="ri-briefcase-4-line"></i> ${s.partnerType || 'Channel Partner'}
+                            </span>
+                            <span style="background: #ecfdf5; color: #047857; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;">
+                              ${s.status || 'Shared'}
+                            </span>
+                            <span style="font-weight: 700; font-size: 0.95rem; color: var(--os-dark);">
+                              <i class="ri-building-2-line" style="color: var(--os-luxury-orange);"></i> ${s.partnerCompany}
+                            </span>
+                          </div>
+                          <span style="font-size: 0.8rem; color: var(--os-gray-500);">
+                            <i class="ri-time-line"></i> ${s.sharedDate || 'Recently shared'}
+                          </span>
+                        </div>
+                        <div style="font-size: 0.86rem; color: #334155; margin-bottom: 6px; display: flex; gap: 16px; flex-wrap: wrap;">
+                          <span><i class="ri-map-pin-line" style="color: #ea580c;"></i> <strong>Area:</strong> ${s.location || 'Thanjavur'}</span>
+                          <span><i class="ri-home-4-line" style="color: #ea580c;"></i> <strong>Type:</strong> ${s.propertyType || 'Property'}</span>
+                          <span><i class="ri-money-rupee-circle-line" style="color: #ea580c;"></i> <strong>Budget:</strong> ${s.budget || '—'}</span>
+                        </div>
+                        ${s.notes ? `
+                          <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; margin-top: 8px; font-size: 0.84rem; color: #475569;">
+                            <strong>Handover Note:</strong> ${s.notes}
+                          </div>
+                        ` : ''}
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.78rem; color: var(--os-gray-400); border-top: 1px solid #f1f5f9; padding-top: 8px;">
+                          <span>Shared by <strong>${s.sharedBy || 'Admin'}</strong></span>
+                          <span style="color: #059669; font-weight: 600;"><i class="ri-shield-check-line"></i> Client phone protected</span>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                `}
               </div>
+
+            </div>
+          </div>
 
             </div>
           </div>
@@ -780,18 +982,18 @@ ${(() => {
               <div class="os-custom-select" style="width: 100%;">
                 <div class="select-value">Welcome message</div>
                 <i class="ri-arrow-down-s-line"></i>
-                <div class="select-dropdown">
+                <div class="select-dropdown" style="max-height: 240px; overflow-y: auto;">
                   <div class="select-option selected">Welcome message</div>
-                  <div class="select-option">No template (auto message)</div>
-                  <div class="select-option">Bank loan assistance (auto)</div>
-                  <div class="select-option">Follow-up message</div>
-                  <div class="select-option">Initial contact intro (auto)</div>
-                  <div class="select-option">Negotiation check-in (auto)</div>
-                  <div class="select-option">Partner transfer notification</div>
-                  <div class="select-option">Registration testimonial & referral (auto)</div>
-                  <div class="select-option">Site visit confirmation (auto)</div>
-                  <div class="select-option">Site visit feedback request (auto)</div>
+                  <div class="select-option">Initial contact intro</div>
+                  <div class="select-option">Property follow-up check-in</div>
+                  <div class="select-option">Site visit confirmation</div>
                   <div class="select-option">Site visit reminder</div>
+                  <div class="select-option">Site visit feedback request</div>
+                  <div class="select-option">Negotiation check-in</div>
+                  <div class="select-option">Bank loan assistance</div>
+                  <div class="select-option">Partner transfer notification</div>
+                  <div class="select-option">Registration testimonial & review</div>
+                  <div class="select-option">General property update</div>
                 </div>
               </div>
             </div>
@@ -848,7 +1050,7 @@ ${(() => {
         </div>
         <div class="os-modal-footer">
           <button class="os-btn-secondary" id="cancel-whatsapp-modal" style="border: 1px solid var(--os-gray-200); padding: 8px 16px; border-radius: 8px; font-weight: 500; cursor: pointer; color: var(--os-gray-700); background: #fff;">Cancel</button>
-          <button class="os-btn-primary" id="confirm-whatsapp-modal" style="background: #e27c3e; border: none; border-radius: 8px; padding: 8px 16px; color: #fff; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+          <button class="os-btn-primary" id="confirm-send-whatsapp" style="background: #e27c3e; border: none; border-radius: 8px; padding: 8px 16px; color: #fff; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px;">
             <i class="ri-send-plane-fill"></i> Send
           </button>
         </div>
@@ -1017,6 +1219,7 @@ export async function initLeadDetailView(id) {
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       visits.push({
         id: visitData.id,
+        leadId: currentLead.id,
         date: day,
         month: monthNames[dateObj.getMonth()],
         hours: hours.toString(),
@@ -1032,6 +1235,18 @@ export async function initLeadDetailView(id) {
         isNew: true
       });
       localStorage.setItem('thanjai_visits', JSON.stringify(visits));
+
+      // Append to lead timeline
+      const visitDateFormatted = `${day} ${monthNames[dateObj.getMonth()]} ${dateObj.getFullYear()}, ${hours}:${mins} ${ampm}`;
+      if (!currentLead.timeline) currentLead.timeline = [];
+      currentLead.timeline.unshift({
+        type: 'visit',
+        message: `${visitType} scheduled: ${propertyText.trim() || 'Property'} (${visitDateFormatted})`,
+        details: notesVal ? `Notes: ${notesVal}` : '',
+        author: staffVal,
+        date: new Date().toISOString()
+      });
+      saveAndSyncLeads(leads, id);
 
       scheduleModal.classList.remove('show');
       showToast(`${visitType} scheduled for ${currentLead.name}!`, 'success');
@@ -1050,11 +1265,19 @@ export async function initLeadDetailView(id) {
 
   const shareModal = document.getElementById('share-partner-modal');
   const btnShare = document.getElementById('btn-share-partner');
+  const btnTabShare = document.getElementById('btn-tab-share-partner');
+  const btnEmptyShare = document.getElementById('btn-empty-share-partner');
   const closeShare = document.getElementById('close-share-modal');
   const cancelShare = document.getElementById('cancel-share-modal');
   const confirmShare = document.getElementById('confirm-share-modal');
 
-  if (btnShare) btnShare.addEventListener('click', () => shareModal.classList.add('show'));
+  const openShareModal = () => {
+    if (shareModal) shareModal.classList.add('show');
+  };
+
+  if (btnShare) btnShare.addEventListener('click', openShareModal);
+  if (btnTabShare) btnTabShare.addEventListener('click', openShareModal);
+  if (btnEmptyShare) btnEmptyShare.addEventListener('click', openShareModal);
   if (closeShare) closeShare.addEventListener('click', () => shareModal.classList.remove('show'));
   if (cancelShare) cancelShare.addEventListener('click', () => shareModal.classList.remove('show'));
   if (confirmShare) {
@@ -1100,6 +1323,7 @@ export async function initLeadDetailView(id) {
 
       const newSharedRecord = {
         id: `SL-${Date.now()}`,
+        leadId: currentLead.id,
         name: currentLead.name || 'Client',
         phone: maskedPhone,
         location: clientLoc,
@@ -1238,23 +1462,33 @@ export async function initLeadDetailView(id) {
           const pSharedRecord = { ...newSharedRecord, id: `SL-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`, partnerId: String(p.id) };
           try {
             await fetchFromAPI('/shared_leads', { method: 'POST', body: JSON.stringify(pSharedRecord) });
-            p.leads = (p.leads || 0) + 1;
-            if (sendWa) sendWhatsAppToPartner(p);
           } catch (err) {
             console.error("Failed to save shared lead to DB:", err);
           }
+
+          if (typeof sharedLeadsData !== 'object' || Array.isArray(sharedLeadsData)) {
+            sharedLeadsData = {};
+          }
+          if (!sharedLeadsData[p.id]) sharedLeadsData[p.id] = [];
+          sharedLeadsData[p.id].push(pSharedRecord);
+
+          p.leads = (p.leads || 0) + 1;
+          if (sendWa) sendWhatsAppToPartner(p);
         }
         
         if (sendWa) sendWhatsAppToClient(null);
 
+        localStorage.setItem('thanjai_shared_leads', JSON.stringify(sharedLeadsData));
         localStorage.setItem('thanjai_partners', JSON.stringify(partners));
 
         // Add timeline
         if (!currentLead.timeline) currentLead.timeline = [];
         currentLead.timeline.unshift({
-          action: 'Broadcasted requirement to ALL channel partners (Client contact protected)',
-          date: dateStr,
-          by: activeUser.fullName || 'Admin'
+          type: 'partner',
+          message: 'Broadcasted requirement to ALL channel partners (Client contact protected)',
+          details: notes ? `Notes: ${notes}` : '',
+          author: activeUser.fullName || 'Admin',
+          date: new Date().toISOString()
         });
         saveAndSyncLeads(leads, id);
 
@@ -1264,6 +1498,8 @@ export async function initLeadDetailView(id) {
         if (content) {
           content.innerHTML = renderLeadDetailView(id);
           initLeadDetailView(id);
+          const partnerTab = document.querySelector('.ld-tab[data-target="pane-partner"]');
+          if (partnerTab) partnerTab.click();
         }
       } else if (partnerId) {
         newSharedRecord.partnerId = String(partnerId);
@@ -1272,6 +1508,13 @@ export async function initLeadDetailView(id) {
         } catch (err) {
           console.error("Failed to save shared lead to DB:", err);
         }
+
+        if (typeof sharedLeadsData !== 'object' || Array.isArray(sharedLeadsData)) {
+          sharedLeadsData = {};
+        }
+        if (!sharedLeadsData[partnerId]) sharedLeadsData[partnerId] = [];
+        sharedLeadsData[partnerId].push(newSharedRecord);
+        localStorage.setItem('thanjai_shared_leads', JSON.stringify(sharedLeadsData));
 
         const partnerIdx = partners.findIndex(p => String(p.id) === String(partnerId));
         let partnerName = 'Partner';
@@ -1288,9 +1531,11 @@ export async function initLeadDetailView(id) {
         // Add timeline
         if (!currentLead.timeline) currentLead.timeline = [];
         currentLead.timeline.unshift({
-          action: `Shared requirement with partner "${partnerName}" (Client contact protected)`,
-          date: dateStr,
-          by: activeUser.fullName || 'Admin'
+          type: 'partner',
+          message: `Shared requirement with partner "${partnerName}" (Client contact protected)`,
+          details: notes ? `Handover note: ${notes}` : '',
+          author: activeUser.fullName || 'Admin',
+          date: new Date().toISOString()
         });
         saveAndSyncLeads(leads, id);
 
@@ -1300,6 +1545,8 @@ export async function initLeadDetailView(id) {
         if (content) {
           content.innerHTML = renderLeadDetailView(id);
           initLeadDetailView(id);
+          const partnerTab = document.querySelector('.ld-tab[data-target="pane-partner"]');
+          if (partnerTab) partnerTab.click();
         }
       } else {
         showToast('Please select a partner company or Broadcast option.', 'ri-alert-line');
@@ -1322,24 +1569,43 @@ export async function initLeadDetailView(id) {
   const btnWA = document.getElementById('btn-send-whatsapp');
   const closeWA = document.getElementById('close-whatsapp-modal');
   const cancelWA = document.getElementById('cancel-whatsapp-modal');
-  const confirmWA = document.getElementById('confirm-whatsapp-modal');
+  const confirmWA = document.getElementById('confirm-send-whatsapp') || document.getElementById('confirm-whatsapp-modal');
   const waTabBtns = document.querySelectorAll('.wa-tab-btn');
   const waTabContents = document.querySelectorAll('.wa-tab-content');
 
   function getCampaignKey(templateText) {
     const campaignMap = {
+      "Initial contact intro (Single property showcase)": "initial_contact_intro",
+      "Welcome message (Intro)": "welcome_message",
       "Welcome message": "welcome_message",
-      "No template (auto message)": "general_property_update",
-      "Bank loan assistance (auto)": "bank_loan_assistance",
-      "Follow-up message": "property_follow_up",
-      "Initial contact intro (auto)": "initial_contact_intro",
-      "Negotiation check-in (auto)": "negotiation_check_in",
-      "Partner lead assignment": "partner_lead_assignment",
+      "Initial contact intro": "initial_contact_intro",
+      "Property follow-up check-in": "property_follow_up",
+      "Site visit confirmation": "site_visit_confirmation",
+      "Site visit reminder (Today)": "site_visit_reminder",
+      "Site visit reminder": "site_visit_reminder",
+      "Site visit feedback request": "site_visit_feedback",
+      "Site visit feedback": "site_visit_feedback",
+      "Negotiation check-in": "negotiation_check_in",
+      "Bank loan assistance": "bank_loan_assistance",
+      "Partner transfer notification (client)": "partner_transfer_notification",
       "Partner transfer notification": "partner_transfer_notification",
-      "Registration testimonial & referral (auto)": "registration_testimonial_referral",
+      "Registration testimonial & review": "registration_testimonial_referral",
+      "General property update": "general_property_update",
+      // Backwards-compatible aliases
+      "Initial contact intro (auto)": "initial_contact_intro",
+      "Welcome message": "welcome_message",
+      "Follow-up nurture message": "property_follow_up",
+      "Follow-up message": "property_follow_up",
+      "Site visit scheduled (auto)": "site_visit_confirmation",
       "Site visit confirmation (auto)": "site_visit_confirmation",
       "Site visit feedback request (auto)": "site_visit_feedback",
-      "Site visit reminder": "site_visit_reminder"
+      "Site visit reminder": "site_visit_reminder",
+      "Negotiation check-in (auto)": "negotiation_check_in",
+      "Bank loan assistance (auto)": "bank_loan_assistance",
+      "Registration testimonial & deal won (auto)": "registration_testimonial_referral",
+      "Registration testimonial & referral (auto)": "registration_testimonial_referral",
+      "General property update (direct)": "general_property_update",
+      "No template (auto message)": "general_property_update"
     };
     return campaignMap[templateText] || templateText.replace('(auto)', '').trim().toLowerCase().replace(/[\s-]/g, '_');
   }
@@ -1348,39 +1614,69 @@ export async function initLeadDetailView(id) {
     const container = document.getElementById('wa-params-fields');
     if (!container) return;
 
-    const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
-    const matchedProp = allProps.find(p => p.title === currentLead.propertyMatch) || allProps[0] || {};
+    const allProps = getProperties() || JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+    
+    // Bidirectional property lookup checking ID and Title
+    let matchedProp = null;
+    const reqStr = (currentLead.propertyMatch || currentLead.propertyId || currentLead.requirement || '').trim();
+    if (reqStr) {
+      matchedProp = allProps.find(p => 
+        String(p.id).toLowerCase() === reqStr.toLowerCase() || 
+        p.title.toLowerCase() === reqStr.toLowerCase() ||
+        (p.id && reqStr.toUpperCase().includes(p.id.toUpperCase()))
+      );
+    }
+    if (!matchedProp && currentLead.propertyId) {
+      matchedProp = allProps.find(p => String(p.id) === String(currentLead.propertyId));
+    }
+    if (!matchedProp && allProps.length > 0) {
+      matchedProp = allProps[0];
+    }
+
     const clientName = currentLead.name || "Client";
-    const propTitle = currentLead.propertyMatch || matchedProp.title || currentLead.type || "DTCP Approved Plot - Trichy Road";
-    const propLoc = matchedProp.location || currentLead.city || "Medical College Road, Thanjavur";
-    const propPrice = matchedProp.priceFormatted || "₹ 25 Lakhs";
-    const validMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(propLoc + ' Thanjavur')}`;
-    const validReviewUrl = "https://g.page/r/thanjaiproperty/review";
+    const isIdString = /^TP-?\d+$/i.test(reqStr);
+    const propTitle = matchedProp ? matchedProp.title : (!isIdString && reqStr ? reqStr : (currentLead.type || "DTCP Approved Plot"));
+    const propLoc = (matchedProp && matchedProp.location) ? matchedProp.location : (currentLead.city || currentLead.location || "Thanjavur");
+    const propPrice = (matchedProp && (matchedProp.priceFormatted || matchedProp.price)) ? (matchedProp.priceFormatted || `₹ ${parseInt(matchedProp.price).toLocaleString('en-IN')}`) : "₹ 25 - 50 Lakhs";
 
     let fieldsHtml = '';
 
+    const propSelectHtml = `
+      <div style="margin-bottom: 8px;">
+        <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
+          <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory (Auto-fills values)
+        </label>
+        <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
+          ${allProps.map(p => {
+            const isSel = matchedProp && String(matchedProp.id) === String(p.id);
+            return `<option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" data-price="${p.priceFormatted || ''}" ${isSel ? 'selected' : ''}>
+              [${p.id}] ${p.title} (${p.location || 'Thanjavur'})
+            </option>`;
+          }).join('')}
+        </select>
+      </div>
+    `;
+
     switch (templateKey) {
-      case "property_shortlist":
+      case "initial_contact_intro":
         fieldsHtml = `
+          ${propSelectHtml}
           <div>
             <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
             <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
           </div>
-          <div style="margin-top: 10px;">
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:flex; justify-content:space-between; margin-bottom:6px;">
-              <span><i class="ri-checkbox-multiple-line" style="color:#e27c3e;"></i> Select 3 Properties from Inventory</span>
-              <span id="wa-shortlist-count" style="color:#e27c3e; font-weight:800;">3/3 selected</span>
-            </label>
-            <div id="wa-shortlist-picker" style="max-height: 180px; overflow-y: auto; background: #ffffff; border: 1px solid #cbd5e0; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; gap: 6px;">
-              ${allProps.map((p, idx) => `
-                <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; cursor: pointer; padding: 6px; border-radius: 4px; background: #f8fafc; border: 1px solid #e2e8f0;">
-                  <input type="checkbox" class="wa-prop-checkbox" data-title="${p.title}" data-price="${p.priceFormatted || 'Price on request'}" data-loc="${p.location || 'Thanjavur'}" ${idx < 3 ? 'checked' : ''} style="margin-top: 2px; accent-color: #e27c3e;" />
-                  <div style="flex: 1;">
-                    <div style="font-weight: 700; color: #1e293b;">${p.title}</div>
-                    <div style="color: #64748b; font-size: 0.73rem;">📍 ${p.location || 'Thanjavur'} • 💰 <strong style="color:#e27c3e;">${p.priceFormatted || ''}</strong></div>
-                  </div>
-                </label>
-              `).join('')}
+          <div style="margin-top:8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
+            <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Location</label>
+              <input type="text" id="wa-p3" class="os-input" value="${propLoc}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Price</label>
+              <input type="text" id="wa-p4" class="os-input" value="${propPrice}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
           </div>
         `;
@@ -1395,38 +1691,21 @@ export async function initLeadDetailView(id) {
         `;
         break;
 
-      case "initial_contact_intro":
+      case "property_follow_up":
         fieldsHtml = `
-          <div style="margin-bottom: 8px;">
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
-              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory (Auto-fills Title, Location & Price)
-            </label>
-            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
-              ${allProps.map(p => `
-                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" data-price="${p.priceFormatted || '₹ 25 Lakhs'}" ${p.title === propTitle ? 'selected' : ''}>
-                  ${p.title} (${p.location || 'Thanjavur'} - ${p.priceFormatted || ''})
-                </option>
-              `).join('')}
-            </select>
+          ${propSelectHtml}
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+            <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
-              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
             <div>
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
               <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <div>
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Location</label>
               <input type="text" id="wa-p3" class="os-input" value="${propLoc}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Price</label>
-              <input type="text" id="wa-p4" class="os-input" value="${propPrice}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
           </div>
         `;
@@ -1434,18 +1713,7 @@ export async function initLeadDetailView(id) {
 
       case "site_visit_confirmation":
         fieldsHtml = `
-          <div style="margin-bottom: 8px;">
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
-              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory (Auto-fills Title, Location & Map Link)
-            </label>
-            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
-              ${allProps.map(p => `
-                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" data-price="${p.priceFormatted || ''}" ${p.title === propTitle ? 'selected' : ''}>
-                  ${p.title} (${p.location || 'Thanjavur'})
-                </option>
-              `).join('')}
-            </select>
-          </div>
+          ${propSelectHtml}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <div>
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
@@ -1456,7 +1724,7 @@ export async function initLeadDetailView(id) {
               <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
             <div>
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Date & Time</label>
               <input type="text" id="wa-p3" class="os-input" value="Tomorrow at 10:30 AM" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
@@ -1466,65 +1734,40 @@ export async function initLeadDetailView(id) {
               <input type="text" id="wa-p4" class="os-input" value="${propLoc}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
           </div>
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{5}} Google Map Link (Direct URL)</label>
-            <input type="url" id="wa-p5" class="os-input" value="${validMapUrl}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+          <div style="margin-top:8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{5}} Google Maps Link</label>
+            <input type="text" id="wa-p5" class="os-input" value="https://maps.google.com/?q=${encodeURIComponent(propLoc + ' Thanjavur')}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
           </div>
         `;
         break;
 
       case "site_visit_reminder":
         fieldsHtml = `
-          <div style="margin-bottom: 8px;">
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
-              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory
-            </label>
-            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
-              ${allProps.map(p => `
-                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" ${p.title === propTitle ? 'selected' : ''}>
-                  ${p.title} (${p.location || 'Thanjavur'})
-                </option>
-              `).join('')}
-            </select>
+          ${propSelectHtml}
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+            <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
-              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
-              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
+          <div style="margin-top:8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
+            <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
             <div>
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Time</label>
-              <input type="text" id="wa-p3" class="os-input" value="11:00 AM" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+              <input type="text" id="wa-p3" class="os-input" value="10:30 AM" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
             <div>
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Meeting Point</label>
-              <input type="text" id="wa-p4" class="os-input" value="${propLoc}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+              <input type="text" id="wa-p4" class="os-input" value="${propLoc} Site Location" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
           </div>
         `;
         break;
 
       case "site_visit_feedback":
-      case "bank_loan_assistance":
         fieldsHtml = `
-          <div style="margin-bottom: 8px;">
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
-              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory
-            </label>
-            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
-              ${allProps.map(p => `
-                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" ${p.title === propTitle ? 'selected' : ''}>
-                  ${p.title}
-                </option>
-              `).join('')}
-            </select>
-          </div>
+          ${propSelectHtml}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <div>
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
@@ -1534,55 +1777,33 @@ export async function initLeadDetailView(id) {
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
               <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
-          </div>
-        `;
-        break;
-
-      case "property_follow_up":
-        fieldsHtml = `
-          <div style="margin-bottom: 8px;">
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
-              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory
-            </label>
-            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
-              ${allProps.map(p => `
-                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" ${p.title === propTitle ? 'selected' : ''}>
-                  ${p.title} (${p.location || 'Thanjavur'})
-                </option>
-              `).join('')}
-            </select>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
-              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
-              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-          </div>
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Location</label>
-            <input type="text" id="wa-p3" class="os-input" value="${propLoc}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
           </div>
         `;
         break;
 
       case "negotiation_check_in":
         fieldsHtml = `
-          <div style="margin-bottom: 8px;">
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
-              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Property from Inventory
-            </label>
-            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
-              ${allProps.map(p => `
-                <option value="${p.id}" data-title="${p.title}" data-loc="${p.location || 'Thanjavur'}" ${p.title === propTitle ? 'selected' : ''}>
-                  ${p.title}
-                </option>
-              `).join('')}
-            </select>
+          ${propSelectHtml}
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+            <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
           </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
+              <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Proposed Meeting Date / Time</label>
+              <input type="text" id="wa-p3" class="os-input" value="This Week at Our Office" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
+          </div>
+        `;
+        break;
+
+      case "bank_loan_assistance":
+        fieldsHtml = `
+          ${propSelectHtml}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <div>
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
@@ -1591,45 +1812,6 @@ export async function initLeadDetailView(id) {
             <div>
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
               <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-          </div>
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Suggested Meeting Time</label>
-            <input type="text" id="wa-p3" class="os-input" value="Tomorrow at 4:00 PM" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-          </div>
-        `;
-        break;
-
-      case "partner_lead_assignment":
-        fieldsHtml = `
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Partner Name</label>
-              <input type="text" id="wa-p1" class="os-input" value="Partner" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Client Name</label>
-              <input type="text" id="wa-p2" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Preferred Location</label>
-              <input type="text" id="wa-p3" class="os-input" value="${currentLead.city || currentLead.location || 'Thanjavur'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Requirement</label>
-              <input type="text" id="wa-p4" class="os-input" value="${currentLead.requirement || currentLead.type || 'Plot'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-          </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{5}} Budget Range</label>
-              <input type="text" id="wa-p5" class="os-input" value="${currentLead.budget || '₹ 25 - 50 Lakhs'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{6}} Notes</label>
-              <input type="text" id="wa-p6" class="os-input" value="${currentLead.notes || 'Immediate buyer requirement.'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
           </div>
         `;
@@ -1643,18 +1825,18 @@ export async function initLeadDetailView(id) {
               <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
             <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} City Name</label>
-              <input type="text" id="wa-p2" class="os-input" value="${currentLead.city || 'Thanjavur'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Location / Area</label>
+              <input type="text" id="wa-p2" class="os-input" value="${propLoc}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
             <div>
               <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Executive Name</label>
-              <input type="text" id="wa-p3" class="os-input" value="${currentLead.assignTo || 'S. Vijayaraghavan'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+              <input type="text" id="wa-p3" class="os-input" value="${currentLead.assignTo || 'Area Specialist'}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
             <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Executive Mobile</label>
-              <input type="text" id="wa-p4" class="os-input" value="+91 95783 11506" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{4}} Mobile Number</label>
+              <input type="text" id="wa-p4" class="os-input" value="+91 84899 96852" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
           </div>
         `;
@@ -1662,31 +1844,20 @@ export async function initLeadDetailView(id) {
 
       case "registration_testimonial_referral":
         fieldsHtml = `
-          <div style="margin-bottom: 8px;">
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">
-              <i class="ri-building-line" style="color:#e27c3e;"></i> Choose Registered Property from Inventory
-            </label>
-            <select id="wa-quick-prop-select" class="os-input" style="width: 100%; padding: 6px 10px; font-size: 0.85rem; background: #ffffff;">
-              ${allProps.map(p => `
-                <option value="${p.id}" data-title="${p.title}" ${p.title === propTitle ? 'selected' : ''}>
-                  ${p.title}
-                </option>
-              `).join('')}
-            </select>
+          ${propSelectHtml}
+          <div>
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
+            <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;">
             <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{1}} Client Name</label>
-              <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
-            </div>
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Registered Property Title</label>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title</label>
               <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
-          </div>
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Google Review Link</label>
-            <input type="url" id="wa-p3" class="os-input" value="${validReviewUrl}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Review Link</label>
+              <input type="text" id="wa-p3" class="os-input" value="https://g.page/r/thanjai-property/review" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+            </div>
           </div>
         `;
         break;
@@ -1700,13 +1871,13 @@ export async function initLeadDetailView(id) {
               <input type="text" id="wa-p1" class="os-input" value="${clientName}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
             <div>
-              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Ref / Title</label>
+              <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{2}} Property Title / Ref</label>
               <input type="text" id="wa-p2" class="os-input" value="${propTitle}" style="width:100%; padding:6px 10px; font-size:0.85rem;" />
             </div>
           </div>
-          <div>
-            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Update Details</label>
-            <input type="text" id="wa-p3" class="os-input" value="Your property verification file has been processed." style="width:100%; padding:6px 10px; font-size:0.85rem;" />
+          <div style="margin-top:8px;">
+            <label style="font-size:0.75rem; font-weight:700; color:#4a5568; display:block; margin-bottom:4px;">{{3}} Custom Message Content</label>
+            <input type="text" id="wa-p3" class="os-input" value="Thank you for your inquiry with Thanjai Property desk." style="width:100%; padding:6px 10px; font-size:0.85rem;" />
           </div>
         `;
         break;
@@ -1726,36 +1897,19 @@ export async function initLeadDetailView(id) {
           const p2Input = container.querySelector('#wa-p2');
           const p3Input = container.querySelector('#wa-p3');
           const p4Input = container.querySelector('#wa-p4');
-          const p5Input = container.querySelector('#wa-p5');
 
           if (p2Input) p2Input.value = selTitle;
-          if (p3Input && templateKey === 'initial_contact_intro') p3Input.value = selLoc;
-          if (p4Input && (templateKey === 'initial_contact_intro' || templateKey === 'site_visit_confirmation')) {
-            p4Input.value = templateKey === 'initial_contact_intro' ? selPrice : selLoc;
-          }
-          if (p5Input) {
-            p5Input.value = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selLoc + ' Thanjavur')}`;
+          if (templateKey === 'initial_contact_intro') {
+            if (p3Input) p3Input.value = selLoc;
+            if (p4Input) p4Input.value = selPrice || '₹ 25 - 50 Lakhs';
+          } else if (templateKey === 'property_follow_up') {
+            if (p3Input) p3Input.value = selLoc;
+          } else if (templateKey === 'site_visit_confirmation') {
+            if (p4Input) p4Input.value = selLoc;
+            const p5Input = container.querySelector('#wa-p5');
+            if (p5Input) p5Input.value = `https://maps.google.com/?q=${encodeURIComponent(selLoc + ' Thanjavur')}`;
           }
         }
-      });
-    }
-
-    // Attach listener to 3-Property Shortlist checkboxes if rendered
-    const checkboxes = container.querySelectorAll('.wa-prop-checkbox');
-    const countDisplay = container.querySelector('#wa-shortlist-count');
-    if (checkboxes.length > 0) {
-      checkboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-          const checkedCount = container.querySelectorAll('.wa-prop-checkbox:checked').length;
-          if (checkedCount > 3) {
-            cb.checked = false;
-            alert('You can select a maximum of 3 properties for the shortlist.');
-            return;
-          }
-          if (countDisplay) {
-            countDisplay.innerText = `${container.querySelectorAll('.wa-prop-checkbox:checked').length}/3 selected`;
-          }
-        });
       });
     }
   }
@@ -1800,11 +1954,11 @@ export async function initLeadDetailView(id) {
       if (isCustom) {
         const customText = document.querySelector('#wa-tab-custom textarea').value;
         if (!customText.trim()) {
-          alert('Please enter a custom message.');
+          showToast('Please enter a custom message.', 'warning');
           return;
         }
-        campaignName = 'custom_message';
-        templateParams = [activeLead.name || "Client", customText];
+        campaignName = 'general_property_update';
+        templateParams = [activeLead.name || "Client", "Direct Message", customText];
       } else {
         const templateText = document.querySelector('#wa-tab-template .os-custom-select .select-value').innerText.trim();
         campaignName = getCampaignKey(templateText);
@@ -1825,42 +1979,44 @@ export async function initLeadDetailView(id) {
 
         // Collect custom edited parameter values from fields if present
         const p1 = document.getElementById('wa-p1')?.value.trim() || activeLead.name || "Client";
-        const p2 = document.getElementById('wa-p2')?.value.trim() || activeLead.propertyMatch || "DTCP Approved Plot";
-        const p3 = document.getElementById('wa-p3')?.value.trim() || "Tomorrow at 10:30 AM";
-        const p4 = document.getElementById('wa-p4')?.value.trim() || "Thanjavur";
-        const p5 = document.getElementById('wa-p5')?.value.trim() || "https://www.google.com/maps/search/?api=1&query=Thanjavur";
+        const p2 = document.getElementById('wa-p2')?.value.trim() || "DTCP Approved Plot";
+        const p3 = document.getElementById('wa-p3')?.value.trim() || activeLead.location || "Thanjavur";
+        const p4 = document.getElementById('wa-p4')?.value.trim() || "₹ 25 - 50 Lakhs";
+        const p5 = document.getElementById('wa-p5')?.value.trim() || "https://maps.google.com/?q=Thanjavur";
         const p6 = document.getElementById('wa-p6')?.value.trim() || activeLead.notes || "Immediate requirement.";
 
         const cName = campaignName.replace(/(_ta|_hi|_te|_kn|_ml)$/, ''); 
         
+        // Exact parameter count matching SmartPing approved template signatures
         switch (cName) {
-          case "property_shortlist":
           case "welcome_message":
             templateParams = [p1];
             break;
+
           case "site_visit_feedback":
           case "bank_loan_assistance":
             templateParams = [p1, p2];
             break;
-          case "general_property_update":
+
           case "property_follow_up":
           case "negotiation_check_in":
           case "registration_testimonial_referral":
+          case "general_property_update":
             templateParams = [p1, p2, p3];
             break;
-          case "partner_transfer_notification":
-          case "site_visit_reminder":
+
           case "initial_contact_intro":
+          case "site_visit_reminder":
+          case "partner_transfer_notification":
             templateParams = [p1, p2, p3, p4];
             break;
+
           case "site_visit_confirmation":
             templateParams = [p1, p2, p3, p4, p5];
             break;
-          case "partner_lead_assignment":
-            templateParams = [p1, p2, p3, p4, p5, p6];
-            break;
+
           default:
-            templateParams = [p1];
+            templateParams = [p1, p2, p3, p4].filter(Boolean);
             break;
         }
       }
@@ -1882,9 +2038,10 @@ export async function initLeadDetailView(id) {
         const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
         const selectedPropTitle = templateParams[1] || '';
         const matchedProp = allProps.find(p => p.title === selectedPropTitle) || allProps[0];
-        const propImg = (matchedProp && matchedProp.images && matchedProp.images[0])
-          ? matchedProp.images[0]
-          : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+        let propImg = (matchedProp && matchedProp.images && matchedProp.images[0]) ? matchedProp.images[0] : "";
+        if (!propImg || !propImg.startsWith('http')) {
+          propImg = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+        }
         customMedia = { url: propImg, filename: "property.jpg" };
       }
 
@@ -2116,19 +2273,61 @@ export async function initLeadDetailView(id) {
   const searchInput = document.getElementById('matching-properties-search');
   const resultsContainer = document.getElementById('matching-properties-results');
 
-  function renderMatchingProperties(results) {
+  function renderMatchingProperties(results, currentQuery = '') {
     if (!results || results.length === 0) {
-      if(resultsContainer) resultsContainer.innerHTML = `<p style="font-size: 0.9rem; color: var(--os-gray-500); padding: 12px 0;">No matching properties found.</p>`;
+      if (resultsContainer) {
+        resultsContainer.innerHTML = `
+          <div style="text-align: center; padding: 24px 16px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; margin-top: 12px;">
+            <i class="ri-search-eye-line" style="font-size: 1.8rem; color: #94a3b8; display: block; margin-bottom: 6px;"></i>
+            <p style="font-size: 0.88rem; color: var(--os-gray-500); margin: 0;">No matching properties found ${currentQuery ? `for "${currentQuery}"` : ''}.</p>
+            <p style="font-size: 0.78rem; color: var(--os-gray-400); margin: 4px 0 0 0;">Try searching by Property ID (e.g. TP-7780, TPC-001), road name, or area.</p>
+          </div>
+        `;
+      }
       return;
     }
-    let html = '<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px; max-height: 300px; overflow-y: auto;">';
+
+    const leads = getLeads() || [];
+    const currentLead = leads.find(l => String(l.id) === String(id)) || lead;
+    const clientPhone = (currentLead?.whatsapp || currentLead?.mobile || currentLead?.phone || '').replace(/\D/g, '');
+    const phoneDisplay = clientPhone.length >= 10 ? `+91 ${clientPhone.slice(-10)}` : 'No mobile number';
+
+    let html = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; margin-bottom: 8px;">
+        <span style="font-size: 0.82rem; font-weight: 700; color: #475569;">
+          Found <span style="color: #ea580c;">${results.length}</span> matching propert${results.length === 1 ? 'y' : 'ies'}
+        </span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="btn-select-all-props" style="background: none; border: none; font-size: 0.78rem; color: #ea580c; font-weight: 600; cursor: pointer; text-decoration: underline;">Select all</button>
+          <span style="color: #cbd5e1;">|</span>
+          <button type="button" id="btn-deselect-all-props" style="background: none; border: none; font-size: 0.78rem; color: #64748b; font-weight: 600; cursor: pointer; text-decoration: underline;">Deselect</button>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 4px;">
+    `;
+
     results.forEach(p => {
+      const pImg = Array.isArray(p.images) && p.images[0] ? p.images[0] : (typeof p.images === 'string' ? p.images : 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=400&q=80');
+      const cleanPrice = (p.priceFormatted || (p.price ? `₹ ${parseInt(p.price).toLocaleString('en-IN')}` : 'Price on Request'))
+        .replace(/â,¹/g, '₹')
+        .replace(/â‚¹/g, '₹');
+
       html += `
-        <label style="display: flex; gap: 12px; padding: 12px; border: 1px solid var(--os-gray-200); border-radius: 8px; align-items: center; cursor: pointer; background: #f8fafc; transition: all 0.2s ease;">
-          <input type="checkbox" class="match-prop-checkbox" value="${p.id}" />
-          <div style="flex: 1;">
-            <div style="font-weight: 600; font-size: 0.9rem; color: var(--os-dark);">${p.title}</div>
-            <div style="font-size: 0.8rem; color: var(--os-gray-500); margin-top: 4px;">${p.location} • <span style="color: #ea580c; font-weight: 500;">${p.priceFormatted || p.price}</span></div>
+        <label class="match-prop-item" data-propid="${p.id}" style="display: flex; gap: 10px; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; align-items: center; cursor: pointer; background: #ffffff; transition: all 0.2s ease;">
+          <input type="checkbox" class="match-prop-checkbox" value="${p.id}" style="width: 17px; height: 17px; accent-color: #ea580c; cursor: pointer; flex-shrink: 0;" />
+          <img src="${pImg}" alt="${p.title}" style="width: 46px; height: 46px; border-radius: 6px; object-fit: cover; flex-shrink: 0; border: 1px solid #cbd5e1;" />
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+              <span style="font-size: 0.72rem; font-weight: 800; color: #ea580c; background: #fff7ed; border: 1px solid #fed7aa; padding: 1px 6px; border-radius: 4px; font-family: monospace;">${p.id}</span>
+              <span style="font-size: 0.7rem; font-weight: 700; color: #475569; background: #f1f5f9; padding: 1px 6px; border-radius: 4px;">${p.type || p.categoryLabel || 'Property'}</span>
+            </div>
+            <div style="font-weight: 700; font-size: 0.86rem; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.title}">${p.title}</div>
+            <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px; display: flex; align-items: center; gap: 6px;">
+              <span style="color: #ea580c; font-weight: 800;">${cleanPrice}</span>
+              <span>•</span>
+              <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.location || 'Thanjavur'}</span>
+              ${p.size ? `<span style="color: #94a3b8; font-size: 0.72rem;">(${p.size})</span>` : ''}
+            </div>
           </div>
         </label>
       `;
@@ -2136,21 +2335,214 @@ export async function initLeadDetailView(id) {
     html += '</div>';
     
     html += `
-      <div style="margin-top: 16px; text-align: right;">
-        <button id="inline-send-wa-btn" class="os-btn-primary" style="background: #25d366; border-color: #25d366;"><i class="ri-whatsapp-line"></i> Send via WhatsApp</button>
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="font-size: 0.78rem; color: #64748b;">
+          <i class="ri-whatsapp-fill" style="color: #25d366; vertical-align: middle;"></i> Target: <strong>${phoneDisplay}</strong>
+        </div>
+        <button id="inline-send-wa-btn" class="os-btn-primary" style="background: #25d366; border-color: #25d366; font-weight: 700; font-size: 0.85rem; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px; color: #fff; cursor: pointer; border-radius: 6px; box-shadow: 0 2px 4px rgba(37,211,102,0.2);">
+          <i class="ri-whatsapp-line" style="font-size: 1.05rem;"></i> Send Selected via WhatsApp
+        </button>
       </div>
     `;
 
-    if(resultsContainer) {
+    if (resultsContainer) {
       resultsContainer.innerHTML = html;
+
+      // Select All / Deselect Listeners
+      const btnSelectAll = document.getElementById('btn-select-all-props');
+      const btnDeselectAll = document.getElementById('btn-deselect-all-props');
+      const checkboxes = document.querySelectorAll('.match-prop-checkbox');
+
+      const updateItemStyles = () => {
+        checkboxes.forEach(cb => {
+          const itemLabel = cb.closest('.match-prop-item');
+          if (itemLabel) {
+            if (cb.checked) {
+              itemLabel.style.borderColor = '#ea580c';
+              itemLabel.style.background = '#fffaf5';
+            } else {
+              itemLabel.style.borderColor = '#e2e8f0';
+              itemLabel.style.background = '#ffffff';
+            }
+          }
+        });
+      };
+
+      if (btnSelectAll) {
+        btnSelectAll.addEventListener('click', () => {
+          checkboxes.forEach(cb => { cb.checked = true; });
+          updateItemStyles();
+        });
+      }
+
+      if (btnDeselectAll) {
+        btnDeselectAll.addEventListener('click', () => {
+          checkboxes.forEach(cb => { cb.checked = false; });
+          updateItemStyles();
+        });
+      }
+
+      checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateItemStyles);
+      });
+
+      // Send via WhatsApp Button Handler
       const inlineBtn = document.getElementById('inline-send-wa-btn');
       if (inlineBtn) {
-        inlineBtn.addEventListener('click', () => {
-          const checkedProps = document.querySelectorAll('.match-prop-checkbox:checked');
-          if (checkedProps.length > 0) {
-            alert(`Message sent successfully via WhatsApp along with ${checkedProps.length} property link(s).`);
-          } else {
-            alert('Please select at least one property to send.');
+        inlineBtn.addEventListener('click', async () => {
+          const checkedBoxes = Array.from(document.querySelectorAll('.match-prop-checkbox:checked'));
+          if (checkedBoxes.length === 0) {
+            showToast('Please select at least one property to send.', 'warning');
+            return;
+          }
+
+          const leads = getLeads() || [];
+          const currentLead = leads.find(l => String(l.id) === String(id)) || lead;
+          if (!currentLead) return;
+
+          const rawPhone = currentLead.whatsapp || currentLead.mobile || currentLead.phone || '';
+          const digits = rawPhone.replace(/\D/g, '');
+          if (!digits || digits.length < 10) {
+            showToast(`No valid 10-digit mobile number found for ${currentLead.name || 'this lead'}.`, 'warning');
+            return;
+          }
+          const destPhone = '+91' + digits.slice(-10);
+
+          const allProps = getProperties() || JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+          const selectedPropIds = checkedBoxes.map(cb => cb.value);
+          const selectedProps = selectedPropIds.map(pId => allProps.find(p => String(p.id) === String(pId))).filter(Boolean);
+
+          if (selectedProps.length === 0) {
+            showToast('Selected properties could not be loaded.', 'warning');
+            return;
+          }
+
+          const clientName = currentLead.name || 'Valued Client';
+          const count = selectedProps.length;
+
+          // Format property recommendation message with clean pricing and direct discovery link
+          const baseUrl = window.location.origin;
+          const propListText = selectedProps.map((p, idx) => {
+            const cleanPrice = (p.priceFormatted || (p.price ? `₹ ${parseInt(p.price).toLocaleString('en-IN')}` : 'Contact Desk'))
+              .replace(/â,¹/g, '₹')
+              .replace(/â‚¹/g, '₹');
+            return `${idx + 1}. *[${p.id}] ${p.title}*\n   📍 Location: ${p.location || 'Thanjavur'}\n   💰 Price: ${cleanPrice}${p.size ? `\n   📐 Size: ${p.size}` : ''}\n   🔗 Details: ${baseUrl}/#discover?id=${encodeURIComponent(p.id)}`;
+          }).join('\n\n');
+
+          const singleProp = count === 1 ? selectedProps[0] : null;
+          const cleanSinglePrice = singleProp ? (singleProp.priceFormatted || (singleProp.price ? `₹ ${parseInt(singleProp.price).toLocaleString('en-IN')}` : '₹ 25 - 50 Lakhs')).replace(/â,¹/g, '₹').replace(/â‚¹/g, '₹') : '';
+
+          const messageText = count === 1
+            ? `Vanakkam ${clientName} 🌾\n\nHere are the details for ${singleProp.title}:\n📍 Location: ${singleProp.location || 'Thanjavur'}\n💰 Price: ${cleanSinglePrice}\n\nWith reference to your reply, we can discuss further to get more information!\n\nBest regards,\nThanjai Property Team`
+            : `Hello ${clientName},\n\nHere are ${count} handpicked properties matching your requirement from Thanjai Property:\n\n${propListText}\n\nFor site visits, verified Patta documents, or direct negotiations, please connect with our official desk at +91 84899 96852.\n\nWarm regards,\nThanjai Property`;
+
+          const originalBtnHtml = inlineBtn.innerHTML;
+          inlineBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sending WhatsApp...';
+          inlineBtn.disabled = true;
+
+          try {
+            let targetCampaign = count === 1 ? 'initial_contact_intro' : 'general_property_update';
+            let targetParams = count === 1
+              ? [clientName, singleProp.title, singleProp.location || 'Thanjavur', cleanSinglePrice]
+              : [clientName, `${count} Matching Properties Recommended`, messageText];
+
+            let customMedia = undefined;
+            if (count === 1 && singleProp.images && singleProp.images[0]) {
+              customMedia = { url: singleProp.images[0], filename: 'property.jpg' };
+            }
+
+            // Dispatch via official SmartPing relay
+            const dispatchRes = await sendWhatsAppMessage({
+              campaignName: targetCampaign,
+              destination: destPhone,
+              userName: clientName,
+              leadId: currentLead.id,
+              messageText: messageText,
+              templateParams: targetParams,
+              media: customMedia
+            });
+
+            let authorName = 'Super Admin';
+            try {
+              const activeUser = JSON.parse(localStorage.getItem('thanjai_active_user'));
+              if (activeUser) authorName = activeUser.fullName || activeUser.name || authorName;
+            } catch(e) {}
+
+            // 1. Post to whatsapp_logs table in database
+            fetchFromAPI('/whatsapp_logs', {
+              method: 'POST',
+              body: JSON.stringify({
+                id: `WA-${Date.now()}`,
+                leadId: currentLead.id,
+                phone: destPhone,
+                sender: authorName,
+                recipientName: clientName,
+                message: messageText,
+                type: 'outbound'
+              })
+            }).catch(err => console.warn("Log API notice:", err));
+
+            // 2. Add to Audit Log
+            addAuditLog({
+              action: `Sent Property Match (${selectedPropIds.join(', ')})`,
+              module: 'WhatsApp Log',
+              details: `Sent ${count} property links to ${clientName} (${destPhone}).`
+            });
+
+            // 3. Update shortlistedProperties on Lead
+            if (!currentLead.shortlistedProperties) currentLead.shortlistedProperties = [];
+            selectedProps.forEach(p => {
+              if (!currentLead.shortlistedProperties.some(sp => String(sp.id) === String(p.id) || sp.title === p.title)) {
+                currentLead.shortlistedProperties.push({
+                  id: p.id,
+                  title: p.title,
+                  price: p.priceFormatted || p.price,
+                  location: p.location
+                });
+              }
+            });
+
+            // 4. Append to Lead Timeline
+            if (!currentLead.timeline) currentLead.timeline = [];
+            const isSuccess = dispatchRes && (dispatchRes.success === true || dispatchRes.success === 'true');
+            currentLead.timeline.unshift({
+              type: 'whatsapp',
+              message: `Sent ${count} matching properties (${selectedProps.map(p => p.id).join(', ')}) via WhatsApp to ${destPhone}`,
+              details: selectedProps.map(p => `• [${p.id}] ${p.title} (${p.location || 'Thanjavur'})`).join('\n'),
+              author: authorName,
+              date: new Date().toISOString()
+            });
+
+            saveAndSyncLeads(leads, id);
+
+            if (isSuccess) {
+              showToast(`WhatsApp sent to ${clientName} with ${count} property link(s)!`, 'ri-checkbox-circle-fill');
+            } else {
+              showToast(`WhatsApp dispatched via SmartPing to ${destPhone}!`, 'ri-checkbox-circle-fill');
+            }
+
+            // Re-render Lead Detail View to refresh timeline & WhatsApp tab counter
+            const osContent = document.getElementById('os-content');
+            if (osContent) {
+              osContent.innerHTML = renderLeadDetailView(id);
+              initLeadDetailView(id);
+              // Preserve search results if a search was performed
+              if (currentQuery) {
+                const newSearchInput = document.getElementById('matching-properties-search');
+                if (newSearchInput) {
+                  newSearchInput.value = currentQuery;
+                  doSearch(currentQuery);
+                }
+              }
+            }
+          } catch (err) {
+            console.error("WhatsApp dispatch error:", err);
+            showToast('Failed to dispatch WhatsApp: ' + err.message, 'warning');
+          } finally {
+            if (inlineBtn) {
+              inlineBtn.innerHTML = originalBtnHtml;
+              inlineBtn.disabled = false;
+            }
           }
         });
       }
@@ -2158,21 +2550,53 @@ export async function initLeadDetailView(id) {
   }
 
   function doSearch(query) {
-    const allProps = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
-    const lowerQuery = query.toLowerCase();
+    const allProps = getProperties() || JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+    const trimmed = (query || '').trim().toLowerCase();
+    if (!trimmed) {
+      if (resultsContainer) {
+        resultsContainer.innerHTML = `<p style="font-size: 0.9rem; color: var(--os-gray-500); line-height: 1.5;">Type a Property ID (e.g. TP-7780, TPC-001), title, location or type to search, or click "Auto Match".</p>`;
+      }
+      return;
+    }
+
+    const cleanNumOnly = trimmed.replace(/\D/g, '');
+
     const matches = allProps.filter(p => {
-      return (p.title && p.title.toLowerCase().includes(lowerQuery)) ||
-             (p.location && p.location.toLowerCase().includes(lowerQuery)) ||
-             (p.description && p.description.toLowerCase().includes(lowerQuery)) ||
-             (p.categoryLabel && p.categoryLabel.toLowerCase().includes(lowerQuery)) ||
-             (p.category && p.category.toLowerCase().includes(lowerQuery));
+      if (!p) return false;
+      const pId = String(p.id || '').toLowerCase();
+      const pIdNum = pId.replace(/\D/g, '');
+      const pTitle = String(p.title || '').toLowerCase();
+      const pLoc = String(p.location || '').toLowerCase();
+      const pDistrict = String(p.district || '').toLowerCase();
+      const pAddress = String(p.address || '').toLowerCase();
+      const pType = String(p.type || '').toLowerCase();
+      const pCat = String(p.category || '').toLowerCase();
+      const pCatLabel = String(p.categoryLabel || '').toLowerCase();
+      const pDesc = String(p.description || '').toLowerCase();
+      const pPriceStr = String(p.priceFormatted || p.price || '').toLowerCase();
+
+      // Check ID match (full string or numeric portion)
+      if (pId.includes(trimmed)) return true;
+      if (cleanNumOnly && cleanNumOnly.length >= 2 && pIdNum && pIdNum.includes(cleanNumOnly)) return true;
+
+      // Check all descriptive fields
+      return pTitle.includes(trimmed) ||
+             pLoc.includes(trimmed) ||
+             pDistrict.includes(trimmed) ||
+             pAddress.includes(trimmed) ||
+             pType.includes(trimmed) ||
+             pCat.includes(trimmed) ||
+             pCatLabel.includes(trimmed) ||
+             pDesc.includes(trimmed) ||
+             pPriceStr.includes(trimmed);
     });
-    renderMatchingProperties(matches);
+
+    renderMatchingProperties(matches, trimmed);
   }
 
   if (btnSearchMatches) {
     btnSearchMatches.addEventListener('click', () => {
-      doSearch(searchInput.value || '');
+      doSearch(searchInput ? searchInput.value : '');
     });
   }
 
@@ -2180,31 +2604,45 @@ export async function initLeadDetailView(id) {
     searchInput.addEventListener('input', (e) => {
       doSearch(searchInput.value || '');
     });
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        doSearch(searchInput.value || '');
+      }
+    });
   }
 
   if (btnFindMatches) {
     btnFindMatches.addEventListener('click', () => {
-      const allProps = getProperties() || [];
+      const allProps = getProperties() || JSON.parse(localStorage.getItem('thanjai_properties')) || [];
       
       const leads = getLeads() || [];
       const currentLead = leads.find(l => String(l.id) === String(id)) || lead;
       if (!currentLead) return;
 
-      const typeFilter = currentLead.type ? currentLead.type.toLowerCase() : '';
+      const typeFilter = (currentLead.type || currentLead.requirement || '').toLowerCase().trim();
+      const areaFilter = (currentLead.city || currentLead.area || currentLead.location || '').toLowerCase().trim();
       const budgetMax = currentLead.budgetMax ? parseInt(currentLead.budgetMax) : 9999999999;
       
       const matches = allProps.filter(p => {
-        const pType = p.type ? p.type.toLowerCase() : '';
-        const pCategory = p.category ? p.category.toLowerCase() : '';
-        const isTypeMatch = !typeFilter || pType.includes(typeFilter) || pCategory.includes(typeFilter);
+        if (!p) return false;
+        const pType = (p.type || '').toLowerCase();
+        const pCategory = (p.category || '').toLowerCase();
+        const pCategoryLabel = (p.categoryLabel || '').toLowerCase();
+        const pLoc = (p.location || '').toLowerCase();
+        const pDistrict = (p.district || '').toLowerCase();
+
+        const isTypeMatch = !typeFilter || pType.includes(typeFilter) || pCategory.includes(typeFilter) || pCategoryLabel.includes(typeFilter) || typeFilter.includes(pType);
+        const isAreaMatch = !areaFilter || pLoc.includes(areaFilter) || pDistrict.includes(areaFilter) || areaFilter.includes(pLoc);
         
         let pPrice = p.price || 0;
-        if(typeof pPrice === 'string') pPrice = parseInt(pPrice.replace(/\D/g, '')) || 0;
+        if (typeof pPrice === 'string') pPrice = parseInt(pPrice.replace(/\D/g, '')) || 0;
         
         const isBudgetMatch = pPrice <= budgetMax;
-        return isTypeMatch && isBudgetMatch;
+        return (isTypeMatch || isAreaMatch) && isBudgetMatch;
       });
-      renderMatchingProperties(matches);
+
+      renderMatchingProperties(matches.length > 0 ? matches : allProps.slice(0, 10));
     });
   }
   const saveEdit = document.getElementById('btn-save-edit');

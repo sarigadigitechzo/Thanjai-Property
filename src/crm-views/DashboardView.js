@@ -2,6 +2,8 @@ import { getProperties } from '../utils/propertiesStore.js';
 import { getRegisteredUsers } from '../utils/userAuthStore.js';
 import { filterLeadsForActiveUser, canViewAllLeads, getActiveAdminUser } from '../utils/adminUsersStore.js';
 import { fetchFromAPI } from '../utils/api.js';
+import { getLeads } from './LeadsView.js';
+import { getCachedStats, saveCachedStats } from '../utils/leadsDb.js';
 import { getLeads, consolidateLeadsByBuyer } from './LeadsView.js';
 
 export function renderDashboardView() {
@@ -11,9 +13,13 @@ export function renderDashboardView() {
   const rawLeads = getLeads() || [];
   const userRawLeads = filterLeadsForActiveUser(rawLeads, activeUser);
   const isSuperOrAll = canViewAllLeads(activeUser);
+  
+  const cachedStats = isSuperOrAll ? getCachedStats() : null;
   const leads = isSuperOrAll ? userRawLeads : consolidateLeadsByBuyer(userRawLeads);
   const storedTotal = parseInt(localStorage.getItem('thanjai_total_leads_count') || '12505', 10);
-  const totalLeads = isSuperOrAll ? Math.max(rawLeads.length, storedTotal || 0) : leads.length;
+  const totalLeads = isSuperOrAll 
+    ? Math.max(rawLeads.length, (cachedStats && typeof cachedStats.totalLeads === 'number') ? cachedStats.totalLeads : (storedTotal || 0)) 
+    : leads.length;
   
   // Calculate new leads today
   const now = new Date();
@@ -21,7 +27,7 @@ export function renderDashboardView() {
   const todayDayNum = String(now.getDate()).padStart(2, '0');
   const todayMonthName = now.toLocaleString('en-US', { month: 'short' }).toLowerCase();
 
-  const newToday = leads.filter(l => {
+  const computedNewToday = leads.filter(l => {
     if (!l) return false;
     if (l.createdAt) {
       const d = new Date(l.createdAt);
@@ -33,12 +39,19 @@ export function renderDashboardView() {
     return false;
   }).length;
 
+  const newToday = (cachedStats && typeof cachedStats.newToday === 'number') ? cachedStats.newToday : computedNewToday;
 
   // Pipeline Distribution
-  const newCount = leads.filter(l => l.status?.toLowerCase() === 'new').length;
-  const followUpCount = leads.filter(l => ['contacted', 'property shared', 'follow up'].includes(l.status?.toLowerCase())).length;
-  const siteVisitCount = leads.filter(l => ['interested'].includes(l.status?.toLowerCase())).length;
-  const regCount = leads.filter(l => ['negotiation', 'converted'].includes(l.status?.toLowerCase())).length;
+  const computedNewCount = leads.filter(l => l.status?.toLowerCase() === 'new').length;
+  const computedFollowUpCount = leads.filter(l => ['contacted', 'property shared', 'follow up'].includes(l.status?.toLowerCase())).length;
+  const computedSiteVisitCount = leads.filter(l => ['interested'].includes(l.status?.toLowerCase())).length;
+  const computedRegCount = leads.filter(l => ['negotiation', 'converted'].includes(l.status?.toLowerCase())).length;
+
+  const newCount = (cachedStats && typeof cachedStats.newPipelineCount === 'number') ? cachedStats.newPipelineCount : computedNewCount;
+  const followUpCount = (cachedStats && typeof cachedStats.followupsDue === 'number' ? cachedStats.followupsDue : ((cachedStats && typeof cachedStats.followupPipelineCount === 'number') ? cachedStats.followupPipelineCount : computedFollowUpCount));
+  const siteVisitCount = (cachedStats && typeof cachedStats.siteVisitPipelineCount === 'number') ? cachedStats.siteVisitPipelineCount : computedSiteVisitCount;
+  const regCount = (cachedStats && typeof cachedStats.registerPipelineCount === 'number') ? cachedStats.registerPipelineCount : computedRegCount;
+
   const pipeTotal = newCount + followUpCount + siteVisitCount + regCount || 1; // avoid division by 0
 
   const newPct = Math.round((newCount / pipeTotal) * 100);
@@ -50,6 +63,26 @@ export function renderDashboardView() {
   const flexFup = Math.max(fupPct, 10);
   const flexSv = Math.max(svPct, 10);
   const flexReg = Math.max(regPct, 10);
+
+  // Dynamic Sources Breakdown from Cached Stats
+  let manualSrc = 11, waSrc = 3, webSrc = 3, refSrc = 1;
+  let totalSrc = 18;
+  if (cachedStats && cachedStats.sources && typeof cachedStats.totalLeads === 'number' && cachedStats.totalLeads > 0) {
+    manualSrc = 0; waSrc = 0; webSrc = 0; refSrc = 0;
+    const s = cachedStats.sources;
+    Object.keys(s).forEach(k => {
+      const val = s[k] || 0;
+      if (k.includes('manual') || k.includes('walk') || !k) manualSrc += val;
+      else if (k.includes('whatsapp') || k.includes('wa')) waSrc += val;
+      else if (k.includes('website') || k.includes('form') || k.includes('site')) webSrc += val;
+      else refSrc += val;
+    });
+    totalSrc = manualSrc + waSrc + webSrc + refSrc || cachedStats.totalLeads;
+  }
+  const manualPct = Math.round((manualSrc / totalSrc) * 100);
+  const waPct = Math.round((waSrc / totalSrc) * 100);
+  const webPct = Math.round((webSrc / totalSrc) * 100);
+  const refPct = Math.round((refSrc / totalSrc) * 100);
 
   const firstName = (activeUser.fullName || activeUser.name || 'Admin').split(' ')[0];
 
@@ -224,13 +257,13 @@ export function renderDashboardView() {
             <div class="donut-svg-wrapper">
               <svg viewBox="0 0 100 100" class="premium-donut">
                 <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(0,0,0,0.03)" stroke-width="12"></circle>
-                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-deep-brown)" stroke-width="12" stroke-dasharray="153.2 251.2" stroke-dashoffset="0" data-tooltip="Manual: 11 (61%)" data-source="manual"></circle>
-                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-luxury-orange)" stroke-width="12" stroke-dasharray="42.7 251.2" stroke-dashoffset="-153.2" data-tooltip="WhatsApp: 3 (17%)" data-source="whatsapp"></circle>
-                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-gold)" stroke-width="12" stroke-dasharray="42.7 251.2" stroke-dashoffset="-195.9" data-tooltip="Website: 3 (17%)" data-source="website"></circle>
-                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-rich-red)" stroke-width="12" stroke-dasharray="12.6 251.2" stroke-dashoffset="-238.6" data-tooltip="Referral: 1 (5%)" data-source="referral"></circle>
+                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-deep-brown)" stroke-width="12" stroke-dasharray="153.2 251.2" stroke-dashoffset="0" data-tooltip="Manual: ${manualSrc} (${manualPct}%)" data-source="manual"></circle>
+                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-luxury-orange)" stroke-width="12" stroke-dasharray="42.7 251.2" stroke-dashoffset="-153.2" data-tooltip="WhatsApp: ${waSrc} (${waPct}%)" data-source="whatsapp"></circle>
+                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-gold)" stroke-width="12" stroke-dasharray="42.7 251.2" stroke-dashoffset="-195.9" data-tooltip="Website: ${webSrc} (${webPct}%)" data-source="website"></circle>
+                <circle class="donut-slice" cx="50" cy="50" r="40" fill="none" stroke="var(--os-rich-red)" stroke-width="12" stroke-dasharray="12.6 251.2" stroke-dashoffset="-238.6" data-tooltip="Referral: ${refSrc} (${refPct}%)" data-source="referral"></circle>
               </svg>
               <div class="donut-center-info">
-                <span class="dc-total count-up" id="source-doughnut-total">18</span>
+                <span class="dc-total count-up" id="source-doughnut-total">${totalSrc.toLocaleString()}</span>
                 <span class="dc-lbl">Total Leads</span>
               </div>
             </div>
@@ -242,44 +275,44 @@ export function renderDashboardView() {
             <div class="source-glass-card hover-lift" data-source="manual">
               <div class="sgc-header">
                 <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-deep-brown);"></span> Manual Entry</div>
-                <div class="sgc-badge"><span class="count-up" id="src-manual-badge">11</span> Leads</div>
+                <div class="sgc-badge"><span class="count-up" id="src-manual-badge">${manualSrc.toLocaleString()}</span> Leads</div>
               </div>
-              <div class="sgc-perc count-up" id="src-manual-perc">61%</div>
+              <div class="sgc-perc count-up" id="src-manual-perc">${manualPct}%</div>
               <div class="sgc-track">
-                <div class="sgc-fill" id="src-manual-fill" style="width: 61%; background: var(--os-deep-brown);"></div>
+                <div class="sgc-fill" id="src-manual-fill" style="width: ${manualPct}%; background: var(--os-deep-brown);"></div>
               </div>
             </div>
 
             <div class="source-glass-card hover-lift" data-source="whatsapp">
               <div class="sgc-header">
                 <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-luxury-orange);"></span> WhatsApp</div>
-                <div class="sgc-badge"><span class="count-up" id="src-wa-badge">3</span> Leads</div>
+                <div class="sgc-badge"><span class="count-up" id="src-wa-badge">${waSrc.toLocaleString()}</span> Leads</div>
               </div>
-              <div class="sgc-perc count-up" id="src-wa-perc">17%</div>
+              <div class="sgc-perc count-up" id="src-wa-perc">${waPct}%</div>
               <div class="sgc-track">
-                <div class="sgc-fill" id="src-wa-fill" style="width: 17%; background: var(--os-luxury-orange);"></div>
+                <div class="sgc-fill" id="src-wa-fill" style="width: ${waPct}%; background: var(--os-luxury-orange);"></div>
               </div>
             </div>
 
             <div class="source-glass-card hover-lift" data-source="website">
               <div class="sgc-header">
                 <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-gold);"></span> Website Form</div>
-                <div class="sgc-badge"><span class="count-up" id="src-web-badge">3</span> Leads</div>
+                <div class="sgc-badge"><span class="count-up" id="src-web-badge">${webSrc.toLocaleString()}</span> Leads</div>
               </div>
-              <div class="sgc-perc count-up" id="src-web-perc">17%</div>
+              <div class="sgc-perc count-up" id="src-web-perc">${webPct}%</div>
               <div class="sgc-track">
-                <div class="sgc-fill" id="src-web-fill" style="width: 17%; background: var(--os-gold);"></div>
+                <div class="sgc-fill" id="src-web-fill" style="width: ${webPct}%; background: var(--os-gold);"></div>
               </div>
             </div>
 
             <div class="source-glass-card hover-lift" data-source="referral">
               <div class="sgc-header">
                 <div class="sgc-title"><span class="sgc-dot" style="background: var(--os-rich-red);"></span> Referral</div>
-                <div class="sgc-badge"><span class="count-up" id="src-ref-badge">1</span> Leads</div>
+                <div class="sgc-badge"><span class="count-up" id="src-ref-badge">${refSrc.toLocaleString()}</span> Leads</div>
               </div>
-              <div class="sgc-perc count-up" id="src-ref-perc">5%</div>
+              <div class="sgc-perc count-up" id="src-ref-perc">${refPct}%</div>
               <div class="sgc-track">
-                <div class="sgc-fill" id="src-ref-fill" style="width: 5%; background: var(--os-rich-red);"></div>
+                <div class="sgc-fill" id="src-ref-fill" style="width: ${refPct}%; background: var(--os-rich-red);"></div>
               </div>
             </div>
 
@@ -411,6 +444,9 @@ export function initDashboardListeners() {
   // Fetch Live MySQL Database Stats
   fetchFromAPI('/leads?stats=1')
     .then(stats => {
+      if (stats && typeof stats === 'object') {
+        saveCachedStats(stats);
+      }
       const activeAdmin = getActiveAdminUser();
       const isFullAdmin = canViewAllLeads(activeAdmin);
 

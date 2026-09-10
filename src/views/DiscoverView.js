@@ -1,4 +1,4 @@
-import { getProperties, getPublicProperties, formatPropertySize, formatLocationDisplay } from '../utils/propertiesStore.js';
+import { getProperties, getPublicProperties, formatPropertySize, formatLocationDisplay, getNumericPropertyPrice } from '../utils/propertiesStore.js';
 import { openPropertyModalById, openPropertyInquiryFormModal } from '../components/PropertyDetailModal.js';
 
 function formatSizeDisplay(size) {
@@ -111,11 +111,13 @@ export function renderDiscoverView(discoverState, onPropertySelect, onNavigateTo
                 <label style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #555; display: block; margin-bottom: 6px; letter-spacing: 0.05em;">Max Budget</label>
                 <select id="filter-budget" style="width: 100%; padding: 12px 14px; font-size: 0.9rem; border-radius: 10px; border: 1px solid #cbd5e0; background: #fff; outline: none;">
                   <option value="all" ${discoverState.budget === 'all' ? 'selected' : ''}>Any Price</option>
+                  <option value="3000000" ${discoverState.budget === '3000000' ? 'selected' : ''}>Upto ₹ 30 Lakhs</option>
                   <option value="5000000" ${discoverState.budget === '5000000' ? 'selected' : ''}>Upto ₹ 50 Lakhs</option>
+                  <option value="10000000" ${discoverState.budget === '10000000' ? 'selected' : ''}>Upto ₹ 1.0 Cr</option>
                   <option value="15000000" ${discoverState.budget === '15000000' ? 'selected' : ''}>Upto ₹ 1.5 Cr</option>
                   <option value="30000000" ${discoverState.budget === '30000000' ? 'selected' : ''}>Upto ₹ 3.0 Cr</option>
                   <option value="50000000" ${discoverState.budget === '50000000' ? 'selected' : ''}>Upto ₹ 5.0 Cr</option>
-                  ${(discoverState.budget !== 'all' && !['5000000', '15000000', '30000000', '50000000'].includes(String(discoverState.budget))) 
+                  ${(discoverState.budget !== 'all' && !['3000000', '5000000', '10000000', '15000000', '30000000', '50000000'].includes(String(discoverState.budget))) 
                     ? `<option value="${discoverState.budget}" selected>Upto ₹ ${(Number(discoverState.budget)/10000000).toFixed(1)} Cr</option>` 
                     : ''}
                 </select>
@@ -735,7 +737,7 @@ function renderPropertyDetailView(property, onNavigateToContact) {
 
 function filterProperties(state) {
   const allProperties = getPublicProperties();
-  return allProperties.filter(prop => {
+  const filtered = allProperties.filter(prop => {
     if (!prop) return false;
     const title = (prop.title || '').toLowerCase();
     const loc = (prop.location || '').toLowerCase();
@@ -775,7 +777,6 @@ function filterProperties(state) {
 
     // Budget filter (Max Budget logic)
     if (state.budget && state.budget !== 'all') {
-      const p = prop.price || 0;
       let maxBudget = Number(state.budget);
       if (isNaN(maxBudget)) {
         // Legacy support
@@ -784,11 +785,23 @@ function filterProperties(state) {
         else if (state.budget === '1.5cr-3cr') maxBudget = 30000000;
         else if (state.budget === 'above-3cr') maxBudget = 9999000000;
       }
-      if (maxBudget > 0 && p > maxBudget) return false;
+      const propP = getNumericPropertyPrice(prop);
+      if (propP <= 0 || (maxBudget > 0 && propP > maxBudget)) return false;
     }
 
     return true;
   });
+
+  // When Budget filter is active, sort results in descending order by price (closest to max budget first)
+  if (state.budget && state.budget !== 'all') {
+    return filtered.sort((a, b) => {
+      const priceA = getNumericPropertyPrice(a);
+      const priceB = getNumericPropertyPrice(b);
+      return priceB - priceA;
+    });
+  }
+
+  return filtered;
 }
 
 function hasActiveFilters(state) {

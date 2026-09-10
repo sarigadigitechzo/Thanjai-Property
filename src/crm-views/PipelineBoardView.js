@@ -2,7 +2,7 @@ import { getPropertyById, getProperties } from '../utils/propertiesStore.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 import { showToast } from '../utils/toast.js';
 import { filterLeadsForActiveUser } from '../utils/adminUsersStore.js';
-import { mapLeadFromAPI, getLeads, saveLeads } from './LeadsView.js';
+import { mapLeadFromAPI, getLeads, saveLeads, initLeadsStore } from './LeadsView.js';
 import { openPropertyModalById } from '../components/PropertyDetailModal.js';
 import { fetchFromAPI } from '../utils/api.js';
 
@@ -74,14 +74,20 @@ function formatCurrency(val, propId = null) {
   return '₹ ' + num.toLocaleString('en-IN');
 }
 
-export function initPipelineBoardView() {
+export async function initPipelineBoardView() {
   const board = document.getElementById('pipeline-board');
   if (!board) return;
 
   let leads = [...getLeads()];
+  if (leads.length === 0) {
+    const idbLeads = await initLeadsStore();
+    if (idbLeads && Array.isArray(idbLeads) && idbLeads.length > 0) {
+      leads = [...idbLeads];
+    }
+  }
   renderBoard();
 
-  // Async load fresh leads from live PHP API backend while preserving local status updates and local new leads
+  // Async load fresh leads from live PHP API backend in background
   try {
     fetchFromAPI('/leads').then(apiLeads => {
       if (apiLeads && Array.isArray(apiLeads) && apiLeads.length > 0) {
@@ -177,13 +183,22 @@ export function initPipelineBoardView() {
       colDiv.className = 'pipeline-col';
       colDiv.dataset.stage = stage.id;
       
+      const maxRenderCards = 60;
+      const visibleLeads = stageLeads.slice(0, maxRenderCards);
+      const remainingCount = stageLeads.length - visibleLeads.length;
+
       colDiv.innerHTML = `
         <div class="pipeline-col-header">
           <span>${stage.name}</span>
-          <span class="pipeline-col-count">${stageLeads.length}</span>
+          <span class="pipeline-col-count">${stageLeads.length.toLocaleString()}</span>
         </div>
         <div class="pipeline-col-cards" data-stage="${stage.id}">
-          ${stageLeads.map(lead => generateCardHTML(lead)).join('')}
+          ${visibleLeads.map(lead => generateCardHTML(lead)).join('')}
+          ${remainingCount > 0 ? `
+            <div class="pipeline-more-indicator" style="text-align: center; padding: 10px 8px; font-size: 0.76rem; font-weight: 700; color: var(--os-gray-500); background: rgba(0,0,0,0.02); border-radius: var(--os-radius-sm); border: 1px dashed var(--os-gray-300); margin-top: 6px;">
+              <i class="ri-list-check-2"></i> + ${remainingCount.toLocaleString()} more leads
+            </div>
+          ` : ''}
         </div>
       `;
       
@@ -464,14 +479,29 @@ export function initPipelineBoardView() {
     if (existing) existing.remove();
 
     const clientName = leadObj.name || 'Client';
-    const rawProp = leadObj.requirement || leadObj.propertyType || leadObj.propertyTitle || '';
-    const isGenericProp = !rawProp || ['any', 'all', 'none', '—', '-'].includes(rawProp.trim().toLowerCase());
-    const initialPropTitle = isGenericProp ? 'DTCP Plots / Luxury Villa' : rawProp;
-
-    let defaultLoc = leadObj.location || leadObj.preferredLocation || leadObj.city || 'Medical College Road, Thanjavur';
-
     const allProperties = (typeof getProperties === 'function' ? getProperties() : []) || [];
-    const matchedProp = allProperties.find(p => p.title.trim().toLowerCase() === initialPropTitle.trim().toLowerCase());
+    
+    // Bidirectional property lookup checking ID and Title
+    let matchedProp = null;
+    const rawProp = (leadObj.propertyMatch || leadObj.propertyId || leadObj.requirement || leadObj.propertyType || leadObj.propertyTitle || '').trim();
+    if (rawProp) {
+      matchedProp = allProperties.find(p => 
+        String(p.id).toLowerCase() === rawProp.toLowerCase() || 
+        p.title.toLowerCase() === rawProp.toLowerCase() ||
+        (p.id && rawProp.toUpperCase().includes(p.id.toUpperCase()))
+      );
+    }
+    if (!matchedProp && leadObj.propertyId) {
+      matchedProp = allProperties.find(p => String(p.id) === String(leadObj.propertyId));
+    }
+    if (!matchedProp && allProperties.length > 0) {
+      matchedProp = allProperties[0];
+    }
+
+    const isIdString = /^TP-?\d+$/i.test(rawProp);
+    const initialPropTitle = matchedProp ? matchedProp.title : (!isIdString && rawProp ? rawProp : 'DTCP Plots / Luxury Villa');
+    let defaultLoc = (matchedProp && matchedProp.location) ? matchedProp.location : (leadObj.location || leadObj.preferredLocation || leadObj.city || 'Medical College Road, Thanjavur');
+    let defaultPrice = (matchedProp && (matchedProp.priceFormatted || matchedProp.price)) ? (matchedProp.priceFormatted || `₹ ${parseInt(matchedProp.price).toLocaleString('en-IN')}`) : '₹ 25 - 50 Lakhs';
 
     const buildPropSelectorHtml = (label = 'Property / Requirement') => `
       <div class="os-form-group" style="margin-bottom: 14px;">
@@ -480,7 +510,7 @@ export function initPipelineBoardView() {
           <option value="">-- Choose from Verified Properties (${allProperties.length} listings) --</option>
           ${allProperties.map(p => {
             const isSelected = matchedProp && matchedProp.id === p.id;
-            return `<option value="${p.title}" data-loc="${p.location || 'Thanjavur'}" ${isSelected ? 'selected' : ''}>${p.title} (${p.location || 'Thanjavur'})</option>`;
+            return `<option value="${p.title}" data-loc="${p.location || 'Thanjavur'}" data-price="${p.priceFormatted || ''}" ${isSelected ? 'selected' : ''}>${p.title} (${p.location || 'Thanjavur'})</option>`;
           }).join('')}
           <option value="__custom__" ${!matchedProp ? 'selected' : ''}>✍️ Custom Property / Requirement...</option>
         </select>
@@ -494,26 +524,31 @@ export function initPipelineBoardView() {
     let campaignName = 'general_property_update';
 
     if (newStatus === 'Initial Contact') {
-      campaignName = 'general_property_update';
+      campaignName = 'initial_contact_intro';
       fieldsHtml = `
         <div class="os-form-group" style="margin-bottom: 14px;">
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        ${buildPropSelectorHtml('Property / Requirement Title')}
+        ${buildPropSelectorHtml('Property Title')}
         <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Custom Message Text</label>
-          <textarea id="pwa-msg" class="os-input" style="width: 100%; height: 70px; resize: vertical;">Thank you for contacting Thanjai Property! Our property specialist will guide you with verified options shortly.</textarea>
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Location</label>
+          <input type="text" id="pwa-loc" value="${defaultLoc}" class="os-input" style="width: 100%;" />
+        </div>
+        <div class="os-form-group" style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Price</label>
+          <input type="text" id="pwa-price" value="${defaultPrice}" class="os-input" style="width: 100%;" />
         </div>
       `;
       getParamsFn = () => [
         document.getElementById('pwa-name')?.value || clientName,
         document.getElementById('pwa-prop')?.value || initialPropTitle,
-        document.getElementById('pwa-msg')?.value || 'Thank you for contacting Thanjai Property!'
+        document.getElementById('pwa-loc')?.value || defaultLoc,
+        document.getElementById('pwa-price')?.value || defaultPrice
       ];
       getPreviewFn = () => {
         const p = getParamsFn();
-        return `Hello ${p[0]} 👋\n\nUpdate on your property file (${p[1]}):\n📌 ${p[2]}\n\nFeel free to reply if you have any questions!\n\nWarm regards,\n*Thanjai Property Team*`;
+        return `Vanakkam ${p[0]} 🌾\n\nHere are the details for ${p[1]}:\n📍 Location: ${p[2]}\n💰 Price: ${p[3]}\n\nWith reference to your reply, we can discuss further to get more information!\n\nBest regards,\nThanjai Property Team`;
       };
     } else if (newStatus === 'Follow Up Pending') {
       campaignName = 'property_follow_up';
@@ -535,7 +570,7 @@ export function initPipelineBoardView() {
       ];
       getPreviewFn = () => {
         const p = getParamsFn();
-        return `Hello ${p[0]} 👋\n\nJust checking in about ${p[1]} in ${p[2]}. The owner is open to reasonable price discussions for genuine buyers.\n\nWould you like to sit together and finalize the deal?\n\nWarm regards,\n*Thanjai Property Team*`;
+        return `Hello ${p[0]} 👋\n\nJust checking in about ${p[1]} in ${p[2]}.\n\nThe owner is open to reasonable price discussions for genuine buyers.\n\nWould you like to sit together and finalize the deal?\n\nWarm regards,\n*Thanjai Property Team*`;
       };
     } else if (newStatus === 'Site Visit Scheduled') {
       campaignName = 'site_visit_confirmation';
@@ -544,18 +579,18 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        ${buildPropSelectorHtml('Property Title for Site Visit')}
+        ${buildPropSelectorHtml('Property Title')}
         <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Visit Date & Time</label>
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Date & Time</label>
           <input type="text" id="pwa-time" value="Tomorrow at 10:30 AM" class="os-input" style="width: 100%;" />
         </div>
         <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Location / Landmark</label>
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Location</label>
           <input type="text" id="pwa-loc" value="${defaultLoc}" class="os-input" style="width: 100%;" />
         </div>
         <div class="os-form-group" style="margin-bottom: 14px;">
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Google Maps Link</label>
-          <input type="text" id="pwa-map" value="https://maps.google.com/?q=Thanjavur" class="os-input" style="width: 100%;" />
+          <input type="text" id="pwa-map" value="https://maps.google.com/?q=${encodeURIComponent(defaultLoc + ' Thanjavur')}" class="os-input" style="width: 100%;" />
         </div>
       `;
       getParamsFn = () => [
@@ -563,11 +598,11 @@ export function initPipelineBoardView() {
         document.getElementById('pwa-prop')?.value || initialPropTitle,
         document.getElementById('pwa-time')?.value || 'Tomorrow at 10:30 AM',
         document.getElementById('pwa-loc')?.value || defaultLoc,
-        document.getElementById('pwa-map')?.value || 'https://maps.google.com/?q=Thanjavur'
+        document.getElementById('pwa-map')?.value || `https://maps.google.com/?q=${encodeURIComponent(defaultLoc + ' Thanjavur')}`
       ];
       getPreviewFn = () => {
         const p = getParamsFn();
-        return `Hello ${p[0]} 👋\n\nYour site visit for ${p[1]} is confirmed!\n\n📅 Date & Time: ${p[2]}\n📍 Location: ${p[3]}\n🗺️ Map: ${p[4]}\n\nOur executive will meet you at the site. Please reply OK to confirm.\n\nBest regards,\n*Thanjai Property Team*`;
+        return `Hello ${p[0]} 👋\n\nYour site visit for ${p[1]} is confirmed!\n\n📅 Date & Time: ${p[2]}\n📍 Location: ${p[3]}\n🗺️ Map: ${p[4]}\n\nOur executive will meet you at the site with all relevant details.\nPlease reply OK to confirm.\n\nBest regards,\n*Thanjai Property Team*`;
       };
     } else if (newStatus === 'Site Visit Completed') {
       campaignName = 'site_visit_feedback';
@@ -584,7 +619,7 @@ export function initPipelineBoardView() {
       ];
       getPreviewFn = () => {
         const p = getParamsFn();
-        return `Hello ${p[0]} 😊\n\nThank you for visiting ${p[1]} with us today!\n\nHow did you feel about the property and location?\n\nWarm regards,\n*Thanjai Property Team*`;
+        return `Hello ${p[0]} 😊\n\nThank you for visiting ${p[1]} with us today!\n\nHow did you feel about the property and location?\n\nTo choose and finalise the property, feel free to call us or reply with text.\n\nWarm regards,\n*Thanjai Property Team*`;
       };
     } else if (newStatus === 'Negotiation') {
       campaignName = 'negotiation_check_in';
@@ -593,20 +628,20 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        ${buildPropSelectorHtml('Property Name')}
+        ${buildPropSelectorHtml('Property Title')}
         <div class="os-form-group" style="margin-bottom: 14px;">
-          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Proposed Meeting Time</label>
+          <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Proposed Meeting Date / Time</label>
           <input type="text" id="pwa-time" value="This Week at Our Office" class="os-input" style="width: 100%;" />
         </div>
       `;
       getParamsFn = () => [
         document.getElementById('pwa-name')?.value || clientName,
         document.getElementById('pwa-prop')?.value || initialPropTitle,
-        document.getElementById('pwa-time')?.value || 'This Week'
+        document.getElementById('pwa-time')?.value || 'This Week at Our Office'
       ];
       getPreviewFn = () => {
         const p = getParamsFn();
-        return `Hello ${p[0]} 🤝\n\nGood news! The owner of ${p[1]} responded positively to your offer.\n\nCan we meet at our office on ${p[2]} to finalize the agreement?\n\nBest regards,\n*Thanjai Property Team*`;
+        return `Hello ${p[0]} 🤝\n\nGood news! The owner of ${p[1]} responded positively to your offer.\n\nCan we meet at our office on ${p[2]} to finalize the agreement?\n📍 Location: Thanjai Property Office, Siva Sakthi Apartment, Near New Bus Stand, Thanjavur.\n\nBest regards,\n*Thanjai Property Team*`;
       };
     } else if (newStatus === 'Bank Loan') {
       campaignName = 'bank_loan_assistance';
@@ -615,7 +650,7 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        ${buildPropSelectorHtml('Property Name')}
+        ${buildPropSelectorHtml('Property Title')}
       `;
       getParamsFn = () => [
         document.getElementById('pwa-name')?.value || clientName,
@@ -632,7 +667,7 @@ export function initPipelineBoardView() {
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Customer Name</label>
           <input type="text" id="pwa-name" value="${clientName}" class="os-input" style="width: 100%;" />
         </div>
-        ${buildPropSelectorHtml('Property Registered')}
+        ${buildPropSelectorHtml('Property Title')}
         <div class="os-form-group" style="margin-bottom: 14px;">
           <label style="font-size: 0.8rem; font-weight: 700; color: #4a5568; margin-bottom: 6px; display: block;">Google Review Link</label>
           <input type="text" id="pwa-rev" value="https://g.page/r/thanjai-property/review" class="os-input" style="width: 100%;" />
@@ -645,7 +680,7 @@ export function initPipelineBoardView() {
       ];
       getPreviewFn = () => {
         const p = getParamsFn();
-        return `Hearty Congratulations, ${p[0]}! 🎉\n\nCongratulations on the successful registration of your ${p[1]}!\n\nReview Link: ${p[2]}\n\nBest regards,\n*Thanjai Property Team*`;
+        return `Hearty Congratulations, ${p[0]}! 🎉\n\nCongratulations on the successful registration of your ${p[1]}!\n\nIf you were happy with our service, we would love for you to leave us a quick 5-star Google review.\n⭐ Review Link: ${p[2]}\n\nBest regards,\n*Thanjai Property Team*`;
       };
     }
 
@@ -723,8 +758,12 @@ export function initPipelineBoardView() {
           propInput.value = this.value;
           propInput.style.display = 'none';
           const selOpt = this.options[this.selectedIndex];
-          if (selOpt && selOpt.dataset.loc && locInput) {
-            locInput.value = selOpt.dataset.loc;
+          if (selOpt) {
+            if (selOpt.dataset.loc && locInput) locInput.value = selOpt.dataset.loc;
+            const priceInput = document.getElementById('pwa-price');
+            if (priceInput && selOpt.dataset.price) priceInput.value = selOpt.dataset.price;
+            const mapInput = document.getElementById('pwa-map');
+            if (mapInput && selOpt.dataset.loc) mapInput.value = `https://maps.google.com/?q=${encodeURIComponent(selOpt.dataset.loc + ' Thanjavur')}`;
           }
         }
         updatePreview();
