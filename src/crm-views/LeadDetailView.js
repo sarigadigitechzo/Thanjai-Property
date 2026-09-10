@@ -929,12 +929,12 @@ ${(() => {
               <div class="form-group">
                 <label>Priority</label>
                 <div class="os-custom-select modal-select" id="edit-lead-priority-select">
-                  <div class="select-value">Medium</div>
+                  <div class="select-value">${lead.priority || 'Medium'}</div>
                   <i class="ri-arrow-down-s-line"></i>
                   <div class="select-dropdown">
-                    <div class="select-option">High</div>
-                    <div class="select-option selected">Medium</div>
-                    <div class="select-option">Low</div>
+                    <div class="select-option ${(lead.priority === 'High') ? 'selected' : ''}">High</div>
+                    <div class="select-option ${(lead.priority === 'Medium' || !lead.priority) ? 'selected' : ''}">Medium</div>
+                    <div class="select-option ${(lead.priority === 'Low') ? 'selected' : ''}">Low</div>
                   </div>
                 </div>
               </div>
@@ -2776,6 +2776,7 @@ export async function initLeadDetailView(id) {
         const leadToUpdate = leads[idx];
         const type = document.getElementById('edit-lead-type-select')?.querySelector('.select-value')?.textContent.trim() || leadToUpdate.type || 'Any';
         const source = document.getElementById('edit-lead-source')?.value.trim() || leadToUpdate.source || 'Manual';
+        const priority = document.getElementById('edit-lead-priority-select')?.querySelector('.select-value')?.textContent.trim() || leadToUpdate.priority || 'Medium';
         const assignTo = document.getElementById('edit-lead-assign-select')?.querySelector('.select-value')?.textContent.trim() || leadToUpdate.assignTo || 'Unassigned';
         const area = document.getElementById('edit-lead-area')?.value.trim() || '';
         const city = document.getElementById('edit-lead-city')?.value.trim() || '';
@@ -2810,6 +2811,7 @@ export async function initLeadDetailView(id) {
           budget: budgetStr || leadToUpdate.budget,
           bedrooms: beds,
           source,
+          priority,
           assignTo,
           assignedTo: assignTo,
           followup,
@@ -3001,8 +3003,9 @@ async function saveAndSyncLeads(leads, changedLeadId = null) {
           requirement: lead.type || '',
           location: lead.city || lead.area || '',
           source: lead.source || '',
+          priority: lead.priority || 'Medium',
           status: lead.status || '',
-          assignedTo: lead.assignTo || '',
+          assignedTo: lead.assignTo || lead.assignedTo || '',
           notes: typeof lead.notes === 'string' ? lead.notes : JSON.stringify(lead.notes || []),
           timeline: typeof lead.timeline === 'string' ? lead.timeline : JSON.stringify(lead.timeline || []),
           followup: lead.followUpDate || lead.followup || ''

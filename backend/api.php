@@ -92,6 +92,7 @@ function renCol($conn, $t, $o, $n, $d) {
 
 @$conn->query("ALTER TABLE `leads` ADD COLUMN `country` varchar(100) DEFAULT NULL");
 @$conn->query("ALTER TABLE `leads` ADD COLUMN `city` varchar(100) DEFAULT NULL");
+@$conn->query("ALTER TABLE `leads` ADD COLUMN `priority` varchar(100) DEFAULT 'Medium'");
 
 @$conn->query("CREATE TABLE IF NOT EXISTS `properties` (
   `id` varchar(50) PRIMARY KEY,
@@ -968,6 +969,9 @@ elseif ($resource === 'leads') {
         }
         if (isset($data['source']) && trim($data['source']) !== '') {
             $updates[] = "`source` = '" . $conn->real_escape_string(trim($data['source'])) . "'";
+        }
+        if (isset($data['priority']) && trim($data['priority']) !== '') {
+            $updates[] = "`priority` = '" . $conn->real_escape_string(trim($data['priority'])) . "'";
         }
         if ($assignedTo !== null) {
             $updates[] = "`assignedTo` = '" . $conn->real_escape_string(trim($assignedTo)) . "'";
