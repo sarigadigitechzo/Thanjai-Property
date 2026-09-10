@@ -12,6 +12,7 @@ export function getUserProperties(user, allProps = null) {
   if (!user) return [];
   const props = allProps || getProperties() || [];
   const userName = (user.fullName || user.name || (user.email ? user.email.split('@')[0] : '')).toLowerCase().trim();
+  const userFirstName = userName.split(' ')[0] || '';
   const userPhone = String(user.phone || '').replace(/\D/g, '').slice(-10);
   const userEmail = String(user.email || '').toLowerCase().trim();
   const userId = user.id ? String(user.id).trim() : '';
@@ -23,7 +24,7 @@ export function getUserProperties(user, allProps = null) {
     if (userId && p.userId && String(p.userId).trim() === userId) return true;
     if (userEmail && p.userEmail && String(p.userEmail).toLowerCase().trim() === userEmail) return true;
 
-    // 2. Match by phone number (last 10 digits)
+    // 2. Match by phone number (last 10 digits or last 7 digits)
     if (userPhone && userPhone.length >= 7) {
       const pActualPhone = String(p.actualOwnerPhone || '').replace(/\D/g, '').slice(-10);
       const pOwnerPhone = String(p.ownerPhone || '').replace(/\D/g, '').slice(-10);
@@ -36,9 +37,10 @@ export function getUserProperties(user, allProps = null) {
       const pActualName = String(p.actualOwnerName || '').toLowerCase().trim();
       const pOwnerName = String(p.ownerName || '').toLowerCase().trim();
       const pListedBy = String(p.listedBy || '').toLowerCase().trim();
-      if (pActualName && pActualName === userName) return true;
-      if (pOwnerName && pOwnerName === userName && pOwnerName !== 'thanjai property') return true;
-      if (pListedBy && pListedBy === userName && pListedBy !== 'thanjai property') return true;
+      
+      if (pActualName && (pActualName === userName || pActualName.includes(userName) || (userFirstName.length >= 3 && pActualName.includes(userFirstName)))) return true;
+      if (pOwnerName && pOwnerName !== 'thanjai property' && (pOwnerName === userName || pOwnerName.includes(userName) || (userFirstName.length >= 3 && pOwnerName.includes(userFirstName)))) return true;
+      if (pListedBy && pListedBy !== 'thanjai property' && (pListedBy === userName || pListedBy.includes(userName) || (userFirstName.length >= 3 && pListedBy.includes(userFirstName)))) return true;
     }
 
     return false;

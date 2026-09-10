@@ -613,7 +613,11 @@ export function initContactSectionListeners() {
           destination: formattedPhone,
           userName: name,
           leadId: leadId,
-          templateParams: [name, reqLocation, reqType, 'our Executive Desk at +91 84899 96852']
+          templateParams: [name, reqType || 'Residential Property', reqLocation || 'Thanjavur', 'our Executive Desk at +91 84899 96852'],
+          media: {
+            url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+            filename: 'thanjai-property.jpg'
+          }
         })
       });
     } catch (e) {}

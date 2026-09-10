@@ -383,6 +383,8 @@ export function addProperty(data) {
     publishTarget: (data.publishTarget || data.visibility || 'public').toLowerCase().trim() === 'crm_only' ? 'crm_only' : 'public',
     ownerName: data.ownerName || '',
     ownerPhone: data.ownerPhone || '',
+    actualOwnerName: data.actualOwnerName || (data.ownerName && data.ownerName !== 'Thanjai Property' ? data.ownerName : '') || '',
+    actualOwnerPhone: data.actualOwnerPhone || (data.ownerPhone && data.ownerPhone !== '8489996852' && data.ownerPhone !== '+91 84899 96852' ? data.ownerPhone : '') || '',
     inquiryPhone: data.inquiryPhone || '8489996852',
     userId: data.userId || null,
     userEmail: data.userEmail || null,

@@ -461,8 +461,9 @@ export function initPropertyDetailModalListeners(property, onClose) {
         leadId: leadId,
         templateParams: [
           name,
-          `${property.title} (${propPriceStr})`,
-          property.location || property.district || 'Thanjavur'
+          property.title || 'Luxury Property',
+          property.location || property.district || 'Thanjavur',
+          propPriceStr || 'Price on Request'
         ],
         media: {
           url: propImgUrl,
@@ -652,8 +653,9 @@ export function openPropertyInquiryFormModal(property) {
         leadId: leadId,
         templateParams: [
           name,
-          `${property.title} (${propPriceStr})`,
-          property.location || property.district || 'Thanjavur'
+          property.title || 'Luxury Property',
+          property.location || property.district || 'Thanjavur',
+          propPriceStr || 'Price on Request'
         ],
         media: { url: propImgUrl, filename: 'property.jpg' }
       });

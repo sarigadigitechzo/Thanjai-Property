@@ -17,16 +17,17 @@ export function getActiveWhatsAppProvider() {
 export async function sendWhatsAppMessage({ campaignName, destination, userName, templateParams, media, messageText, leadId }) {
   const digits = String(destination || '').replace(/\D/g, '');
   const last10 = digits.slice(-10);
-  const smartPingPhone = '+91' + last10;
+  const smartPingPhone = '91' + last10;
 
   const apiKey = getActiveWhatsAppApiKey();
 
-  const defaultMedia = media || {
+  const isMediaTemplate = (campaignName === 'initial_contact_intro' || campaignName === 'property_shortlist');
+  const defaultMedia = media || (isMediaTemplate ? {
     url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
     filename: 'thanjai-property.jpg'
-  };
+  } : undefined);
 
-  const stringParams = (templateParams || []).map(p => String(p));
+  const stringParams = (templateParams || []).map(p => String(p ?? ''));
   let isDispatched = false;
   let lastError = '';
   let responseData = null;
@@ -62,17 +63,21 @@ export async function sendWhatsAppMessage({ campaignName, destination, userName,
   // FALLBACK: Direct browser dispatch only if backend relay failed
   if (!isDispatched) {
     try {
+      const payload = {
+        apiKey: apiKey,
+        campaignName: campaignName,
+        destination: smartPingPhone,
+        userName: userName || 'Customer',
+        templateParams: stringParams
+      };
+      if (defaultMedia) {
+        payload.media = defaultMedia;
+      }
+
       const smartPingRes = await fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          apiKey: apiKey,
-          campaignName: campaignName,
-          destination: smartPingPhone,
-          userName: userName || 'Customer',
-          templateParams: stringParams,
-          media: defaultMedia
-        })
+        body: JSON.stringify(payload)
       });
       const resData = await smartPingRes.json();
       responseData = resData;

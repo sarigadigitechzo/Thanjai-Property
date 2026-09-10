@@ -377,6 +377,7 @@ addCol($conn, 'properties', 'approvalStatus', "varchar(50) DEFAULT 'Approved'");
 addCol($conn, 'properties', 'userId', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'properties', 'userEmail', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'properties', 'actualOwnerName', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'properties', 'actualOwnerPhone', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'properties', 'approval', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'properties', 'facing', 'varchar(100) DEFAULT NULL');
 addCol($conn, 'properties', 'area', 'varchar(255) DEFAULT NULL');

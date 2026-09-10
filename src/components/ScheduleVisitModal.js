@@ -182,11 +182,12 @@ export function initScheduleVisitModalListeners(onClose) {
 
     // 4. Dispatch Official SmartPing Site Visit Template
     try {
+      const cleanPhone = '91' + String(phone).replace(/\D/g, '').slice(-10);
       await fetchFromAPI('/send_whatsapp', {
         method: 'POST',
         body: JSON.stringify({
           campaignName: 'stage_site_visit_scheduled',
-          destination: formattedPhone,
+          destination: cleanPhone,
           userName: name,
           leadId: leadId,
           templateParams: [name, propTitle, `${visitDate} (${timeSlot})`, 'our Location Manager at +91 84899 96852']

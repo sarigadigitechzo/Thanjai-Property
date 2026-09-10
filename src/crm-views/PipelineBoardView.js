@@ -845,16 +845,25 @@ export async function initPipelineBoardView() {
             messageText: msgText,
             leadId: leadObj.id
           }).then(sent => {
-            showToast(`Automated WhatsApp sent to ${leadObj.name || 'Client'} (${campaignName})`, 'success');
+            if (sent && (sent.success === true || sent.success === 'true')) {
+              showToast(`Automated WhatsApp sent to ${leadObj.name || 'Client'} (${campaignName})`, 'success');
+              leadObj.timeline.unshift({
+                type: 'whatsapp',
+                message: `Automated WhatsApp sent to ${leadObj.name || 'Client'} (${destPhone}): [${campaignName}]`,
+                author: 'System Auto Dispatch',
+                date: new Date().toISOString()
+              });
+            } else {
+              showToast(`WhatsApp status: ${sent?.error || 'Message dispatched to queue'}`, 'warning');
+              leadObj.timeline.unshift({
+                type: 'whatsapp',
+                message: `WhatsApp attempted (${campaignName}): ${sent?.error || 'Dispatched'}`,
+                author: 'System Auto Dispatch',
+                date: new Date().toISOString()
+              });
+            }
           }).catch(err => {
             showToast(`Stage updated to ${newStatus}`, 'info');
-          });
-
-          leadObj.timeline.unshift({
-            type: 'whatsapp',
-            message: `Automated WhatsApp sent to ${leadObj.name || 'Client'} (${destPhone}): [${campaignName}]`,
-            author: 'System Auto Dispatch',
-            date: new Date().toISOString()
           });
         } else {
           showToast(`Lead moved to ${newStatus}`, 'info');

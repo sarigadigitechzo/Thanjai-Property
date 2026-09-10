@@ -2093,13 +2093,10 @@ export async function initLeadDetailView(id) {
         }
       }
 
-      let rawPhone = activeLead.whatsapp || activeLead.mobile || activeLead.phone || '9566321457';
+      let rawPhone = activeLead.whatsapp || activeLead.mobile || activeLead.phone || '';
       let phone = rawPhone.replace(/\D/g, '');
-      if (phone.length === 10) {
-        phone = '+91' + phone;
-      } else if (!phone.startsWith('+')) {
-        phone = '+' + phone;
-      }
+      const last10Digits = phone.slice(-10);
+      phone = '91' + last10Digits;
       
       const originalBtnText = confirmWA.innerHTML;
       confirmWA.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sending...';
@@ -2158,7 +2155,7 @@ export async function initLeadDetailView(id) {
           }
 
           const isSuccess = dispatchRes && (dispatchRes.success === true || dispatchRes.success === 'true');
-          const statusPrefix = isSuccess ? 'WhatsApp sent' : 'WhatsApp sent (SmartPing)';
+          const statusPrefix = isSuccess ? 'WhatsApp sent' : 'WhatsApp failed to deliver';
           const errorDetail = (!isSuccess && dispatchRes?.error) ? ` (${dispatchRes.error})` : '';
 
           leads[idx].timeline.unshift({
@@ -2176,7 +2173,7 @@ export async function initLeadDetailView(id) {
           }
           window.dispatchEvent(new HashChangeEvent('hashchange'));
         } else {
-          if (dispatchRes && dispatchRes.success) {
+          if (dispatchRes && (dispatchRes.success === true || dispatchRes.success === 'true')) {
             showToast('WhatsApp message sent!', 'ri-checkbox-circle-fill');
           } else {
             showToast(`SmartPing: ${dispatchRes?.error || 'Message dispatched'}`, 'ri-information-line');
