@@ -1,15 +1,14 @@
 import { fetchFromAPI } from '../utils/api.js';
 
 export function renderReportsView(fromDateStr, toDateStr) {
-  // Determine dates
-  let fromDate = fromDateStr ? new Date(fromDateStr) : new Date(new Date().getFullYear(), 0, 1);
-  let toDate = toDateStr ? new Date(toDateStr) : new Date(new Date().getFullYear(), 11, 31);
+  // Determine dates using local time boundaries
+  let fromDate = fromDateStr ? new Date(fromDateStr + 'T00:00:00') : new Date(new Date().getFullYear(), 0, 1, 0, 0, 0);
+  let toDate = toDateStr ? new Date(toDateStr + 'T23:59:59.999') : new Date(new Date().getFullYear(), 11, 31, 23, 59, 59);
   
-  const fromValue = `${fromDate.getFullYear()}-${String(fromDate.getMonth() + 1).padStart(2, '0')}-${String(fromDate.getDate()).padStart(2, '0')}`;
-  const toValue = `${toDate.getFullYear()}-${String(toDate.getMonth() + 1).padStart(2, '0')}-${String(toDate.getDate()).padStart(2, '0')}`;
+  const fromValue = fromDateStr || `${fromDate.getFullYear()}-${String(fromDate.getMonth() + 1).padStart(2, '0')}-${String(fromDate.getDate()).padStart(2, '0')}`;
+  const toValue = toDateStr || `${toDate.getFullYear()}-${String(toDate.getMonth() + 1).padStart(2, '0')}-${String(toDate.getDate()).padStart(2, '0')}`;
   
   const toDateEnd = new Date(toDate);
-  toDateEnd.setHours(23, 59, 59, 999);
   
   let allLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
   let partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
@@ -25,15 +24,14 @@ export function renderReportsView(fromDateStr, toDateStr) {
   const statusMap = {};
   const staffMap = {};
 
-
   filteredLeads.forEach(l => {
     const src = l.source || 'Manual';
     sourceMap[src] = (sourceMap[src] || 0) + 1;
     
-    const st = l.status || 'New';
+    const st = l.status || 'New Lead';
     statusMap[st] = (statusMap[st] || 0) + 1;
     
-    const staff = l.assignTo || 'Unassigned';
+    const staff = l.assignTo || l.assignedTo || 'Unassigned';
     if (!staffMap[staff]) staffMap[staff] = { total: 0, converted: 0 };
     staffMap[staff].total += 1;
     if (st === 'Registration' || st === 'Converted') staffMap[staff].converted += 1;
@@ -42,8 +40,16 @@ export function renderReportsView(fromDateStr, toDateStr) {
   const loadingHTML = `<div style="padding: 16px; color: var(--os-gray-500); display: flex; align-items: center; gap: 8px;"><i class="ri-loader-4-line ri-spin" style="font-size: 1.2rem; color: var(--os-luxury-orange);"></i> <span>Loading live database metrics...</span></div>`;
   const loadingPartnerRowHTML = `<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--os-gray-500);"><i class="ri-loader-4-line ri-spin"></i> Loading partner network data...</td></tr>`;
 
-  const sourceHTML = loadingHTML;
-  const statusHTML = loadingHTML;
+  const initialSrcList = Object.entries(sourceMap);
+  const initialStList = Object.entries(statusMap);
+
+  const sourceHTML = initialSrcList.length > 0 
+    ? initialSrcList.map(([s, c]) => `<div class="report-list-item"><span>${s}</span><strong>${c.toLocaleString()}</strong></div>`).join('')
+    : loadingHTML;
+
+  const statusHTML = initialStList.length > 0
+    ? initialStList.map(([s, c]) => `<div class="report-list-item"><span>${s}</span><strong>${c.toLocaleString()}</strong></div>`).join('')
+    : loadingHTML;
   
   // Instant Initial Staff Calculation (Maheshwari 114 leads + DB unassigned estimation)
   let initialStaffMap = {
@@ -357,22 +363,53 @@ export function initReportsView() {
       if (!rep) return;
 
       // 1. Leads by Source Live Update
-      if (Array.isArray(rep.sources) && rep.sources.length > 0) {
-        const srcContainer = document.getElementById('reports-source-list');
-        if (srcContainer) {
+      const srcContainer = document.getElementById('reports-source-list');
+      if (srcContainer) {
+        if (Array.isArray(rep.sources) && rep.sources.length > 0) {
           srcContainer.innerHTML = rep.sources.map(s => `
             <div class="report-list-item"><span>${s.source}</span><strong>${s.count.toLocaleString()}</strong></div>
           `).join('');
+        } else {
+          // Check local leads for date range if DB returns 0 for this filter
+          const localLeads = (JSON.parse(localStorage.getItem('thanjai_leads')) || []).filter(l => {
+            const t = l.createdAt ? new Date(l.createdAt) : new Date('2026-01-01T00:00:00');
+            const fD = fromVal ? new Date(fromVal + 'T00:00:00') : new Date('2026-01-01T00:00:00');
+            const tD = toVal ? new Date(toVal + 'T23:59:59.999') : new Date();
+            return t >= fD && t <= tD;
+          });
+          const srcMap = {};
+          localLeads.forEach(l => { const src = l.source || 'Manual'; srcMap[src] = (srcMap[src] || 0) + 1; });
+          const entries = Object.entries(srcMap);
+          if (entries.length > 0) {
+            srcContainer.innerHTML = entries.map(([s, c]) => `<div class="report-list-item"><span>${s}</span><strong>${c.toLocaleString()}</strong></div>`).join('');
+          } else {
+            srcContainer.innerHTML = `<div class="report-list-item" style="color: var(--os-gray-500);"><span>No leads in selected range</span><strong>0</strong></div>`;
+          }
         }
       }
 
       // 2. Leads by Status Live Update
-      if (Array.isArray(rep.statuses) && rep.statuses.length > 0) {
-        const stContainer = document.getElementById('reports-status-list');
-        if (stContainer) {
+      const stContainer = document.getElementById('reports-status-list');
+      if (stContainer) {
+        if (Array.isArray(rep.statuses) && rep.statuses.length > 0) {
           stContainer.innerHTML = rep.statuses.map(s => `
             <div class="report-list-item"><span>${s.status}</span><strong>${s.count.toLocaleString()}</strong></div>
           `).join('');
+        } else {
+          const localLeads = (JSON.parse(localStorage.getItem('thanjai_leads')) || []).filter(l => {
+            const t = l.createdAt ? new Date(l.createdAt) : new Date('2026-01-01T00:00:00');
+            const fD = fromVal ? new Date(fromVal + 'T00:00:00') : new Date('2026-01-01T00:00:00');
+            const tD = toVal ? new Date(toVal + 'T23:59:59.999') : new Date();
+            return t >= fD && t <= tD;
+          });
+          const stMap = {};
+          localLeads.forEach(l => { const st = l.status || 'New Lead'; stMap[st] = (stMap[st] || 0) + 1; });
+          const entries = Object.entries(stMap);
+          if (entries.length > 0) {
+            stContainer.innerHTML = entries.map(([s, c]) => `<div class="report-list-item"><span>${s}</span><strong>${c.toLocaleString()}</strong></div>`).join('');
+          } else {
+            stContainer.innerHTML = `<div class="report-list-item" style="color: var(--os-gray-500);"><span>No leads in selected range</span><strong>0</strong></div>`;
+          }
         }
       }
 
@@ -487,7 +524,6 @@ export function initReportsView() {
 
     }).catch(err => {
       console.warn('Reports live database load notice:', err);
-      // Fallback: Populate source and status lists locally if still showing loading spinner
       const srcContainer = document.getElementById('reports-source-list');
       if (srcContainer && srcContainer.innerHTML.includes('Loading')) {
         const localSources = { 'Manual': 12451, 'Direct': 86, 'Portal': 24, 'WhatsApp': 12, 'Website': 5 };
@@ -506,40 +542,60 @@ export function initReportsView() {
 
   if (downloadBtn) {
     downloadBtn.addEventListener('click', () => {
-      // Fetch 100% Live DB Leads and download CSV directly
+      const fromDate = fromVal ? new Date(fromVal + 'T00:00:00') : new Date('2026-01-01T00:00:00');
+      const toDateEnd = toVal ? new Date(toVal + 'T23:59:59.999') : new Date();
+
+      const triggerDownload = (allLeads) => {
+        if (!Array.isArray(allLeads)) allLeads = [];
+
+        // Merge local leads if any
+        try {
+          const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+          localLeads.forEach(locL => {
+            if (locL && locL.id && !allLeads.some(dbL => String(dbL.id) === String(locL.id))) {
+              allLeads.push(locL);
+            }
+          });
+        } catch (e) {}
+
+        const filtered = allLeads.filter(l => {
+           const leadTime = l.createdAt ? new Date(l.createdAt) : new Date('2026-01-01T00:00:00');
+           return leadTime >= fromDate && leadTime <= toDateEnd;
+        });
+
+        let csvLines = [];
+        csvLines.push("ID,Date,Name,Mobile,Type,Budget,Source,Status,Assigned To");
+
+        filtered.forEach(l => {
+          const dateStr = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-IN') : '01/01/2026';
+          const name = `"${(l.name || '').replace(/"/g, '""')}"`;
+          const mobile = `"${(l.phone || l.mobile || '').replace(/"/g, '""')}"`;
+          const req = `"${(l.requirement || l.type || '').replace(/"/g, '""')}"`;
+          const budget = `"${(l.budget || l.budgetMax || '').replace(/"/g, '""')}"`;
+          const src = `"${(l.source || '').replace(/"/g, '""')}"`;
+          const st = `"${(l.status || '').replace(/"/g, '""')}"`;
+          const staff = `"${(l.assignedTo || l.assignTo || 'Unassigned').replace(/"/g, '""')}"`;
+          
+          csvLines.push(`${l.id || ''},${dateStr},${name},${mobile},${req},${budget},${src},${st},${staff}`);
+        });
+
+        const csvString = "\uFEFF" + csvLines.join("\n");
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Thanjai_CRM_Report_${fromVal || 'All'}_to_${toVal || 'Today'}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      };
+
       fetchFromAPI('/leads')
-        .then(allLeads => {
-          if (!Array.isArray(allLeads)) allLeads = [];
-          const fromDate = fromVal ? new Date(fromVal + 'T00:00:00') : new Date('2026-01-01');
-          const toDateEnd = toVal ? new Date(toVal + 'T23:59:59') : new Date();
-
-          const filtered = allLeads.filter(l => {
-             const leadTime = l.createdAt ? new Date(l.createdAt) : new Date('2026-01-01T00:00:00');
-             return leadTime >= fromDate && leadTime <= toDateEnd;
-          });
-
-          let csvContent = "data:text/csv;charset=utf-8,";
-          csvContent += "ID,Date,Name,Mobile,Type,Budget,Source,Status,Assigned To\n";
-
-          filtered.forEach(l => {
-            const dateStr = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-IN') : '01/01/2026';
-            const name = `"${l.name || ''}"`;
-            const mobile = `"${l.phone || l.mobile || ''}"`;
-            const budget = `"${l.budget || l.budgetMax || ''}"`;
-            const staff = `"${l.assignedTo || l.assignTo || 'Unassigned'}"`;
-            
-            csvContent += `${l.id},${dateStr},${name},${mobile},${l.requirement || l.type || ''},${budget},${l.source || ''},${l.status || ''},${staff}\n`;
-          });
-
-          const encodedUri = encodeURI(csvContent);
-          const link = document.createElement("a");
-          link.setAttribute("href", encodedUri);
-          link.setAttribute("download", `Thanjai_CRM_Report_${fromVal || 'All'}_to_${toVal || 'Today'}.csv`);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }).catch(err => {
-          alert('Downloading CSV...');
+        .then(triggerDownload)
+        .catch(err => {
+          const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+          triggerDownload(localLeads);
         });
     });
   }
