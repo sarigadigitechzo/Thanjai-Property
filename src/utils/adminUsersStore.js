@@ -237,6 +237,9 @@ export function getActiveAdminUser() {
     if (!raw) return null;
     let parsed = JSON.parse(raw);
     if (!parsed) return null;
+    if (parsed.fullName === 'Super Admin' || parsed.fullName === 'Admin' || !parsed.fullName) {
+      parsed.fullName = 'Vijayaraghavan';
+    }
     parsed = normalizeAdminUser(parsed);
 
     // Check if we can enrich with latest thanjai_admin_users record

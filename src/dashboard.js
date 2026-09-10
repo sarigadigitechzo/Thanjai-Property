@@ -234,6 +234,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Update user profile card in sidebar
   if (activeAdminUser) {
+    let displayName = activeAdminUser.fullName || activeAdminUser.name || 'Vijayaraghavan';
+    if (displayName === 'Super Admin' || displayName === 'Admin') {
+      displayName = 'Vijayaraghavan';
+    }
+
     const nameEl = document.querySelector('.sidebar-footer .name');
     const roleEl = document.querySelector('.sidebar-footer .role');
     const avatarEl = document.querySelector('.sidebar-footer .avatar');
@@ -243,12 +248,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerDropdownName = document.getElementById('header-dropdown-name');
     const headerDropdownRole = document.getElementById('header-dropdown-role');
     
-    if (nameEl) nameEl.textContent = activeAdminUser.fullName || activeAdminUser.name || 'Admin Staff';
-    if (roleEl) roleEl.textContent = activeAdminUser.role || 'Admin Staff';
-    if (headerDropdownName) headerDropdownName.textContent = activeAdminUser.fullName || activeAdminUser.name || 'Admin Staff';
-    if (headerDropdownRole) headerDropdownRole.textContent = activeAdminUser.role || 'Admin Staff';
+    if (nameEl) nameEl.textContent = displayName;
+    if (roleEl) roleEl.textContent = activeAdminUser.role || 'Super Admin';
+    if (headerDropdownName) headerDropdownName.textContent = displayName;
+    if (headerDropdownRole) headerDropdownRole.textContent = activeAdminUser.role || 'Super Admin';
     
-    const initials = (activeAdminUser.fullName || activeAdminUser.name || 'AS')
+    const initials = displayName
       .split(' ')
       .map(n => n[0])
       .join('')
