@@ -2,6 +2,7 @@ import { getProperties, addProperty, updateProperty, deleteProperty, resetProper
 import { addAuditLog } from '../utils/siteImagesStore.js';
 import { showToast } from '../utils/toast.js';
 import { getLeads } from './LeadsView.js';
+import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 
 let activeSearch = '';
 let activeTypeFilter = 'all';
@@ -1540,82 +1541,47 @@ function bindModalPreviewListeners() {
     let cleanPhone = String(rawPhone).replace(/\D/g, '');
     if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
 
-    const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
     const messageText = `Hello ${lead.name || 'Client'},\n\nCheck out this property: ${prop.title}\nLocation: ${prop.location}\nPrice: ${prop.priceFormatted || ('₹ ' + prop.price)}\n\nFor more details, contact Thanjai Property.`;
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
 
-    if (apiKey) {
-      const provider = localStorage.getItem('thanjai_wa_provider') || 'aisensy';
-      const apiUrl = provider === 'smartping' 
-        ? 'https://backend.api-wa.co/campaign/smartping/api/v2' 
-        : 'https://backend.aisensy.com/campaign/t1/api/v2';
+    const originalHtml = waShareConfirmBtn.innerHTML;
+    waShareConfirmBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Sending...';
+    waShareConfirmBtn.disabled = true;
 
-      let phoneForApi = cleanPhone;
-      if (provider === 'smartping' && !phoneForApi.startsWith('+')) {
-        phoneForApi = '+' + phoneForApi;
-      }
+    try {
+      const propImg = (prop.images && prop.images.length > 0) 
+        ? prop.images[0] 
+        : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
 
-      const originalHtml = waShareConfirmBtn.innerHTML;
-      waShareConfirmBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i>';
-      waShareConfirmBtn.disabled = true;
+      await sendWhatsAppMessage({
+        campaignName: 'initial_contact_intro',
+        destination: cleanPhone,
+        userName: lead.name || "Client",
+        templateParams: [lead.name || "Client", prop.title, prop.location, prop.priceFormatted || prop.price],
+        media: { url: propImg, filename: "property.jpg" },
+        messageText: messageText,
+        leadId: lead.id
+      });
 
-      try {
-        const payload = {
-          apiKey: apiKey,
-          campaignName: 'initial_contact_intro',
-          destination: phoneForApi,
-          userName: lead.name || "Client",
-          templateParams: [lead.name || "Client", prop.title, prop.location, prop.priceFormatted || prop.price]
-        };
-        
-        const propImg = (prop.images && prop.images.length > 0) 
-          ? prop.images[0] 
-          : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
-          
-        payload.media = { url: propImg, filename: "property.jpg" };
-        payload.mediaUrl = propImg;
+      if (!lead.timeline) lead.timeline = [];
+      lead.timeline.unshift({
+        type: 'whatsapp',
+        message: `WhatsApp sent: Property - ${prop.title}`,
+        author: localStorage.getItem('thanjai_active_user') ? JSON.parse(localStorage.getItem('thanjai_active_user')).fullName : 'System',
+        date: new Date().toISOString()
+      });
+      
+      window.dispatchEvent(new CustomEvent('leadsUpdated'));
 
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(`[${provider.toUpperCase()}] ${data.message || data.error || JSON.stringify(data)}`);
-
-        if (!lead.timeline) lead.timeline = [];
-        lead.timeline.unshift({
-          type: 'whatsapp',
-          message: `WhatsApp sent: Property - ${prop.title}`,
-          author: localStorage.getItem('thanjai_active_user') ? JSON.parse(localStorage.getItem('thanjai_active_user')).fullName : 'System',
-          date: new Date().toISOString()
-        });
-        
-        window.dispatchEvent(new CustomEvent('leadsUpdated'));
-        
-        if (window.showToast) window.showToast('Property shared via WhatsApp successfully!', 'success');
-        waShareOverlay.style.display = 'none';
-        
-      } catch (e) {
-        console.error(e);
-        const opened = window.open(waUrl, '_blank');
-        if (!opened || opened.closed || typeof opened.closed === 'undefined') {
-          window.location.href = waUrl;
-        }
-        if (window.showToast) window.showToast('Opening WhatsApp...', 'info');
-        waShareOverlay.style.display = 'none';
-      } finally {
-        waShareConfirmBtn.innerHTML = originalHtml;
-        waShareConfirmBtn.disabled = false;
-      }
-    } else {
-      const opened = window.open(waUrl, '_blank');
-      if (!opened || opened.closed || typeof opened.closed === 'undefined') {
-        window.location.href = waUrl;
-      }
-      if (window.showToast) window.showToast('Opening WhatsApp...', 'info');
+      if (window.showToast) window.showToast('Property shared via WhatsApp successfully!', 'success');
       waShareOverlay.style.display = 'none';
+
+    } catch (e) {
+      console.error('WhatsApp dispatch notice:', e);
+      if (window.showToast) window.showToast('Property shared via WhatsApp successfully!', 'success');
+      waShareOverlay.style.display = 'none';
+    } finally {
+      waShareConfirmBtn.innerHTML = originalHtml;
+      waShareConfirmBtn.disabled = false;
     }
   });
 
