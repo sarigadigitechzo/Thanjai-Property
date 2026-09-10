@@ -1,6 +1,6 @@
 import { fetchFromAPI } from '../utils/api.js';
 import { showToast, showAlertModal, showConfirmModal } from '../utils/toast.js';
-import { sendWhatsAppMessage } from '../utils/whatsapp.js';
+import { sendWhatsAppMessage, getActiveWhatsAppApiKey } from '../utils/whatsapp.js';
 import { canViewAllLeads, filterLeadsForActiveUser, getActiveAdminUser } from '../utils/adminUsersStore.js';
 import { getLeads, saveLeads, initLeadsView } from './LeadsView.js';
 import { getProperties } from '../utils/propertiesStore.js';
@@ -1148,46 +1148,29 @@ export async function initLeadDetailView(id) {
           details: `Sent partner_lead_assignment template to ${partnerName} (${pPhone}) for client ${clientName}.`
         });
 
-        const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
-        if (!apiKey) {
-          showToast('Please configure your SmartPing API Key in Settings > Integrations.', 'ri-alert-line');
-          return;
-        }
-
-        const payload = {
-          apiKey: apiKey,
-          campaignName: 'partner_lead_assignment',
-          destination: pPhone,
-          userName: partnerName,
-          templateParams: [
-            partnerName,
-            clientName,
-            preferredLoc,
-            reqType,
-            budget,
-            handoverNotes
-          ]
-        };
-
         try {
-          const res = await fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+          const res = await sendWhatsAppMessage({
+            campaignName: 'partner_lead_assignment',
+            destination: pPhone,
+            userName: partnerName,
+            leadId: currentLead.id,
+            templateParams: [
+              partnerName,
+              clientName,
+              preferredLoc,
+              reqType,
+              budget,
+              handoverNotes
+            ]
           });
-          const resData = await res.json();
-          if (res.ok && resData.status !== 'error') {
+          if (res.success) {
             showToast(`WhatsApp sent to partner ${partnerName}!`, 'ri-checkbox-circle-fill');
           } else {
-            console.warn("SmartPing partner dispatch error:", resData);
-            showToast(`SmartPing: ${resData.message || resData.error || 'Check campaign name/status in SmartPing'}`, 'ri-alert-line');
+            console.warn("SmartPing partner dispatch notice:", res.error);
+            showToast(`SmartPing: ${res.error || 'Check campaign status in SmartPing'}`, 'ri-alert-line');
           }
         } catch (err) {
-          console.warn("Direct SmartPing dispatch warning, calling server relay:", err);
-          fetchFromAPI('/send_whatsapp', {
-            method: 'POST',
-            body: JSON.stringify(payload)
-          }).catch(() => {});
+          console.warn("Partner WhatsApp dispatch error:", err);
         }
       };
 
@@ -1225,39 +1208,26 @@ export async function initLeadDetailView(id) {
           details: `Sent partner_transfer_notification to client ${clientName} (${cPhone}) assigned to ${partnerName}.`
         });
 
-        const apiKey = localStorage.getItem('thanjai_whatsapp_api_key');
-        if (!apiKey) return;
-
-        const payload = {
-          apiKey: apiKey,
-          campaignName: 'partner_transfer_notification',
-          destination: cPhone,
-          userName: clientName,
-          templateParams: [
-            clientName,
-            preferredLoc,
-            partnerName,
-            '+91 84899 96852'
-          ]
-        };
-
         try {
-          const res = await fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+          const res = await sendWhatsAppMessage({
+            campaignName: 'partner_transfer_notification',
+            destination: cPhone,
+            userName: clientName,
+            leadId: currentLead.id,
+            templateParams: [
+              clientName,
+              preferredLoc,
+              partnerName,
+              '+91 84899 96852'
+            ]
           });
-          const resData = await res.json();
-          if (res.ok && resData.status !== 'error') {
+          if (res.success) {
             showToast(`WhatsApp notification sent to client ${clientName}!`, 'ri-checkbox-circle-fill');
           } else {
-            console.warn("SmartPing client dispatch error:", resData);
+            console.warn("SmartPing client dispatch notice:", res.error);
           }
         } catch (err) {
-          fetchFromAPI('/send_whatsapp', {
-            method: 'POST',
-            body: JSON.stringify(payload)
-          }).catch(() => {});
+          console.warn("Client WhatsApp dispatch error:", err);
         }
       };
 
@@ -1797,9 +1767,9 @@ export async function initLeadDetailView(id) {
     options.forEach(opt => {
       opt.addEventListener('click', () => {
         const leads = getLeads() || [];
-        const currentLead = leads.find(l => String(l.id) === String(id)) || lead || {};
+        const activeLead = leads.find(l => String(l.id) === String(id)) || { id, name: 'Client' };
         const key = getCampaignKey(opt.innerText.trim());
-        renderTemplateParamsFields(key, currentLead);
+        renderTemplateParamsFields(key, activeLead);
       });
     });
   }
@@ -1807,9 +1777,9 @@ export async function initLeadDetailView(id) {
   if (btnWA) {
     btnWA.addEventListener('click', () => {
       const leads = getLeads() || [];
-      const currentLead = leads.find(l => String(l.id) === String(id)) || lead || {};
+      const activeLead = leads.find(l => String(l.id) === String(id)) || { id, name: 'Client' };
       const currentTemplateText = document.querySelector('#wa-tab-template .os-custom-select .select-value')?.innerText.trim() || 'Welcome message';
-      renderTemplateParamsFields(getCampaignKey(currentTemplateText), currentLead);
+      renderTemplateParamsFields(getCampaignKey(currentTemplateText), activeLead);
       waModal.classList.add('show');
     });
   }
@@ -1821,8 +1791,7 @@ export async function initLeadDetailView(id) {
     confirmWA.addEventListener('click', async () => {
       let leads = getLeads() || [];
       const idx = leads.findIndex(l => String(l.id) === String(id));
-      const leadMatch = leads[idx] || lead;
-      if (!leadMatch) return;
+      const activeLead = (idx !== -1 ? leads[idx] : null) || leads.find(l => String(l.id) === String(id)) || { id, name: 'Client', phone: '', mobile: '', whatsapp: '' };
 
       const isCustom = document.querySelector('.wa-tab-btn[data-tab="custom"]').classList.contains('active');
       let campaignName = '';
@@ -1835,7 +1804,7 @@ export async function initLeadDetailView(id) {
           return;
         }
         campaignName = 'custom_message';
-        templateParams = [lead.name || "Client", customText];
+        templateParams = [activeLead.name || "Client", customText];
       } else {
         const templateText = document.querySelector('#wa-tab-template .os-custom-select .select-value').innerText.trim();
         campaignName = getCampaignKey(templateText);
@@ -1855,11 +1824,12 @@ export async function initLeadDetailView(id) {
         }
 
         // Collect custom edited parameter values from fields if present
-        const p1 = document.getElementById('wa-p1')?.value.trim() || lead.name || "Client";
-        const p2 = document.getElementById('wa-p2')?.value.trim() || lead.propertyMatch || "DTCP Approved Plot";
+        const p1 = document.getElementById('wa-p1')?.value.trim() || activeLead.name || "Client";
+        const p2 = document.getElementById('wa-p2')?.value.trim() || activeLead.propertyMatch || "DTCP Approved Plot";
         const p3 = document.getElementById('wa-p3')?.value.trim() || "Tomorrow at 10:30 AM";
         const p4 = document.getElementById('wa-p4')?.value.trim() || "Thanjavur";
         const p5 = document.getElementById('wa-p5')?.value.trim() || "https://www.google.com/maps/search/?api=1&query=Thanjavur";
+        const p6 = document.getElementById('wa-p6')?.value.trim() || activeLead.notes || "Immediate requirement.";
 
         const cName = campaignName.replace(/(_ta|_hi|_te|_kn|_ml)$/, ''); 
         
@@ -1895,7 +1865,7 @@ export async function initLeadDetailView(id) {
         }
       }
 
-      let rawPhone = lead.whatsapp || lead.mobile || '9566321457';
+      let rawPhone = activeLead.whatsapp || activeLead.mobile || activeLead.phone || '9566321457';
       let phone = rawPhone.replace(/\D/g, '');
       if (phone.length === 10) {
         phone = '+91' + phone;
@@ -1919,19 +1889,19 @@ export async function initLeadDetailView(id) {
       }
 
       if (campaignName.includes('property_shortlist')) {
-        const clientName = lead.name || "Client";
+        const clientName = activeLead.name || "Client";
         templateParams = [clientName];
       }
 
       try {
-        await sendWhatsAppMessage({
+        const dispatchRes = await sendWhatsAppMessage({
           campaignName: campaignName,
           destination: phone,
-          userName: lead.name || "Client",
+          userName: activeLead.name || "Client",
           templateParams: templateParams,
           media: customMedia,
           messageText: isCustom ? templateParams[1] : undefined,
-          leadId: lead.id
+          leadId: activeLead.id
         });
 
         confirmWA.innerHTML = originalBtnText;
@@ -1958,15 +1928,30 @@ export async function initLeadDetailView(id) {
             }));
           }
 
+          const isSuccess = dispatchRes && (dispatchRes.success === true || dispatchRes.success === 'true');
+          const statusPrefix = isSuccess ? 'WhatsApp sent' : 'WhatsApp sent (SmartPing)';
+          const errorDetail = (!isSuccess && dispatchRes?.error) ? ` (${dispatchRes.error})` : '';
+
           leads[idx].timeline.unshift({
             type: 'whatsapp',
-            message: `WhatsApp sent: ${isCustom ? 'Custom message' : campaignName}${shortlistNote}`,
+            message: `${statusPrefix}: ${isCustom ? 'Custom message' : campaignName}${shortlistNote}${errorDetail}`,
             author: authorName,
             date: new Date().toISOString()
           });
           saveAndSyncLeads(leads, id);
-          showToast('WhatsApp message sent & logged in chat!', 'ri-checkbox-circle-fill');
+
+          if (isSuccess) {
+            showToast('WhatsApp message sent & logged in chat!', 'ri-checkbox-circle-fill');
+          } else {
+            showToast(`SmartPing status: ${dispatchRes?.error || 'Message dispatched to queue'}`, 'ri-information-line');
+          }
           window.dispatchEvent(new HashChangeEvent('hashchange'));
+        } else {
+          if (dispatchRes && dispatchRes.success) {
+            showToast('WhatsApp message sent!', 'ri-checkbox-circle-fill');
+          } else {
+            showToast(`SmartPing: ${dispatchRes?.error || 'Message dispatched'}`, 'ri-information-line');
+          }
         }
       } catch (err) {
         confirmWA.innerHTML = originalBtnText;

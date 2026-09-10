@@ -501,17 +501,16 @@ export async function initLeadsView(searchQuery = null) {
 }
 
 export function getLeads() {
-  if (!cachedLeads || cachedLeads.length === 0) {
-    try {
-      const stored = localStorage.getItem('thanjai_leads');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          cachedLeads = parsed;
-        }
+  try {
+    const stored = localStorage.getItem('thanjai_leads');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        cachedLeads = parsed;
+        return cachedLeads;
       }
-    } catch (e) {}
-  }
+    }
+  } catch (e) {}
   return cachedLeads || [];
 }
 

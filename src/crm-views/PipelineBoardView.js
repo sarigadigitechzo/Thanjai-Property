@@ -2,8 +2,9 @@ import { getPropertyById, getProperties } from '../utils/propertiesStore.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 import { showToast } from '../utils/toast.js';
 import { filterLeadsForActiveUser } from '../utils/adminUsersStore.js';
-import { mapLeadFromAPI } from './LeadsView.js';
+import { mapLeadFromAPI, getLeads, saveLeads } from './LeadsView.js';
 import { openPropertyModalById } from '../components/PropertyDetailModal.js';
+import { fetchFromAPI } from '../utils/api.js';
 
 export function renderPipelineBoardView() {
   return `
@@ -43,30 +44,6 @@ const STAGES = [
   { id: 'Lost Closed', name: 'LOST CLOSED', emailIcon: false }
 ];
 
-let boardLeadsCache = [];
-
-function getLeads() {
-  if (!boardLeadsCache || boardLeadsCache.length === 0) {
-    try {
-      const stored = localStorage.getItem('thanjai_leads');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          boardLeadsCache = parsed.map(l => (l && l.mobile !== undefined) ? l : mapLeadFromAPI(l));
-        }
-      }
-    } catch(e) {}
-  }
-  return boardLeadsCache || [];
-}
-
-function saveLeads(leads) {
-  boardLeadsCache = leads;
-  try {
-    localStorage.setItem('thanjai_leads', JSON.stringify(leads));
-  } catch(e) {}
-}
-
 function formatCurrency(val, propId = null) {
   if (propId) {
     const prop = getPropertyById(propId);
@@ -101,10 +78,10 @@ export function initPipelineBoardView() {
   const board = document.getElementById('pipeline-board');
   if (!board) return;
 
-  let leads = getLeads();
+  let leads = [...getLeads()];
   renderBoard();
 
-  // Async load fresh leads from live PHP API backend while preserving local status updates
+  // Async load fresh leads from live PHP API backend while preserving local status updates and local new leads
   try {
     fetchFromAPI('/leads').then(apiLeads => {
       if (apiLeads && Array.isArray(apiLeads) && apiLeads.length > 0) {
@@ -124,13 +101,19 @@ export function initPipelineBoardView() {
             }
           }
         });
+
+        // Preserve local-only leads that haven't been synced to server yet
+        const apiIdSet = new Set(mapped.map(m => String(m.id)));
+        const localOnlyLeads = localLeads.filter(locL => locL && locL.id && !apiIdSet.has(String(locL.id)));
+        const merged = [...localOnlyLeads, ...mapped];
+
         let deletedList = [];
         try { deletedList = JSON.parse(localStorage.getItem('thanjai_deleted_leads')) || []; } catch(e) {}
         const deletedIds = new Set(deletedList.map(d => String(d.id || d.leadId)));
         const deletedPhones = new Set(deletedList.map(d => String(d.phone || '')).filter(Boolean));
         const deletedNames = new Set(deletedList.map(d => String(d.name || '').trim().toLowerCase()).filter(Boolean));
 
-        const filteredMapped = mapped.filter(apiL => {
+        const filteredMapped = merged.filter(apiL => {
           if (!apiL) return false;
           const lIdStr = String(apiL.id);
           const cleanPhone = String(apiL.phone || apiL.mobile || '').replace(/\D/g, '');
@@ -142,8 +125,7 @@ export function initPipelineBoardView() {
         });
 
         saveLeads(filteredMapped);
-        leads.length = 0;
-        leads.push(...filteredMapped);
+        leads = [...filteredMapped];
         renderBoard();
       }
     }).catch(e => {});

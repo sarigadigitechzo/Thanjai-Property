@@ -422,6 +422,37 @@
 }
 
 @media (max-width: 768px) {
+  .settings-container {
+    padding: 16px 10px !important;
+  }
+  .settings-tabs {
+    display: flex !important;
+    gap: 16px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    white-space: nowrap !important;
+    scrollbar-width: none !important;
+    padding-bottom: 4px !important;
+    margin-bottom: 16px !important;
+  }
+  .settings-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+  .settings-tab {
+    padding: 10px 4px !important;
+    font-size: 0.88rem !important;
+    flex-shrink: 0 !important;
+  }
+  .settings-content-card {
+    padding: 16px 12px !important;
+    border-radius: 10px !important;
+  }
+  .settings-content-card input,
+  .settings-content-card select,
+  .settings-content-card textarea {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
   .template-card {
     flex-direction: column !important;
     align-items: flex-start !important;

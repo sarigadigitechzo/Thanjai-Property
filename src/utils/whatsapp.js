@@ -28,9 +28,10 @@ export async function sendWhatsAppMessage({ campaignName, destination, userName,
 
   const stringParams = (templateParams || []).map(p => String(p));
   let isDispatched = false;
+  let lastError = '';
+  let responseData = null;
 
-  // PRIMARY: Route through backend PHP relay — avoids browser CORS blocking completely.
-  // PHP server-side cURL sends the request to SmartPing with the master API key.
+  // PRIMARY: Route through backend PHP relay with master key fallback — avoids browser CORS blocking.
   try {
     const relayRes = await fetchFromAPI('/send_whatsapp', {
       method: 'POST',
@@ -45,14 +46,20 @@ export async function sendWhatsAppMessage({ campaignName, destination, userName,
         apiKey
       })
     });
+    responseData = relayRes;
     if (relayRes && (relayRes.success === true || relayRes.success === 'true')) {
       isDispatched = true;
+    } else if (relayRes && relayRes.response && (relayRes.response.status === 'success' || relayRes.response.submitted_message_id)) {
+      isDispatched = true;
+    } else {
+      lastError = relayRes?.response?.message || relayRes?.response?.error || relayRes?.curlError || 'SmartPing template parameter mismatch';
     }
   } catch (err) {
+    lastError = err.message || 'Network error connecting to WhatsApp relay';
     console.warn('Backend relay notice:', err);
   }
 
-  // FALLBACK: Direct browser dispatch only if backend relay fails (CORS may block this)
+  // FALLBACK: Direct browser dispatch only if backend relay failed
   if (!isDispatched) {
     try {
       const smartPingRes = await fetch('https://backend.api-wa.co/campaign/smartping/api/v2', {
@@ -68,14 +75,21 @@ export async function sendWhatsAppMessage({ campaignName, destination, userName,
         })
       });
       const resData = await smartPingRes.json();
+      responseData = resData;
       if (resData.status === 'success' || resData.success === 'true' || resData.submitted_message_id) {
         isDispatched = true;
+      } else {
+        lastError = resData.message || resData.error || lastError;
       }
     } catch (err) {
-      // Browser CORS may block direct dispatch — backend relay is the reliable path
+      // Browser CORS may block direct dispatch — backend relay is primary
     }
   }
 
-  return isDispatched;
+  return {
+    success: isDispatched,
+    error: isDispatched ? null : lastError,
+    data: responseData
+  };
 }
 
