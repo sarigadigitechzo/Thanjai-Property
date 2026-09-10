@@ -362,6 +362,19 @@ function renderApp() {
     }
   } catch (err) {
     console.error("Critical renderApp error:", err);
+    const appContainer = document.getElementById('app');
+    if (appContainer && !appContainer.innerHTML.trim()) {
+      appContainer.innerHTML = `
+        <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; background: #fafaf9; color: #1c1917; padding: 24px; text-align: center;">
+          <img src="/thanjai-official-new.png" alt="Thanjai Property" style="height: 60px; margin-bottom: 24px;" onerror="this.style.display='none'" />
+          <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; color: #eb5e28;">Thanjai Property Official</h2>
+          <p style="color: #78716c; max-width: 480px; margin-bottom: 24px; font-size: 0.95rem; line-height: 1.6;">Loading Tamil Nadu's Premier Real Estate Experience...</p>
+          <button onclick="window.location.reload()" style="background: #eb5e28; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
+            Refresh Page
+          </button>
+        </div>
+      `;
+    }
   }
 }
 
