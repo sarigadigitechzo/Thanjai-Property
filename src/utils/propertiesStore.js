@@ -43,7 +43,11 @@ function loadPropertiesFromStorage() {
 }
 
 function savePropertiesToStorage(props) {
-  // Pure in-memory cache, no localStorage write
+  try {
+    localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(props));
+  } catch (e) {
+    console.error("Failed writing properties to localStorage", e);
+  }
 }
 
 // Synchronously populate propertiesCache on module load so UI gets data on very first render
@@ -57,8 +61,14 @@ export async function initPropertiesStore() {
     if (data && Array.isArray(data)) {
       const remoteNormalized = data.map(remoteP => {
         const resolvedAdType = (remoteP.adType || remoteP.ad_type || 'free');
-        const resolvedOwnerName = (remoteP.ownerName || remoteP.owner_name || (resolvedAdType === 'paid' ? 'Verified Owner' : 'Thanjai Property'));
-        const resolvedOwnerPhone = (remoteP.ownerPhone || remoteP.owner_phone || (resolvedAdType === 'paid' ? '8489996852' : '8489996852'));
+        const resolvedActualOwnerName = remoteP.actualOwnerName || remoteP.actual_owner_name || (remoteP.ownerName && remoteP.ownerName !== 'Thanjai Property' ? remoteP.ownerName : '') || '';
+        const resolvedActualOwnerPhone = remoteP.actualOwnerPhone || remoteP.actual_owner_phone || (remoteP.ownerPhone && remoteP.ownerPhone !== '8489996852' && remoteP.ownerPhone !== '+91 84899 96852' ? remoteP.ownerPhone : '') || '';
+        const resolvedUserId = remoteP.userId || remoteP.user_id || '';
+        const resolvedUserEmail = remoteP.userEmail || remoteP.user_email || '';
+        const resolvedPosterRole = remoteP.posterRole || remoteP.poster_role || remoteP.userRole || remoteP.user_role || 'Individual Owner';
+
+        const resolvedOwnerName = remoteP.ownerName || remoteP.owner_name || (resolvedAdType === 'paid' ? 'Verified Owner' : 'Thanjai Property');
+        const resolvedOwnerPhone = remoteP.ownerPhone || remoteP.owner_phone || (resolvedAdType === 'paid' ? '8489996852' : '8489996852');
         
         const resolvedFacing = remoteP.facing || remoteP.address || '';
         const resolvedRoad = remoteP.road || '';
@@ -75,6 +85,11 @@ export async function initPropertiesStore() {
 
         return normalizePropertyRecord({
           ...remoteP,
+          actualOwnerName: resolvedActualOwnerName,
+          actualOwnerPhone: resolvedActualOwnerPhone,
+          userId: resolvedUserId,
+          userEmail: resolvedUserEmail,
+          posterRole: resolvedPosterRole,
           facing: resolvedFacing,
           road: resolvedRoad,
           taluk: resolvedTaluk,
@@ -574,8 +589,10 @@ function normalizePropertyRecord(p) {
     approvalStatus: approvalStatus,
     purpose: purpose,
     inquiriesCount: parseInt(p.inquiriesCount || 0, 10),
-    userId: p.userId || null,
-    userEmail: p.userEmail || null,
+    userId: p.userId || p.user_id || null,
+    userEmail: p.userEmail || p.user_email || null,
+    actualOwnerName: p.actualOwnerName || p.actual_owner_name || (p.ownerName && p.ownerName !== 'Thanjai Property' ? p.ownerName : '') || '',
+    actualOwnerPhone: p.actualOwnerPhone || p.actual_owner_phone || (p.ownerPhone && p.ownerPhone !== '8489996852' && p.ownerPhone !== '+91 84899 96852' ? p.ownerPhone : '') || '',
     price: numPrice,
     priceFormatted: formattedPrice,
     location: loc || '',

@@ -79,6 +79,9 @@ export function renderPropertyApprovalsView() {
 
 function renderPendingPropertyCard(p) {
   const defaultImg = (p.images && p.images[0]) || '/default-property.jpg';
+  const posterName = p.actualOwnerName || (p.ownerName && p.ownerName !== 'Thanjai Property' ? p.ownerName : '') || (p.listedBy && p.listedBy !== 'Thanjai Property' ? p.listedBy : '') || 'Portal User';
+  const posterRole = p.posterRole || p.userRole || (p.listedBy && p.listedBy !== 'Thanjai Property' ? p.listedBy : '') || 'Individual Owner';
+  const posterPhone = p.actualOwnerPhone || (p.ownerPhone && p.ownerPhone !== '8489996852' && p.ownerPhone !== '+91 84899 96852' ? p.ownerPhone : '') || p.ownerPhone || '—';
   
   return `
     <div class="pending-prop-card" style="background: #FAF8F5; border: 1px solid #E7E0D8; border-radius: 16px; padding: 24px; display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start;">
@@ -97,13 +100,13 @@ function renderPendingPropertyCard(p) {
           <!-- POSTER CREDENTIALS BADGE -->
           <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px; flex-wrap: wrap;">
             <span style="background: #2B3648; color: #fff; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;">
-              <i class="ri-user-3-line" style="color: #eb5e28;"></i> Posted By: <strong>${p.ownerName || 'Portal User'}</strong>
+              <i class="ri-user-3-line" style="color: #eb5e28;"></i> Posted By: <strong>${posterName}</strong>
             </span>
             <span style="background: rgba(49,130,206,0.12); color: #3182ce; font-size: 0.78rem; font-weight: 700; padding: 4px 10px; border-radius: 6px;">
-              Role: ${p.listedBy || 'Individual Owner'}
+              Role: ${posterRole}
             </span>
             <span style="color: #718096; font-size: 0.78rem; font-weight: 600;">
-              <i class="ri-phone-line"></i> ${p.ownerPhone || '9585777772'}
+              <i class="ri-phone-line"></i> ${posterPhone}
             </span>
           </div>
 
@@ -386,8 +389,8 @@ function openSubmissionPreviewModal(prop) {
 
             <div style="background: #F8FAFC; padding: 14px 16px; border-radius: 10px; border: 1px solid #E2E8F0;">
               <strong style="font-size: 0.8rem; color: #718096; text-transform: uppercase; display: block; margin-bottom: 4px;">Poster / Owner Details:</strong>
-              <span style="font-weight: 700; color: #1A202C;">${prop.ownerName || 'Portal User'} (${prop.listedBy || 'Individual Owner'})</span> • 
-              <a href="tel:${prop.ownerPhone}" style="color: #2b6cb0; text-decoration: none; font-weight: 700;">${prop.ownerPhone || 'N/A'}</a>
+              <span style="font-weight: 700; color: #1A202C;">${prop.actualOwnerName || (prop.ownerName && prop.ownerName !== 'Thanjai Property' ? prop.ownerName : '') || (prop.listedBy && prop.listedBy !== 'Thanjai Property' ? prop.listedBy : '') || 'Portal User'} (${prop.posterRole || prop.userRole || (prop.listedBy && prop.listedBy !== 'Thanjai Property' ? prop.listedBy : '') || 'Individual Owner'})</span> • 
+              <a href="tel:${prop.actualOwnerPhone || (prop.ownerPhone && prop.ownerPhone !== '8489996852' && prop.ownerPhone !== '+91 84899 96852' ? prop.ownerPhone : '') || prop.ownerPhone || ''}" style="color: #2b6cb0; text-decoration: none; font-weight: 700;">${prop.actualOwnerPhone || (prop.ownerPhone && prop.ownerPhone !== '8489996852' && prop.ownerPhone !== '+91 84899 96852' ? prop.ownerPhone : '') || prop.ownerPhone || 'N/A'}</a>
             </div>
 
             <div>

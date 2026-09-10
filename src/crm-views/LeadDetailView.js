@@ -804,6 +804,7 @@ ${(() => {
         <div class="os-modal-body">
           <form id="edit-lead-form">
             <input type="hidden" id="edit-lead-id" value="${lead.id}" />
+            <!-- CONTACT -->
             <div class="form-section-title">CONTACT</div>
             <div class="form-row">
               <div class="form-group">
@@ -812,13 +813,13 @@ ${(() => {
               </div>
               <div class="form-group">
                 <label>Mobile *</label>
-                <input type="text" id="edit-lead-mobile" required value="${lead.mobile || ''}" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                <input type="text" id="edit-lead-mobile" placeholder="10-digit number" required value="${lead.mobile || lead.phone || ''}" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
                 <label>WhatsApp number</label>
-                <input type="text" id="edit-lead-whatsapp" value="${lead.whatsapp || ''}" />
+                <input type="text" id="edit-lead-whatsapp" placeholder="defaults to mobile" value="${lead.whatsapp || ''}" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
               </div>
               <div class="form-group">
                 <label>Email</label>
@@ -828,19 +829,40 @@ ${(() => {
             <div class="form-row">
               <div class="form-group">
                 <label>Country</label>
-                <input type="text" id="edit-lead-country" value="${lead.country || ''}" />
+                <input type="text" id="edit-lead-country" value="${lead.country || 'India'}" />
               </div>
               <div class="form-group">
-                <label>City / area</label>
-                <input type="text" id="edit-lead-city" value="${lead.city || lead.area || ''}" />
+                <label>City</label>
+                <input type="text" id="edit-lead-city" value="${lead.city || 'Thanjavur'}" />
               </div>
             </div>
 
+            <!-- REQUIREMENT -->
             <div class="form-section-title">REQUIREMENT</div>
             <div class="form-row">
               <div class="form-group">
+                <label>Preferred area</label>
+                <input type="text" id="edit-lead-area" value="${lead.area || ''}" />
+              </div>
+              <div class="form-group">
                 <label>Property type</label>
-                <input type="text" id="edit-lead-type" value="${lead.type || ''}" />
+                <div class="os-custom-select modal-select" id="edit-lead-type-select">
+                  <div class="select-value">${lead.type || 'Any'}</div>
+                  <i class="ri-arrow-down-s-line"></i>
+                  <div class="select-dropdown">
+                    <div class="select-option ${(lead.type === 'Any' || !lead.type) ? 'selected' : ''}">Any</div>
+                    <div class="select-option ${lead.type === 'Apartment' ? 'selected' : ''}">Apartment</div>
+                    <div class="select-option ${lead.type === 'Villa' ? 'selected' : ''}">Villa</div>
+                    <div class="select-option ${lead.type === 'Townhouse' ? 'selected' : ''}">Townhouse</div>
+                    <div class="select-option ${lead.type === 'Penthouse' ? 'selected' : ''}">Penthouse</div>
+                    <div class="select-option ${lead.type === 'Studio' ? 'selected' : ''}">Studio</div>
+                    <div class="select-option ${lead.type === 'Plot' || lead.type === 'Residential Plot' ? 'selected' : ''}">Plot</div>
+                    <div class="select-option ${lead.type === 'Office' ? 'selected' : ''}">Office</div>
+                    <div class="select-option ${lead.type === 'Retail' ? 'selected' : ''}">Retail</div>
+                    <div class="select-option ${lead.type === 'Warehouse' ? 'selected' : ''}">Warehouse</div>
+                    <div class="select-option ${lead.type === 'Other' ? 'selected' : ''}">Other</div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="form-row">
@@ -850,22 +872,72 @@ ${(() => {
               </div>
               <div class="form-group">
                 <label>Budget max</label>
-                <input type="text" id="edit-lead-budget-max" value="${lead.budgetMax || ''}" />
+                <input type="text" id="edit-lead-budget-max" value="${lead.budgetMax || lead.budget || ''}" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Currency</label>
+                <div class="os-custom-select modal-select" id="edit-lead-currency-select">
+                  <div class="select-value">INR</div>
+                  <i class="ri-arrow-down-s-line"></i>
+                  <div class="select-dropdown">
+                    <div class="select-option selected">INR</div>
+                    <div class="select-option">USD</div>
+                    <div class="select-option">EUR</div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Bedrooms</label>
+                <input type="text" id="edit-lead-bedrooms" value="${lead.bedrooms || ''}" />
               </div>
             </div>
 
+            <!-- TRACKING -->
             <div class="form-section-title">TRACKING</div>
             <div class="form-row">
               <div class="form-group">
                 <label>Source</label>
-                <input type="text" id="edit-lead-source" value="${lead.source || ''}" />
+                <input type="text" id="edit-lead-source" placeholder="e.g. Manual, Walk-in, Referral, Instagram, Meta Ads..." value="${lead.source || 'Manual'}" />
               </div>
               <div class="form-group">
-                <label>Assign to</label>
-                <input type="text" id="edit-lead-assign" value="${lead.assignTo || ''}" />
+                <label>Priority</label>
+                <div class="os-custom-select modal-select" id="edit-lead-priority-select">
+                  <div class="select-value">Medium</div>
+                  <i class="ri-arrow-down-s-line"></i>
+                  <div class="select-dropdown">
+                    <div class="select-option">High</div>
+                    <div class="select-option selected">Medium</div>
+                    <div class="select-option">Low</div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="form-row">
+              <div class="form-group">
+                <label>Assign to</label>
+                <div class="os-custom-select modal-select" id="edit-lead-assign-select">
+                  <div class="select-value">${lead.assignTo || lead.assignedTo || 'Unassigned'}</div>
+                  <i class="ri-arrow-down-s-line"></i>
+                  <div class="select-dropdown">
+                    <div class="select-option ${(!lead.assignTo || lead.assignTo === 'Unassigned') ? 'selected' : ''}">Unassigned</div>
+${(() => {
+              const adminUsers = JSON.parse(localStorage.getItem('thanjai_admin_users')) || [];
+              let html = '';
+              if (adminUsers.length > 0) {
+                adminUsers.filter(u => u.status === 'Active').forEach(u => {
+                  const isSel = (lead.assignTo === u.fullName || lead.assignedTo === u.fullName) ? 'selected' : '';
+                  html += `<div class="select-option ${isSel}">${u.fullName}</div>`;
+                });
+              } else {
+                html += `<div class="select-option" style="color:var(--os-gray-400);">No staff found</div>`;
+              }
+              return html;
+            })()}
+                  </div>
+                </div>
+              </div>
               <div class="form-group">
                 <label>Follow-up Date</label>
                 <input type="date" id="edit-lead-followup" value="${lead.followup && lead.followup !== '—' ? lead.followup : ''}" style="color: var(--os-gray-600);" />
@@ -874,7 +946,7 @@ ${(() => {
             <div class="form-row">
               <div class="form-group" style="width: 100%;">
                 <label>Requirement notes</label>
-                <textarea id="edit-lead-notes" rows="3" style="width: 100%; border: var(--os-border-thin); border-radius: var(--os-radius-sm); padding: 12px; font-family: inherit; resize: vertical;">${lead.notes || ''}</textarea>
+                <textarea id="edit-lead-notes" rows="3" style="width: 100%; border: var(--os-border-thin); border-radius: var(--os-radius-sm); padding: 12px; font-family: inherit; resize: vertical;">${typeof lead.notes === 'string' ? lead.notes : ''}</textarea>
               </div>
             </div>
           </form>
@@ -2134,12 +2206,7 @@ export async function initLeadDetailView(id) {
     });
   });
 
-  // Edit logic
-  const editModal = document.getElementById('edit-lead-modal');
-  const btnEdit = document.getElementById('btn-edit-lead');
-  const closeEdit = document.getElementById('close-edit-modal');
-  const cancelEdit = document.getElementById('cancel-edit-modal');
-  
+
   // Set Follow-up Logic
   const btnFollowUp = document.getElementById('btn-set-follow-up');
   const followUpInput = document.getElementById('follow-up-datetime');
@@ -2645,19 +2712,27 @@ export async function initLeadDetailView(id) {
       renderMatchingProperties(matches.length > 0 ? matches : allProps.slice(0, 10));
     });
   }
+  const editModal = document.getElementById('edit-lead-modal');
+  const btnEdit = document.getElementById('btn-edit-lead');
+  const closeEdit = document.getElementById('close-edit-modal');
+  const cancelEdit = document.getElementById('cancel-edit-btn');
   const saveEdit = document.getElementById('btn-save-edit');
 
-  if (btnEdit) btnEdit.addEventListener('click', () => editModal.classList.add('show'));
-  if (closeEdit) closeEdit.addEventListener('click', () => editModal.classList.remove('show'));
-  if (cancelEdit) cancelEdit.addEventListener('click', () => editModal.classList.remove('show'));
+  if (btnEdit) btnEdit.addEventListener('click', () => { if (editModal) editModal.classList.add('show'); });
+  if (closeEdit) closeEdit.addEventListener('click', () => { if (editModal) editModal.classList.remove('show'); });
+  if (cancelEdit) cancelEdit.addEventListener('click', () => { if (editModal) editModal.classList.remove('show'); });
 
   if (saveEdit) {
-    saveEdit.addEventListener('click', () => {
-      const name = document.getElementById('edit-lead-name').value.trim();
-      const mobile = document.getElementById('edit-lead-mobile').value.trim();
+    saveEdit.addEventListener('click', async () => {
+      const name = document.getElementById('edit-lead-name')?.value.trim();
+      const mobile = document.getElementById('edit-lead-mobile')?.value.trim();
       
       if (!name || !mobile) {
-        alert('Name and Mobile are required!');
+        showAlertModal({
+          title: 'Missing Required Fields',
+          message: 'Please enter both the <strong>Lead Name</strong> and <strong>Mobile Phone Number</strong> to proceed.',
+          type: 'warning'
+        });
         return;
       }
 
@@ -2665,29 +2740,67 @@ export async function initLeadDetailView(id) {
       const idx = leads.findIndex(l => String(l.id) === String(id));
       
       if (idx !== -1) {
+        const leadToUpdate = leads[idx];
+        const type = document.getElementById('edit-lead-type-select')?.querySelector('.select-value')?.textContent.trim() || leadToUpdate.type || 'Any';
+        const source = document.getElementById('edit-lead-source')?.value.trim() || leadToUpdate.source || 'Manual';
+        const assignTo = document.getElementById('edit-lead-assign-select')?.querySelector('.select-value')?.textContent.trim() || leadToUpdate.assignTo || 'Unassigned';
+        const area = document.getElementById('edit-lead-area')?.value.trim() || '';
+        const city = document.getElementById('edit-lead-city')?.value.trim() || '';
+        const country = document.getElementById('edit-lead-country')?.value.trim() || 'India';
+        const locationStr = [area, city, country].filter(Boolean).join(', ');
+        const beds = document.getElementById('edit-lead-bedrooms')?.value.trim() || '';
+        const requirementStr = beds ? `${type} - ${beds} Beds` : type;
+        const bMin = document.getElementById('edit-lead-budget-min')?.value.trim() || '';
+        const bMax = document.getElementById('edit-lead-budget-max')?.value.trim() || '';
+        const budgetStr = bMin && bMax ? `${bMin} - ${bMax}` : (bMax || bMin || '');
+        const whatsapp = document.getElementById('edit-lead-whatsapp')?.value.trim() || mobile;
+        const email = document.getElementById('edit-lead-email')?.value.trim() || '';
+        const followup = document.getElementById('edit-lead-followup')?.value || '—';
+        const notes = document.getElementById('edit-lead-notes')?.value || '';
+
         leads[idx] = {
-          ...leads[idx],
+          ...leadToUpdate,
           name,
+          phone: mobile,
           mobile,
-          whatsapp: document.getElementById('edit-lead-whatsapp').value,
-          email: document.getElementById('edit-lead-email').value,
-          country: document.getElementById('edit-lead-country').value,
-          city: document.getElementById('edit-lead-city').value,
-          area: document.getElementById('edit-lead-city').value, // simplified
-          type: document.getElementById('edit-lead-type').value,
-          budgetMin: document.getElementById('edit-lead-budget-min').value,
-          budgetMax: document.getElementById('edit-lead-budget-max').value,
-          source: document.getElementById('edit-lead-source').value,
-          assignTo: document.getElementById('edit-lead-assign').value,
-          followup: document.getElementById('edit-lead-followup').value || '—',
-          notes: document.getElementById('edit-lead-notes').value
+          whatsapp,
+          email,
+          country,
+          city,
+          area,
+          location: locationStr || leadToUpdate.location,
+          type,
+          propertyType: type,
+          requirement: requirementStr,
+          budgetMin: bMin,
+          budgetMax: bMax,
+          budget: budgetStr || leadToUpdate.budget,
+          bedrooms: beds,
+          source,
+          assignTo,
+          assignedTo: assignTo,
+          followup,
+          notes: notes || leadToUpdate.notes
         };
-        saveAndSyncLeads(leads, id);
         
-        editModal.classList.remove('show');
-        
-        // Trigger a re-render of the detail view by resetting the hash or manually reloading
-        window.dispatchEvent(new HashChangeEvent('hashchange'));
+        saveLeads(leads);
+
+        addAuditLog({
+          action: `Updated Lead (${name})`,
+          module: 'CRM Pipeline',
+          details: `Updated details for ${name} (${mobile}) from Lead Details view.`
+        });
+
+        if (editModal) editModal.classList.remove('show');
+        showToast(`Lead "${name}" updated successfully!`, 'ri-checkbox-circle-fill');
+
+        await saveAndSyncLeads(leads, id);
+
+        const content = document.getElementById('os-content');
+        if (content) {
+          content.innerHTML = renderLeadDetailView(id);
+          initLeadDetailView(id);
+        }
       }
     });
   }
@@ -2715,7 +2828,7 @@ export async function initLeadDetailView(id) {
   });
 
   // Custom Select Dropdown logic for LeadDetailView
-  const customSelects = document.querySelectorAll('.lead-detail-page .os-custom-select, #share-partner-modal .os-custom-select, #send-whatsapp-modal .os-custom-select');
+  const customSelects = document.querySelectorAll('.lead-detail-page .os-custom-select, #share-partner-modal .os-custom-select, #send-whatsapp-modal .os-custom-select, #edit-lead-modal .os-custom-select');
   customSelects.forEach(select => {
     const valueEl = select.querySelector('.select-value');
     const dropdown = select.querySelector('.select-dropdown');

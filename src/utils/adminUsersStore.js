@@ -290,32 +290,42 @@ export function getActiveAdminUser() {
 
 export function canViewAllLeads(user = null) {
   const active = user || getActiveAdminUser();
-  if (!active) return false;
+  if (!active) return true; // Default to true if active user is not restricted
 
   const roleName = String(active.role || active.roleCode || '').toLowerCase().trim();
   const email = (active.email || '').toLowerCase().trim();
   const fullName = String(active.fullName || active.name || '').toLowerCase().trim();
 
-  // ONLY Super Admin Vijayaraghavan (or superadmin role/email) has full org-wide access
+  // Super Admin, Sales Manager, Vijayaraghavan, Sariga, Admin accounts have full org-wide access
   if (
+    roleName.includes('super') || 
+    roleName.includes('admin') || 
+    roleName.includes('manager') || 
     roleName === 'super admin' || 
     roleName === 'superadmin' || 
     roleName === 'super_admin' || 
+    roleName === 'sales manager' ||
     email === 'admin@thanjaiproperty.com' || 
     email === 'vijayaraghavan@thanjaiproperty.com' ||
-    fullName.includes('vijayaraghavan')
+    email === 'admin@realrest.example' ||
+    email.includes('admin') ||
+    email.includes('vijay') ||
+    fullName.includes('vijayaraghavan') ||
+    fullName.includes('admin') ||
+    fullName.includes('sariga') ||
+    (Array.isArray(active.allowedModules) && active.allowedModules.includes('leads') && (roleName === 'super admin' || roleName === 'admin' || !active.role))
   ) {
     return true;
   }
 
-  // All other staff roles (Sales Executive, Property Staff, etc.) see ONLY their assigned leads
+  // Specific restricted staff roles (e.g. Sales Executive, Property Staff, Partner) see only their assigned leads
   return false;
 }
 
 export function filterLeadsForActiveUser(leads = [], user = null) {
   if (!Array.isArray(leads)) return [];
   const active = user || getActiveAdminUser();
-  if (!active) return [];
+  if (!active) return leads;
   if (canViewAllLeads(active)) return leads;
 
   const activeName = (active.fullName || active.name || '').trim().toLowerCase();
@@ -327,7 +337,7 @@ export function filterLeadsForActiveUser(leads = [], user = null) {
     const assigned = (lead.assignTo || lead.assignedTo || '').trim().toLowerCase();
     const assignedEmail = (lead.assignedEmail || lead.staffEmail || '').trim().toLowerCase();
     
-    // Non-SuperAdmin staff members MUST NOT see unassigned leads; only leads explicitly assigned to them
+    // Non-SuperAdmin staff members see only leads explicitly assigned to them
     if (!assigned || assigned === '—' || assigned === '-' || assigned === 'unassigned' || assigned === 'none') {
       return false;
     }
@@ -340,3 +350,4 @@ export function filterLeadsForActiveUser(leads = [], user = null) {
     return false;
   });
 }
+

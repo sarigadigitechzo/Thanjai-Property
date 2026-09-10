@@ -1,5 +1,5 @@
 import { getCurrentUser, logoutUser, setCurrentUser, getRegisteredUsers, updateUserPassword } from './utils/userAuthStore.js';
-import { getProperties, addProperty, updateProperty, deleteProperty } from './utils/propertiesStore.js';
+import { getProperties, addProperty, updateProperty, deleteProperty, initPropertiesStore } from './utils/propertiesStore.js';
 import { showToast } from './utils/toast.js';
 
 let userUploadedImages = [];
@@ -7,6 +7,43 @@ let userUploadedVideoUrl = '';
 let userActivePreviewId = null;
 let userActiveMediaIndex = 0;
 let currentSelectedAdType = 'free';
+
+export function getUserProperties(user, allProps = null) {
+  if (!user) return [];
+  const props = allProps || getProperties() || [];
+  const userName = (user.fullName || user.name || (user.email ? user.email.split('@')[0] : '')).toLowerCase().trim();
+  const userPhone = String(user.phone || '').replace(/\D/g, '').slice(-10);
+  const userEmail = String(user.email || '').toLowerCase().trim();
+  const userId = user.id ? String(user.id).trim() : '';
+
+  return props.filter(p => {
+    if (!p) return false;
+    
+    // 1. Match by userId or userEmail
+    if (userId && p.userId && String(p.userId).trim() === userId) return true;
+    if (userEmail && p.userEmail && String(p.userEmail).toLowerCase().trim() === userEmail) return true;
+
+    // 2. Match by phone number (last 10 digits)
+    if (userPhone && userPhone.length >= 7) {
+      const pActualPhone = String(p.actualOwnerPhone || '').replace(/\D/g, '').slice(-10);
+      const pOwnerPhone = String(p.ownerPhone || '').replace(/\D/g, '').slice(-10);
+      if (pActualPhone && pActualPhone === userPhone) return true;
+      if (pOwnerPhone && pOwnerPhone === userPhone && pOwnerPhone !== '8489996852') return true;
+    }
+
+    // 3. Match by owner name
+    if (userName) {
+      const pActualName = String(p.actualOwnerName || '').toLowerCase().trim();
+      const pOwnerName = String(p.ownerName || '').toLowerCase().trim();
+      const pListedBy = String(p.listedBy || '').toLowerCase().trim();
+      if (pActualName && pActualName === userName) return true;
+      if (pOwnerName && pOwnerName === userName && pOwnerName !== 'thanjai property') return true;
+      if (pListedBy && pListedBy === userName && pListedBy !== 'thanjai property') return true;
+    }
+
+    return false;
+  });
+}
 
 const defaultBuyersInquiries = [
   {
@@ -67,7 +104,7 @@ function compressImageFile(file, maxWidth = 1000, maxHeight = 800, quality = 0.7
           width = maxWidth;
         }
         if (height > maxHeight) {
-          width = Math.round((width * maxHeight) / height);
+          height = Math.round((width * maxHeight) / height);
           height = maxHeight;
         }
         const canvas = document.createElement('canvas');
@@ -104,19 +141,7 @@ export function renderUserDashboard() {
   const userName = user.fullName || user.name || (user.email ? user.email.split('@')[0] : 'Property Owner');
 
   const allProps = getProperties();
-  const userProps = allProps.filter(p => {
-    if (p.userId && user.id && p.userId === user.id) return true;
-    if (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()) return true;
-    
-    // Check actualOwner metadata first if available
-    if (p.actualOwnerPhone === user.phone && (p.actualOwnerName === userName)) return true;
-    
-    // Fallback to legacy check
-    if (!p.userId && !p.userEmail) {
-      return p.ownerPhone === user.phone && (p.listedBy === userName || p.ownerName === userName);
-    }
-    return false;
-  });
+  const userProps = getUserProperties(user, allProps);
 
   const submittedCount = userProps.length;
   const pendingCount = userProps.filter(p => p.approvalStatus === 'Pending Approval' || p.status === 'Pending Approval').length;
@@ -289,19 +314,7 @@ export function renderUserDashboard() {
 
   function refreshMyProperties() {
     const currentAll = getProperties();
-    const updatedUserProps = currentAll.filter(p => {
-      if (p.userId && user.id && p.userId === user.id) return true;
-      if (p.userEmail && user.email && p.userEmail.toLowerCase() === user.email.toLowerCase()) return true;
-      
-      // Check actualOwner metadata first if available
-      if (p.actualOwnerPhone === user.phone && (p.actualOwnerName === userName)) return true;
-
-      // Fallback to legacy check
-      if (!p.userId && !p.userEmail) {
-        return p.ownerPhone === user.phone && (p.listedBy === userName || p.ownerName === userName);
-      }
-      return false;
-    });
+    const updatedUserProps = getUserProperties(user, currentAll);
     
     const panelTitle = document.getElementById('panel-title-text');
     const panelSub = document.getElementById('panel-sub-text');
@@ -571,6 +584,23 @@ export function renderUserDashboard() {
       }
     });
 
+    // DYNAMIC ROAD CORRIDOR "OTHER" TEXT INPUT TOGGLE
+    const roadSelect = document.getElementById('user-prop-road');
+    const customRoadInput = document.getElementById('user-prop-road-custom');
+    roadSelect?.addEventListener('change', () => {
+      if (roadSelect.value === 'Other / Outside Road') {
+        if (customRoadInput) {
+          customRoadInput.style.display = 'block';
+          customRoadInput.focus();
+        }
+      } else {
+        if (customRoadInput) {
+          customRoadInput.style.display = 'none';
+          customRoadInput.value = '';
+        }
+      }
+    });
+
     // PRIMARY IMAGE URL LIVE SYNC
     imgUrlInput?.addEventListener('input', () => {
       const url = imgUrlInput.value.trim();
@@ -686,7 +716,9 @@ export function renderUserDashboard() {
       const type = document.getElementById('user-prop-type').value;
       const categoryRaw = document.getElementById('user-prop-category').value;
       const area = document.getElementById('user-prop-area')?.value.trim() || '';
-      const road = document.getElementById('user-prop-road')?.value || '';
+      const roadSelectVal = document.getElementById('user-prop-road')?.value || '';
+      const customRoadVal = document.getElementById('user-prop-road-custom')?.value.trim() || '';
+      const road = (roadSelectVal === 'Other / Outside Road' && customRoadVal) ? customRoadVal : roadSelectVal;
       const taluk = document.getElementById('user-prop-taluk')?.value.trim() || 'Thanjavur';
       const district = document.getElementById('user-prop-district')?.value.trim() || 'Thanjavur';
       const facing = document.getElementById('user-prop-facing')?.value.trim() || '';
@@ -703,7 +735,7 @@ export function renderUserDashboard() {
       const longitude = document.getElementById('user-prop-longitude')?.value || '79.137827';
       const desc = document.getElementById('user-prop-desc').value;
 
-      const roadPart = road && road !== 'Other / Outside Road' ? road : '';
+      const roadPart = (road && road !== 'Other / Outside Road') ? road : (customRoadVal || '');
       const locParts = [area, roadPart, taluk, district].filter(Boolean);
       const location = locParts.length > 0 ? [...new Set(locParts)].join(', ') : (area || district || '');
 
@@ -1294,6 +1326,23 @@ function renderPostPropertyFormHtml(propToEdit = null, adType = 'free') {
   const resKeywords = ['house', 'villa', 'apartment', 'home', 'flat', 'duplex', 'townhouse', 'penthouse', 'building', 'room', 'bhk', 'residence', 'cottage', 'bungalow', 'rowhouse', 'manor', 'studio'];
   const isRes = resKeywords.some(k => val.includes(k));
 
+  const knownRoads = [
+    "Medical College Road",
+    "Trichy Road",
+    "Pudukkottai Road",
+    "Madhakottai Road",
+    "Nanjikottai Road",
+    "Villar Road",
+    "Pattukottai Bypass",
+    "Mariyamman Kovil Road",
+    "Srinivasapuram",
+    "Reddipalayam Road",
+    "Kumbakonam Bypass"
+  ];
+  const activeRoad = propToEdit?.road || '';
+  const isKnownRoad = knownRoads.includes(activeRoad);
+  const isOtherRoad = Boolean(activeRoad && !isKnownRoad);
+
   return `
     <div style="background: #FAF8F5; border: 1px solid #E7E0D8; border-radius: 16px; padding: 32px; width: 100%; max-width: 980px; margin: 0 auto; box-sizing: border-box;">
       <div style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
@@ -1397,20 +1446,11 @@ function renderPostPropertyFormHtml(propToEdit = null, adType = 'free') {
             <div>
               <label style="font-size: 0.82rem; font-weight: 800; color: #4A5568; display: block; margin-bottom: 6px;">Road / Prime Corridor</label>
               <select id="user-prop-road" style="width: 100%; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px; border: 1px solid #CBD5E0; background: #fff; box-sizing: border-box;">
-                <option value="" ${!propToEdit?.road ? 'selected' : ''}>-- Select Road Corridor (Optional) --</option>
-                <option value="Medical College Road" ${propToEdit?.road === 'Medical College Road' ? 'selected' : ''}>Medical College Road</option>
-                <option value="Trichy Road" ${propToEdit?.road === 'Trichy Road' ? 'selected' : ''}>Trichy Road</option>
-                <option value="Pudukkottai Road" ${propToEdit?.road === 'Pudukkottai Road' ? 'selected' : ''}>Pudukkottai Road</option>
-                <option value="Madhakottai Road" ${propToEdit?.road === 'Madhakottai Road' ? 'selected' : ''}>Madhakottai Road</option>
-                <option value="Nanjikottai Road" ${propToEdit?.road === 'Nanjikottai Road' ? 'selected' : ''}>Nanjikottai Road</option>
-                <option value="Villar Road" ${propToEdit?.road === 'Villar Road' ? 'selected' : ''}>Villar Road</option>
-                <option value="Pattukottai Bypass" ${propToEdit?.road === 'Pattukottai Bypass' ? 'selected' : ''}>Pattukottai Bypass</option>
-                <option value="Mariyamman Kovil Road" ${propToEdit?.road === 'Mariyamman Kovil Road' ? 'selected' : ''}>Mariyamman Kovil Road</option>
-                <option value="Srinivasapuram" ${propToEdit?.road === 'Srinivasapuram' ? 'selected' : ''}>Srinivasapuram</option>
-                <option value="Reddipalayam Road" ${propToEdit?.road === 'Reddipalayam Road' ? 'selected' : ''}>Reddipalayam Road</option>
-                <option value="Kumbakonam Bypass" ${propToEdit?.road === 'Kumbakonam Bypass' ? 'selected' : ''}>Kumbakonam Bypass</option>
-                <option value="Other / Outside Road" ${propToEdit?.road === 'Other / Outside Road' ? 'selected' : ''}>Other / Outside Road</option>
+                <option value="" ${!activeRoad ? 'selected' : ''}>-- Select Road Corridor (Optional) --</option>
+                ${knownRoads.map(r => `<option value="${r}" ${activeRoad === r ? 'selected' : ''}>${r}</option>`).join('')}
+                <option value="Other / Outside Road" ${isOtherRoad || activeRoad === 'Other / Outside Road' ? 'selected' : ''}>Other / Outside Road...</option>
               </select>
+              <input type="text" id="user-prop-road-custom" value="${isOtherRoad && activeRoad !== 'Other / Outside Road' ? activeRoad : ''}" placeholder="Type custom road name or corridor..." style="width: 100%; margin-top: 8px; padding: 10px 14px; font-size: 0.92rem; border-radius: 8px; border: 1px solid #CBD5E0; box-sizing: border-box; display: ${isOtherRoad || activeRoad === 'Other / Outside Road' ? 'block' : 'none'};" />
             </div>
 
             <div>
@@ -1940,7 +1980,15 @@ function showAdTypeSelectionModal(onSelect) {
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', renderUserDashboard);
+  document.addEventListener('DOMContentLoaded', () => {
+    renderUserDashboard();
+    initPropertiesStore().then(() => renderUserDashboard()).catch(() => {});
+  });
 } else {
   renderUserDashboard();
+  initPropertiesStore().then(() => renderUserDashboard()).catch(() => {});
 }
+
+window.addEventListener('propertiesUpdated', () => {
+  renderUserDashboard();
+});

@@ -251,12 +251,12 @@ export async function initPipelineBoardView() {
     const priorityClass = (lead.priority || 'Medium').toLowerCase() === 'high' ? 'high' : '';
     const priorityText = lead.priority ? lead.priority.toUpperCase() : 'MEDIUM';
 
-    let rawSource = (lead.source || 'MANUAL').toUpperCase();
-    let sourceText = 'CONTACT ENQUIRY';
-    if (propIdList.length > 0 || rawSource.includes('PROPERTY') || rawSource.includes('VISIT')) {
-      sourceText = 'PROPERTY INQUIRY';
-    } else {
+    let rawSource = String(lead.source || (propIdList.length > 0 ? 'PROPERTY INQUIRY' : 'MANUAL')).trim().toUpperCase();
+    let sourceText = rawSource;
+    if (rawSource.includes('CONTACT') || rawSource === 'WEBSITE FORM' || rawSource === 'CONTACT FORM') {
       sourceText = 'CONTACT ENQUIRY';
+    } else if (rawSource.includes('PROPERTY') || rawSource.includes('VISIT') || propIdList.length > 0) {
+      sourceText = 'PROPERTY INQUIRY';
     }
 
     let propBadgeHtml = '';

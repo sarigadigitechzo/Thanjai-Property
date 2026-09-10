@@ -294,6 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
       case 'leads':
         html = renderLeadsView();
+        afterRender = () => initLeadsView(param);
         break;
       case 'lead-detail':
         html = renderLeadDetailView(param);
@@ -400,9 +401,6 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       if (contentArea) {
         contentArea.innerHTML = html;
-      }
-      if (viewName === 'leads') {
-        initLeadsView(param);
       }
       if (afterRender) {
         setTimeout(afterRender, 0); // ensure DOM is painted

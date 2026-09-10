@@ -508,8 +508,46 @@ export async function initLeadsView(searchQuery = null) {
   try {
     fetchFromAPI('/leads').then(data => {
       if (data && Array.isArray(data) && data.length > 0) {
+        const localLeads = getLeads();
         const mapped = data.map(mapLeadFromAPI);
-        cachedLeads = mapped;
+        mapped.forEach(apiL => {
+          const matchingLocal = localLeads.find(locL => 
+            (locL.id && String(locL.id) === String(apiL.id)) ||
+            (locL.phone && String(locL.phone).replace(/\D/g, '') === String(apiL.phone).replace(/\D/g, '')) ||
+            (locL.name && String(locL.name).trim().toLowerCase() === String(apiL.name).trim().toLowerCase())
+          );
+          if (matchingLocal) {
+            if (matchingLocal.status) apiL.status = matchingLocal.status;
+            if (matchingLocal.assignTo && matchingLocal.assignTo !== 'Unassigned') {
+              apiL.assignTo = matchingLocal.assignTo;
+              apiL.assignedTo = matchingLocal.assignTo;
+            }
+          }
+        });
+
+        // Preserve local-only leads that haven't synced to server yet
+        const apiIdSet = new Set(mapped.map(m => String(m.id)));
+        const localOnlyLeads = localLeads.filter(locL => locL && locL.id && !apiIdSet.has(String(locL.id)));
+        const merged = [...localOnlyLeads, ...mapped];
+
+        let deletedList = [];
+        try { deletedList = JSON.parse(localStorage.getItem('thanjai_deleted_leads')) || []; } catch(e) {}
+        const deletedIds = new Set(deletedList.map(d => String(d.id || d.leadId)));
+        const deletedPhones = new Set(deletedList.map(d => String(d.phone || '')).filter(Boolean));
+        const deletedNames = new Set(deletedList.map(d => String(d.name || '').trim().toLowerCase()).filter(Boolean));
+
+        const filteredMapped = merged.filter(apiL => {
+          if (!apiL) return false;
+          const lIdStr = String(apiL.id);
+          const cleanPhone = String(apiL.phone || apiL.mobile || '').replace(/\D/g, '');
+          const cleanName = String(apiL.name || '').trim().toLowerCase();
+          if (deletedIds.has(lIdStr)) return false;
+          if (cleanPhone && deletedPhones.has(cleanPhone)) return false;
+          if (cleanName && deletedNames.has(cleanName)) return false;
+          return true;
+        });
+
+        cachedLeads = filteredMapped;
         saveLeads(cachedLeads);
         renderTable();
       }
