@@ -4,16 +4,18 @@ import { filterLeadsForActiveUser, canViewAllLeads, getActiveAdminUser } from '.
 import { fetchFromAPI } from '../utils/api.js';
 import { getLeads } from './LeadsView.js';
 import { getCachedStats, saveCachedStats } from '../utils/leadsDb.js';
+import { getLeads, consolidateLeadsByBuyer } from './LeadsView.js';
 
 export function renderDashboardView() {
   const activePropertiesCount = getProperties().length;
   const users = getRegisteredUsers();
   const activeUser = getActiveAdminUser() || JSON.parse(localStorage.getItem('thanjai_active_user')) || { fullName: 'Admin' };
   const rawLeads = getLeads() || [];
-  const leads = filterLeadsForActiveUser(rawLeads, activeUser);
+  const userRawLeads = filterLeadsForActiveUser(rawLeads, activeUser);
   const isSuperOrAll = canViewAllLeads(activeUser);
   
   const cachedStats = isSuperOrAll ? getCachedStats() : null;
+  const leads = isSuperOrAll ? userRawLeads : consolidateLeadsByBuyer(userRawLeads);
   const storedTotal = parseInt(localStorage.getItem('thanjai_total_leads_count') || '12505', 10);
   const totalLeads = isSuperOrAll 
     ? Math.max(rawLeads.length, (cachedStats && typeof cachedStats.totalLeads === 'number') ? cachedStats.totalLeads : (storedTotal || 0)) 

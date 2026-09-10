@@ -637,7 +637,7 @@ function getLeadPropertyIds(lead, allLeads = []) {
   return Array.from(propIdSet);
 }
 
-function consolidateLeadsByBuyer(leadsList) {
+export function consolidateLeadsByBuyer(leadsList) {
   if (!Array.isArray(leadsList) || leadsList.length === 0) return [];
   
   const buyerMap = new Map();
@@ -672,6 +672,12 @@ function consolidateLeadsByBuyer(leadsList) {
       const primary = isNewer ? lead : existing;
       const secondary = isNewer ? existing : lead;
 
+      const pAssigned = (primary.assignTo || primary.assignedTo || '').trim();
+      const sAssigned = (secondary.assignTo || secondary.assignedTo || '').trim();
+      const isPUnassigned = !pAssigned || ['—', '-', 'unassigned', 'none'].includes(pAssigned.toLowerCase());
+      const isSUnassigned = !sAssigned || ['—', '-', 'unassigned', 'none'].includes(sAssigned.toLowerCase());
+      const finalAssigned = !isPUnassigned ? pAssigned : (!isSUnassigned ? sAssigned : 'Unassigned');
+
       const merged = {
         ...secondary,
         ...primary,
@@ -687,8 +693,8 @@ function consolidateLeadsByBuyer(leadsList) {
         location: primary.location || secondary.location || primary.area || secondary.area,
         area: primary.area || secondary.area || primary.location || secondary.location,
         status: primary.status || secondary.status,
-        assignTo: primary.assignTo || secondary.assignTo || primary.assignedTo || secondary.assignedTo,
-        assignedTo: primary.assignedTo || secondary.assignedTo || primary.assignTo || secondary.assignTo,
+        assignTo: finalAssigned,
+        assignedTo: finalAssigned,
         followup: (primary.followup && primary.followup !== '—') ? primary.followup : secondary.followup,
         createdAt: primary.createdAt || secondary.createdAt,
         timeline: [
@@ -795,10 +801,13 @@ function renderTable() {
       if (canViewAllLeads(activeAdmin)) {
         if (fStaff && fStaff !== 'All staff') {
           const staffNorm = fStaff.toLowerCase().trim();
+          const staffFirstName = staffNorm.split(' ')[0] || '';
           const leadAssigned = (lead.assignTo || lead.assignedTo || '').toLowerCase().trim();
-          if (leadAssigned !== staffNorm && !leadAssigned.includes(staffNorm) && !staffNorm.includes(leadAssigned)) {
-            return false;
-          }
+          const matchesStaff = leadAssigned === staffNorm ||
+                               leadAssigned.includes(staffNorm) ||
+                               staffNorm.includes(leadAssigned) ||
+                               (staffFirstName && staffFirstName.length >= 3 && (leadAssigned.includes(staffFirstName) || staffFirstName.includes(leadAssigned)));
+          if (!matchesStaff) return false;
         }
       }
       

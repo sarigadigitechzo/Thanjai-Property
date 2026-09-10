@@ -87,19 +87,6 @@ export const DEFAULT_ADMIN_USERS = [
     createdAt: '2026-01-01T00:00:00.000Z'
   },
   {
-    id: 'ADM-003',
-    fullName: 'Aishwarya R.',
-    email: 'admin@realrest.example',
-    phone: '+91 98401 23456',
-    password: 'Admin@1234',
-    role: 'Super Admin',
-    roleCode: 'superadmin',
-    status: 'Active',
-    allowedModules: [...ALL_MODULE_IDS],
-    lastLogin: 'Active Now',
-    createdAt: '2026-01-01T00:00:00.000Z'
-  },
-  {
     id: 'ADM-004',
     fullName: 'Sales Manager',
     email: 'manager@realrest.example',
@@ -115,25 +102,33 @@ export const DEFAULT_ADMIN_USERS = [
 ];
 
 export function getAdminUsers() {
-  if (adminUsersCache && adminUsersCache.length > 0) return adminUsersCache.map(normalizeAdminUser);
+  const sanitizeUsers = (list) => {
+    if (!Array.isArray(list)) return [];
+    return list
+      .filter(u => u && u.id !== 'ADM-003' && (u.fullName || '').toLowerCase() !== 'aishwarya r.')
+      .map(normalizeAdminUser);
+  };
+
+  if (adminUsersCache && adminUsersCache.length > 0) return sanitizeUsers(adminUsersCache);
   try {
     const data = localStorage.getItem(ADMIN_USERS_STORAGE_KEY);
     if (!data) {
       localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(DEFAULT_ADMIN_USERS));
-      adminUsersCache = [...DEFAULT_ADMIN_USERS].map(normalizeAdminUser);
+      adminUsersCache = sanitizeUsers(DEFAULT_ADMIN_USERS);
       return adminUsersCache;
     }
     const parsed = JSON.parse(data);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      adminUsersCache = parsed.map(normalizeAdminUser);
+      adminUsersCache = sanitizeUsers(parsed);
+      localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(adminUsersCache));
     } else {
-      adminUsersCache = [...DEFAULT_ADMIN_USERS].map(normalizeAdminUser);
+      adminUsersCache = sanitizeUsers(DEFAULT_ADMIN_USERS);
       localStorage.setItem(ADMIN_USERS_STORAGE_KEY, JSON.stringify(DEFAULT_ADMIN_USERS));
     }
     return adminUsersCache;
   } catch (err) {
     console.error('Error reading admin users:', err);
-    adminUsersCache = [...DEFAULT_ADMIN_USERS].map(normalizeAdminUser);
+    adminUsersCache = sanitizeUsers(DEFAULT_ADMIN_USERS);
     return adminUsersCache;
   }
 }
@@ -299,27 +294,22 @@ export function canViewAllLeads(user = null) {
 
   const roleName = String(active.role || active.roleCode || '').toLowerCase().trim();
   const email = (active.email || '').toLowerCase().trim();
+  const fullName = String(active.fullName || active.name || '').toLowerCase().trim();
 
-  // Super Admins ALWAYS have full access
+  // ONLY Super Admin Vijayaraghavan (or superadmin role/email) has full org-wide access
   if (
     roleName === 'super admin' || 
     roleName === 'superadmin' || 
     roleName === 'super_admin' || 
-    email === 'admin@realrest.example' || 
     email === 'admin@thanjaiproperty.com' || 
-    email === 'vijayaraghavan@thanjaiproperty.com'
+    email === 'vijayaraghavan@thanjaiproperty.com' ||
+    fullName.includes('vijayaraghavan')
   ) {
     return true;
   }
 
-  const allowed = Array.isArray(active.allowedModules) ? active.allowedModules : [];
-  if (allowed.length === 0) return false;
-
-  const normAllowed = allowed.map(m => String(m).toLowerCase().replace(/[-_]/g, ''));
-  const hasEveryModule = ALL_MODULE_IDS.every(mod => normAllowed.includes(mod.replace(/[-_]/g, '')));
-
-  // ONLY staff who have EVERY SINGLE module checked get full organization-wide CRM lead access
-  return hasEveryModule;
+  // All other staff roles (Sales Executive, Property Staff, etc.) see ONLY their assigned leads
+  return false;
 }
 
 export function filterLeadsForActiveUser(leads = [], user = null) {
@@ -337,9 +327,9 @@ export function filterLeadsForActiveUser(leads = [], user = null) {
     const assigned = (lead.assignTo || lead.assignedTo || '').trim().toLowerCase();
     const assignedEmail = (lead.assignedEmail || lead.staffEmail || '').trim().toLowerCase();
     
-    // Allow unassigned / newly created leads to be visible to all staff members so team can view & process them
+    // Non-SuperAdmin staff members MUST NOT see unassigned leads; only leads explicitly assigned to them
     if (!assigned || assigned === '—' || assigned === '-' || assigned === 'unassigned' || assigned === 'none') {
-      return true;
+      return false;
     }
 
     if (assignedEmail && assignedEmail === activeEmail) return true;
