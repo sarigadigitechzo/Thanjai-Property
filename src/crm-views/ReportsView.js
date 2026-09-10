@@ -112,18 +112,43 @@ export function renderReportsView(fromDateStr, toDateStr) {
     `;
     }).join('');
 
-  // 3. Monthly / Period Chart
-  const allMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const chartHTML = allMonths.map(m => `
-    <div class="os-bar-group">
-      <div class="os-bar-tooltip">0 Leads, 0 Converted</div>
-      <div class="os-bars">
-        <div class="os-bar total" style="height: 5%;"></div>
-        <div class="os-bar converted" style="height: 2%;"></div>
+  // 3. Monthly / Period Chart (Dynamic Month-wise Lead Counts)
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthlyMap = Array.from({ length: 12 }, () => ({ total: 0, converted: 0 }));
+
+  allLeads.forEach(l => {
+    if (!l) return;
+    const leadDate = l.createdAt ? new Date(l.createdAt) : null;
+    if (leadDate && !isNaN(leadDate.getTime())) {
+      const mIdx = leadDate.getMonth();
+      if (mIdx >= 0 && mIdx < 12) {
+        monthlyMap[mIdx].total += 1;
+        const st = (l.status || '').toLowerCase();
+        if (st.includes('convert') || st.includes('register') || st.includes('negotiat')) {
+          monthlyMap[mIdx].converted += 1;
+        }
+      }
+    }
+  });
+
+  let maxMonthVal = 1;
+  monthlyMap.forEach(m => { if (m.total > maxMonthVal) maxMonthVal = m.total; });
+
+  const chartHTML = monthNames.map((mName, mIdx) => {
+    const data = monthlyMap[mIdx];
+    const totalH = data.total > 0 ? Math.max(8, Math.round((data.total / maxMonthVal) * 100)) : 5;
+    const convH = data.converted > 0 ? Math.max(5, Math.round((data.converted / maxMonthVal) * 100)) : 2;
+    return `
+      <div class="os-bar-group">
+        <div class="os-bar-tooltip">${data.total.toLocaleString()} Leads, ${data.converted.toLocaleString()} Converted</div>
+        <div class="os-bars">
+          <div class="os-bar total" style="height: ${totalH}%;"></div>
+          <div class="os-bar converted" style="height: ${convH}%;"></div>
+        </div>
+        <span class="os-bar-label">${mName}</span>
       </div>
-      <span class="os-bar-label">${m}</span>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
   // 4. Partner Company Performance
   let sharedLeadsMap = {};
@@ -479,6 +504,57 @@ export function initReportsView() {
               </tr>
             `;
           }).join('');
+      }
+
+      // 4. Dynamic Monthly Trend Bar Chart Live Update
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthlyMap = Array.from({ length: 12 }, () => ({ total: 0, converted: 0 }));
+
+      consolidated.forEach(l => {
+        if (!l) return;
+        const leadDate = l.createdAt ? new Date(l.createdAt) : null;
+        if (leadDate && !isNaN(leadDate.getTime())) {
+          const mIdx = leadDate.getMonth();
+          if (mIdx >= 0 && mIdx < 12) {
+            monthlyMap[mIdx].total += 1;
+            const st = (l.status || '').toLowerCase();
+            if (st.includes('convert') || st.includes('register') || st.includes('negotiat')) {
+              monthlyMap[mIdx].converted += 1;
+            }
+          }
+        }
+      });
+
+      let maxMonthVal = 1;
+      monthlyMap.forEach(m => { if (m.total > maxMonthVal) maxMonthVal = m.total; });
+
+      const chartArea = document.getElementById('reports-chart-bars');
+      if (chartArea) {
+        const gridHtml = `
+          <div class="report-chart-grid">
+            <div class="report-chart-grid-line"></div>
+            <div class="report-chart-grid-line"></div>
+            <div class="report-chart-grid-line"></div>
+            <div class="report-chart-grid-line"></div>
+            <div class="report-chart-grid-line"></div>
+          </div>
+        `;
+        const barsHtml = monthNames.map((mName, mIdx) => {
+          const data = monthlyMap[mIdx];
+          const totalH = data.total > 0 ? Math.max(8, Math.round((data.total / maxMonthVal) * 100)) : 5;
+          const convH = data.converted > 0 ? Math.max(5, Math.round((data.converted / maxMonthVal) * 100)) : 2;
+          return `
+            <div class="os-bar-group">
+              <div class="os-bar-tooltip">${data.total.toLocaleString()} Leads, ${data.converted.toLocaleString()} Converted</div>
+              <div class="os-bars">
+                <div class="os-bar total" style="height: ${totalH}%;"></div>
+                <div class="os-bar converted" style="height: ${convH}%;"></div>
+              </div>
+              <span class="os-bar-label">${mName}</span>
+            </div>
+          `;
+        }).join('');
+        chartArea.innerHTML = gridHtml + barsHtml;
       }
 
     }).catch(err => {});
