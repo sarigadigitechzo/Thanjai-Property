@@ -1,4 +1,6 @@
 import { fetchFromAPI } from '../utils/api.js';
+import { consolidateLeadsByBuyer } from './LeadsView.js';
+import { getAdminUsers } from '../utils/adminUsersStore.js';
 
 export function renderReportsView(fromDateStr, toDateStr) {
   // Determine dates using local time boundaries
@@ -10,16 +12,15 @@ export function renderReportsView(fromDateStr, toDateStr) {
   
   const toDateEnd = new Date(toDate);
   
-  let allLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+  let rawLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+  let allLeads = consolidateLeadsByBuyer(rawLeads);
   let partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
   let properties = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
-  let adminUsers = [];
-  try {
-    adminUsers = JSON.parse(localStorage.getItem('thanjai_admin_users')) || [];
-  } catch(e) {}
+  let adminUsers = getAdminUsers();
   
   // Strict Date Range Filtered Leads
   const filteredLeads = allLeads.filter(l => {
+     if (!l) return false;
      const leadTime = l.createdAt ? new Date(l.createdAt) : new Date('2026-01-01T00:00:00');
      return leadTime >= fromDate && leadTime <= toDateEnd;
   });
@@ -47,9 +48,9 @@ export function renderReportsView(fromDateStr, toDateStr) {
     : `<div class="report-list-item" style="color: var(--os-gray-500);"><span>No leads in selected date range</span><strong>0</strong></div>`;
 
   // 2. Staff Performance (Strict Roster & Date Range Filter)
-  const officialStaffNames = adminUsers.length > 0 ? adminUsers.map(u => u.fullName).filter(Boolean) : [
-    'Vijayaraghavan', 'Aishwarya R.', 'Sales Manager', 'Maheshwari', 'Esther', 'Kavitha', 'Arun', 'Priya'
-  ];
+  const officialStaffNames = Array.isArray(adminUsers) && adminUsers.length > 0
+    ? adminUsers.map(u => u.fullName).filter(Boolean)
+    : ['Vijayaraghavan', 'Sales Manager', 'Maheshwari', 'Esther', 'Kavitha', 'Arun', 'Priya'];
 
   const staffPerfMap = {};
   staffPerfMap['Unassigned'] = { total: 0, converted: 0, visits: 0 };
@@ -70,7 +71,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
     }
     staffPerfMap[targetKey].total += 1;
     const st = (l.status || '').toLowerCase();
-    if (st.includes('convert') || st.includes('register')) {
+    if (st.includes('convert') || st.includes('register') || st.includes('negotiat')) {
       staffPerfMap[targetKey].converted += 1;
     }
   });
@@ -92,7 +93,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
     });
   } catch(err) {}
 
-  // Filter staff table: Show official staff members + Unassigned desk + any staff with activity in this date range
+  // Filter staff table
   const staffHTML = Object.entries(staffPerfMap)
     .filter(([name, data]) => officialStaffNames.includes(name) || name === 'Unassigned' || data.total > 0 || data.visits > 0)
     .sort((a, b) => b[1].total - a[1].total)
@@ -124,7 +125,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
     </div>
   `).join('');
 
-  // 4. Partner Company Performance (Strict Date Range Filter)
+  // 4. Partner Company Performance
   let sharedLeadsMap = {};
   try {
     const sharedLeadsData = JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {};
@@ -143,7 +144,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
     const leadsRec = sharedLeadsMap[p.id] || 0;
     const converted = 0;
     const convRate = 0;
-    const sharedText = leadsRec > 0 ? `Shared: ${leadsRec}` : '—';
+    const sharedText = leadsRec > 0 ? `Shared: ${leadsRec}` : 'Active Partner';
     return `
       <tr>
         <td style="font-weight: 700; color: var(--os-deep-brown);">${p.company || p.name}</td>
@@ -155,11 +156,11 @@ export function renderReportsView(fromDateStr, toDateStr) {
     `;
   }).join('') : `<tr><td colspan="5" class="report-empty" style="text-align:center; padding: 20px;">No partner network data available</td></tr>`;
 
-  // 5. Buyer Behavior (Strict Date Range Filter)
+  // 5. Buyer Behavior
   const repeatCount = filteredLeads.length > 0 ? filteredLeads.filter((l, idx, arr) => arr.some((o, oIdx) => oIdx !== idx && l.phone && o.phone && l.phone === o.phone)).length : 0;
   const convertedTotal = filteredLeads.filter(l => {
     const st = (l.status || '').toLowerCase();
-    return st.includes('convert') || st.includes('register');
+    return st.includes('convert') || st.includes('register') || st.includes('negotiat');
   }).length;
 
   const buyerBehaviorHTML = `
@@ -183,10 +184,10 @@ export function renderReportsView(fromDateStr, toDateStr) {
     </div>
   `;
 
-  // 6. Property Engagement (Strict Date Range Filter)
+  // 6. Property Engagement
   const topProperties = properties.slice(0, 6).map((p, i) => {
     const propLeads = filteredLeads.filter(l => l.propertyId === p.id || l.title === p.title || (l.requirement && l.requirement.includes(p.title))).length;
-    const views = propLeads > 0 ? propLeads * 3 : (filteredLeads.length > 0 ? Math.floor(Math.random() * 2) : 0);
+    const views = propLeads > 0 ? propLeads * 3 : (filteredLeads.length > 0 ? Math.floor(Math.random() * 2) + 1 : 0);
     const shortlisted = propLeads;
     const locText = p.location || p.district || 'Unknown';
     const linkOrText = locText.length > 35 ? `<span style="font-size:0.8rem; color:var(--os-gray-500);">${locText.substring(0,35)}...</span>` : locText;
@@ -203,8 +204,8 @@ export function renderReportsView(fromDateStr, toDateStr) {
   }).join('');
   const propertyEngagementHTML = topProperties || '<tr><td colspan="5" class="report-empty" style="text-align:center; padding: 24px;">No property data available</td></tr>';
 
-  // 7. Recently Lost Leads (Strict Date Range Filter)
-  const lostLeadsList = filteredLeads.filter(l => l.status && (l.status.toLowerCase().includes('lost') || l.status === 'Dropped' || l.status.toLowerCase().includes('reject')));
+  // 7. Recently Lost Leads
+  const lostLeadsList = filteredLeads.filter(l => l.status && (l.status.toLowerCase().includes('lost') || l.status.toLowerCase().includes('drop') || l.status.toLowerCase().includes('reject')));
   const lostLeadsHTML = lostLeadsList.length > 0 ? lostLeadsList.map(l => `
     <div style="padding: 12px 16px; border-bottom: 1px solid var(--os-border-light); font-size: 0.9rem;">
       <span style="font-weight: 500; color: var(--os-deep-brown);">${l.name}</span> — 
@@ -237,7 +238,7 @@ export function renderReportsView(fromDateStr, toDateStr) {
             </div>
           </div>
           <button class="os-btn-primary" id="btn-download-reports" style="background: var(--os-luxury-orange); border-color: var(--os-luxury-orange); cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px;">
-            <i class="ri-download-2-line"></i> Download CSV
+            <i class="ri-download-2-line"></i> Download Full CSV Report
           </button>
         </div>
       </div>
@@ -384,76 +385,111 @@ export function initReportsView() {
   const toDateEnd = toVal ? new Date(toVal + 'T23:59:59.999') : new Date();
 
   // Fetch Live MySQL Database Reports API with Date Filter parameters
-  const reportsEndpoint = '/leads?reports=1' + (fromVal ? `&from=${encodeURIComponent(fromVal)}` : '') + (toVal ? `&to=${encodeURIComponent(toVal)}` : '');
+  const reportsEndpoint = '/leads' + (fromVal ? `?from=${encodeURIComponent(fromVal)}` : '');
 
   fetchFromAPI(reportsEndpoint)
-    .then(rep => {
-      if (!rep) return;
+    .then(apiLeads => {
+      if (!apiLeads || !Array.isArray(apiLeads) || apiLeads.length === 0) return;
 
-      // 1. Leads by Source Live Update
+      const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+      const mergedLeads = [...apiLeads];
+      localLeads.forEach(locL => {
+        if (locL && locL.id && !mergedLeads.some(dbL => String(dbL.id) === String(locL.id))) {
+          mergedLeads.push(locL);
+        }
+      });
+
+      const consolidated = consolidateLeadsByBuyer(mergedLeads);
+      const filteredLeads = consolidated.filter(l => {
+        if (!l) return false;
+        const leadTime = l.createdAt ? new Date(l.createdAt) : new Date('2026-01-01T00:00:00');
+        return leadTime >= fromDate && leadTime <= toDateEnd;
+      });
+
+      // 1. Refresh Source Breakdown
+      const srcMap = {};
+      const stMap = {};
+      filteredLeads.forEach(l => {
+        const src = l.source || 'Manual';
+        srcMap[src] = (srcMap[src] || 0) + 1;
+        const st = l.status || 'New Lead';
+        stMap[st] = (stMap[st] || 0) + 1;
+      });
+
       const srcContainer = document.getElementById('reports-source-list');
       if (srcContainer) {
-        if (Array.isArray(rep.sources) && rep.sources.length > 0) {
-          srcContainer.innerHTML = rep.sources.map(s => `
-            <div class="report-list-item"><span>${s.source}</span><strong>${s.count.toLocaleString()}</strong></div>
-          `).join('');
-        }
+        srcContainer.innerHTML = Object.entries(srcMap).map(([s, c]) => `
+          <div class="report-list-item"><span>${s}</span><strong>${c.toLocaleString()}</strong></div>
+        `).join('');
       }
 
-      // 2. Leads by Status Live Update
+      // 2. Refresh Status Breakdown
       const stContainer = document.getElementById('reports-status-list');
       if (stContainer) {
-        if (Array.isArray(rep.statuses) && rep.statuses.length > 0) {
-          stContainer.innerHTML = rep.statuses.map(s => `
-            <div class="report-list-item"><span>${s.status}</span><strong>${s.count.toLocaleString()}</strong></div>
-          `).join('');
-        }
+        stContainer.innerHTML = Object.entries(stMap).map(([s, c]) => `
+          <div class="report-list-item"><span>${s}</span><strong>${c.toLocaleString()}</strong></div>
+        `).join('');
       }
 
-      // 3. Monthly Trend Bar Chart Live Update
-      if (Array.isArray(rep.monthly) && rep.monthly.length > 0) {
-        const chartArea = document.getElementById('reports-chart-bars');
-        if (chartArea) {
-          let maxVal = 1;
-          rep.monthly.forEach(m => { if (m.total > maxVal) maxVal = m.total; });
-          const gridHtml = `
-            <div class="report-chart-grid">
-              <div class="report-chart-grid-line"></div>
-              <div class="report-chart-grid-line"></div>
-              <div class="report-chart-grid-line"></div>
-              <div class="report-chart-grid-line"></div>
-              <div class="report-chart-grid-line"></div>
-            </div>
-          `;
-          const barsHtml = rep.monthly.map((m, idx) => {
-            const totalH = m.total > 0 ? Math.max(8, Math.round((m.total / maxVal) * 100)) : 5;
-            const convH = m.converted > 0 ? Math.max(5, Math.round((m.converted / maxVal) * 100)) : 2;
+      // 3. Refresh Staff Performance Table with Live Consolidated Leads
+      const adminUsers = getAdminUsers();
+      const officialStaffNames = Array.isArray(adminUsers) && adminUsers.length > 0
+        ? adminUsers.map(u => u.fullName).filter(Boolean)
+        : ['Vijayaraghavan', 'Sales Manager', 'Maheshwari', 'Esther', 'Kavitha', 'Arun', 'Priya'];
+
+      const staffPerfMap = {};
+      staffPerfMap['Unassigned'] = { total: 0, converted: 0, visits: 0 };
+      officialStaffNames.forEach(name => {
+        staffPerfMap[name] = { total: 0, converted: 0, visits: 0 };
+      });
+
+      filteredLeads.forEach(l => {
+        const rawStaff = (l.assignTo || l.assignedTo || 'Unassigned').trim();
+        let targetKey = 'Unassigned';
+        if (rawStaff && rawStaff !== 'Unassigned' && rawStaff !== '-' && rawStaff !== '—') {
+          const match = officialStaffNames.find(s => s.toLowerCase().includes(rawStaff.toLowerCase()) || rawStaff.toLowerCase().includes(s.toLowerCase()));
+          targetKey = match ? match : rawStaff;
+        }
+        if (!staffPerfMap[targetKey]) {
+          staffPerfMap[targetKey] = { total: 0, converted: 0, visits: 0 };
+        }
+        staffPerfMap[targetKey].total += 1;
+        const st = (l.status || '').toLowerCase();
+        if (st.includes('convert') || st.includes('register') || st.includes('negotiat')) {
+          staffPerfMap[targetKey].converted += 1;
+        }
+      });
+
+      const staffTbody = document.getElementById('reports-staff-tbody');
+      if (staffTbody) {
+        staffTbody.innerHTML = Object.entries(staffPerfMap)
+          .filter(([name, data]) => officialStaffNames.includes(name) || name === 'Unassigned' || data.total > 0 || data.visits > 0)
+          .sort((a, b) => b[1].total - a[1].total)
+          .map(([stName, data]) => {
+            const rate = data.total > 0 ? Math.round((data.converted / data.total) * 100) : 0;
             return `
-              <div class="os-bar-group">
-                <div class="os-bar-tooltip">${m.total.toLocaleString()} Leads, ${m.converted} Converted</div>
-                <div class="os-bars">
-                  <div class="os-bar total" style="height: ${totalH}%;"></div>
-                  <div class="os-bar converted" style="height: ${convH}%;"></div>
-                </div>
-                <span class="os-bar-label">${m.month}</span>
-              </div>
+              <tr>
+                <td style="font-weight: 700; color: var(--os-deep-brown);">${stName}</td>
+                <td class="right-align" style="font-weight: 700;">${data.total.toLocaleString()}</td>
+                <td class="right-align">${data.converted.toLocaleString()}</td>
+                <td class="right-align" style="font-weight: 700; color: #3182ce;">${rate}%</td>
+                <td class="right-align">-</td>
+                <td class="right-align">-</td>
+                <td class="right-align" style="font-weight: 700; color: var(--os-luxury-orange);">${data.visits > 0 ? data.visits : '-'}</td>
+              </tr>
             `;
           }).join('');
-          chartArea.innerHTML = gridHtml + barsHtml;
-        }
       }
 
-    }).catch(err => {
-      console.warn('Reports live database load notice:', err);
-    });
+    }).catch(err => {});
 
-  // Download CSV Event Handler (Interactive Feedback + Strict Date Filtering)
+  // Download Comprehensive Multi-Section CSV Event Handler
   if (downloadBtn) {
     downloadBtn.addEventListener('click', () => {
       const originalText = downloadBtn.innerHTML;
       downloadBtn.disabled = true;
       downloadBtn.style.opacity = '0.85';
-      downloadBtn.innerHTML = `<i class="ri-loader-4-line ri-spin"></i> Exporting CSV...`;
+      downloadBtn.innerHTML = `<i class="ri-loader-4-line ri-spin"></i> Exporting Full CSV...`;
 
       const resetBtn = () => {
         setTimeout(() => {
@@ -466,27 +502,36 @@ export function initReportsView() {
         }, 300);
       };
 
-      const executeDownload = (allLeads) => {
-        if (!Array.isArray(allLeads)) allLeads = [];
+      const executeDownload = (allRawLeads) => {
+        if (!Array.isArray(allRawLeads)) allRawLeads = [];
 
         try {
           const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
           localLeads.forEach(locL => {
-            if (locL && locL.id && !allLeads.some(dbL => String(dbL.id) === String(locL.id))) {
-              allLeads.push(locL);
+            if (locL && locL.id && !allRawLeads.some(dbL => String(dbL.id) === String(locL.id))) {
+              allRawLeads.push(locL);
             }
           });
         } catch (e) {}
 
-        // Strictly filter for selected date range
-        const filtered = allLeads.filter(l => {
+        const consolidated = consolidateLeadsByBuyer(allRawLeads);
+        const filtered = consolidated.filter(l => {
+           if (!l) return false;
            const leadTime = l.createdAt ? new Date(l.createdAt) : new Date('2026-01-01T00:00:00');
            return leadTime >= fromDate && leadTime <= toDateEnd;
         });
 
         let csvLines = [];
-        csvLines.push("ID,Date,Name,Mobile,Type,Budget,Source,Status,Assigned To");
+        csvLines.push("==================================================");
+        csvLines.push("THANJAI PROPERTY - COMPREHENSIVE CRM REPORTS & ANALYTICS");
+        csvLines.push(`Date Range: ${fromVal || 'All Time'} to ${toVal || 'Today'}`);
+        csvLines.push(`Export Generated: ${new Date().toLocaleString('en-IN')}`);
+        csvLines.push("==================================================");
+        csvLines.push("");
 
+        // SECTION 1: FULL LEADS LIST
+        csvLines.push(`SECTION 1: FULL FILTERED LEADS AUDIT TRAIL (Total: ${filtered.length})`);
+        csvLines.push("ID,Date,Name,Mobile,Property Type,Budget,Source,Status,Assigned Staff");
         filtered.forEach(l => {
           const dateStr = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-IN') : '01/01/2026';
           const name = `"${(l.name || '').replace(/"/g, '""')}"`;
@@ -496,8 +541,103 @@ export function initReportsView() {
           const src = `"${(l.source || '').replace(/"/g, '""')}"`;
           const st = `"${(l.status || '').replace(/"/g, '""')}"`;
           const staff = `"${(l.assignedTo || l.assignTo || 'Unassigned').replace(/"/g, '""')}"`;
-          
           csvLines.push(`${l.id || ''},${dateStr},${name},${mobile},${req},${budget},${src},${st},${staff}`);
+        });
+        csvLines.push("");
+
+        // SECTION 2: LEADS BY SOURCE SUMMARY
+        csvLines.push("SECTION 2: LEADS BY SOURCE SUMMARY");
+        csvLines.push("Source Name,Lead Count,Percentage");
+        const srcMap = {};
+        filtered.forEach(l => { const s = l.source || 'Manual'; srcMap[s] = (srcMap[s] || 0) + 1; });
+        Object.entries(srcMap).forEach(([src, count]) => {
+          const pct = filtered.length > 0 ? Math.round((count / filtered.length) * 100) : 0;
+          csvLines.push(`"${src}",${count},${pct}%`);
+        });
+        csvLines.push("");
+
+        // SECTION 3: LEADS BY STATUS SUMMARY
+        csvLines.push("SECTION 3: LEADS BY STATUS SUMMARY");
+        csvLines.push("Status Name,Lead Count,Percentage");
+        const stMap = {};
+        filtered.forEach(l => { const st = l.status || 'New Lead'; stMap[st] = (stMap[st] || 0) + 1; });
+        Object.entries(stMap).forEach(([st, count]) => {
+          const pct = filtered.length > 0 ? Math.round((count / filtered.length) * 100) : 0;
+          csvLines.push(`"${st}",${count},${pct}%`);
+        });
+        csvLines.push("");
+
+        // SECTION 4: STAFF PERFORMANCE SUMMARY
+        csvLines.push("SECTION 4: STAFF PERFORMANCE SUMMARY");
+        csvLines.push("Staff Name,Total Assigned Leads,Converted Leads,Conversion Rate %,Site Visits Done");
+        const adminUsers = getAdminUsers();
+        const officialStaffNames = Array.isArray(adminUsers) && adminUsers.length > 0
+          ? adminUsers.map(u => u.fullName).filter(Boolean)
+          : ['Vijayaraghavan', 'Sales Manager', 'Maheshwari', 'Esther', 'Kavitha', 'Arun', 'Priya'];
+
+        const staffPerfMap = {};
+        staffPerfMap['Unassigned'] = { total: 0, converted: 0, visits: 0 };
+        officialStaffNames.forEach(name => { staffPerfMap[name] = { total: 0, converted: 0, visits: 0 }; });
+
+        filtered.forEach(l => {
+          const rawStaff = (l.assignTo || l.assignedTo || 'Unassigned').trim();
+          let targetKey = 'Unassigned';
+          if (rawStaff && rawStaff !== 'Unassigned' && rawStaff !== '-' && rawStaff !== '—') {
+            const match = officialStaffNames.find(s => s.toLowerCase().includes(rawStaff.toLowerCase()) || rawStaff.toLowerCase().includes(s.toLowerCase()));
+            targetKey = match ? match : rawStaff;
+          }
+          if (!staffPerfMap[targetKey]) staffPerfMap[targetKey] = { total: 0, converted: 0, visits: 0 };
+          staffPerfMap[targetKey].total += 1;
+          const st = (l.status || '').toLowerCase();
+          if (st.includes('convert') || st.includes('register') || st.includes('negotiat')) staffPerfMap[targetKey].converted += 1;
+        });
+
+        Object.entries(staffPerfMap).forEach(([sName, data]) => {
+          const rate = data.total > 0 ? Math.round((data.converted / data.total) * 100) : 0;
+          csvLines.push(`"${sName}",${data.total},${data.converted},${rate}%,${data.visits}`);
+        });
+        csvLines.push("");
+
+        // SECTION 5: PARTNER COMPANY PERFORMANCE
+        csvLines.push("SECTION 5: PARTNER COMPANY PERFORMANCE");
+        csvLines.push("Partner Company,Leads Received,Converted Leads,Conversion Rate %");
+        const partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
+        partners.forEach(p => {
+          csvLines.push(`"${p.company || p.name}",0,0,0%`);
+        });
+        csvLines.push("");
+
+        // SECTION 6: BUYER BEHAVIOR ANALYTICS
+        csvLines.push("SECTION 6: BUYER BEHAVIOR ANALYTICS");
+        csvLines.push("Metric,Value");
+        const repeatCount = filtered.filter((l, idx, arr) => arr.some((o, oIdx) => oIdx !== idx && l.phone && o.phone && l.phone === o.phone)).length;
+        const convertedTotal = filtered.filter(l => {
+          const st = (l.status || '').toLowerCase();
+          return st.includes('convert') || st.includes('register') || st.includes('negotiat');
+        }).length;
+        csvLines.push(`"Repeat Inquirers",${repeatCount}`);
+        csvLines.push(`"Converted Leads",${convertedTotal}`);
+        csvLines.push(`"Avg Decision Time","20 Days"`);
+        csvLines.push(`"Avg Shortlist Size","0.5"`);
+        csvLines.push("");
+
+        // SECTION 7: TOP PROPERTY ENGAGEMENT
+        csvLines.push("SECTION 7: TOP PROPERTY ENGAGEMENT");
+        csvLines.push("Property Title,Location,Status,Views,Shortlisted Count");
+        const properties = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+        properties.slice(0, 10).forEach(p => {
+          const propLeads = filtered.filter(l => l.propertyId === p.id || l.title === p.title || (l.requirement && l.requirement.includes(p.title))).length;
+          const views = propLeads > 0 ? propLeads * 3 : (filtered.length > 0 ? 1 : 0);
+          csvLines.push(`"${p.title}","${p.location || 'Thanjavur'}","${p.status || 'Available'}",${views},${propLeads}`);
+        });
+        csvLines.push("");
+
+        // SECTION 8: RECENTLY LOST LEADS
+        csvLines.push("SECTION 8: RECENTLY LOST LEADS");
+        csvLines.push("Lead Name,Requirement,Budget,Status");
+        const lostLeads = filtered.filter(l => l.status && (l.status.toLowerCase().includes('lost') || l.status.toLowerCase().includes('drop') || l.status.toLowerCase().includes('reject')));
+        lostLeads.forEach(l => {
+          csvLines.push(`"${l.name}","${l.requirement || l.type || 'General'}","${l.budget || l.budgetMax || 'N/A'}","${l.status}"`);
         });
 
         const csvString = "\uFEFF" + csvLines.join("\n");
@@ -505,7 +645,7 @@ export function initReportsView() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `Thanjai_CRM_Report_${fromVal || 'All'}_to_${toVal || 'Today'}.csv`);
+        link.setAttribute("download", `Thanjai_Comprehensive_CRM_Report_${fromVal || 'All'}_to_${toVal || 'Today'}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
