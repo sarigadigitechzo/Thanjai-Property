@@ -45,10 +45,13 @@ function cleanUrlRewritePlugin() {
 }
 
 export default defineConfig({
-  base: './',
+  base: '/',
   plugins: [adminLinkPlugin(), cleanUrlRewritePlugin()],
   server: {
-    open: '/admin-dashboard'
+    open: '/admin-dashboard',
+    watch: {
+      ignored: ['**/*.zip']
+    }
   },
   build: {
     emptyOutDir: true,

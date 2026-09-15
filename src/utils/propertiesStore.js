@@ -83,8 +83,13 @@ export async function initPropertiesStore() {
         const resolvedPublishTarget = String(remoteP.publishTarget || remoteP.publish_target || remoteP.visibility || 'public').toLowerCase().trim() === 'crm_only' ? 'crm_only' : 'public';
         const resolvedApprovalStatus = remoteP.approvalStatus || remoteP.approval_status || (remoteP.approval === 'Approved' ? 'Approved' : (remoteP.status === 'Pending Approval' ? 'Pending Approval' : 'Approved'));
 
+        const existingMap = new Map((propertiesCache || []).map(p => [p.id, p]));
+        const existingMatch = existingMap.get(remoteP.id);
+        const resolvedCreatedAt = remoteP.createdAt || remoteP.created_at || remoteP.date || (existingMatch ? existingMatch.createdAt : new Date().toISOString());
+
         return normalizePropertyRecord({
           ...remoteP,
+          createdAt: resolvedCreatedAt,
           actualOwnerName: resolvedActualOwnerName,
           actualOwnerPhone: resolvedActualOwnerPhone,
           userId: resolvedUserId,
@@ -392,6 +397,7 @@ export function addProperty(data) {
     description: data.description || '',
     features: Array.isArray(data.features) ? data.features : [],
     listedBy: data.listedBy || 'Thanjai Property',
+    advisoryName: (data.advisoryName && data.advisoryName !== 'Thanjai Advisory Desk') ? data.advisoryName.trim() : '',
     createdAt: new Date().toISOString(),
     isNewUserAdded: true
   };
@@ -581,6 +587,7 @@ function normalizePropertyRecord(p) {
   return {
     ...p,
     id: p.id || `TP-${Date.now().toString().slice(-4)}`,
+    createdAt: p.createdAt || p.created_at || p.date || new Date().toISOString(),
     title: p.title || 'Untitled Property',
     type: type,
     category: frontEndCat,
@@ -595,6 +602,10 @@ function normalizePropertyRecord(p) {
     userEmail: p.userEmail || p.user_email || null,
     actualOwnerName: p.actualOwnerName || p.actual_owner_name || (p.ownerName && p.ownerName !== 'Thanjai Property' ? p.ownerName : '') || '',
     actualOwnerPhone: p.actualOwnerPhone || p.actual_owner_phone || (p.ownerPhone && p.ownerPhone !== '8489996852' && p.ownerPhone !== '+91 84899 96852' ? p.ownerPhone : '') || '',
+    advisoryName: (() => {
+      const raw = p.advisoryName || p.advisory_name || p.advisorName || p.advisor_name || p.inquiryName || p.inquiry_name || '';
+      return (raw === 'Thanjai Advisory Desk') ? '' : String(raw).trim();
+    })(),
     price: numPrice,
     priceFormatted: formattedPrice,
     location: loc || '',

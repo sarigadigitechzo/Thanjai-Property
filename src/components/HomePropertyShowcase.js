@@ -48,8 +48,13 @@ export function renderHomePropertyShowcase(properties, onSelectProperty, onNavig
                 </span>
 
                 <div style="position: absolute; bottom: 18px; left: 18px; right: 18px; color: #ffffff;">
-                  <div style="font-family: var(--font-serif); font-size: 1.5rem; font-weight: 700; color: #ffffff;">
-                    ${prop.priceFormatted}
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="font-family: var(--font-serif); font-size: 1.5rem; font-weight: 700; color: #ffffff;">
+                      ${prop.priceFormatted}
+                    </div>
+                    <span style="background: rgba(0,0,0,0.65); padding: 4px 10px; border-radius: 6px; font-family: var(--font-sans); font-size: 0.82rem; color: #ffffff; border: 1px solid rgba(255,255,255,0.25); font-weight: 700; backdrop-filter: blur(4px);">
+                      # ID: ${prop.id}
+                    </span>
                   </div>
                 </div>
               </div>

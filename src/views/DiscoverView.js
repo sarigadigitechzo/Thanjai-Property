@@ -131,99 +131,110 @@ export function renderDiscoverView(discoverState, onPropertySelect, onNavigateTo
 
       <!-- PROPERTY RESULTS SECTION -->
       <section style="padding: 60px 0 90px 0; background: #ffffff;">
-        <div class="container">
-          
-          <!-- Results Count & Active Filters Indicator -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
-            <div style="font-size: 1.1rem; font-weight: 700; color: #1a1a1a;">
-              Showing <span style="color: var(--color-orange, #eb5e28);">${filteredProps.length}</span> ${filteredProps.length === 1 ? 'property' : 'properties'}
-            </div>
-
-            ${hasActiveFilters(discoverState) ? `
-              <button class="os-btn-secondary" id="clear-all-filters-btn" style="font-size: 0.85rem; padding: 6px 16px; border-radius: 20px; color: #e53e3e;">
-                <i class="ri-close-circle-line"></i> Clear Filters
-              </button>
-            ` : ''}
-          </div>
-
-          <!-- Cards Grid or Empty State -->
-          ${filteredProps.length > 0 ? `
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 32px;">
-              ${filteredProps.map(prop => `
-                <div class="discover-prop-card hover-lift" data-id="${prop.id}" style="
-                  background: #ffffff; border-radius: 20px; overflow: hidden;
-                  border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 18px rgba(0,0,0,0.04);
-                  display: flex; flex-direction: column; cursor: pointer; transition: all 0.3s ease;
-                ">
-                  <div style="position: relative; width: 100%; height: 240px; overflow: hidden; background: #111;">
-                    <img src="${prop.images[0]}" alt="${prop.title}" style="width: 100%; height: 100%; object-fit: cover;" />
-                    
-                    <span class="badge badge-orange" style="position: absolute; top: 16px; left: 16px; font-weight: 700;">
-                      ${prop.categoryLabel}
-                    </span>
-
-                    <span class="badge badge-dark" style="position: absolute; top: 16px; right: 16px; text-transform: uppercase;">
-                      ${prop.purpose === 'rent' ? 'For Rent' : 'For Sale'}
-                    </span>
-                  </div>
-
-                  <div style="padding: 24px; display: flex; flex-direction: column; flex: 1;">
-                    <div style="font-family: var(--font-serif); font-size: 1.4rem; font-weight: 700; color: var(--color-orange, #eb5e28); margin-bottom: 6px;">
-                      ${prop.priceFormatted}
-                    </div>
-
-                    <h3 style="font-family: var(--font-serif); font-size: 1.2rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">
-                      ${prop.title}
-                    </h3>
-
-                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: #666; margin-bottom: 16px;">
-                      <i class="ri-map-pin-2-line" style="color: var(--color-orange, #eb5e28);"></i>
-                      <span>${formatLocationDisplay(prop.location, prop.district)}</span>
-                    </div>
-
-                    ${prop.description ? `
-                      <p style="font-size: 0.88rem; color: #666; line-height: 1.5; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                        ${prop.description}
-                      </p>
-                    ` : ''}
-
-                    <div style="display: flex; gap: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.85rem; color: #555; margin-top: auto; flex-wrap: wrap;">
-                      ${prop.builtUpArea ? `<span><i class="ri-home-4-line"></i> ${formatSizeDisplay(prop.builtUpArea)} Built-up</span>` : (prop.size ? `<span><i class="ri-ruler-2-line"></i> ${formatSizeDisplay(prop.size)}</span>` : '')}
-                      ${prop.facing ? `<span><i class="ri-compass-3-line"></i> ${prop.facing}</span>` : ''}
-                      ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : (prop.approval ? `<span><i class="ri-shield-check-line"></i> ${prop.approval}</span>` : '')}
-                    </div>
-
-                    <button class="btn btn-outline-dark" style="margin-top: 20px; width: 100%; border-radius: 10px; font-size: 0.9rem;">
-                      <span>View Property Details</span>
-                      <i class="ri-arrow-right-line"></i>
-                    </button>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          ` : `
-            <!-- Empty State -->
-            <div style="
-              text-align: center; padding: 80px 20px; background: #faf8f5; border-radius: 24px;
-              border: 1px dashed #cbd5e0; max-width: 580px; margin: 0 auto;
-            ">
-              <i class="ri-search-eye-line" style="font-size: 3.5rem; color: #a0aec0; margin-bottom: 16px; display: block;"></i>
-              <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: #2d3748; margin-bottom: 10px;">
-                No properties found
-              </h3>
-              <p style="color: #718096; font-size: 0.95rem; margin-bottom: 24px; line-height: 1.6;">
-                We couldn't find any properties matching your current filter selections. Try adjusting your search query or location filters.
-              </p>
-              <button class="btn btn-primary" id="empty-clear-filters-btn" style="padding: 12px 28px; border-radius: 10px;">
-                <i class="ri-refresh-line"></i> Clear All Filters
-              </button>
-            </div>
-          `}
-
+        <div class="container" id="discover-results-container">
+          ${renderDiscoverResultsContent(discoverState)}
         </div>
       </section>
 
     </div>
+  `;
+}
+
+export function renderDiscoverResultsContent(discoverState) {
+  const filteredProps = filterProperties(discoverState);
+
+  return `
+    <!-- Results Count & Active Filters Indicator -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+      <div style="font-size: 1.1rem; font-weight: 700; color: #1a1a1a;">
+        Showing <span style="color: var(--color-orange, #eb5e28);">${filteredProps.length}</span> ${filteredProps.length === 1 ? 'property' : 'properties'}
+      </div>
+
+      ${hasActiveFilters(discoverState) ? `
+        <button class="os-btn-secondary" id="clear-all-filters-btn" style="font-size: 0.85rem; padding: 6px 16px; border-radius: 20px; color: #e53e3e;">
+          <i class="ri-close-circle-line"></i> Clear Filters
+        </button>
+      ` : ''}
+    </div>
+
+    <!-- Cards Grid or Empty State -->
+    ${filteredProps.length > 0 ? `
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 32px;">
+        ${filteredProps.map(prop => `
+          <div class="discover-prop-card hover-lift" data-id="${prop.id}" style="
+            background: #ffffff; border-radius: 20px; overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 4px 18px rgba(0,0,0,0.04);
+            display: flex; flex-direction: column; cursor: pointer; transition: all 0.3s ease;
+          ">
+            <div style="position: relative; width: 100%; height: 240px; overflow: hidden; background: #111;">
+              <img src="${prop.images[0]}" alt="${prop.title}" style="width: 100%; height: 100%; object-fit: cover;" />
+              
+              <span class="badge badge-orange" style="position: absolute; top: 16px; left: 16px; font-weight: 700;">
+                ${prop.categoryLabel}
+              </span>
+
+              <span class="badge badge-dark" style="position: absolute; top: 16px; right: 16px; text-transform: uppercase;">
+                ${prop.purpose === 'rent' ? 'For Rent' : 'For Sale'}
+              </span>
+            </div>
+
+            <div style="padding: 24px; display: flex; flex-direction: column; flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 8px;">
+                <div style="font-family: var(--font-serif); font-size: 1.4rem; font-weight: 700; color: var(--color-orange, #eb5e28);">
+                  ${prop.priceFormatted}
+                </div>
+                <span style="background: rgba(235, 94, 40, 0.08); color: var(--color-orange, #eb5e28); border: 1px solid rgba(235, 94, 40, 0.3); padding: 3px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; flex-shrink: 0;">
+                  # ID: ${prop.id}
+                </span>
+              </div>
+
+              <h3 style="font-family: var(--font-serif); font-size: 1.2rem; font-weight: 700; color: #1a1a1a; margin-bottom: 8px;">
+                ${prop.title}
+              </h3>
+
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: #666; margin-bottom: 16px;">
+                <i class="ri-map-pin-2-line" style="color: var(--color-orange, #eb5e28);"></i>
+                <span>${formatLocationDisplay(prop.location, prop.district)}</span>
+              </div>
+
+              ${prop.description ? `
+                <p style="font-size: 0.88rem; color: #666; line-height: 1.5; margin-bottom: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                  ${prop.description}
+                </p>
+              ` : ''}
+
+              <div style="display: flex; gap: 14px; padding-top: 14px; border-top: 1px solid rgba(0,0,0,0.06); font-size: 0.85rem; color: #555; margin-top: auto; flex-wrap: wrap;">
+                ${prop.builtUpArea ? `<span><i class="ri-home-4-line"></i> ${formatSizeDisplay(prop.builtUpArea)} Built-up</span>` : (prop.size ? `<span><i class="ri-ruler-2-line"></i> ${formatSizeDisplay(prop.size)}</span>` : '')}
+                ${prop.facing ? `<span><i class="ri-compass-3-line"></i> ${prop.facing}</span>` : ''}
+                ${prop.bedrooms ? `<span><i class="ri-hotel-bed-line"></i> ${prop.bedrooms} BHK</span>` : (prop.approval ? `<span><i class="ri-shield-check-line"></i> ${prop.approval}</span>` : '')}
+              </div>
+
+              <button class="btn btn-outline-dark" style="margin-top: 20px; width: 100%; border-radius: 10px; font-size: 0.9rem;">
+                <span>View Property Details</span>
+                <i class="ri-arrow-right-line"></i>
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    ` : `
+      <!-- Empty State -->
+      <div style="
+        text-align: center; padding: 80px 20px; background: #faf8f5; border-radius: 24px;
+        border: 1px dashed #cbd5e0; max-width: 580px; margin: 0 auto;
+      ">
+        <i class="ri-search-eye-line" style="font-size: 3.5rem; color: #a0aec0; margin-bottom: 16px; display: block;"></i>
+        <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: #2d3748; margin-bottom: 10px;">
+          No properties found
+        </h3>
+        <p style="color: #718096; font-size: 0.95rem; margin-bottom: 24px; line-height: 1.6;">
+          We couldn't find any properties matching your current filter selections. Try adjusting your search query or location filters.
+        </p>
+        <button class="btn btn-primary" id="empty-clear-filters-btn" style="padding: 12px 28px; border-radius: 10px;">
+          <i class="ri-refresh-line"></i> Clear All Filters
+        </button>
+      </div>
+    `}
   `;
 }
 
@@ -519,6 +530,12 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                     <div style="font-size: 0.75rem; font-weight: 700; color: ${isPaidAd ? '#38A169' : '#eb5e28'}; margin-top: 2px;">
                       ${isPaidAd ? '👑 Direct Owner Listing • 0% Brokerage' : '🛡️ Executive Real Estate Advisory Desk'}
                     </div>
+                    ${(property.advisoryName && property.advisoryName.trim() && property.advisoryName.trim() !== 'Thanjai Advisory Desk') ? `
+                      <div style="font-size: 0.84rem; color: #2d3748; font-weight: 700; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+                        <i class="ri-user-heart-fill" style="color: #eb5e28;"></i>
+                        <span>Property Advisory Contact: <strong style="color: #0f172a;">${property.advisoryName.trim()}</strong></span>
+                      </div>
+                    ` : ''}
                   </div>
 
                   <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -745,6 +762,7 @@ function filterProperties(state) {
     const catLabel = (prop.categoryLabel || '').toLowerCase();
     const type = (prop.type || '').toLowerCase();
     const cat = (prop.category || '').toLowerCase();
+    const id = (prop.id || '').toLowerCase();
 
     // Keyword search
     if (state.keyword && state.keyword.trim() !== '') {
@@ -753,7 +771,12 @@ function filterProperties(state) {
       const matchLoc = loc.includes(q);
       const matchDist = dist.includes(q);
       const matchCategory = catLabel.includes(q) || cat.includes(q) || type.includes(q);
-      if (!matchTitle && !matchLoc && !matchDist && !matchCategory) return false;
+      
+      const cleanId = id.replace(/[^a-z0-9]/g, '');
+      const cleanQ = q.replace(/[^a-z0-9]/g, '');
+      const matchId = id.includes(q) || (cleanQ.length > 0 && cleanId.includes(cleanQ));
+
+      if (!matchTitle && !matchLoc && !matchDist && !matchCategory && !matchId) return false;
     }
 
     // Type filter
@@ -863,53 +886,92 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
     });
   });
 
+  // Dynamic In-Place Results Updater for Butter-Smooth Real-Time Typing & Filtering
+  const updateResultsViewInPlace = () => {
+    const container = document.getElementById('discover-results-container');
+    if (container) {
+      container.innerHTML = renderDiscoverResultsContent(discoverState);
+      rebindDynamicResultsListeners();
+    }
+  };
+
+  const rebindDynamicResultsListeners = () => {
+    // Re-bind Clear Filters buttons
+    const clearBtns = [
+      document.getElementById('clear-all-filters-btn'),
+      document.getElementById('empty-clear-filters-btn')
+    ];
+
+    clearBtns.forEach(btn => {
+      btn?.addEventListener('click', () => {
+        discoverState.keyword = '';
+        discoverState.type = 'all';
+        discoverState.location = 'all';
+        discoverState.purpose = 'all';
+        discoverState.budget = 'all';
+
+        const sInput = document.getElementById('discover-search-input');
+        if (sInput) sInput.value = '';
+        const fType = document.getElementById('filter-type');
+        if (fType) fType.value = 'all';
+        const fLoc = document.getElementById('filter-location');
+        if (fLoc) fLoc.value = 'all';
+        const fPurp = document.getElementById('filter-purpose');
+        if (fPurp) fPurp.value = 'all';
+        const fBudg = document.getElementById('filter-budget');
+        if (fBudg) fBudg.value = 'all';
+
+        updateResultsViewInPlace();
+      });
+    });
+
+    // Re-bind Property Cards & Related Property Cards Click
+    document.querySelectorAll('.discover-prop-card, .related-prop-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = card.dataset.id;
+        if (id && onPropertySelect) {
+          activeDetailPhotoIndex = 0;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          onPropertySelect(id);
+        }
+      });
+    });
+  };
+
   // Filter Bar Listeners
   const searchInput = document.getElementById('discover-search-input');
   searchInput?.addEventListener('input', (e) => {
     discoverState.keyword = e.target.value;
-    onStateUpdate(discoverState);
+    updateResultsViewInPlace();
   });
 
   const selectType = document.getElementById('filter-type');
   selectType?.addEventListener('change', (e) => {
     discoverState.type = e.target.value;
-    onStateUpdate(discoverState);
+    updateResultsViewInPlace();
   });
 
   const selectLocation = document.getElementById('filter-location');
   selectLocation?.addEventListener('change', (e) => {
     discoverState.location = e.target.value;
-    onStateUpdate(discoverState);
+    updateResultsViewInPlace();
   });
 
   const selectPurpose = document.getElementById('filter-purpose');
   selectPurpose?.addEventListener('change', (e) => {
     discoverState.purpose = e.target.value;
-    onStateUpdate(discoverState);
+    updateResultsViewInPlace();
   });
 
   const selectBudget = document.getElementById('filter-budget');
   selectBudget?.addEventListener('change', (e) => {
     discoverState.budget = e.target.value;
-    onStateUpdate(discoverState);
+    updateResultsViewInPlace();
   });
 
-  // Clear Filters
-  const clearBtns = [
-    document.getElementById('clear-all-filters-btn'),
-    document.getElementById('empty-clear-filters-btn')
-  ];
-
-  clearBtns.forEach(btn => {
-    btn?.addEventListener('click', () => {
-      discoverState.keyword = '';
-      discoverState.type = 'all';
-      discoverState.location = 'all';
-      discoverState.purpose = 'all';
-      discoverState.budget = 'all';
-      onStateUpdate(discoverState);
-    });
-  });
+  // Initial binding of dynamic results buttons & cards
+  rebindDynamicResultsListeners();
 
   // View All Listings in Similar Section
   document.getElementById('view-all-similar-btn')?.addEventListener('click', (e) => {
@@ -919,18 +981,5 @@ export function initDiscoverListeners(discoverState, onStateUpdate, onPropertySe
       window.scrollTo({ top: 0, behavior: 'smooth' });
       onPropertySelect(null);
     }
-  });
-
-  // Property Cards & Related Property Cards Click
-  document.querySelectorAll('.discover-prop-card, .related-prop-card').forEach(card => {
-    card.addEventListener('click', (e) => {
-      e.preventDefault();
-      const id = card.dataset.id;
-      if (id && onPropertySelect) {
-        activeDetailPhotoIndex = 0;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        onPropertySelect(id);
-      }
-    });
   });
 }

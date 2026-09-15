@@ -908,7 +908,7 @@ elseif ($resource === 'leads') {
             $assignedTo = strval($data['assignedTo'] ?? ($data['assignTo'] ?? 'Unassigned'));
             $notes = is_string($data['notes'] ?? null) ? $data['notes'] : json_encode($data['notes'] ?? []);
             $followup = strval($data['followup'] ?? '—');
-            $propertyId = $data['propertyId'] ?? ($data['propertyMatch'] ?? null);
+            $propertyId = strval($data['propertyId'] ?? ($data['propertyMatch'] ?? ''));
 
             $stmt->bind_param("sssssssssssssss", $lId, $name, $phone, $whatsapp, $email, $source, $status, $budget, $requirement, $location, $timeline, $assignedTo, $notes, $followup, $propertyId);
             if ($stmt->execute()) {

@@ -290,20 +290,19 @@ export function getActiveAdminUser() {
 
 export function canViewAllLeads(user = null) {
   const active = user || getActiveAdminUser();
-  if (!active) return true; // Default to true if active user is not restricted
+  if (!active) return true;
 
   const roleName = String(active.role || active.roleCode || '').toLowerCase().trim();
   const email = (active.email || '').toLowerCase().trim();
   const fullName = String(active.fullName || active.name || '').toLowerCase().trim();
 
-  // Super Admin, Sales Manager, Vijayaraghavan, Sariga, Admin accounts have full org-wide access
+  // Super Admin, Admin, Sales Manager, Vijayaraghavan have full org-wide lead access
   if (
     roleName.includes('super') || 
     roleName.includes('admin') || 
     roleName.includes('manager') || 
     roleName === 'super admin' || 
     roleName === 'superadmin' || 
-    roleName === 'super_admin' || 
     roleName === 'sales manager' ||
     email === 'admin@thanjaiproperty.com' || 
     email === 'vijayaraghavan@thanjaiproperty.com' ||
@@ -312,13 +311,12 @@ export function canViewAllLeads(user = null) {
     email.includes('vijay') ||
     fullName.includes('vijayaraghavan') ||
     fullName.includes('admin') ||
-    fullName.includes('sariga') ||
-    (Array.isArray(active.allowedModules) && active.allowedModules.includes('leads') && (roleName === 'super admin' || roleName === 'admin' || !active.role))
+    fullName.includes('sariga')
   ) {
     return true;
   }
 
-  // Specific restricted staff roles (e.g. Sales Executive, Property Staff, Partner) see only their assigned leads
+  // Non-SuperAdmin staff roles (e.g. Sales Executive, Property Staff, Partner) see ONLY leads assigned to them
   return false;
 }
 

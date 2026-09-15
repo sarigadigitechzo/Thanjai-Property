@@ -67,6 +67,11 @@ function parseCurrentRoute() {
   const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
   const hash = window.location.hash.toLowerCase().replace(/^#\/?/, '');
 
+  if (path.includes('admin-dashboard') || path.includes('dashboard') || path === '/admin' || path === '/crm' || hash === 'admin-dashboard' || hash === 'dashboard') {
+    window.location.href = '/dashboard.html';
+    return 'home';
+  }
+
   if (path.includes('our-story') || hash === 'our-story') return 'our-story';
   if (path.includes('find-your-property') || path.includes('find-you-property') || path.includes('discover-properties') || path.includes('discover') || hash === 'find-your-property' || hash === 'discover-properties' || hash === 'discover') return 'discover';
   
@@ -363,14 +368,14 @@ function renderApp() {
   } catch (err) {
     console.error("Critical renderApp error:", err);
     const appContainer = document.getElementById('app');
-    if (appContainer && !appContainer.innerHTML.trim()) {
+    if (appContainer) {
       appContainer.innerHTML = `
-        <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; background: #fafaf9; color: #1c1917; padding: 24px; text-align: center;">
-          <img src="/thanjai-official-new.png" alt="Thanjai Property" style="height: 60px; margin-bottom: 24px;" onerror="this.style.display='none'" />
+        <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; background: #FAF8F5; color: #1c1917; padding: 24px; text-align: center;">
+          <img src="/thanjai-official-new.png" alt="Thanjai Property" style="height: 54px; margin-bottom: 20px; object-fit: contain;" onerror="this.style.display='none'" />
           <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; color: #eb5e28;">Thanjai Property Official</h2>
-          <p style="color: #78716c; max-width: 480px; margin-bottom: 24px; font-size: 0.95rem; line-height: 1.6;">Loading Tamil Nadu's Premier Real Estate Experience...</p>
-          <button onclick="window.location.reload()" style="background: #eb5e28; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem;">
-            Refresh Page
+          <p style="color: #64748b; max-width: 480px; margin-bottom: 24px; font-size: 0.95rem; line-height: 1.6;">Welcome to Thanjai Property. Click below to refresh and load the latest experience.</p>
+          <button onclick="window.location.reload(true)" style="background: #eb5e28; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(235,94,40,0.3);">
+            Refresh Website
           </button>
         </div>
       `;
@@ -539,10 +544,22 @@ function boot() {
   });
 }
 
+// Global Error & Promise Rejection Safeguards
+window.addEventListener('error', (event) => {
+  console.warn("Global Error caught, triggering renderApp fallback:", event.error);
+  try { renderApp(); } catch (e) {}
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.warn("Global Promise Rejection caught:", event.reason);
+  try { renderApp(); } catch (e) {}
+});
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', boot);
 } else {
   boot();
 }
+
 
 

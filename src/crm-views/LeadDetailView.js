@@ -250,7 +250,21 @@ export function renderLeadDetailView(id) {
     });
   } catch (err) {}
 
-  const formatCurrency = (val) => val ? '₹' + parseInt(val).toLocaleString('en-IN') : '—';
+  const formatCurrency = (val) => {
+    if (!val) return '—';
+    const str = String(val).trim();
+    if (!str || str === '—' || str === '-') return '—';
+    const lower = str.toLowerCase();
+    if (lower.includes('cr') || lower.includes('crore') || lower.includes('lakh') || lower.includes('l') || lower.includes('-') || str.includes('₹')) {
+      return str.startsWith('₹') ? str : `₹${str}`;
+    }
+    let num = parseFloat(str.replace(/[^0-9.]/g, ''));
+    if (isNaN(num) || num <= 0) return str;
+    if (num > 0 && num < 100) return '₹' + num.toFixed(2).replace(/\.00$/, '') + ' Lakhs';
+    if (num >= 10000000) return '₹' + (num / 10000000).toFixed(2).replace(/\.00$/, '') + ' Crore';
+    if (num >= 100000) return '₹' + (num / 100000).toFixed(2).replace(/\.00$/, '') + ' Lakhs';
+    return '₹' + num.toLocaleString('en-IN');
+  };
 
   const formatLeadCreatedDate = (leadObj) => {
     const rawDate = leadObj.createdAt || leadObj.created_at || leadObj.created || leadObj.date;
@@ -484,7 +498,7 @@ ${(() => {
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Email</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${lead.email || '—'}</td></tr>
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Country</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${lead.country || '—'}</td></tr>
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">City / area</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${lead.city || lead.area || '—'}</td></tr>
-                <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Budget</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${formatCurrency(lead.budgetMax)}</td></tr>
+                <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Budget</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${formatCurrency(lead.budget || lead.budgetMax || lead.budgetMin)}</td></tr>
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Property type</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${lead.type || '—'}</td></tr>
                 ${(() => {
                   let rawS = (lead.source || 'MANUAL').toUpperCase();
@@ -507,7 +521,17 @@ ${(() => {
                     </td>
                   </tr>
                 ` : ''}
-                <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Priority</td><td style="padding: 8px 0; text-align: right; font-weight: 500;"><span style="border: 1px solid #3b82f6; color: #3b82f6; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase;">MEDIUM</span></td></tr>
+                ${(() => {
+                  const pVal = String(lead.priority || 'Medium').trim();
+                  const pUpper = pVal.toUpperCase();
+                  let pStyle = 'border: 1px solid #3b82f6; color: #3b82f6; background: #eff6ff;';
+                  if (pUpper === 'HIGH') {
+                    pStyle = 'border: 1px solid #ef4444; color: #ef4444; background: #fee2e2;';
+                  } else if (pUpper === 'LOW') {
+                    pStyle = 'border: 1px solid #10b981; color: #10b981; background: #d1fae5;';
+                  }
+                  return `<tr><td style="padding: 8px 0; color: var(--os-gray-500);">Priority</td><td style="padding: 8px 0; text-align: right; font-weight: 500;"><span style="${pStyle} padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">${pUpper}</span></td></tr>`;
+                })()}
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Assigned to</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${lead.assignTo || 'Unassigned'}</td></tr>
                 <tr><td style="padding: 8px 0; color: var(--os-gray-500);">Created</td><td style="padding: 8px 0; text-align: right; font-weight: 500;">${formatLeadCreatedDate(lead)}</td></tr>
               </tbody>
@@ -924,7 +948,10 @@ ${(() => {
             <div class="form-row">
               <div class="form-group">
                 <label>Source</label>
-                <input type="text" id="edit-lead-source" placeholder="e.g. Manual, Walk-in, Referral, Instagram, Meta Ads..." value="${lead.source || 'Manual'}" />
+                <input type="text" id="edit-lead-source" list="edit-lead-source-options" placeholder="Select or type custom source (e.g. Housing.com)..." value="${lead.source || 'Manual'}" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--os-gray-300); background: #fff; font-size: 0.9rem;" />
+                <datalist id="edit-lead-source-options">
+                  ${['OLX', 'Instagram', 'Facebook', 'WhatsApp', 'YouTube', 'Justdial', 'Real Estate India', 'Manual', 'Referral', 'Website Form', 'Partner', 'Meta Ads', 'Import'].map(s => `<option value="${s}">`).join('')}
+                </datalist>
               </div>
               <div class="form-group">
                 <label>Priority</label>

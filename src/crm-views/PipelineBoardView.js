@@ -55,7 +55,8 @@ function formatCurrency(val, propId = null) {
 
   if (!val) return '—';
   const str = String(val).trim();
-  if (str.includes('Lakh') || str.includes('Crore') || str.includes('Cr') || str.includes('L')) {
+  const lower = str.toLowerCase();
+  if (lower.includes('cr') || lower.includes('crore') || lower.includes('lakh') || lower.includes('l') || str.includes('₹')) {
     return str.startsWith('₹') ? str : `₹ ${str}`;
   }
 

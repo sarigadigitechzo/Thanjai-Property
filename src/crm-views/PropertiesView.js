@@ -1198,6 +1198,11 @@ function renderFullPagePropertyForm(prop) {
                 <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Inquiry / Advisory Phone <span style="font-size: 0.72rem; color: #38a169; font-weight: 600;">(Public Call & WhatsApp)</span></label>
                 <input type="tel" id="form-prop-inquiry-phone" value="${isEdit ? prop?.inquiryPhone || '' : ''}" placeholder="e.g. 8489996852 (Website Queries)" maxlength="10" pattern="[0-9]{10}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
               </div>
+
+              <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #4a5568; display: block; margin-bottom: 6px;">Inquiry / Advisory Contact Name <span style="font-size: 0.72rem; color: #eb5e28; font-weight: 600;">(Frontend Advisory Desk)</span></label>
+                <input type="text" id="form-prop-advisory-name" value="${isEdit ? ((prop?.advisoryName && prop?.advisoryName !== 'Thanjai Advisory Desk') ? prop.advisoryName : '') : ''}" placeholder="e.g. Sariga / Aishwarya R. (Optional)" style="width: 100%; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border: 1px solid #cbd5e0; box-sizing: border-box;" />
+              </div>
             </div>
           </div>
 
@@ -2400,6 +2405,10 @@ function initPropertyFormListeners() {
         ownerName: document.getElementById('form-prop-owner-company')?.value.trim() || document.getElementById('form-prop-owner-name')?.value?.trim() || '',
         ownerPhone: document.getElementById('form-prop-contact-phone')?.value.trim() || document.getElementById('form-prop-owner-phone')?.value?.trim() || '',
         inquiryPhone: document.getElementById('form-prop-inquiry-phone')?.value.trim() || '8489996852',
+        advisoryName: (() => {
+          const val = document.getElementById('form-prop-advisory-name')?.value.trim() || '';
+          return (val === 'Thanjai Advisory Desk') ? '' : val;
+        })(),
         listedBy: document.getElementById('form-prop-contact-name')?.value.trim() || 'Thanjai Property'
       };
 

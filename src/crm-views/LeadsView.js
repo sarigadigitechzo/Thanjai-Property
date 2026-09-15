@@ -1,4 +1,33 @@
+export function getDynamicSourcesList() {
+  const baseSources = [
+    'OLX', 'Instagram', 'Facebook', 'WhatsApp', 'YouTube', 'Justdial',
+    'Real Estate India', 'Manual', 'Referral', 'Website Form', 'Import',
+    'Partner', 'Meta Ads'
+  ];
+  try {
+    const raw = localStorage.getItem('thanjai_leads');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        parsed.forEach(l => {
+          if (l && l.source && typeof l.source === 'string') {
+            const trimmed = l.source.trim();
+            if (trimmed && !baseSources.some(s => s.toLowerCase() === trimmed.toLowerCase())) {
+              baseSources.push(trimmed);
+            }
+          }
+        });
+      }
+    }
+  } catch (e) {
+    console.warn("Error getting dynamic sources list:", e);
+  }
+  return baseSources;
+}
+
 export function renderLeadsView() {
+  const dynamicSources = getDynamicSourcesList();
+
   return `
     <div class="view-enter">
       <div class="view-header-flex" style="margin-bottom: 24px;">
@@ -47,14 +76,7 @@ export function renderLeadsView() {
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
             <div class="select-option selected">All sources</div>
-            <div class="select-option">Visa Form</div>
-            <div class="select-option">Website Form</div>
-            <div class="select-option">Manual</div>
-            <div class="select-option">Referral</div>
-            <div class="select-option">Whatsapp</div>
-            <div class="select-option">Import</div>
-            <div class="select-option">Partner</div>
-            <div class="select-option">Meta Ads</div>
+            ${dynamicSources.map(src => `<div class="select-option">${src}</div>`).join('')}
           </div>
         </div>
 
@@ -303,7 +325,10 @@ ${(() => {
             <div class="form-row">
               <div class="form-group">
                 <label>Source</label>
-                <input type="text" id="lead-source" placeholder="e.g. Manual, Walk-in, Referral, Instagram, Meta Ads..." value="Manual" />
+                <input type="text" id="lead-source" list="lead-source-options" placeholder="Select or type custom source (e.g. Housing.com)..." value="Manual" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--os-gray-300); background: #fff; font-size: 0.9rem;" />
+                <datalist id="lead-source-options">
+                  ${dynamicSources.map(src => `<option value="${src}">`).join('')}
+                </datalist>
               </div>
               <div class="form-group">
                 <label>Priority</label>
@@ -399,13 +424,30 @@ let cachedLeads = [];
 let currentPage = 1;
 let pageSize = 25;
 
+export function sortLeadsDesc(leads) {
+  if (!Array.isArray(leads)) return [];
+  return leads.sort((a, b) => {
+    const parseTs = (item) => {
+      if (!item) return 0;
+      const val = item.createdAt || item.created_at || item.created || item.date || 0;
+      if (typeof val === 'number') return val;
+      const num = Number(val);
+      if (!isNaN(num) && num > 1000000) return num;
+      const str = String(val).trim().replace(' ', 'T');
+      const d = new Date(str).getTime();
+      return !isNaN(d) ? d : 0;
+    };
+    return parseTs(b) - parseTs(a);
+  });
+}
+
 // Global initial store loader from IndexedDB
 export async function initLeadsStore() {
-  if (cachedLeads && cachedLeads.length > 0) return cachedLeads;
+  if (cachedLeads && cachedLeads.length > 0) return sortLeadsDesc(cachedLeads);
   try {
     const idbLeads = await getLeadsFromIDB();
     if (idbLeads && Array.isArray(idbLeads) && idbLeads.length > 0) {
-      cachedLeads = idbLeads;
+      cachedLeads = sortLeadsDesc(idbLeads);
       return cachedLeads;
     }
   } catch (e) {}
@@ -463,7 +505,8 @@ export function mapLeadFromAPI(l) {
       if (typeof rawD === 'number') return rawD;
       const parsedNum = Number(rawD);
       if (!isNaN(parsedNum) && parsedNum > 1000000) return parsedNum;
-      const parsedD = new Date(String(rawD)).getTime();
+      const strD = String(rawD).trim().replace(' ', 'T');
+      const parsedD = new Date(strD).getTime();
       return !isNaN(parsedD) ? parsedD : Date.now();
     })(),
     timeline: l.timeline
@@ -519,7 +562,9 @@ export async function initLeadsView(searchQuery = null) {
           );
           if (matchingLocal) {
             if (matchingLocal.status) apiL.status = matchingLocal.status;
-            if (matchingLocal.priority) apiL.priority = matchingLocal.priority;
+            if (matchingLocal.priority && (!apiL.priority || apiL.priority === 'Medium')) {
+              apiL.priority = matchingLocal.priority;
+            }
             if (matchingLocal.assignTo && matchingLocal.assignTo !== 'Unassigned') {
               apiL.assignTo = matchingLocal.assignTo;
               apiL.assignedTo = matchingLocal.assignTo;
@@ -563,38 +608,43 @@ export async function initLeadsView(searchQuery = null) {
 
 export function getLeads() {
   if (cachedLeads && cachedLeads.length > 0) {
-    return cachedLeads;
+    return sortLeadsDesc(cachedLeads);
   }
   try {
     const stored = localStorage.getItem('thanjai_leads');
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        cachedLeads = parsed;
+        cachedLeads = sortLeadsDesc(parsed);
         return cachedLeads;
       }
     }
   } catch (e) {}
-  return cachedLeads || [];
+  return sortLeadsDesc(cachedLeads || []);
 }
 
 export function saveLeads(leads) {
-  cachedLeads = leads;
+  cachedLeads = sortLeadsDesc(leads || []);
   try {
     // Only save up to first 100 leads to localStorage to avoid QuotaExceededError
-    const subset = Array.isArray(leads) ? leads.slice(0, 100) : [];
+    const subset = Array.isArray(cachedLeads) ? cachedLeads.slice(0, 100) : [];
     localStorage.setItem('thanjai_leads', JSON.stringify(subset));
   } catch (e) {}
   // Persist full dataset cleanly into IndexedDB
-  saveLeadsToIDB(leads);
+  saveLeadsToIDB(cachedLeads);
 }
 
 function formatCurrency(val) {
   if (!val) return '—';
-  if (typeof val === 'string' && (val.includes('Lakh') || val.includes('Crore') || val.includes('-') || val.includes('₹'))) {
-    return val.startsWith('₹') ? val : '₹ ' + val;
+  const str = String(val).trim();
+  if (!str || str === '—' || str === '-') return '—';
+
+  const lower = str.toLowerCase();
+  if (lower.includes('cr') || lower.includes('crore') || lower.includes('lakh') || lower.includes('l') || lower.includes('-') || str.includes('₹')) {
+    return str.startsWith('₹') ? str : `₹ ${str}`;
   }
-  let num = parseFloat(String(val).replace(/[^0-9.]/g, ''));
+
+  let num = parseFloat(str.replace(/[^0-9.]/g, ''));
   if (isNaN(num) || num <= 0) return typeof val === 'string' && val.trim() ? val : '—';
   if (num > 0 && num < 100) {
     return '₹ ' + num.toFixed(2).replace(/\.00$/, '') + ' Lakhs';
@@ -757,8 +807,9 @@ export function consolidateLeadsByBuyer(leadsList) {
 function renderTable() {
   const tbody = document.getElementById('leads-table-body');
   if (!tbody) return;
-  const rawAllLeads = filterLeadsForActiveUser(getLeads());
-  let leads = consolidateLeadsByBuyer(rawAllLeads);
+  const allConsolidatedLeads = consolidateLeadsByBuyer(getLeads());
+  const rawAllLeads = allConsolidatedLeads;
+  let leads = sortLeadsDesc(filterLeadsForActiveUser(allConsolidatedLeads));
   
   // Apply filters
   const searchEl = document.getElementById('filter-search');
@@ -1658,7 +1709,7 @@ function bindLeadEvents() {
 
   if (exportBtn) {
     exportBtn.addEventListener('click', () => {
-      const leads = filterLeadsForActiveUser(getLeads());
+      const leads = filterLeadsForActiveUser(consolidateLeadsByBuyer(getLeads()));
       if (leads.length === 0) {
         showAlertModal({
           title: 'Export Notice',

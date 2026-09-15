@@ -217,6 +217,12 @@ export function renderPropertyDetailModal(property) {
               <div style="font-size: 0.8rem; color: ${isPaidAd ? '#166534' : '#ea580c'}; font-weight: 700;">
                 ${isPaidAd ? '👑 Direct Owner Listing • 0% Brokerage' : '🛡️ Executive Real Estate Advisory Desk'}
               </div>
+              ${(property.advisoryName && property.advisoryName.trim() && property.advisoryName.trim() !== 'Thanjai Advisory Desk') ? `
+                <div style="font-size: 0.82rem; color: #475569; font-weight: 700; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+                  <i class="ri-user-heart-fill" style="color: #eb5e28;"></i>
+                  <span>Property Advisory Contact: <strong style="color: #0f172a;">${property.advisoryName.trim()}</strong></span>
+                </div>
+              ` : ''}
             </div>
 
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
