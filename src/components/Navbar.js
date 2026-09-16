@@ -51,7 +51,7 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
                 `;
               } else {
                 return `
-                  <a href="/user-login" class="nav-login-btn" id="nav-login-btn" title="Sign In to your Account">
+                  <a href="/login.html" class="nav-login-btn" id="nav-login-btn" title="Sign In to your Account">
                     <i class="ri-user-3-line"></i>
                     <span>Login</span>
                   </a>
@@ -114,7 +114,7 @@ export function renderNavbar(currentRoute = 'home', onNavigate) {
               `;
             } else {
               return `
-                <a href="/user-login" class="mobile-drawer-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
+                <a href="/login.html" class="mobile-drawer-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 30px; border: 1.5px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
                   <i class="ri-user-3-line"></i>
                   <span>Login</span>
                 </a>
