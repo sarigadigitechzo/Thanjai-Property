@@ -10,8 +10,11 @@
   # Route /dashboard, /admin-dashboard, /admin, /crm to dashboard.html
   RewriteRule ^(dashboard|admin-dashboard|admin|crm)/?$ dashboard.html [L]
 
-  # Route /login to login.html
-  RewriteRule ^login/?$ login.html [L]
+  # Route /login, /user-login, /user-register, /register to login.html
+  RewriteRule ^(login|user-login|user-register|register)/?$ login.html [L]
+  
+  # Route /user-dashboard, /my-account to user-dashboard.html
+  RewriteRule ^(user-dashboard|my-account)/?$ user-dashboard.html [L]
   
   # Fallback all other SPA routes to index.html
   RewriteRule ^ index.html [L]

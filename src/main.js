@@ -72,6 +72,16 @@ function parseCurrentRoute() {
     return 'home';
   }
 
+  if (path.includes('user-login') || path.includes('user-register') || path === '/login' || path === '/register' || hash === 'user-login' || hash === 'user-register') {
+    window.location.href = '/login.html';
+    return 'home';
+  }
+
+  if (path.includes('user-dashboard') || path === '/my-account' || hash === 'user-dashboard') {
+    window.location.href = '/user-dashboard.html';
+    return 'home';
+  }
+
   if (path.includes('our-story') || hash === 'our-story') return 'our-story';
   if (path.includes('find-your-property') || path.includes('find-you-property') || path.includes('discover-properties') || path.includes('discover') || hash === 'find-your-property' || hash === 'discover-properties' || hash === 'discover') return 'discover';
   
