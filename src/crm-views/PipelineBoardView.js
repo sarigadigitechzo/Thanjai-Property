@@ -385,27 +385,30 @@ export async function initPipelineBoardView() {
           }
         }
       });
-      
-      document.addEventListener('click', (e) => {
-        if (e.target.closest('.custom-option')) {
-          const optionEl = e.target.closest('.custom-option');
-          const optionsDiv = optionEl.closest('.custom-dropdown-options');
-          
-          if (optionsDiv && optionsDiv.dataset.wrapId === leadIdStr) {
-            const newStageId = optionEl.dataset.val;
-            
+    });
+
+    // Delegated click handler for dropdown options & outside clicks
+    if (window._pipelineBoardClickListener) {
+      document.removeEventListener('click', window._pipelineBoardClickListener);
+    }
+    window._pipelineBoardClickListener = (e) => {
+      const optionEl = e.target.closest('.custom-option');
+      if (optionEl) {
+        const optionsDiv = optionEl.closest('.custom-dropdown-options');
+        if (optionsDiv && optionsDiv.dataset.wrapId) {
+          const leadIdStr = optionsDiv.dataset.wrapId;
+          const newStageId = optionEl.dataset.val;
+          const wrap = document.querySelector(`.custom-dropdown-wrap[data-lead="${leadIdStr}"]`);
+          if (wrap) {
             wrap.appendChild(optionsDiv);
             optionsDiv.style.position = '';
             optionsDiv.style.display = '';
             wrap.classList.remove('open');
-            
-            updateLeadStatus(leadIdStr, newStageId);
           }
+          updateLeadStatus(leadIdStr, newStageId);
         }
-      });
-    });
+      }
 
-    document.addEventListener('click', (e) => {
       if (!e.target.closest('.custom-dropdown-wrap') && !e.target.closest('.custom-dropdown-options')) {
         document.querySelectorAll('.custom-dropdown-wrap.open').forEach(wrap => {
           wrap.classList.remove('open');
@@ -421,7 +424,8 @@ export async function initPipelineBoardView() {
           }
         });
       }
-    });
+    };
+    document.addEventListener('click', window._pipelineBoardClickListener);
 
     // 2. Drag and Drop
     const cards = board.querySelectorAll('.pipeline-card');
