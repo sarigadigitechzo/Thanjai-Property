@@ -13,17 +13,6 @@ export function getInquiredPropertiesForLead(lead, allLeads = []) {
 
   if (!lead) return [];
 
-  const REGEX_PROP_ID = /(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi;
-
-  const extractPropIdsFromText = (text) => {
-    if (!text || typeof text !== 'string') return;
-    REGEX_PROP_ID.lastIndex = 0;
-    let match;
-    while ((match = REGEX_PROP_ID.exec(text)) !== null) {
-      if (match[1]) propIdSet.add(match[1].toUpperCase());
-    }
-  };
-
   // 1. Direct propertyId / propertyMatch
   if (lead.propertyId) propIdSet.add(String(lead.propertyId).trim().toUpperCase());
   if (lead.propertyMatch) propIdSet.add(String(lead.propertyMatch).trim().toUpperCase());
@@ -32,14 +21,26 @@ export function getInquiredPropertiesForLead(lead, allLeads = []) {
   const rawTimeline = Array.isArray(lead.timeline) ? lead.timeline : [];
   rawTimeline.forEach(evt => {
     const text = typeof evt === 'string' ? evt : (evt.message || evt.note || '');
-    extractPropIdsFromText(text);
+    const matches = text.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi);
+    if (matches) {
+      matches.forEach(m => {
+        const idMatch = m.match(/([A-Z]{2}-?\d+)/i);
+        if (idMatch && idMatch[1]) propIdSet.add(idMatch[1].toUpperCase());
+      });
+    }
   });
 
   // 3. Notes of this lead
   const rawNotes = Array.isArray(lead.notes) ? lead.notes : [];
   rawNotes.forEach(n => {
     const text = typeof n === 'string' ? n : (n.text || '');
-    extractPropIdsFromText(text);
+    const matches = text.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi);
+    if (matches) {
+      matches.forEach(m => {
+        const idMatch = m.match(/([A-Z]{2}-?\d+)/i);
+        if (idMatch && idMatch[1]) propIdSet.add(idMatch[1].toUpperCase());
+      });
+    }
   });
 
   // 4. Inquiries from other lead rows with same phone (last 10 digits) or email
@@ -48,7 +49,7 @@ export function getInquiredPropertiesForLead(lead, allLeads = []) {
 
   if (leadPhoneDigits.length >= 10 || (leadEmail && leadEmail.includes('@'))) {
     allLeads.forEach(otherLead => {
-      if (!otherLead || otherLead === lead) return;
+      if (!otherLead) return;
       const otherDigits = String(otherLead.phone || otherLead.mobile || '').replace(/\D/g, '').slice(-10);
       const otherEmail = String(otherLead.email || '').trim().toLowerCase();
 
@@ -62,7 +63,13 @@ export function getInquiredPropertiesForLead(lead, allLeads = []) {
         const otherTimeline = Array.isArray(otherLead.timeline) ? otherLead.timeline : [];
         otherTimeline.forEach(evt => {
           const text = typeof evt === 'string' ? evt : (evt.message || evt.note || '');
-          extractPropIdsFromText(text);
+          const matches = text.match(/(?:ID:\s*|property\s*|ID\s+)([A-Z]{2}-?\d+)/gi);
+          if (matches) {
+            matches.forEach(m => {
+              const idMatch = m.match(/([A-Z]{2}-?\d+)/i);
+              if (idMatch && idMatch[1]) propIdSet.add(idMatch[1].toUpperCase());
+            });
+          }
         });
       }
     });
@@ -3003,13 +3010,9 @@ export async function initLeadDetailView(id) {
     });
   });
 
-  if (window._leadDetailOutsideClickListener) {
-    document.removeEventListener('click', window._leadDetailOutsideClickListener);
-  }
-  window._leadDetailOutsideClickListener = () => {
+  document.addEventListener('click', () => {
     customSelects.forEach(select => select.classList.remove('open'));
-  };
-  document.addEventListener('click', window._leadDetailOutsideClickListener);
+  });
 }
 
 async function saveAndSyncLeads(leads, changedLeadId = null) {

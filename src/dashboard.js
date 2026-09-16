@@ -488,47 +488,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Header Interactions
   const universalSearchInputs = document.querySelectorAll('.universal-search');
-  let searchDebounceTimer = null;
   universalSearchInputs.forEach(input => {
     input.addEventListener('input', (e) => {
       const q = e.target.value;
-      if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+      
+      // Update properties search filter
+      setPropertiesSearchFilter(q);
 
-      searchDebounceTimer = setTimeout(() => {
-        // Update properties search filter
-        setPropertiesSearchFilter(q);
+      // Sync into page search inputs if present on DOM
+      const propSearchEl = document.getElementById('props-search-input');
+      if (propSearchEl && propSearchEl !== input) {
+        propSearchEl.value = q;
+      }
 
-        // Sync into page search inputs if present on DOM
-        const propSearchEl = document.getElementById('props-search-input');
-        if (propSearchEl && propSearchEl !== input) {
-          propSearchEl.value = q;
+      const leadSearchEl = document.getElementById('filter-search');
+      if (leadSearchEl && leadSearchEl !== input) {
+        leadSearchEl.value = q;
+        leadSearchEl.dispatchEvent(new Event('input'));
+      }
+
+      // Check current active view
+      const activeNav = document.querySelector('.nav-item.active');
+      const currentView = activeNav ? activeNav.dataset.view : '';
+
+      if (currentView === 'reviews' || currentView === 'testimonials') {
+        // Stay within Google Reviews section and filter reviews directly
+        setReviewsSearchQuery(q);
+        const reviewSearchEl = document.getElementById('reviews-search-input');
+        if (reviewSearchEl && reviewSearchEl !== input) {
+          reviewSearchEl.value = q;
         }
-
-        const leadSearchEl = document.getElementById('filter-search');
-        if (leadSearchEl && leadSearchEl !== input) {
-          leadSearchEl.value = q;
-          leadSearchEl.dispatchEvent(new Event('input'));
-        }
-
-        // Check current active view
-        const activeNav = document.querySelector('.nav-item.active');
-        const currentView = activeNav ? activeNav.dataset.view : '';
-
-        if (currentView === 'reviews' || currentView === 'testimonials') {
-          // Stay within Google Reviews section and filter reviews directly
-          setReviewsSearchQuery(q);
-          const reviewSearchEl = document.getElementById('reviews-search-input');
-          if (reviewSearchEl && reviewSearchEl !== input) {
-            reviewSearchEl.value = q;
-          }
-          loadView('reviews');
-        } else if (currentView === 'properties') {
-          renderPropertiesGridOnly();
-        } else if (currentView !== 'leads' && q.trim().length > 0) {
-          // Only switch to Properties Inventory if user actively typed a search query
-          navigateTo('properties');
-        }
-      }, 200);
+        loadView('reviews');
+      } else if (currentView === 'properties') {
+        renderPropertiesGridOnly();
+      } else if (currentView !== 'leads') {
+        // If user starts typing a Property ID or query from another view, switch to Properties Inventory
+        navigateTo('properties');
+      }
     });
   });
 

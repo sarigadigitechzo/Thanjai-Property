@@ -426,27 +426,19 @@ let pageSize = 25;
 
 export function sortLeadsDesc(leads) {
   if (!Array.isArray(leads)) return [];
-  const getTs = (item) => {
-    if (!item) return 0;
-    if (typeof item._ts === 'number') return item._ts;
-    const val = item.createdAt || item.created_at || item.created || item.date || 0;
-    let ts = 0;
-    if (typeof val === 'number') {
-      ts = val;
-    } else {
+  return leads.sort((a, b) => {
+    const parseTs = (item) => {
+      if (!item) return 0;
+      const val = item.createdAt || item.created_at || item.created || item.date || 0;
+      if (typeof val === 'number') return val;
       const num = Number(val);
-      if (!isNaN(num) && num > 1000000) {
-        ts = num;
-      } else {
-        const str = String(val).trim().replace(' ', 'T');
-        const d = new Date(str).getTime();
-        ts = !isNaN(d) ? d : 0;
-      }
-    }
-    item._ts = ts;
-    return ts;
-  };
-  return leads.sort((a, b) => getTs(b) - getTs(a));
+      if (!isNaN(num) && num > 1000000) return num;
+      const str = String(val).trim().replace(' ', 'T');
+      const d = new Date(str).getTime();
+      return !isNaN(d) ? d : 0;
+    };
+    return parseTs(b) - parseTs(a);
+  });
 }
 
 // Global initial store loader from IndexedDB
@@ -616,7 +608,7 @@ export async function initLeadsView(searchQuery = null) {
 
 export function getLeads() {
   if (cachedLeads && cachedLeads.length > 0) {
-    return cachedLeads;
+    return sortLeadsDesc(cachedLeads);
   }
   try {
     const stored = localStorage.getItem('thanjai_leads');
@@ -628,7 +620,7 @@ export function getLeads() {
       }
     }
   } catch (e) {}
-  return cachedLeads || [];
+  return sortLeadsDesc(cachedLeads || []);
 }
 
 export function saveLeads(leads) {
@@ -1158,14 +1150,10 @@ function bindLeadEvents() {
     });
   });
 
-  // Close dropdowns on outside click cleanly without duplicating listeners
-  if (window._leadsViewOutsideClickListener) {
-    document.removeEventListener('click', window._leadsViewOutsideClickListener);
-  }
-  window._leadsViewOutsideClickListener = () => {
+  // Close dropdowns on outside click
+  document.addEventListener('click', () => {
     customSelects.forEach(select => select.classList.remove('open'));
-  };
-  document.addEventListener('click', window._leadsViewOutsideClickListener);
+  });
 
   // Custom Date Modal Logic
   const dateModal = document.getElementById('custom-date-modal');
