@@ -11,35 +11,36 @@ function loadPropertiesFromStorage() {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const existing = parsed.map(p => normalizePropertyRecord(p)).filter(Boolean);
-        // Safe merge: append any legacy properties whose IDs don't already exist
+        const existing = parsed.map(p => normalizePropertyRecord(p)).filter(p => {
+          if (!p) return false;
+          // Filter out dummy sample initial seed properties that have status Inactive or sample titles
+          if (p.status === 'Inactive' && (p.title === 'Plot in Thanjavur' || p.title === 'Thanjaiproperty' || (p.images && p.images[0] && p.images[0].includes('tn_industrial.jpg')))) {
+            return false;
+          }
+          return true;
+        });
+        
         const existingIds = new Set(existing.map(p => p.id));
         const newFromLegacy = LEGACY_PROPERTIES
           .filter(p => p.id && !existingIds.has(p.id))
           .map(p => normalizePropertyRecord(p))
           .filter(Boolean);
-        if (newFromLegacy.length > 0) {
-          const merged = [...existing, ...newFromLegacy];
-          try { localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(merged)); } catch(e) {}
-          console.log(`[LegacyMerge] Appended ${newFromLegacy.length} legacy properties.`);
-          return merged;
-        }
-        return existing;
+        
+        const merged = newFromLegacy.length > 0 ? [...existing, ...newFromLegacy] : existing;
+        try { localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(merged)); } catch(e) {}
+        return merged;
       }
     }
   } catch (e) {
     console.error("Failed reading properties from localStorage", e);
   }
   
-  // Seed fallback: combine initial + legacy, deduped by ID
-  const combined = [...INITIAL_PROPERTIES, ...LEGACY_PROPERTIES];
-  const seenIds = new Set();
-  const deduped = combined.filter(p => { if (!p.id || seenIds.has(p.id)) return false; seenIds.add(p.id); return true; });
-  const defaults = deduped.map(p => normalizePropertyRecord(p)).filter(Boolean);
+  // Fallback: load LEGACY_PROPERTIES deduped by ID
+  const deduped = LEGACY_PROPERTIES.map(p => normalizePropertyRecord(p)).filter(Boolean);
   try {
-    localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(defaults));
+    localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(deduped));
   } catch (e) {}
-  return defaults;
+  return deduped;
 }
 
 function savePropertiesToStorage(props) {
@@ -132,10 +133,9 @@ export async function initPropertiesStore() {
         });
       }).filter(Boolean);
 
-      // Safe merge & Auto-sync: always include initial & legacy properties that aren't in remote MySQL data
+      // Safe merge & Auto-sync: include legacy properties that aren't in remote MySQL data
       const remoteIds = new Set(remoteNormalized.map(p => p.id));
-      const allDefaultProps = [...INITIAL_PROPERTIES, ...LEGACY_PROPERTIES];
-      const legacyToAdd = allDefaultProps
+      const legacyToAdd = LEGACY_PROPERTIES
         .filter(p => p.id && !remoteIds.has(p.id))
         .map(p => normalizePropertyRecord(p))
         .filter(Boolean);
