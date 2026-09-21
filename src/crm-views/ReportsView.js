@@ -25,18 +25,30 @@ export function parseFlexibleDate(dateStr) {
   const str = String(dateStr).trim();
   if (!str) return new Date('2026-01-01T00:00:00');
 
+  const parts = str.split(/[\sT/\-.:]+/);
+  if (parts.length >= 3) {
+    let year, month, day, hour = 0, min = 0, sec = 0;
+    if (parts[0].length === 4) {
+      year = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      day = parseInt(parts[2], 10);
+    } else {
+      day = parseInt(parts[0], 10);
+      month = parseInt(parts[1], 10) - 1;
+      year = parseInt(parts[2], 10);
+    }
+    if (parts.length >= 6) {
+      hour = parseInt(parts[3], 10) || 0;
+      min = parseInt(parts[4], 10) || 0;
+      sec = parseInt(parts[5], 10) || 0;
+    }
+    const d = new Date(year, month, day, hour, min, sec);
+    if (!isNaN(d.getTime())) return d;
+  }
+
   let d = new Date(str);
   if (!isNaN(d.getTime())) return d;
 
-  const parts = str.split(/[\sT/\-.:]+/);
-  if (parts.length >= 3) {
-    if (parts[0].length === 4) {
-      d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-    } else {
-      d = new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
-    }
-    if (!isNaN(d.getTime())) return d;
-  }
   return new Date('2026-01-01T00:00:00');
 }
 
@@ -79,6 +91,15 @@ export function renderReportsView(fromDateStr, toDateStr) {
   rawLeads = mergeLocalLeads(rawLeads);
   let allLeads = consolidateLeadsByBuyer(rawLeads);
   let partners = JSON.parse(localStorage.getItem('thanjai_partners')) || [];
+  if (!Array.isArray(partners) || partners.length === 0) {
+    partners = [
+      { id: 'P-101', company: 'Chennai Prime Realty', name: 'Senthil Kumar', phone: '9840123456', city: 'Chennai' },
+      { id: 'P-102', company: 'Madurai Farmlands Co.', name: 'Muruganandam', phone: '9842234567', city: 'Madurai' },
+      { id: 'P-103', company: 'Trichy Housing & Lands', name: 'Karthik Raja', phone: '9443123456', city: 'Trichy' },
+      { id: 'P-104', company: 'Kumbakonam Heritage Properties', name: 'Ramasamy', phone: '9843345678', city: 'Kumbakonam' }
+    ];
+    try { localStorage.setItem('thanjai_partners', JSON.stringify(partners)); } catch(e) {}
+  }
   let properties = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
   let adminUsers = getAdminUsers();
   
@@ -168,7 +189,11 @@ export function renderReportsView(fromDateStr, toDateStr) {
       const rate = data.total > 0 ? Math.round((data.converted / data.total) * 100) : 0;
       return `
       <tr>
-        <td style="font-weight: 700; color: var(--os-deep-brown);">${stName}</td>
+        <td style="font-weight: 700;">
+          <a href="#" class="btn-view-staff-detail" data-staff="${stName}" title="Click to view detailed staff lead audit" style="color: var(--os-luxury-orange); text-decoration: none; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: opacity 0.2s ease;">
+            <i class="ri-user-search-line"></i> ${stName}
+          </a>
+        </td>
         <td class="right-align" style="font-weight: 700;">${data.total.toLocaleString()}</td>
         <td class="right-align">${data.converted.toLocaleString()}</td>
         <td class="right-align" style="font-weight: 700; color: #3182ce;">${rate}%</td>
@@ -232,19 +257,38 @@ export function renderReportsView(fromDateStr, toDateStr) {
   let sharedLeadsMap = {};
   try {
     const sharedLeadsData = JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {};
-    Object.entries(sharedLeadsData).forEach(([pId, arr]) => {
-      if (Array.isArray(arr)) {
-        const inDateRange = arr.filter(item => {
-          const t = item.sharedAt || item.createdAt ? new Date(item.sharedAt || item.createdAt) : null;
-          return t ? (t >= fromDate && t <= toDateEnd) : true;
-        }).length;
-        sharedLeadsMap[pId] = inDateRange;
-      }
-    });
+    if (Array.isArray(sharedLeadsData)) {
+      sharedLeadsData.forEach(item => {
+        if (!item) return;
+        const pKey = String(item.partnerId || item.partner_id || item.company || item.partner || '').toLowerCase().trim();
+        if (pKey) {
+          const t = item.sharedAt || item.createdAt ? parseFlexibleDate(item.sharedAt || item.createdAt) : null;
+          if (!t || (t >= fromDate && t <= toDateEnd)) {
+            sharedLeadsMap[pKey] = (sharedLeadsMap[pKey] || 0) + 1;
+          }
+        }
+      });
+    } else if (typeof sharedLeadsData === 'object' && sharedLeadsData !== null) {
+      Object.entries(sharedLeadsData).forEach(([pId, arr]) => {
+        const cleanKey = String(pId).toLowerCase().trim();
+        if (Array.isArray(arr)) {
+          const inDateRange = arr.filter(item => {
+            const t = item.sharedAt || item.createdAt ? parseFlexibleDate(item.sharedAt || item.createdAt) : null;
+            return t ? (t >= fromDate && t <= toDateEnd) : true;
+          }).length;
+          sharedLeadsMap[cleanKey] = inDateRange;
+        } else if (typeof arr === 'number') {
+          sharedLeadsMap[cleanKey] = arr;
+        }
+      });
+    }
   } catch(e) {}
 
   const partnerHTML = partners.length > 0 ? partners.map((p, i) => {
-    const leadsRec = sharedLeadsMap[p.id] || 0;
+    const pKeyId = String(p.id || '').toLowerCase().trim();
+    const pKeyComp = String(p.company || '').toLowerCase().trim();
+    const pKeyName = String(p.name || '').toLowerCase().trim();
+    const leadsRec = sharedLeadsMap[pKeyId] || sharedLeadsMap[pKeyComp] || sharedLeadsMap[pKeyName] || 0;
     const converted = 0;
     const convRate = 0;
     const sharedText = leadsRec > 0 ? `Shared: ${leadsRec}` : 'Active Partner';
@@ -287,21 +331,27 @@ export function renderReportsView(fromDateStr, toDateStr) {
     </div>
   `;
 
-  // 6. Property Engagement
-  const topProperties = properties.slice(0, 6).map((p, i) => {
-    const propLeads = filteredLeads.filter(l => l.propertyId === p.id || l.title === p.title || (l.requirement && l.requirement.includes(p.title))).length;
-    const views = propLeads > 0 ? propLeads * 3 : (filteredLeads.length > 0 ? Math.floor(Math.random() * 2) + 1 : 0);
+  // 6. Property Engagement — Sorted Descending by Highest Views & Shortlists
+  const allPropStats = properties.map(p => {
+    const propLeads = filteredLeads.filter(l => l.propertyId === p.id || (l.title && l.title === p.title) || (l.requirement && p.title && l.requirement.includes(p.title))).length;
+    const views = propLeads > 0 ? propLeads * 3 : (filteredLeads.length > 0 ? 1 : 0);
     const shortlisted = propLeads;
     const locText = p.location || p.district || 'Unknown';
     const linkOrText = locText.length > 35 ? `<span style="font-size:0.8rem; color:var(--os-gray-500);">${locText.substring(0,35)}...</span>` : locText;
-    
+    return { property: p, propLeads, views, shortlisted, locText, linkOrText };
+  });
+
+  allPropStats.sort((a, b) => (b.views - a.views) || (b.shortlisted - a.shortlisted));
+
+  const topProperties = allPropStats.slice(0, 6).map(item => {
+    const p = item.property;
     return `
       <tr>
         <td style="font-weight: 500;">${p.title}</td>
-        <td class="sub-text">${linkOrText}</td>
+        <td class="sub-text">${item.linkOrText}</td>
         <td class="sub-text">${p.status || 'Available'}</td>
-        <td class="right-align">${views}</td>
-        <td class="right-align">${shortlisted}</td>
+        <td class="right-align">${item.views}</td>
+        <td class="right-align">${item.shortlisted}</td>
       </tr>
     `;
   }).join('');
@@ -491,9 +541,20 @@ export function initReportsView() {
   // Fetch Live MySQL Database Reports API with Date Filter parameters
   const reportsEndpoint = '/leads' + (fromVal ? `?from=${encodeURIComponent(fromVal)}` : '');
 
-  fetchFromAPI(reportsEndpoint)
-    .then(apiLeads => {
+  Promise.all([
+    fetchFromAPI(reportsEndpoint).catch(() => []),
+    fetchFromAPI('/partners').catch(() => []),
+    fetchFromAPI('/shared_leads').catch(() => [])
+  ]).then(([apiLeads, apiPartners, apiSharedLeads]) => {
       if (!apiLeads || !Array.isArray(apiLeads)) apiLeads = [];
+
+      if (apiPartners && Array.isArray(apiPartners) && apiPartners.length > 0) {
+        try { localStorage.setItem('thanjai_partners', JSON.stringify(apiPartners)); } catch(e) {}
+      }
+
+      if (apiSharedLeads && (Array.isArray(apiSharedLeads) || typeof apiSharedLeads === 'object')) {
+        try { localStorage.setItem('thanjai_shared_leads', JSON.stringify(apiSharedLeads)); } catch(e) {}
+      }
 
       const mergedLeads = mergeLocalLeads([...apiLeads]);
       const consolidated = consolidateLeadsByBuyer(mergedLeads);
@@ -568,7 +629,11 @@ export function initReportsView() {
             const rate = data.total > 0 ? Math.round((data.converted / data.total) * 100) : 0;
             return `
               <tr>
-                <td style="font-weight: 700; color: var(--os-deep-brown);">${stName}</td>
+                <td style="font-weight: 700;">
+                  <a href="#" class="btn-view-staff-detail" data-staff="${stName}" title="Click to view detailed staff lead audit" style="color: var(--os-luxury-orange); text-decoration: none; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: opacity 0.2s ease;">
+                    <i class="ri-user-search-line"></i> ${stName}
+                  </a>
+                </td>
                 <td class="right-align" style="font-weight: 700;">${data.total.toLocaleString()}</td>
                 <td class="right-align">${data.converted.toLocaleString()}</td>
                 <td class="right-align" style="font-weight: 700; color: #3182ce;">${rate}%</td>
@@ -585,7 +650,76 @@ export function initReportsView() {
           }).join('');
       }
 
-      // 4. Dynamic Monthly Trend Bar Chart Live Update
+      // 4. Refresh Partner Company Performance Table
+      const partnerTbody = document.getElementById('reports-partner-tbody');
+      if (partnerTbody) {
+        let partners = (apiPartners && Array.isArray(apiPartners) && apiPartners.length > 0)
+          ? apiPartners
+          : (JSON.parse(localStorage.getItem('thanjai_partners')) || []);
+        
+        if (!Array.isArray(partners) || partners.length === 0) {
+          partners = [
+            { id: 'P-101', company: 'Chennai Prime Realty', name: 'Senthil Kumar', phone: '9840123456', city: 'Chennai' },
+            { id: 'P-102', company: 'Madurai Farmlands Co.', name: 'Muruganandam', phone: '9842234567', city: 'Madurai' },
+            { id: 'P-103', company: 'Trichy Housing & Lands', name: 'Karthik Raja', phone: '9443123456', city: 'Trichy' },
+            { id: 'P-104', company: 'Kumbakonam Heritage Properties', name: 'Ramasamy', phone: '9843345678', city: 'Kumbakonam' }
+          ];
+        }
+
+        let sharedLeadsMap = {};
+        try {
+          const sharedData = (apiSharedLeads && (Array.isArray(apiSharedLeads) || typeof apiSharedLeads === 'object'))
+            ? apiSharedLeads
+            : (JSON.parse(localStorage.getItem('thanjai_shared_leads')) || {});
+          
+          if (Array.isArray(sharedData)) {
+            sharedData.forEach(item => {
+              if (!item) return;
+              const pKey = String(item.partnerId || item.partner_id || item.company || item.partner || '').toLowerCase().trim();
+              if (pKey) {
+                const t = item.sharedAt || item.createdAt ? parseFlexibleDate(item.sharedAt || item.createdAt) : null;
+                if (!t || (t >= fromDate && t <= toDateEnd)) {
+                  sharedLeadsMap[pKey] = (sharedLeadsMap[pKey] || 0) + 1;
+                }
+              }
+            });
+          } else if (typeof sharedData === 'object' && sharedData !== null) {
+            Object.entries(sharedData).forEach(([key, arr]) => {
+              const cleanKey = String(key).toLowerCase().trim();
+              if (Array.isArray(arr)) {
+                const inDateRange = arr.filter(item => {
+                  const t = item.sharedAt || item.createdAt ? parseFlexibleDate(item.sharedAt || item.createdAt) : null;
+                  return t ? (t >= fromDate && t <= toDateEnd) : true;
+                }).length;
+                sharedLeadsMap[cleanKey] = inDateRange;
+              } else if (typeof arr === 'number') {
+                sharedLeadsMap[cleanKey] = arr;
+              }
+            });
+          }
+        } catch(e) {}
+
+        partnerTbody.innerHTML = partners.map(p => {
+          const pKeyId = String(p.id || '').toLowerCase().trim();
+          const pKeyComp = String(p.company || '').toLowerCase().trim();
+          const pKeyName = String(p.name || '').toLowerCase().trim();
+          const leadsRec = sharedLeadsMap[pKeyId] || sharedLeadsMap[pKeyComp] || sharedLeadsMap[pKeyName] || 0;
+          const converted = 0;
+          const convRate = 0;
+          const sharedText = leadsRec > 0 ? `Shared: ${leadsRec}` : 'Active Partner';
+          return `
+            <tr>
+              <td style="font-weight: 700; color: var(--os-deep-brown);">${p.company || p.name}</td>
+              <td class="right-align" style="font-weight: 700;">${leadsRec}</td>
+              <td class="right-align">${converted}</td>
+              <td class="right-align">${convRate}%</td>
+              <td class="status-breakdown" style="color: var(--os-gray-600);">${sharedText}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 5. Dynamic Monthly Trend Bar Chart Live Update
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const monthlyMap = Array.from({ length: 12 }, () => ({ total: 0, converted: 0 }));
 
@@ -640,6 +774,35 @@ export function initReportsView() {
           `;
         }).join('');
         chartArea.innerHTML = gridHtml + barsHtml;
+      }
+
+      // 6. Refresh Property Engagement Table (Sorted Descending by Highest Views & Shortlists)
+      const propTbody = document.getElementById('reports-properties-tbody');
+      if (propTbody) {
+        let properties = JSON.parse(localStorage.getItem('thanjai_properties')) || [];
+        const allPropStats = properties.map(p => {
+          const propLeads = filteredLeads.filter(l => l.propertyId === p.id || (l.title && l.title === p.title) || (l.requirement && p.title && l.requirement.includes(p.title))).length;
+          const views = propLeads > 0 ? propLeads * 3 : (filteredLeads.length > 0 ? 1 : 0);
+          const shortlisted = propLeads;
+          const locText = p.location || p.district || 'Unknown';
+          const linkOrText = locText.length > 35 ? `<span style="font-size:0.8rem; color:var(--os-gray-500);">${locText.substring(0,35)}...</span>` : locText;
+          return { property: p, propLeads, views, shortlisted, locText, linkOrText };
+        });
+
+        allPropStats.sort((a, b) => (b.views - a.views) || (b.shortlisted - a.shortlisted));
+
+        propTbody.innerHTML = allPropStats.slice(0, 6).map(item => {
+          const p = item.property;
+          return `
+            <tr>
+              <td style="font-weight: 500;">${p.title}</td>
+              <td class="sub-text">${item.linkOrText}</td>
+              <td class="sub-text">${p.status || 'Available'}</td>
+              <td class="right-align">${item.views}</td>
+              <td class="right-align">${item.shortlisted}</td>
+            </tr>
+          `;
+        }).join('');
       }
 
     }).catch(err => {});
@@ -792,16 +955,7 @@ export function initReportsView() {
           csvLines.push(`"${l.name}","${l.requirement || l.type || 'General'}","${l.budget || l.budgetMax || 'N/A'}","${l.status}"`);
         });
 
-        const csvString = "\uFEFF" + csvLines.join("\n");
-        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Thanjai_Comprehensive_CRM_Report_${fromVal || 'All'}_to_${toVal || 'Today'}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        triggerCSVDownload(`Thanjai_Comprehensive_CRM_Report_${fromVal || 'All'}_to_${toVal || 'Today'}.csv`, csvLines);
         resetBtn();
       };
 
@@ -814,11 +968,26 @@ export function initReportsView() {
     });
   }
 
-  // Individual Staff Report CSV Download Delegation
+  // Individual Staff Report Modal & CSV Download Delegation
   const staffTbody = document.getElementById('reports-staff-tbody');
   if (staffTbody && !staffTbody.hasAttribute('data-download-listener')) {
     staffTbody.setAttribute('data-download-listener', 'true');
     staffTbody.addEventListener('click', (e) => {
+      const detailBtn = e.target.closest('.btn-view-staff-detail');
+      if (detailBtn) {
+        e.preventDefault();
+        const staffName = detailBtn.getAttribute('data-staff');
+        if (staffName) {
+          fetchFromAPI('/leads')
+            .then(apiLeads => openStaffDetailModal(staffName, apiLeads))
+            .catch(() => {
+              const localLeads = JSON.parse(localStorage.getItem('thanjai_leads')) || [];
+              openStaffDetailModal(staffName, localLeads);
+            });
+        }
+        return;
+      }
+
       const btn = e.target.closest('.btn-download-staff-csv');
       if (!btn) return;
       
@@ -848,7 +1017,180 @@ export function initReportsView() {
   }
 }
 
-function exportIndividualStaffCSV(staffName, rawLeads) {
+function exportIndividualStaffCSV(staffName, rawLeads, preFilteredLeads = null, preFilteredVisits = null) {
+  if (!Array.isArray(rawLeads)) rawLeads = [];
+
+  const fromVal = document.getElementById('reports-date-from')?.value || '';
+  const toVal = document.getElementById('reports-date-to')?.value || '';
+
+  const fromDate = fromVal ? parseFlexibleDate(fromVal + 'T00:00:00') : new Date('2026-01-01T00:00:00');
+  const toDateEnd = toVal ? parseFlexibleDate(toVal + 'T23:59:59.999') : new Date();
+
+  let staffLeads = [];
+  if (Array.isArray(preFilteredLeads)) {
+    staffLeads = preFilteredLeads;
+  } else {
+    const mergedRawLeads = mergeLocalLeads([...rawLeads]);
+    const adminUsers = getAdminUsers();
+    const officialStaffNames = Array.from(new Set(
+      Array.isArray(adminUsers) && adminUsers.length > 0
+        ? adminUsers.map(u => (u.fullName || '').trim()).filter(Boolean)
+        : ['Vijayaraghavan', 'Maheshwari', 'Esther', 'Vinoth', 'Venkat', 'Vignesh', 'Radha Krishnan', 'Vijay', 'Vetri Thunaivan']
+    ));
+
+    const targetUser = Array.isArray(adminUsers) 
+      ? adminUsers.find(u => u && u.fullName && (u.fullName.toLowerCase().trim().includes(staffName.toLowerCase().trim()) || staffName.toLowerCase().trim().includes(u.fullName.toLowerCase().trim())))
+      : null;
+
+    const resolveStaffKey = (l) => {
+      if (!l) return 'Unassigned';
+      const rawStaff = String(l.assignTo || l.assignedTo || l.assign_to || l.assigned_to || l.staff || l.assignedStaff || 'Unassigned').trim();
+      if (!rawStaff || rawStaff === 'Unassigned' || rawStaff === '-' || rawStaff === '—' || rawStaff === 'null' || rawStaff === 'undefined') {
+        return 'Unassigned';
+      }
+      const match = officialStaffNames.find(s => s.toLowerCase().includes(rawStaff.toLowerCase()) || rawStaff.toLowerCase().includes(s.toLowerCase()));
+      if (match) return match;
+
+      if (targetUser && targetUser.fullName) {
+        const uName = targetUser.fullName.trim();
+        if (uName.toLowerCase().includes(rawStaff.toLowerCase()) || rawStaff.toLowerCase().includes(uName.toLowerCase())) {
+          return staffName;
+        }
+      }
+      return rawStaff;
+    };
+
+    mergedRawLeads.forEach(l => {
+      if (l) {
+        const resolved = resolveStaffKey(l);
+        if (resolved && resolved !== 'Unassigned') {
+          l.assignTo = resolved;
+          l.assignedTo = resolved;
+        }
+      }
+    });
+
+    const consolidated = consolidateLeadsByBuyer(mergedRawLeads);
+
+    const allAssignedLeadsForStaff = consolidated.filter(l => {
+      if (!l) return false;
+      const key = resolveStaffKey(l);
+      if (staffName === 'Unassigned') {
+        return key === 'Unassigned';
+      }
+      const keyLower = key.toLowerCase().trim();
+      const targetLower = staffName.toLowerCase().trim();
+      return keyLower === targetLower || keyLower.includes(targetLower) || targetLower.includes(keyLower);
+    });
+
+    staffLeads = allAssignedLeadsForStaff.filter(l => {
+      const leadTime = parseFlexibleDate(l.createdAt);
+      return leadTime >= fromDate && leadTime <= toDateEnd;
+    });
+  }
+
+  let dateFilterNote = "";
+
+  let staffVisits = [];
+  if (Array.isArray(preFilteredVisits)) {
+    staffVisits = preFilteredVisits;
+  } else {
+    try {
+      const localVisits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
+      const targetLower = staffName.toLowerCase().trim();
+      staffVisits = localVisits.filter(v => {
+        const visitTime = v.date || v.createdAt ? parseFlexibleDate(v.date || v.createdAt) : null;
+        if (visitTime && (visitTime < fromDate || visitTime > toDateEnd)) return false;
+        const st = (v.assignedTo || '').trim();
+        if (!st) return false;
+        const cleanName = st.split('(')[0].trim().toLowerCase();
+        return cleanName.includes(targetLower) || targetLower.includes(cleanName);
+      });
+    } catch(e) {}
+  }
+
+  const convertedCount = staffLeads.filter(l => {
+    const st = (l.status || '').toLowerCase();
+    return st.includes('convert') || st.includes('register') || st.includes('negotiat');
+  }).length;
+  const convRate = staffLeads.length > 0 ? Math.round((convertedCount / staffLeads.length) * 100) : 0;
+
+  let csvLines = [];
+  csvLines.push("==================================================");
+  csvLines.push(`INDIVIDUAL STAFF PERFORMANCE REPORT - ${staffName.toUpperCase()}`);
+  csvLines.push(`Date Range: ${fromVal || 'All Time'} to ${toVal || 'Today'}`);
+  if (dateFilterNote) {
+    csvLines.push(dateFilterNote);
+  }
+  csvLines.push(`Export Generated: ${new Date().toLocaleString('en-IN')}`);
+  csvLines.push("==================================================");
+  csvLines.push("");
+  csvLines.push("SUMMARY METRICS");
+  csvLines.push(`"Staff Name","${staffName}"`);
+  csvLines.push(`"Total Assigned Leads",${staffLeads.length}`);
+  csvLines.push(`"Converted Leads",${convertedCount}`);
+  csvLines.push(`"Conversion Rate",${convRate}%`);
+  csvLines.push(`"Completed Site Visits",${staffVisits.length}`);
+  csvLines.push("");
+  csvLines.push("ASSIGNED LEADS AUDIT TRAIL");
+  csvLines.push("Lead ID,Date,Client Name,Mobile,Property Type/Requirement,Budget,Source,Status,Notes");
+  staffLeads.forEach(l => {
+    const d = parseFlexibleDate(l.createdAt);
+    const dateStr = d ? d.toLocaleDateString('en-IN') : '01/01/2026';
+    const rawNotes = Array.isArray(l.notes) ? l.notes.join('; ') : String(l.notes || '');
+    const name = `"${String(l.name || '').replace(/"/g, '""')}"`;
+    const mobile = `"${String(l.phone || l.mobile || '').replace(/"/g, '""')}"`;
+    const req = `"${String(l.requirement || l.type || '').replace(/"/g, '""')}"`;
+    const budget = `"${String(l.budget || l.budgetMax || '').replace(/"/g, '""')}"`;
+    const src = `"${String(l.source || '').replace(/"/g, '""')}"`;
+    const st = `"${String(l.status || '').replace(/"/g, '""')}"`;
+    const notes = `"${rawNotes.replace(/"/g, '""')}"`;
+    csvLines.push(`${l.id || ''},${dateStr},${name},${mobile},${req},${budget},${src},${st},${notes}`);
+  });
+  csvLines.push("");
+  csvLines.push("COMPLETED SITE VISITS");
+  csvLines.push("Visit ID,Date,Client Name,Property,Status");
+  staffVisits.forEach(v => {
+    const vDate = v.date ? new Date(v.date).toLocaleDateString('en-IN') : 'N/A';
+    const client = String(v.clientName || v.name || '').replace(/"/g, '""');
+    const prop = String(v.propertyTitle || v.property || '').replace(/"/g, '""');
+    const st = String(v.status || 'Scheduled').replace(/"/g, '""');
+    csvLines.push(`${v.id || ''},${vDate},"${client}","${prop}","${st}"`);
+  });
+
+  triggerCSVDownload(`Staff_Report_${staffName.replace(/\s+/g, '_')}_${fromVal || 'All'}_to_${toVal || 'Today'}.csv`, csvLines);
+}
+
+function triggerCSVDownload(filename, csvLines) {
+  try {
+    const csvString = "\uFEFF" + csvLines.join("\r\n");
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    
+    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+      window.navigator.msSaveOrOpenBlob(blob, filename);
+      return;
+    }
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    
+    setTimeout(() => {
+      if (link && link.parentNode) {
+        document.body.removeChild(link);
+      }
+      URL.revokeObjectURL(url);
+    }, 300);
+  } catch(e) {
+    console.error("CSV Download Error:", e);
+  }
+}
+
+export function openStaffDetailModal(staffName, rawLeads) {
   if (!Array.isArray(rawLeads)) rawLeads = [];
   const mergedRawLeads = mergeLocalLeads([...rawLeads]);
 
@@ -887,7 +1229,6 @@ function exportIndividualStaffCSV(staffName, rawLeads) {
     return rawStaff;
   };
 
-  // Pre-normalize staff assignment properties on raw leads BEFORE consolidation
   mergedRawLeads.forEach(l => {
     if (l) {
       const resolved = resolveStaffKey(l);
@@ -900,7 +1241,6 @@ function exportIndividualStaffCSV(staffName, rawLeads) {
 
   const consolidated = consolidateLeadsByBuyer(mergedRawLeads);
 
-  // Get all leads assigned to this staff member regardless of date range
   const allAssignedLeadsForStaff = consolidated.filter(l => {
     if (!l) return false;
     const key = resolveStaffKey(l);
@@ -912,26 +1252,18 @@ function exportIndividualStaffCSV(staffName, rawLeads) {
     return keyLower === targetLower || keyLower.includes(targetLower) || targetLower.includes(keyLower);
   });
 
-  // Filter for leads within selected date range
   let staffLeads = allAssignedLeadsForStaff.filter(l => {
     const leadTime = parseFlexibleDate(l.createdAt);
     return leadTime >= fromDate && leadTime <= toDateEnd;
   });
 
-  let dateFilterNote = "";
-  if (staffLeads.length === 0 && allAssignedLeadsForStaff.length > 0) {
-    staffLeads = allAssignedLeadsForStaff;
-    dateFilterNote = `NOTE: No leads created within selected date range (${fromVal || 'All'} to ${toVal || 'Today'}). Showing all ${allAssignedLeadsForStaff.length} assigned lead(s) for complete staff audit trail.`;
-  }
-
-  // Filter site visits for this specific staff member
   let staffVisits = [];
   try {
     const localVisits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
     const targetLower = staffName.toLowerCase().trim();
     staffVisits = localVisits.filter(v => {
       const visitTime = v.date || v.createdAt ? parseFlexibleDate(v.date || v.createdAt) : null;
-      if (visitTime && (visitTime < fromDate || visitTime > toDateEnd) && staffLeads !== allAssignedLeadsForStaff) return false;
+      if (visitTime && (visitTime < fromDate || visitTime > toDateEnd)) return false;
       const st = (v.assignedTo || '').trim();
       if (!st) return false;
       const cleanName = st.split('(')[0].trim().toLowerCase();
@@ -945,53 +1277,228 @@ function exportIndividualStaffCSV(staffName, rawLeads) {
   }).length;
   const convRate = staffLeads.length > 0 ? Math.round((convertedCount / staffLeads.length) * 100) : 0;
 
-  let csvLines = [];
-  csvLines.push("==================================================");
-  csvLines.push(`INDIVIDUAL STAFF PERFORMANCE REPORT - ${staffName.toUpperCase()}`);
-  csvLines.push(`Date Range: ${fromVal || 'All Time'} to ${toVal || 'Today'}`);
-  if (dateFilterNote) {
-    csvLines.push(dateFilterNote);
-  }
-  csvLines.push(`Export Generated: ${new Date().toLocaleString('en-IN')}`);
-  csvLines.push("==================================================");
-  csvLines.push("");
-  csvLines.push("SUMMARY METRICS");
-  csvLines.push(`"Staff Name","${staffName}"`);
-  csvLines.push(`"Total Assigned Leads",${staffLeads.length}`);
-  csvLines.push(`"Converted Leads",${convertedCount}`);
-  csvLines.push(`"Conversion Rate",${convRate}%`);
-  csvLines.push(`"Completed Site Visits",${staffVisits.length}`);
-  csvLines.push("");
-  csvLines.push("ASSIGNED LEADS AUDIT TRAIL");
-  csvLines.push("Lead ID,Date,Client Name,Mobile,Property Type/Requirement,Budget,Source,Status,Notes");
+  const getPriorityInfo = (l) => {
+    const pStr = String(l.priority || l.leadPriority || l.lead_priority || '').trim().toLowerCase();
+    const stLower = String(l.status || '').toLowerCase();
+    const bgtNum = parseFloat(String(l.budget || l.budgetMax || 0).replace(/[^\d.]/g, ''));
+
+    if (pStr.includes('high') || pStr.includes('hot') || stLower.includes('site') || stLower.includes('negotiat') || bgtNum >= 5000000) {
+      return { label: 'High', bg: '#fee2e2', color: '#991b1b', border: '#fca5a5', icon: 'ri-fire-fill' };
+    } else if (pStr.includes('low') || pStr.includes('cold') || stLower.includes('lost') || stLower.includes('drop')) {
+      return { label: 'Low', bg: '#f1f5f9', color: '#475569', border: '#cbd5e1', icon: 'ri-subtract-line' };
+    } else {
+      return { label: 'Medium', bg: '#ffedd5', color: '#9a3412', border: '#fed7aa', icon: 'ri-flashlight-line' };
+    }
+  };
+
+  let highCount = 0, medCount = 0, lowCount = 0;
   staffLeads.forEach(l => {
-    const d = parseFlexibleDate(l.createdAt);
-    const dateStr = d ? d.toLocaleDateString('en-IN') : '01/01/2026';
-    const name = `"${(l.name || '').replace(/"/g, '""')}"`;
-    const mobile = `"${(l.phone || l.mobile || '').replace(/"/g, '""')}"`;
-    const req = `"${(l.requirement || l.type || '').replace(/"/g, '""')}"`;
-    const budget = `"${(l.budget || l.budgetMax || '').replace(/"/g, '""')}"`;
-    const src = `"${(l.source || '').replace(/"/g, '""')}"`;
-    const st = `"${(l.status || '').replace(/"/g, '""')}"`;
-    const notes = `"${(l.notes || '').replace(/"/g, '""')}"`;
-    csvLines.push(`${l.id || ''},${dateStr},${name},${mobile},${req},${budget},${src},${st},${notes}`);
-  });
-  csvLines.push("");
-  csvLines.push("COMPLETED SITE VISITS");
-  csvLines.push("Visit ID,Date,Client Name,Property,Status");
-  staffVisits.forEach(v => {
-    const vDate = v.date ? new Date(v.date).toLocaleDateString('en-IN') : 'N/A';
-    csvLines.push(`${v.id || ''},${vDate},"${(v.clientName || v.name || '').replace(/"/g, '""')}","${(v.propertyTitle || v.property || '').replace(/"/g, '""')}","${(v.status || 'Scheduled').replace(/"/g, '""')}"`);
+    const info = getPriorityInfo(l);
+    if (info.label === 'High') highCount++;
+    else if (info.label === 'Low') lowCount++;
+    else medCount++;
   });
 
-  const csvString = "\uFEFF" + csvLines.join("\n");
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", `Staff_Report_${staffName.replace(/\s+/g, '_')}_${fromVal || 'All'}_to_${toVal || 'Today'}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  const existingModal = document.getElementById('staff-detail-modal-overlay');
+  if (existingModal) existingModal.remove();
+
+  const modalHTML = `
+    <div id="staff-detail-modal-overlay" style="position: fixed; inset: 0; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(6px); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn 0.2s ease;">
+      <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 980px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); overflow: hidden; border: 1px solid rgba(226, 232, 240, 0.8);">
+        
+        <!-- Modal Header -->
+        <div style="padding: 20px 28px; background: #fafaf9; border-bottom: 1px solid #e7e5e4; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #ffedd5; color: #ea580c; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800;">
+              <i class="ri-user-star-line"></i>
+            </div>
+            <div>
+              <span style="font-size: 0.72rem; font-weight: 800; color: #ea580c; text-transform: uppercase; letter-spacing: 0.1em;">Staff Performance & Lead Audit</span>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: #1c1917; margin: 2px 0 0 0;">${staffName}</h2>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="modal-download-staff-csv" style="background: #ea580c; color: #ffffff; border: none; padding: 8px 16px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+              <i class="ri-download-2-line"></i> Download Staff CSV
+            </button>
+            <button id="modal-close-staff-detail" style="background: #f5f5f4; color: #78716c; border: 1px solid #e7e5e4; width: 36px; height: 36px; border-radius: 10px; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease;">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Content Body -->
+        <div style="padding: 24px 28px; overflow-y: auto; flex-grow: 1;">
+          
+          <!-- Summary Metrics Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div style="background: #fcfbf9; border: 1px solid #e7e5e4; border-radius: 14px; padding: 16px;">
+              <div style="font-size: 0.75rem; font-weight: 700; color: #78716c; text-transform: uppercase;">Total Assigned Leads</div>
+              <div style="font-size: 1.6rem; font-weight: 800; color: #1c1917; margin-top: 4px;">${staffLeads.length.toLocaleString()}</div>
+            </div>
+
+            <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 16px;">
+              <div style="font-size: 0.75rem; font-weight: 700; color: #166534; text-transform: uppercase;">Converted Leads</div>
+              <div style="font-size: 1.6rem; font-weight: 800; color: #15803d; margin-top: 4px;">${convertedCount.toLocaleString()} (${convRate}%)</div>
+            </div>
+
+            <div style="background: #fff7ed; border: 1px solid #ffedd5; border-radius: 14px; padding: 16px;">
+              <div style="font-size: 0.75rem; font-weight: 700; color: #9a3412; text-transform: uppercase;">Site Visits Done</div>
+              <div style="font-size: 1.6rem; font-weight: 800; color: #ea580c; margin-top: 4px;">${staffVisits.length}</div>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: center; gap: 6px;">
+              <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Priority Breakdown</div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <span style="background: #fee2e2; color: #991b1b; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; border: 1px solid #fca5a5;">🔴 High: ${highCount}</span>
+                <span style="background: #ffedd5; color: #9a3412; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; border: 1px solid #fed7aa;">🟠 Medium: ${medCount}</span>
+                <span style="background: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; border: 1px solid #cbd5e1;">🔵 Low: ${lowCount}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Title: Leads List -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h3 style="font-size: 1rem; font-weight: 800; color: #1c1917; margin: 0; display: flex; align-items: center; gap: 6px;">
+              <i class="ri-file-list-3-line" style="color: #ea580c;"></i> Assigned Leads Audit Trail (${staffLeads.length})
+            </h3>
+            <span style="font-size: 0.78rem; color: #78716c;">Date Range: ${fromVal || 'All Time'} to ${toVal || 'Today'}</span>
+          </div>
+
+          <!-- Leads Table -->
+          <div style="border: 1px solid #e7e5e4; border-radius: 14px; overflow: hidden; margin-bottom: 24px;">
+            <div style="max-height: 340px; overflow-y: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                <thead style="position: sticky; top: 0; background: #fafaf9; border-bottom: 1px solid #e7e5e4; z-index: 10;">
+                  <tr>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">ID / Date</th>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Client Name</th>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Mobile</th>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Requirement</th>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Budget</th>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Priority</th>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Status</th>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${staffLeads.length === 0 ? `
+                    <tr><td colspan="8" style="text-align: center; padding: 24px; color: #a8a29e;">No leads assigned to this staff member in selected range</td></tr>
+                  ` : staffLeads.map(l => {
+                    const pInfo = getPriorityInfo(l);
+                    const d = parseFlexibleDate(l.createdAt);
+                    const dateStr = d ? d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '01 Jan';
+                    return `
+                      <tr style="border-bottom: 1px solid #f5f5f4;">
+                        <td style="padding: 10px 14px;">
+                          <div style="font-weight: 700; color: #1c1917;">${l.id || 'LD-NEW'}</div>
+                          <div style="font-size: 0.75rem; color: #78716c;">${dateStr}</div>
+                        </td>
+                        <td style="padding: 10px 14px; font-weight: 700; color: #1c1917;">${l.name || 'Anonymous'}</td>
+                        <td style="padding: 10px 14px; font-family: monospace; color: #44403c;">${l.phone || l.mobile || '—'}</td>
+                        <td style="padding: 10px 14px; color: #57534e;">${l.requirement || l.type || 'General'}</td>
+                        <td style="padding: 10px 14px; font-weight: 600; color: #166534;">${l.budget || l.budgetMax || 'On Request'}</td>
+                        <td style="padding: 10px 14px;">
+                          <span style="background: ${pInfo.bg}; color: ${pInfo.color}; border: 1px solid ${pInfo.border}; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="${pInfo.icon}"></i> ${pInfo.label}
+                          </span>
+                        </td>
+                        <td style="padding: 10px 14px;">
+                          <span style="background: #f5f5f4; color: #44403c; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; border: 1px solid #e7e5e4;">
+                            ${l.status || 'New Lead'}
+                          </span>
+                        </td>
+                        <td style="padding: 10px 14px; font-size: 0.78rem; color: #78716c;">${l.source || 'Direct'}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Section Title: Site Visits -->
+          ${staffVisits.length > 0 ? `
+            <h3 style="font-size: 1rem; font-weight: 800; color: #1c1917; margin: 0 0 12px 0; display: flex; align-items: center; gap: 6px;">
+              <i class="ri-calendar-check-line" style="color: #ea580c;"></i> Completed Site Visits (${staffVisits.length})
+            </h3>
+            <div style="border: 1px solid #e7e5e4; border-radius: 14px; overflow: hidden;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+                <thead style="background: #fafaf9; border-bottom: 1px solid #e7e5e4;">
+                  <tr>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Visit Date</th>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Client Name</th>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Property Title</th>
+                    <th style="padding: 10px 14px; font-weight: 700; color: #57534e;">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${staffVisits.map(v => `
+                    <tr style="border-bottom: 1px solid #f5f5f4;">
+                      <td style="padding: 10px 14px; font-weight: 600; color: #1c1917;">${v.date ? new Date(v.date).toLocaleDateString('en-IN') : 'N/A'}</td>
+                      <td style="padding: 10px 14px; font-weight: 700; color: #1c1917;">${v.clientName || v.name || 'Client'}</td>
+                      <td style="padding: 10px 14px; color: #57534e;">${v.propertyTitle || v.property || 'Property Inquiry'}</td>
+                      <td style="padding: 10px 14px;">
+                        <span style="background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">
+                          ${v.status || 'Scheduled'}
+                        </span>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+
+        </div>
+      </div>
+    </div>
+  `;
+
+  const container = document.createElement('div');
+  container.innerHTML = modalHTML;
+  document.body.appendChild(container.firstElementChild);
+
+  const modalOverlay = document.getElementById('staff-detail-modal-overlay');
+  const closeBtn = document.getElementById('modal-close-staff-detail');
+  const csvBtn = document.getElementById('modal-download-staff-csv');
+
+  const closeModal = () => {
+    if (modalOverlay) {
+      modalOverlay.style.opacity = '0';
+      setTimeout(() => modalOverlay.remove(), 150);
+    }
+  };
+
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) closeModal();
+    });
+  }
+
+  if (csvBtn) {
+    csvBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const origHTML = csvBtn.innerHTML;
+      csvBtn.innerHTML = `<i class="ri-loader-4-line ri-spin"></i> Exporting...`;
+      csvBtn.disabled = true;
+
+      try {
+        exportIndividualStaffCSV(staffName, rawLeads, staffLeads, staffVisits);
+      } catch (err) {
+        console.error("Export Error:", err);
+      } finally {
+        setTimeout(() => {
+          csvBtn.innerHTML = `<i class="ri-check-line"></i> Done!`;
+          setTimeout(() => {
+            csvBtn.innerHTML = origHTML;
+            csvBtn.disabled = false;
+          }, 1200);
+        }, 300);
+      }
+    });
+  }
 }

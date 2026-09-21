@@ -44,6 +44,7 @@ function loadPropertiesFromStorage() {
 
 function savePropertiesToStorage(props) {
   try {
+    propertiesCache = props;
     localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(props));
   } catch (e) {
     console.error("Failed writing properties to localStorage", e);
@@ -59,6 +60,7 @@ export async function initPropertiesStore() {
   try {
     const data = await fetchFromAPI('/properties');
     if (data && Array.isArray(data)) {
+      const existingMap = new Map((propertiesCache || []).map(p => [p.id, p]));
       const remoteNormalized = data.map(remoteP => {
         const resolvedAdType = (remoteP.adType || remoteP.ad_type || 'free');
         const resolvedActualOwnerName = remoteP.actualOwnerName || remoteP.actual_owner_name || (remoteP.ownerName && remoteP.ownerName !== 'Thanjai Property' ? remoteP.ownerName : '') || '';
@@ -81,15 +83,33 @@ export async function initPropertiesStore() {
         const resolvedFeatures = remoteP.features || [];
         const resolvedImages = remoteP.images || [];
         const resolvedPublishTarget = String(remoteP.publishTarget || remoteP.publish_target || remoteP.visibility || 'public').toLowerCase().trim() === 'crm_only' ? 'crm_only' : 'public';
-        const resolvedApprovalStatus = remoteP.approvalStatus || remoteP.approval_status || (remoteP.approval === 'Approved' ? 'Approved' : (remoteP.status === 'Pending Approval' ? 'Pending Approval' : 'Approved'));
-
-        const existingMap = new Map((propertiesCache || []).map(p => [p.id, p]));
+        
         const existingMatch = existingMap.get(remoteP.id);
         const resolvedCreatedAt = remoteP.createdAt || remoteP.created_at || remoteP.date || (existingMatch ? existingMatch.createdAt : new Date().toISOString());
+
+        let resolvedApprovalStatus = remoteP.approvalStatus || remoteP.approval_status || (remoteP.approval === 'Approved' ? 'Approved' : (remoteP.status === 'Rejected' || remoteP.approval === 'Rejected' ? 'Rejected' : (remoteP.status === 'Pending Approval' ? 'Pending Approval' : 'Approved')));
+        let resolvedStatus = remoteP.status;
+        let resolvedAvailability = remoteP.availability;
+
+        if (resolvedApprovalStatus === 'Rejected' || remoteP.status === 'Rejected') {
+          resolvedApprovalStatus = 'Rejected';
+          resolvedStatus = 'Rejected';
+          resolvedAvailability = 'Rejected';
+        } else if (existingMatch && existingMatch.approvalStatus && existingMatch.approvalStatus !== 'Pending Approval' && resolvedApprovalStatus === 'Pending Approval') {
+          resolvedApprovalStatus = existingMatch.approvalStatus;
+          if (existingMatch.status && existingMatch.status !== 'Pending Approval') {
+            resolvedStatus = existingMatch.status;
+          }
+          if (existingMatch.availability && existingMatch.availability !== 'Pending Approval') {
+            resolvedAvailability = existingMatch.availability;
+          }
+        }
 
         return normalizePropertyRecord({
           ...remoteP,
           createdAt: resolvedCreatedAt,
+          status: resolvedStatus || remoteP.status,
+          availability: resolvedAvailability || remoteP.availability,
           actualOwnerName: resolvedActualOwnerName,
           actualOwnerPhone: resolvedActualOwnerPhone,
           userId: resolvedUserId,
@@ -236,6 +256,7 @@ export function rejectSubmission(id, reason = 'Did not meet Patta title guidelin
 
   props[idx].approvalStatus = 'Rejected';
   props[idx].status = 'Rejected';
+  props[idx].availability = 'Rejected';
   props[idx].rejectionReason = reason;
   savePropertiesToStorage(props);
 
@@ -532,14 +553,22 @@ function normalizePropertyRecord(p) {
   const categoryRaw = p.categoryRaw || (p.purpose === 'rent' ? 'Rent' : 'Sale');
   const frontEndCat = getFrontEndCategory(type, categoryRaw);
   
-  const isPending = p.approvalStatus === 'Pending Approval' || 
-                    p.status === 'Pending Approval' || 
-                    p.availability === 'Pending Approval' || 
-                    p.availability === 'Pending';
+  let approvalStatus = p.approvalStatus;
+  if (approvalStatus === 'Approved' || p.approval === 'Approved' || p.status === 'Approved') {
+    approvalStatus = 'Approved';
+  } else if (approvalStatus === 'Rejected' || p.approval === 'Rejected' || p.status === 'Rejected') {
+    approvalStatus = 'Rejected';
+  } else if (approvalStatus === 'Pending Approval' || p.status === 'Pending Approval' || p.availability === 'Pending Approval' || p.availability === 'Pending') {
+    approvalStatus = 'Pending Approval';
+  } else {
+    approvalStatus = 'Approved';
+  }
 
-  const approvalStatus = isPending ? 'Pending Approval' : (p.approvalStatus || (p.status === 'Rejected' ? 'Rejected' : 'Approved'));
-  const status = isPending ? 'Pending Approval' : (p.status || p.availability || 'Available');
-  const availability = isPending ? 'Pending Approval' : (p.availability || p.status || 'Available');
+  const isPending = approvalStatus === 'Pending Approval';
+  const isRejected = approvalStatus === 'Rejected';
+
+  const status = isPending ? 'Pending Approval' : (isRejected ? 'Rejected' : (p.status && p.status !== 'Pending Approval' ? p.status : 'Available'));
+  const availability = isPending ? 'Pending Approval' : (isRejected ? 'Rejected' : (p.availability && p.availability !== 'Pending Approval' && p.availability !== 'Pending' ? p.availability : 'Available'));
   const purpose = p.purpose || ((categoryRaw.toLowerCase() === 'rent' || categoryRaw.toLowerCase() === 'lease') ? 'rent' : 'buy');
 
   const loc = p.location || 'Thanjavur';

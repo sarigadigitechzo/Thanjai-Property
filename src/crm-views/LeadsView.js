@@ -425,20 +425,27 @@ let currentPage = 1;
 let pageSize = 25;
 
 export function sortLeadsDesc(leads) {
-  if (!Array.isArray(leads)) return [];
-  return leads.sort((a, b) => {
-    const parseTs = (item) => {
-      if (!item) return 0;
-      const val = item.createdAt || item.created_at || item.created || item.date || 0;
-      if (typeof val === 'number') return val;
-      const num = Number(val);
-      if (!isNaN(num) && num > 1000000) return num;
-      const str = String(val).trim().replace(' ', 'T');
-      const d = new Date(str).getTime();
-      return !isNaN(d) ? d : 0;
-    };
-    return parseTs(b) - parseTs(a);
-  });
+  if (!Array.isArray(leads) || leads.length === 0) return [];
+  
+  const parseTs = (item) => {
+    if (!item) return 0;
+    const val = item.createdAt || item.created_at || item.created || item.date || 0;
+    if (typeof val === 'number') return val;
+    const num = Number(val);
+    if (!isNaN(num) && num > 1000000) return num;
+    const str = String(val).trim().replace(' ', 'T');
+    const d = new Date(str).getTime();
+    return !isNaN(d) ? d : 0;
+  };
+
+  const mapped = leads.map(item => ({
+    lead: item,
+    ts: parseTs(item)
+  }));
+
+  mapped.sort((a, b) => b.ts - a.ts);
+
+  return mapped.map(m => m.lead);
 }
 
 // Global initial store loader from IndexedDB
@@ -561,13 +568,15 @@ export async function initLeadsView(searchQuery = null) {
             (locL.name && String(locL.name).trim().toLowerCase() === String(apiL.name).trim().toLowerCase())
           );
           if (matchingLocal) {
-            if (matchingLocal.status) apiL.status = matchingLocal.status;
+            if (matchingLocal._pendingSync) {
+              if (matchingLocal.status) apiL.status = matchingLocal.status;
+              if (matchingLocal.assignTo && matchingLocal.assignTo !== 'Unassigned') {
+                apiL.assignTo = matchingLocal.assignTo;
+                apiL.assignedTo = matchingLocal.assignTo;
+              }
+            }
             if (matchingLocal.priority && (!apiL.priority || apiL.priority === 'Medium')) {
               apiL.priority = matchingLocal.priority;
-            }
-            if (matchingLocal.assignTo && matchingLocal.assignTo !== 'Unassigned') {
-              apiL.assignTo = matchingLocal.assignTo;
-              apiL.assignedTo = matchingLocal.assignTo;
             }
           }
         });
@@ -1110,6 +1119,8 @@ function renderTable() {
   }).join('');
 }
 
+let onLeadOutsideClick = null;
+
 function bindLeadEvents() {
   // Initialize Custom Selects
   const customSelects = document.querySelectorAll('.os-custom-select');
@@ -1150,10 +1161,14 @@ function bindLeadEvents() {
     });
   });
 
-  // Close dropdowns on outside click
-  document.addEventListener('click', () => {
-    customSelects.forEach(select => select.classList.remove('open'));
-  });
+  // Close dropdowns on outside click (clean up previous global listener if re-binding)
+  if (onLeadOutsideClick) {
+    document.removeEventListener('click', onLeadOutsideClick);
+  }
+  onLeadOutsideClick = () => {
+    document.querySelectorAll('.os-custom-select').forEach(select => select.classList.remove('open'));
+  };
+  document.addEventListener('click', onLeadOutsideClick);
 
   // Custom Date Modal Logic
   const dateModal = document.getElementById('custom-date-modal');
@@ -1299,6 +1314,8 @@ function bindLeadEvents() {
               date: new Date().toISOString()
             });
 
+            leads[idx]._pendingSync = true;
+
             // Async sync to live MySQL backend
             fetchFromAPI('/leads?id=' + encodeURIComponent(leadId), {
               method: 'PUT',
@@ -1310,7 +1327,14 @@ function bindLeadEvents() {
                 assignedTo: staffName,
                 timeline: leads[idx].timeline
               })
-            }).catch(() => {});
+            }).then(() => {
+              if (leads[idx]) {
+                delete leads[idx]._pendingSync;
+                saveLeads(leads);
+              }
+            }).catch(() => {
+              if (leads[idx]) delete leads[idx]._pendingSync;
+            });
           }
         });
 

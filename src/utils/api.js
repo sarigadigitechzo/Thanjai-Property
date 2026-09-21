@@ -40,6 +40,18 @@ export async function fetchFromAPI(endpoint, options = {}) {
     body = JSON.stringify(body);
   }
 
+  const timeoutMs = options.timeout || 4000;
+
+  const createTimedFetch = (url, opts) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    const combinedOpts = {
+      ...opts,
+      signal: opts.signal || controller.signal
+    };
+    return fetch(url, combinedOpts).finally(() => clearTimeout(id));
+  };
+
   const fetchOptions = {
     method,
     ...options,
@@ -53,7 +65,7 @@ export async function fetchFromAPI(endpoint, options = {}) {
   const primaryUrl = buildApiUrl(PRIMARY_API_BASE_URL, endpoint, isGet);
 
   try {
-    const response = await fetch(primaryUrl, fetchOptions);
+    const response = await createTimedFetch(primaryUrl, fetchOptions);
 
     if (!response.ok) {
       let errorMsg = `API error: ${response.status} ${response.statusText}`;
@@ -62,11 +74,10 @@ export async function fetchFromAPI(endpoint, options = {}) {
         if (errorData.error) errorMsg = errorData.error;
       } catch (e) {}
 
-      // If primary relative endpoint fails on production host (e.g. 404 or 500), try master fallback
       if (PRIMARY_API_BASE_URL !== MASTER_API_URL) {
         console.warn(`Primary API call failed (${errorMsg}), attempting master relay fallback...`);
         const fallbackUrl = buildApiUrl(MASTER_API_URL, endpoint, isGet);
-        const fallbackRes = await fetch(fallbackUrl, fetchOptions);
+        const fallbackRes = await createTimedFetch(fallbackUrl, fetchOptions);
         if (fallbackRes.ok) {
           return await fallbackRes.json();
         }
@@ -76,12 +87,11 @@ export async function fetchFromAPI(endpoint, options = {}) {
 
     return await response.json();
   } catch (error) {
-    // If network error occurred on primary URL and it wasn't the master URL, attempt fallback
     if (PRIMARY_API_BASE_URL !== MASTER_API_URL) {
       try {
-        console.warn('Network error on primary API, attempting master relay fallback...', error);
+        console.warn('Network error or timeout on primary API, attempting master relay fallback...', error);
         const fallbackUrl = buildApiUrl(MASTER_API_URL, endpoint, isGet);
-        const fallbackRes = await fetch(fallbackUrl, fetchOptions);
+        const fallbackRes = await createTimedFetch(fallbackUrl, fetchOptions);
         if (fallbackRes.ok) {
           return await fallbackRes.json();
         }

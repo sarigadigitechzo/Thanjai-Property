@@ -3022,6 +3022,7 @@ async function saveAndSyncLeads(leads, changedLeadId = null) {
   if (changedLeadId) {
     const lead = leads.find(l => l.id == changedLeadId);
     if (lead) {
+      lead._pendingSync = true;
       try {
         const payload = {
           ...lead,
@@ -3041,7 +3042,10 @@ async function saveAndSyncLeads(leads, changedLeadId = null) {
           method: 'PUT',
           body: JSON.stringify(payload)
         });
+        delete lead._pendingSync;
+        saveLeads(leads);
       } catch (err) {
+        delete lead._pendingSync;
         console.error('Failed to sync lead update to backend:', err);
       }
     }

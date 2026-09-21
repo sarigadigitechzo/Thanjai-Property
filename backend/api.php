@@ -385,6 +385,9 @@ addCol($conn, 'properties', 'area', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'properties', 'taluk', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'properties', 'road', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'properties', 'inquiryPhone', 'varchar(50) DEFAULT NULL');
+addCol($conn, 'properties', 'advisoryName', 'varchar(255) DEFAULT NULL');
+addCol($conn, 'properties', 'publishTarget', "varchar(50) DEFAULT 'public'");
+addCol($conn, 'properties', 'approvalStatus', "varchar(100) DEFAULT 'Approved'");
 
 addCol($conn, 'partners', 'company', 'varchar(255) DEFAULT NULL');
 addCol($conn, 'partners', 'type', 'varchar(255) DEFAULT NULL');
@@ -524,10 +527,23 @@ if ($resource === 'properties') {
         $taluk = $data['taluk'] ?? '';
         $road = $data['road'] ?? '';
         $inquiryPhone = $data['inquiryPhone'] ?? '8489996852';
+        $status = isset($data['status']) ? strval($data['status']) : 'Available';
+        $availability = isset($data['availability']) ? strval($data['availability']) : 'Available';
         $advisoryName = isset($data['advisoryName']) ? strval($data['advisoryName']) : (isset($data['advisory_name']) ? strval($data['advisory_name']) : '');
         $publishTarget = isset($data['publishTarget']) ? strval($data['publishTarget']) : (isset($data['publish_target']) ? strval($data['publish_target']) : (isset($data['visibility']) ? strval($data['visibility']) : 'public'));
         $approvalStatus = isset($data['approvalStatus']) ? strval($data['approvalStatus']) : (isset($data['approval_status']) ? strval($data['approval_status']) : 'Approved');
         $approval = isset($data['approval']) ? strval($data['approval']) : '';
+
+        if ($approvalStatus === 'Rejected' || $status === 'Rejected' || $availability === 'Rejected' || $approval === 'Rejected') {
+            $approvalStatus = 'Rejected';
+            $status = 'Rejected';
+            $availability = 'Rejected';
+        } else if ($approvalStatus === 'Approved' || $status === 'Approved' || $approval === 'Approved') {
+            $approvalStatus = 'Approved';
+            if ($status === 'Pending Approval') $status = 'Available';
+            if ($availability === 'Pending Approval' || $availability === 'Pending') $availability = 'Available';
+        }
+
         $builtUpArea = $data['builtUpArea'] ?? '';
         $posterRole = $data['posterRole'] ?? $data['userRole'] ?? 'Individual Owner';
         $userSource = $data['userSource'] ?? $data['source'] ?? 'Direct Website Submission';
@@ -538,7 +554,7 @@ if ($resource === 'properties') {
         $stmt->bind_param("sssssssdssssssssssssssssssssssssssssssssssss", 
             $data['id'], $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], 
             $data['purpose'], $price, $data['priceFormatted'], $data['location'], $data['district'], $address, 
-            $data['size'], $builtUpArea, $posterRole, $userSource, $bedrooms, $bathrooms, $data['furnishing'], $data['status'], $data['availability'], 
+            $data['size'], $builtUpArea, $posterRole, $userSource, $bedrooms, $bathrooms, $data['furnishing'], $status, $availability, 
             $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], 
             $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, 
             $data['description'], $features, $approval, $facing, $area, $taluk, $road, $inquiryPhone, $advisoryName, $publishTarget, $approvalStatus
@@ -566,10 +582,23 @@ if ($resource === 'properties') {
         $taluk = $data['taluk'] ?? '';
         $road = $data['road'] ?? '';
         $inquiryPhone = $data['inquiryPhone'] ?? '8489996852';
+        $status = isset($data['status']) ? strval($data['status']) : 'Available';
+        $availability = isset($data['availability']) ? strval($data['availability']) : 'Available';
         $advisoryName = isset($data['advisoryName']) ? strval($data['advisoryName']) : (isset($data['advisory_name']) ? strval($data['advisory_name']) : '');
         $publishTarget = isset($data['publishTarget']) ? strval($data['publishTarget']) : (isset($data['publish_target']) ? strval($data['publish_target']) : (isset($data['visibility']) ? strval($data['visibility']) : 'public'));
         $approvalStatus = isset($data['approvalStatus']) ? strval($data['approvalStatus']) : (isset($data['approval_status']) ? strval($data['approval_status']) : 'Approved');
         $approval = isset($data['approval']) ? strval($data['approval']) : '';
+
+        if ($approvalStatus === 'Rejected' || $status === 'Rejected' || $availability === 'Rejected' || $approval === 'Rejected') {
+            $approvalStatus = 'Rejected';
+            $status = 'Rejected';
+            $availability = 'Rejected';
+        } else if ($approvalStatus === 'Approved' || $status === 'Approved' || $approval === 'Approved') {
+            $approvalStatus = 'Approved';
+            if ($status === 'Pending Approval') $status = 'Available';
+            if ($availability === 'Pending Approval' || $availability === 'Pending') $availability = 'Available';
+        }
+
         $builtUpArea = $data['builtUpArea'] ?? '';
         $posterRole = $data['posterRole'] ?? $data['userRole'] ?? 'Individual Owner';
         $userSource = $data['userSource'] ?? $data['source'] ?? 'Direct Website Submission';
@@ -580,7 +609,7 @@ if ($resource === 'properties') {
         $stmt->bind_param("sssssssdssssssssssssssssssssssssssssssssssss", 
             $data['title'], $data['type'], $data['category'], $data['categoryRaw'], $data['categoryLabel'], 
             $data['purpose'], $price, $data['priceFormatted'], $data['location'], $data['district'], $address, 
-            $data['size'], $builtUpArea, $posterRole, $userSource, $bedrooms, $bathrooms, $data['furnishing'], $data['status'], $data['availability'], 
+            $data['size'], $builtUpArea, $posterRole, $userSource, $bedrooms, $bathrooms, $data['furnishing'], $status, $availability, 
             $data['latitude'], $data['longitude'], $data['videoUrl'], $data['ownerName'], $data['ownerPhone'], 
             $data['listedBy'], $adType, $userId, $userEmail, $actualOwnerName, $actualOwnerPhone, $images, 
             $data['description'], $features, $approval, $facing, $area, $taluk, $road, $inquiryPhone, $advisoryName, $publishTarget, $approvalStatus, $id

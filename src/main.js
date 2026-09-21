@@ -191,9 +191,9 @@ function renderApp() {
       return;
     }
 
-    const allProperties = getPublicProperties();
+    const allProperties = getPublicProperties() || [];
     const selectedModalProperty = appState.selectedPropertyId 
-      ? allProperties.find(p => p.id === appState.selectedPropertyId) 
+      ? (allProperties.find(p => p.id === appState.selectedPropertyId) || null)
       : null;
 
     let mainContentHtml = '';
@@ -556,19 +556,17 @@ function boot() {
 
 // Global Error & Promise Rejection Safeguards
 window.addEventListener('error', (event) => {
-  console.warn("Global Error caught, triggering renderApp fallback:", event.error);
-  try { renderApp(); } catch (e) {}
+  console.warn("Global Error caught:", event.error);
 });
 
 window.addEventListener('unhandledrejection', (event) => {
   console.warn("Global Promise Rejection caught:", event.reason);
-  try { renderApp(); } catch (e) {}
 });
 
+// Run boot immediately on script evaluation
+boot();
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', boot);
-} else {
-  boot();
 }
 
 

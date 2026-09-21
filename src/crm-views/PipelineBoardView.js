@@ -93,14 +93,40 @@ export async function initPipelineBoardView() {
     fetchFromAPI('/leads').then(apiLeads => {
       if (apiLeads && Array.isArray(apiLeads) && apiLeads.length > 0) {
         const localLeads = getLeads();
+
+        // Build O(1) lookup maps from localLeads to replace O(N^2) .find() loop
+        const localIdMap = new Map();
+        const localPhoneMap = new Map();
+        const localNameMap = new Map();
+
+        localLeads.forEach(locL => {
+          if (!locL) return;
+          if (locL.id) {
+            localIdMap.set(String(locL.id), locL);
+          }
+          const cleanPhone = locL.phone || locL.mobile ? String(locL.phone || locL.mobile).replace(/\D/g, '') : '';
+          if (cleanPhone && !localPhoneMap.has(cleanPhone)) {
+            localPhoneMap.set(cleanPhone, locL);
+          }
+          const cleanName = locL.name ? String(locL.name).trim().toLowerCase() : '';
+          if (cleanName && !localNameMap.has(cleanName)) {
+            localNameMap.set(cleanName, locL);
+          }
+        });
+
         const mapped = apiLeads.map(mapLeadFromAPI);
         mapped.forEach(apiL => {
-          const matchingLocal = localLeads.find(locL => 
-            (locL.id && String(locL.id) === String(apiL.id)) ||
-            (locL.phone && String(locL.phone).replace(/\D/g, '') === String(apiL.phone).replace(/\D/g, '')) ||
-            (locL.name && String(locL.name).trim().toLowerCase() === String(apiL.name).trim().toLowerCase())
-          );
-          if (matchingLocal) {
+          if (!apiL) return;
+          const apiIdStr = apiL.id ? String(apiL.id) : '';
+          const apiCleanPhone = apiL.phone || apiL.mobile ? String(apiL.phone || apiL.mobile).replace(/\D/g, '') : '';
+          const apiCleanName = apiL.name ? String(apiL.name).trim().toLowerCase() : '';
+
+          const matchingLocal = (apiIdStr && localIdMap.get(apiIdStr)) ||
+                                (apiCleanPhone && localPhoneMap.get(apiCleanPhone)) ||
+                                (apiCleanName && localNameMap.get(apiCleanName)) ||
+                                null;
+
+          if (matchingLocal && matchingLocal._pendingSync) {
             if (matchingLocal.status) apiL.status = matchingLocal.status;
             if (matchingLocal.assignTo && matchingLocal.assignTo !== 'Unassigned') {
               apiL.assignTo = matchingLocal.assignTo;
@@ -133,6 +159,12 @@ export async function initPipelineBoardView() {
 
         saveLeads(filteredMapped);
         leads = [...filteredMapped];
+
+        // View-mount guard: if user navigated away from Pipeline, exit without heavy DOM re-rendering
+        if (!document.getElementById('pipeline-board')) {
+          return;
+        }
+
         renderBoard();
       }
     }).catch(e => {});
@@ -177,8 +209,39 @@ export async function initPipelineBoardView() {
     });
     const userLeads = filterLeadsForActiveUser(leads);
 
+    // Build phone-to-property lookup map once per board render
+    const phonePropMap = new Map();
+    if (Array.isArray(leads)) {
+      leads.forEach(ol => {
+        if (!ol) return;
+        const oDigits = String(ol.phone || ol.mobile || '').replace(/\D/g, '').slice(-10);
+        if (oDigits.length >= 10) {
+          let set = phonePropMap.get(oDigits);
+          if (!set) {
+            set = new Set();
+            phonePropMap.set(oDigits, set);
+          }
+          if (ol.propertyId) set.add(String(ol.propertyId).trim().toUpperCase());
+          if (ol.propertyMatch) set.add(String(ol.propertyMatch).trim().toUpperCase());
+        }
+      });
+    }
+
+    // Single-pass stage grouping Map to avoid 13 separate .filter() scans
+    const stageLeadsMap = new Map();
+    STAGES.forEach(stage => stageLeadsMap.set(stage.id, []));
+    userLeads.forEach(l => {
+      const stageArr = stageLeadsMap.get(l.status);
+      if (stageArr) {
+        stageArr.push(l);
+      } else {
+        const defaultArr = stageLeadsMap.get(STAGES[0].id);
+        if (defaultArr) defaultArr.push(l);
+      }
+    });
+
     STAGES.forEach(stage => {
-      const stageLeads = userLeads.filter(l => l.status === stage.id);
+      const stageLeads = stageLeadsMap.get(stage.id) || [];
 
       const colDiv = document.createElement('div');
       colDiv.className = 'pipeline-col';
@@ -194,7 +257,7 @@ export async function initPipelineBoardView() {
           <span class="pipeline-col-count">${stageLeads.length.toLocaleString()}</span>
         </div>
         <div class="pipeline-col-cards" data-stage="${stage.id}">
-          ${visibleLeads.map(lead => generateCardHTML(lead)).join('')}
+          ${visibleLeads.map(lead => generateCardHTML(lead, phonePropMap)).join('')}
           ${remainingCount > 0 ? `
             <div class="pipeline-more-indicator" style="text-align: center; padding: 10px 8px; font-size: 0.76rem; font-weight: 700; color: var(--os-gray-500); background: rgba(0,0,0,0.02); border-radius: var(--os-radius-sm); border: 1px dashed var(--os-gray-300); margin-top: 6px;">
               <i class="ri-list-check-2"></i> + ${remainingCount.toLocaleString()} more leads
@@ -209,7 +272,7 @@ export async function initPipelineBoardView() {
     attachEventListeners();
   }
 
-  function generateCardHTML(lead) {
+  function generateCardHTML(lead, phonePropMap = null) {
     const propIdSet = new Set();
     if (lead.propertyId) propIdSet.add(String(lead.propertyId).trim().toUpperCase());
     if (lead.propertyMatch) propIdSet.add(String(lead.propertyMatch).trim().toUpperCase());
@@ -226,15 +289,22 @@ export async function initPipelineBoardView() {
     }
 
     const leadPhoneDigits = String(lead.phone || lead.mobile || '').replace(/\D/g, '').slice(-10);
-    if (leadPhoneDigits.length >= 10 && Array.isArray(leads)) {
-      leads.forEach(ol => {
-        if (!ol || ol.id === lead.id) return;
-        const oDigits = String(ol.phone || ol.mobile || '').replace(/\D/g, '').slice(-10);
-        if (oDigits === leadPhoneDigits) {
-          if (ol.propertyId) propIdSet.add(String(ol.propertyId).trim().toUpperCase());
-          if (ol.propertyMatch) propIdSet.add(String(ol.propertyMatch).trim().toUpperCase());
+    if (leadPhoneDigits.length >= 10) {
+      if (phonePropMap && phonePropMap.has(leadPhoneDigits)) {
+        const set = phonePropMap.get(leadPhoneDigits);
+        if (set) {
+          set.forEach(pId => propIdSet.add(pId));
         }
-      });
+      } else if (Array.isArray(leads)) {
+        leads.forEach(ol => {
+          if (!ol || ol.id === lead.id) return;
+          const oDigits = String(ol.phone || ol.mobile || '').replace(/\D/g, '').slice(-10);
+          if (oDigits === leadPhoneDigits) {
+            if (ol.propertyId) propIdSet.add(String(ol.propertyId).trim().toUpperCase());
+            if (ol.propertyMatch) propIdSet.add(String(ol.propertyMatch).trim().toUpperCase());
+          }
+        });
+      }
     }
 
     const propIdList = Array.from(propIdSet);
@@ -872,6 +942,7 @@ export async function initPipelineBoardView() {
 
         // INSTANTLY SYNC STATUS UPDATE TO LIVE MYSQL DATABASE
         try {
+          leadObj._pendingSync = true;
           fetchFromAPI('/leads?id=' + encodeURIComponent(leadObj.id), {
             method: 'PUT',
             body: JSON.stringify({
@@ -882,8 +953,16 @@ export async function initPipelineBoardView() {
               assignedTo: leadObj.assignTo || leadObj.assignedTo,
               timeline: leadObj.timeline
             })
-          }).catch(err => console.warn('MySQL Lead status sync notice:', err));
-        } catch (err) {}
+          }).then(() => {
+            delete leadObj._pendingSync;
+            saveLeads(leads);
+          }).catch(err => {
+            delete leadObj._pendingSync;
+            console.warn('MySQL Lead status sync notice:', err);
+          });
+        } catch (err) {
+          delete leadObj._pendingSync;
+        }
 
         saveLeads(leads);
         renderBoard();

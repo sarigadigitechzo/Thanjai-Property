@@ -424,9 +424,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!viewName) viewName = 'dashboard';
     sessionStorage.setItem('thanjai_active_view', viewName);
     
-    // Clean URL: Keep address bar completely clean without #hash suffix
-    if (window.location.hash) {
-      history.replaceState(null, '', window.location.pathname + (window.location.search || ''));
+    // Maintain hash in address bar so browser F5 refresh & Back/Forward work cleanly
+    const targetHash = '#' + viewName + (queryParam ? `?prop=${encodeURIComponent(queryParam)}` : '');
+    if (window.location.hash !== targetHash) {
+      history.replaceState(null, '', targetHash);
     }
 
     if (viewName.startsWith('lead/')) {
@@ -467,13 +468,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Intercept Sidebar Nav Clicks to update view cleanly without hash
+  // Intercept Sidebar Nav Clicks to update hash cleanly
   navItems.forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
       const view = item.dataset.view;
       if (view) {
-        navigateTo(view);
+        window.location.hash = '#' + view;
       }
     });
   });
@@ -487,15 +488,16 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('hashchange', handleHashChange);
 
   // Header Interactions
+  let universalSearchDebounceTimer = null;
   const universalSearchInputs = document.querySelectorAll('.universal-search');
   universalSearchInputs.forEach(input => {
     input.addEventListener('input', (e) => {
       const q = e.target.value;
       
-      // Update properties search filter
+      // Update properties search filter state immediately
       setPropertiesSearchFilter(q);
 
-      // Sync into page search inputs if present on DOM
+      // Sync value into page search inputs if present on DOM
       const propSearchEl = document.getElementById('props-search-input');
       if (propSearchEl && propSearchEl !== input) {
         propSearchEl.value = q;
@@ -504,27 +506,34 @@ document.addEventListener('DOMContentLoaded', () => {
       const leadSearchEl = document.getElementById('filter-search');
       if (leadSearchEl && leadSearchEl !== input) {
         leadSearchEl.value = q;
-        leadSearchEl.dispatchEvent(new Event('input'));
       }
 
-      // Check current active view
-      const activeNav = document.querySelector('.nav-item.active');
-      const currentView = activeNav ? activeNav.dataset.view : '';
-
-      if (currentView === 'reviews' || currentView === 'testimonials') {
-        // Stay within Google Reviews section and filter reviews directly
-        setReviewsSearchQuery(q);
-        const reviewSearchEl = document.getElementById('reviews-search-input');
-        if (reviewSearchEl && reviewSearchEl !== input) {
-          reviewSearchEl.value = q;
+      // Debounce heavy view rendering & search dispatch by 250ms
+      if (universalSearchDebounceTimer) clearTimeout(universalSearchDebounceTimer);
+      universalSearchDebounceTimer = setTimeout(() => {
+        if (leadSearchEl && leadSearchEl !== input) {
+          leadSearchEl.dispatchEvent(new Event('input'));
         }
-        loadView('reviews');
-      } else if (currentView === 'properties') {
-        renderPropertiesGridOnly();
-      } else if (currentView !== 'leads') {
-        // If user starts typing a Property ID or query from another view, switch to Properties Inventory
-        navigateTo('properties');
-      }
+
+        // Check current active view
+        const activeNav = document.querySelector('.nav-item.active');
+        const currentView = activeNav ? activeNav.dataset.view : '';
+
+        if (currentView === 'reviews' || currentView === 'testimonials') {
+          // Stay within Google Reviews section and filter reviews directly
+          setReviewsSearchQuery(q);
+          const reviewSearchEl = document.getElementById('reviews-search-input');
+          if (reviewSearchEl && reviewSearchEl !== input) {
+            reviewSearchEl.value = q;
+          }
+          loadView('reviews');
+        } else if (currentView === 'properties') {
+          renderPropertiesGridOnly();
+        } else if (currentView !== 'leads') {
+          // If user starts typing a Property ID or query from another view, switch to Properties Inventory
+          navigateTo('properties');
+        }
+      }, 250);
     });
   });
 
@@ -676,6 +685,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // Run the check on load and every 1 minute
   checkFollowUps();
   setInterval(checkFollowUps, 60000);
+
+  // Auto-refresh Properties Inventory when background store sync completes
+  window.addEventListener('propertiesUpdated', () => {
+    const currentHash = (window.location.hash || '#dashboard').toLowerCase();
+    if (currentHash.startsWith('#properties') || currentHash.startsWith('#inventory')) {
+      try {
+        refreshPropertiesView();
+      } catch (e) {
+        handleHashChange();
+      }
+    }
+  });
 
   // Initialize
   handleHashChange();

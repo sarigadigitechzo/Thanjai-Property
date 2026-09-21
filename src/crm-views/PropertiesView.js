@@ -216,6 +216,49 @@ function compressImageFile(file, maxWidth = 1000, maxHeight = 800, quality = 0.7
   });
 }
 
+export function buildPropertyInquiriesMap(propertiesList = [], allLeads = []) {
+  const map = new Map();
+  if (!Array.isArray(propertiesList) || propertiesList.length === 0) return map;
+  
+  const processedLeads = (Array.isArray(allLeads) ? allLeads : []).filter(Boolean).map(l => {
+    const lPropId = String(l.propertyId || l.propertyMatch || '').trim().toLowerCase();
+    const lPropDigits = lPropId.replace(/\D/g, '');
+    const lTimeline = typeof l.timeline === 'string' ? l.timeline.toLowerCase() : JSON.stringify(l.timeline || []).toLowerCase();
+    const lNotes = typeof l.notes === 'string' ? l.notes.toLowerCase() : JSON.stringify(l.notes || []).toLowerCase();
+    return { lPropId, lPropDigits, lTimeline, lNotes };
+  });
+
+  propertiesList.forEach(prop => {
+    if (!prop || !prop.id) return;
+    const propIdStr = String(prop.id).trim().toLowerCase();
+    const propDigits = propIdStr.replace(/\D/g, '');
+    if (!propIdStr) return;
+
+    let matchedCount = 0;
+    processedLeads.forEach(l => {
+      let isMatch = false;
+      if (l.lPropId) {
+        if (l.lPropId === propIdStr || (propDigits.length >= 3 && l.lPropDigits && propDigits === l.lPropDigits)) {
+          isMatch = true;
+        }
+      }
+      if (!isMatch && propIdStr.length >= 3) {
+        if (l.lTimeline.includes(`id: ${propIdStr}`) || l.lTimeline.includes(`(${propIdStr})`) || l.lNotes.includes(`id: ${propIdStr}`) || l.lNotes.includes(`(${propIdStr})`)) {
+          isMatch = true;
+        }
+      }
+      if (isMatch) {
+        matchedCount++;
+      }
+    });
+
+    const finalCount = Math.max(matchedCount, parseInt(prop.inquiriesCount || 0, 10));
+    map.set(String(prop.id), finalCount);
+  });
+
+  return map;
+}
+
 export function renderPropertiesGridContent(filtered = [], allLeads = []) {
   if (filtered.length === 0) {
     return `
@@ -231,11 +274,12 @@ export function renderPropertiesGridContent(filtered = [], allLeads = []) {
       </div>
     `;
   }
+  const inquiryMap = buildPropertyInquiriesMap(filtered, allLeads);
   return `
     <div style="
       display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px;
     ">
-      ${filtered.map(p => renderPropertyCard(p, allLeads)).join('')}
+      ${filtered.map(p => renderPropertyCard(p, allLeads, inquiryMap)).join('')}
     </div>
   `;
 }
@@ -415,7 +459,7 @@ function computePropertyInquiriesCount(prop, allLeads = []) {
   return Math.max(matchedCount, parseInt(prop.inquiriesCount || 0, 10));
 }
 
-function renderPropertyCard(prop, allLeads = []) {
+function renderPropertyCard(prop, allLeads = [], inquiryMap = null) {
   if (!prop) return '';
   const status = prop.status || prop.availability || 'Available';
   const approvalStatus = prop.approvalStatus || (status === 'Pending Approval' ? 'Pending Approval' : 'Approved');
@@ -523,7 +567,7 @@ function renderPropertyCard(prop, allLeads = []) {
             ${(prop.priceFormatted && prop.priceFormatted !== '0' && prop.priceFormatted !== '₹ 0') ? prop.priceFormatted : (prop.price > 0 ? (prop.price >= 10000000 ? `₹ ${(prop.price / 10000000).toFixed(2)} Crore` : (prop.price >= 100000 ? `₹ ${(prop.price / 100000).toFixed(2)} Lakhs` : `₹ ${prop.price.toLocaleString('en-IN')}`)) : 'Price on Request')}
           </div>
           <span class="prop-inquiries-badge" data-propid="${prop.id}" style="background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer !important; user-select: none; position: relative; z-index: 5;" title="Click to view inquiries for this property in CRM Pipeline">
-            <i class="ri-mail-unread-line" style="pointer-events: none;"></i> <span style="pointer-events: none;">${computePropertyInquiriesCount(prop, allLeads)} Inquiries</span>
+            <i class="ri-mail-unread-line" style="pointer-events: none;"></i> <span style="pointer-events: none;">${inquiryMap && prop.id && inquiryMap.has(String(prop.id)) ? inquiryMap.get(String(prop.id)) : computePropertyInquiriesCount(prop, allLeads)} Inquiries</span>
           </span>
         </div>
 
