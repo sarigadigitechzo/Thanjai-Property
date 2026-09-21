@@ -232,9 +232,18 @@ a {
   border-color: var(--color-white);
 }
 
+.btn-outline-dark {
+  background: transparent;
+  color: var(--color-brown, #211915);
+  border: 1.5px solid var(--color-brown, #211915);
+  transition: all var(--transition-normal, 0.3s ease);
+}
+
 .btn-outline-dark:hover {
-  background: var(--color-brown);
-  color: var(--color-white);
+  background: var(--color-brown, #211915);
+  color: var(--color-white, #ffffff);
+  border-color: var(--color-brown, #211915);
+  box-shadow: 0 4px 14px rgba(33, 25, 21, 0.2);
 }
 
 /* Header Action Buttons (Matching Screenshot 1) */
