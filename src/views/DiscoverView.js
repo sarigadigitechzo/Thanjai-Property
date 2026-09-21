@@ -356,10 +356,15 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                 <span id="detail-photo-counter">${isVideo ? (allVideos.length > 1 ? `Property Video ${currentMedia.index} of ${allVideos.length}` : 'Property Video Tour') : `Photo ${activeDetailPhotoIndex + 1} of ${images.length}`}</span>
               </div>
 
-              <!-- Top Right Status Badge -->
-              <span style="position: absolute; top: 20px; right: 20px; background: #eb5e28; color: #ffffff; font-size: 0.8rem; font-weight: 800; padding: 6px 16px; border-radius: 20px; z-index: 10; box-shadow: 0 4px 14px rgba(0,0,0,0.25); letter-spacing: 0.05em; text-transform: uppercase;">
-                ${property.purpose === 'rent' ? 'FOR RENT' : 'FOR SALE'}
-              </span>
+              <!-- Top Right Status & Property ID Badges Stack -->
+              <div style="position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; z-index: 10;">
+                <span style="background: #eb5e28; color: #ffffff; font-size: 0.8rem; font-weight: 800; padding: 6px 16px; border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.25); letter-spacing: 0.05em; text-transform: uppercase;">
+                  ${property.purpose === 'rent' ? 'FOR RENT' : 'FOR SALE'}
+                </span>
+                <span style="background: rgba(15, 23, 42, 0.88); color: #ffffff; font-size: 0.78rem; font-weight: 800; padding: 5px 14px; border-radius: 20px; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 4px 12px rgba(0,0,0,0.25); letter-spacing: 0.05em;">
+                  # ID: ${property.id}
+                </span>
+              </div>
 
               <!-- Left/Right Carousel Swipe Arrows -->
               ${mediaItems.length > 1 ? `
