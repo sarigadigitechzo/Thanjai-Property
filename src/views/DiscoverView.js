@@ -361,7 +361,7 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                 <span style="background: #eb5e28; color: #ffffff; font-size: 0.8rem; font-weight: 800; padding: 6px 16px; border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.25); letter-spacing: 0.05em; text-transform: uppercase;">
                   ${property.purpose === 'rent' ? 'FOR RENT' : 'FOR SALE'}
                 </span>
-                <span style="background: rgba(15, 23, 42, 0.88); color: #ffffff; font-size: 0.78rem; font-weight: 800; padding: 5px 14px; border-radius: 20px; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.25); box-shadow: 0 4px 12px rgba(0,0,0,0.25); letter-spacing: 0.05em;">
+                <span style="background: #ffffff; color: #000000; font-size: 0.8rem; font-weight: 800; padding: 5px 14px; border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); letter-spacing: 0.05em;">
                   # ID: ${property.id}
                 </span>
               </div>
@@ -421,9 +421,6 @@ function renderPropertyDetailView(property, onNavigateToContact) {
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
                   <span class="badge badge-orange" style="font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em; display: inline-block;">
                     ${property.categoryLabel || property.type || 'Property'}
-                  </span>
-                  <span style="font-size: 0.82rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #718096; background: #EDF2F7; padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid #E2E8F0;">
-                    <i class="ri-hashtag" style="color: #eb5e28; font-size: 0.9rem;"></i> ID: ${property.id}
                   </span>
                 </div>
                 <h1 style="font-family: var(--font-serif); font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 800; color: #1A202C; margin-bottom: 10px; line-height: 1.25;">
