@@ -13,8 +13,8 @@ function loadPropertiesFromStorage() {
       if (Array.isArray(parsed) && parsed.length > 0) {
         const existing = parsed.map(p => normalizePropertyRecord(p)).filter(p => {
           if (!p) return false;
-          // Filter out dummy sample initial seed properties that have status Inactive or sample titles
-          if (p.status === 'Inactive' && (p.title === 'Plot in Thanjavur' || p.title === 'Thanjaiproperty' || (p.images && p.images[0] && p.images[0].includes('tn_industrial.jpg')))) {
+          // Filter out dummy sample initial seed properties and inactive PP legacy entries
+          if (p.status === 'Inactive' || (p.id && String(p.id).startsWith('PP')) || p.title === 'Plot in Thanjavur' || p.title === 'Thanjaiproperty') {
             return false;
           }
           return true;
@@ -22,7 +22,7 @@ function loadPropertiesFromStorage() {
         
         const existingIds = new Set(existing.map(p => p.id));
         const newFromLegacy = LEGACY_PROPERTIES
-          .filter(p => p.id && !existingIds.has(p.id))
+          .filter(p => p.id && !existingIds.has(p.id) && p.status !== 'Inactive' && p.title !== 'Plot in Thanjavur' && !String(p.id).startsWith('PP'))
           .map(p => normalizePropertyRecord(p))
           .filter(Boolean);
         
@@ -35,8 +35,8 @@ function loadPropertiesFromStorage() {
     console.error("Failed reading properties from localStorage", e);
   }
   
-  // Fallback: load LEGACY_PROPERTIES deduped by ID
-  const deduped = LEGACY_PROPERTIES.map(p => normalizePropertyRecord(p)).filter(Boolean);
+  // Fallback: load active LEGACY_PROPERTIES deduped by ID
+  const deduped = LEGACY_PROPERTIES.filter(p => p.status !== 'Inactive' && !String(p.id).startsWith('PP')).map(p => normalizePropertyRecord(p)).filter(Boolean);
   try {
     localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(deduped));
   } catch (e) {}
@@ -133,10 +133,10 @@ export async function initPropertiesStore() {
         });
       }).filter(Boolean);
 
-      // Safe merge & Auto-sync: include legacy properties that aren't in remote MySQL data
+      // Safe merge & Auto-sync: include active legacy properties that aren't in remote MySQL data
       const remoteIds = new Set(remoteNormalized.map(p => p.id));
       const legacyToAdd = LEGACY_PROPERTIES
-        .filter(p => p.id && !remoteIds.has(p.id))
+        .filter(p => p.id && !remoteIds.has(p.id) && p.status !== 'Inactive' && p.title !== 'Plot in Thanjavur' && !String(p.id).startsWith('PP'))
         .map(p => normalizePropertyRecord(p))
         .filter(Boolean);
 
