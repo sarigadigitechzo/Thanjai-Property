@@ -56,7 +56,7 @@ export function renderLeadsView() {
         </div>
         
         <!-- Custom Selects -->
-        <div class="os-custom-select" id="filter-status" style="flex: 0 0 auto; min-width: 115px;">
+        <div class="os-custom-select" id="filter-status" style="flex: 0 0 auto; min-width: 125px;">
           <div class="select-value">All statuses</div>
           <i class="ri-arrow-down-s-line"></i>
           <div class="select-dropdown">
@@ -65,6 +65,7 @@ export function renderLeadsView() {
             <div class="select-option">Contacted</div>
             <div class="select-option">Property Shared</div>
             <div class="select-option">Follow Up</div>
+            <div class="select-option">Site Visit / Tour</div>
             <div class="select-option">Interested</div>
             <div class="select-option">Negotiation</div>
             <div class="select-option">Converted</div>
@@ -179,6 +180,9 @@ ${(() => {
           <button id="clear-bulk-selection-btn" class="os-btn-secondary" style="padding: 8px 14px; font-size: 0.85rem; background: #ffffff;">Clear Selection</button>
         </div>
       </div>
+
+      <!-- Active Filter Banner Container -->
+      <div id="leads-active-filter-banner-container" style="margin-bottom: 16px;"></div>
 
       <!-- Table View -->
       <div class="os-table-container" style="background: var(--os-white); border: var(--os-border-thin); border-radius: var(--os-radius-xl); box-shadow: var(--os-shadow-soft); overflow-x: auto;">
@@ -526,38 +530,160 @@ function tryParseJSON(str) {
   try { return JSON.parse(str); } catch (e) { return null; }
 }
 
+let leadRequestSeq = 0;
+
 // Data Store Initializer
 export async function initLeadsView(searchQuery = null) {
-  // 1. Instant populate from memory or IndexedDB without network blocking
-  if (!cachedLeads || cachedLeads.length === 0) {
-    await initLeadsStore();
+  const thisSeq = ++leadRequestSeq;
+
+  // 1. Show immediate skeleton / loading feedback to prevent stale flash
+  const tbody = document.getElementById('leads-table-body');
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 48px 24px; color: var(--os-gray-400);"><i class="ri-loader-4-line ri-spin" style="font-size: 24px; color: var(--os-luxury-orange); display: block; margin-bottom: 8px;"></i>Loading leads...</td></tr>`;
   }
+
+  // 2. Instant populate from memory/localStorage without network blocking
+  getLeads();
 
   // Call init logic that binds events
   bindLeadEvents();
 
-  // Check passed searchQuery parameter or URL hash for property query parameter
-  let targetQuery = searchQuery;
-  if (!targetQuery) {
-    const rawHash = window.location.hash || '';
-    if (rawHash.includes('?')) {
-      const qParts = rawHash.split('?')[1] || '';
-      const params = new URLSearchParams(qParts);
-      targetQuery = params.get('prop') || params.get('search') || '';
+  // Check passed searchQuery parameter or URL hash for filter query parameters
+  const rawHash = window.location.hash || '';
+  const searchEl = document.getElementById('filter-search');
+  const statusEl = document.getElementById('filter-status');
+  const staffEl = document.getElementById('filter-staff');
+  const dateEl = document.getElementById('filter-date');
+  const dueEl = document.getElementById('filter-due');
+  const sourceEl = document.getElementById('filter-source');
+
+  // Reset active filter flags
+  window.__activePriorityFilter = null;
+  window.__activeFollowupFilter = null;
+
+  // 1. Reset all dropdowns to default first (prevents stale filter pollution)
+  if (searchEl) searchEl.value = '';
+  if (dueEl) dueEl.checked = false;
+  if (statusEl) {
+    const valEl = statusEl.querySelector('.select-value');
+    if (valEl) valEl.textContent = 'All statuses';
+    statusEl.querySelectorAll('.select-option').forEach(opt => {
+      opt.classList.toggle('selected', opt.textContent.trim() === 'All statuses');
+    });
+  }
+  if (staffEl) {
+    const valEl = staffEl.querySelector('.select-value');
+    if (valEl) valEl.textContent = 'All staff';
+    staffEl.querySelectorAll('.select-option').forEach(opt => {
+      opt.classList.toggle('selected', opt.textContent.trim() === 'All staff');
+    });
+  }
+  if (dateEl) {
+    const valEl = dateEl.querySelector('.select-value');
+    if (valEl) valEl.textContent = 'All Time';
+    dateEl.querySelectorAll('.select-option').forEach(opt => {
+      opt.classList.toggle('selected', opt.textContent.trim() === 'All Time');
+    });
+  }
+  if (sourceEl) {
+    const valEl = sourceEl.querySelector('.select-value');
+    if (valEl) valEl.textContent = 'All sources';
+    sourceEl.querySelectorAll('.select-option').forEach(opt => {
+      opt.classList.toggle('selected', opt.textContent.trim() === 'All sources');
+    });
+  }
+
+  // 2. Parse URL parameters if present
+  if (rawHash.includes('?')) {
+    const qParts = rawHash.split('?')[1] || '';
+    const params = new URLSearchParams(qParts);
+    const targetProp = params.get('prop') || '';
+    const targetSearch = params.get('search') || '';
+    const targetStatus = params.get('status') || '';
+    const targetStaff = params.get('staff') || '';
+    const targetDate = params.get('date') || '';
+    const targetDue = params.get('due') || '';
+    const targetPriority = params.get('priority') || '';
+    const targetSource = params.get('source') || '';
+    const targetFollowup = params.get('followup') || '';
+
+    if (targetProp || targetSearch) {
+      if (searchEl) searchEl.value = targetProp || targetSearch;
+    }
+
+    if (targetStatus && statusEl) {
+      let matchedLabel = targetStatus;
+      const targetNorm = targetStatus.toLowerCase().trim();
+      if (targetNorm.includes('site visit') || targetNorm.includes('tour') || targetNorm === 'interested') {
+        matchedLabel = 'Site Visit / Tour';
+      } else if (targetNorm.includes('convert') || targetNorm.includes('won') || targetNorm.includes('closed') || targetNorm.includes('registration')) {
+        matchedLabel = 'Converted';
+      } else if (targetNorm.includes('follow') || targetNorm.includes('callback')) {
+        matchedLabel = 'Follow Up';
+      } else if (targetNorm.includes('property') || targetNorm.includes('matching') || targetNorm.includes('shared') || targetNorm.includes('requirement')) {
+        matchedLabel = 'Property Shared';
+      } else if (targetNorm.includes('negotiation') || targetNorm.includes('loan')) {
+        matchedLabel = 'Negotiation';
+      } else if (targetNorm.includes('contact')) {
+        matchedLabel = 'Contacted';
+      } else if (targetNorm === 'new' || targetNorm.includes('inquir')) {
+        matchedLabel = 'New';
+      }
+      const valEl = statusEl.querySelector('.select-value');
+      if (valEl) valEl.textContent = matchedLabel;
+      statusEl.querySelectorAll('.select-option').forEach(opt => {
+        const optText = opt.textContent.trim().toLowerCase();
+        opt.classList.toggle('selected', optText === matchedLabel.toLowerCase() || optText === targetNorm);
+      });
+    }
+
+    if (targetStaff && staffEl) {
+      const valEl = staffEl.querySelector('.select-value');
+      if (valEl) valEl.textContent = targetStaff;
+      staffEl.querySelectorAll('.select-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.textContent.trim().toLowerCase() === targetStaff.toLowerCase());
+      });
+    }
+
+    if (targetDate && dateEl) {
+      const dateLabel = targetDate.toLowerCase() === 'today' ? 'Today' : targetDate;
+      const valEl = dateEl.querySelector('.select-value');
+      if (valEl) valEl.textContent = dateLabel;
+      dateEl.querySelectorAll('.select-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.textContent.trim().toLowerCase() === dateLabel.toLowerCase());
+      });
+    }
+
+    if (targetDue) {
+      if (dueEl) dueEl.checked = true;
+      window.__activeFollowupFilter = 'due';
+    }
+
+    if (targetPriority) {
+      window.__activePriorityFilter = targetPriority.toLowerCase();
+    }
+
+    if (targetSource && sourceEl) {
+      const valEl = sourceEl.querySelector('.select-value');
+      if (valEl) valEl.textContent = targetSource;
+    }
+
+    if (targetFollowup) {
+      window.__activeFollowupFilter = targetFollowup.toLowerCase();
     }
   }
 
-  if (targetQuery) {
-    const searchEl = document.getElementById('filter-search');
-    if (searchEl) searchEl.value = targetQuery;
+  if (searchQuery && searchEl && typeof searchQuery === 'string' && !searchQuery.includes('=')) {
+    searchEl.value = searchQuery;
   }
 
   // Render table immediately with cached/restored leads
   renderTable();
 
-  // 2. Non-blocking background network fetch for live server sync
+  // 3. Non-blocking background network fetch for live server sync with sequence check
   try {
     fetchFromAPI('/leads').then(data => {
+      if (thisSeq !== leadRequestSeq) return;
       if (data && Array.isArray(data) && data.length > 0) {
         const localLeads = getLeads();
         const mapped = data.map(mapLeadFromAPI);
@@ -603,6 +729,7 @@ export async function initLeadsView(searchQuery = null) {
           return true;
         });
 
+        if (thisSeq !== leadRequestSeq) return;
         cachedLeads = filteredMapped;
         saveLeads(cachedLeads);
         renderTable();
@@ -831,37 +958,36 @@ function renderTable() {
   const endDateEl = document.getElementById('filter-date-end');
   const dueEl = document.getElementById('filter-due');
 
-  if (searchEl && statusEl) {
-    const q = searchEl.value.toLowerCase();
-    const fStatus = statusEl.querySelector('.select-value').textContent.trim();
-    const fSource = sourceEl.querySelector('.select-value').textContent.trim();
-    const fType = typeEl.querySelector('.select-value').textContent.trim();
-    const fStaff = staffEl.querySelector('.select-value').textContent.trim();
-    const fDate = dateEl ? dateEl.querySelector('.select-value').textContent.trim() : 'All Time';
-    const startDateVal = startDateEl ? startDateEl.value : '';
-    const endDateVal = endDateEl ? endDateEl.value : '';
-    const fDue = dueEl ? dueEl.checked : false;
+  const q = searchEl ? searchEl.value.toLowerCase().trim() : '';
+  const fStatus = statusEl ? statusEl.querySelector('.select-value').textContent.trim() : 'All statuses';
+  const fSource = sourceEl ? sourceEl.querySelector('.select-value').textContent.trim() : 'All sources';
+  const fType = typeEl ? typeEl.querySelector('.select-value').textContent.trim() : 'All property types';
+  const fStaff = staffEl ? staffEl.querySelector('.select-value').textContent.trim() : 'All staff';
+  const fDate = dateEl ? dateEl.querySelector('.select-value').textContent.trim() : 'All Time';
+  const startDateVal = startDateEl ? startDateEl.value : '';
+  const endDateVal = endDateEl ? endDateEl.value : '';
+  const fDue = dueEl ? dueEl.checked : false;
 
+  if (searchEl && statusEl) {
     leads = leads.filter(lead => {
       // Search
       if (q) {
-        const qClean = q.trim().toLowerCase();
-        const isPropSearch = /^tp-?\d+/i.test(qClean);
+        const isPropSearch = /^tp-?\d+/i.test(q);
 
         if (isPropSearch) {
-          const targetPropId = qClean.replace(/[^a-z0-9]/g, '');
+          const targetPropId = q.replace(/[^a-z0-9]/g, '');
           const leadPropId = String(lead.propertyId || lead.propertyMatch || '').toLowerCase().replace(/[^a-z0-9]/g, '');
           const notesStr = typeof lead.notes === 'string' ? lead.notes.toLowerCase() : JSON.stringify(lead.notes || []).toLowerCase();
           const timelineStr = typeof lead.timeline === 'string' ? lead.timeline.toLowerCase() : JSON.stringify(lead.timeline || []).toLowerCase();
 
           const matchesProp = (leadPropId && leadPropId === targetPropId) ||
-                              notesStr.includes(qClean) ||
-                              timelineStr.includes(qClean);
+                              notesStr.includes(q) ||
+                              timelineStr.includes(q);
                               
           if (!matchesProp) return false;
         } else {
           const str = `${lead.name || ''} ${lead.mobile || ''} ${lead.phone || ''} ${lead.email || ''} ${lead.type || ''} ${lead.area || ''} ${lead.location || ''} ${lead.source || ''} ${lead.status || ''} ${lead.assignTo || ''}`.toLowerCase();
-          if (!str.includes(qClean)) return false;
+          if (!str.includes(q)) return false;
         }
       }
       // Dropdowns - Status Filter Normalization
@@ -869,20 +995,20 @@ function renderTable() {
         const fLow = fStatus.toLowerCase().trim();
         const lLow = (lead.status || '').toLowerCase().trim();
 
-        if (fLow === 'new' || fLow === 'new lead') {
-          if (lLow !== 'new' && lLow !== 'new lead' && !lLow.startsWith('new')) return false;
+        if (fLow === 'new' || fLow === 'new lead' || fLow === 'new inquiries') {
+          if (lLow !== 'new' && lLow !== 'new lead' && !lLow.startsWith('new') && !lLow.includes('inquir')) return false;
         } else if (fLow === 'contacted') {
-          if (!lLow.includes('contacted')) return false;
+          if (!lLow.includes('contacted') && !lLow.includes('initial contact')) return false;
         } else if (fLow === 'property shared') {
-          if (!lLow.includes('property') && !lLow.includes('shared')) return false;
+          if (!lLow.includes('property') && !lLow.includes('shared') && !lLow.includes('matching') && !lLow.includes('requirement')) return false;
         } else if (fLow === 'follow up') {
-          if (!lLow.includes('follow')) return false;
-        } else if (fLow === 'interested') {
-          if (!lLow.includes('interested')) return false;
+          if (!lLow.includes('follow') && !lLow.includes('callback')) return false;
+        } else if (fLow === 'interested' || fLow.includes('site visit') || fLow.includes('tour') || fLow.includes('visit')) {
+          if (!lLow.includes('interested') && !lLow.includes('site visit') && !lLow.includes('tour') && !lLow.includes('visit')) return false;
         } else if (fLow === 'negotiation') {
-          if (!lLow.includes('negotiation')) return false;
-        } else if (fLow === 'converted') {
-          if (!lLow.includes('converted')) return false;
+          if (!lLow.includes('negotiation') && !lLow.includes('bank loan') && !lLow.includes('loan')) return false;
+        } else if (fLow === 'converted' || fLow === 'closed / won' || fLow === 'closed won' || fLow === 'closed') {
+          if (!lLow.includes('converted') && !lLow.includes('registration') && !lLow.includes('won') && !lLow.includes('closed')) return false;
         } else {
           if (lLow !== fLow && !lLow.includes(fLow) && !fLow.includes(lLow)) return false;
         }
@@ -900,13 +1026,18 @@ function renderTable() {
       const activeAdmin = getActiveAdminUser();
       if (canViewAllLeads(activeAdmin)) {
         if (fStaff && fStaff !== 'All staff') {
-          const staffNorm = fStaff.toLowerCase().trim();
-          const staffFirstName = staffNorm.split(' ')[0] || '';
-          const leadAssigned = (lead.assignTo || lead.assignedTo || '').toLowerCase().trim();
-          const matchesStaff = leadAssigned === staffNorm ||
-                               leadAssigned.includes(staffNorm) ||
-                               staffNorm.includes(leadAssigned) ||
-                               (staffFirstName && staffFirstName.length >= 3 && (leadAssigned.includes(staffFirstName) || staffFirstName.includes(leadAssigned)));
+          const cleanTarget = fStaff.replace(/\s*\(.*?\)/g, '').toLowerCase().trim();
+          const cleanAssigned = (lead.assignTo || lead.assignedTo || '').replace(/\s*\(.*?\)/g, '').toLowerCase().trim();
+          
+          let matchesStaff = (cleanAssigned === cleanTarget);
+          if (!matchesStaff) {
+            const targetWords = cleanTarget.split(/\s+/).filter(Boolean);
+            const assignedWords = cleanAssigned.split(/\s+/).filter(Boolean);
+            if (targetWords.length > 0 && assignedWords.length > 0) {
+              matchesStaff = (targetWords[0] === assignedWords[0] && targetWords[0].length >= 3 && 
+                             (cleanAssigned.startsWith(cleanTarget + ' ') || cleanTarget.startsWith(cleanAssigned + ' ')));
+            }
+          }
           if (!matchesStaff) return false;
         }
       }
@@ -969,11 +1100,118 @@ function renderTable() {
 
       // Due Checkbox
       if (fDue) {
-        if (!lead.followup || lead.followup === '—') return false;
+        if (!lead.followup || lead.followup === '—' || lead.followup === '-') return false;
+        const d = new Date(lead.followup);
+        if (isNaN(d.getTime())) return false;
+        const endDay = new Date();
+        endDay.setHours(23, 59, 59, 999);
+        if (d > endDay) return false;
+      }
+
+      // Follow-up status filter (overdue, today, due/pending, upcoming)
+      if (window.__activeFollowupFilter) {
+        const nowDay = new Date();
+        nowDay.setHours(0, 0, 0, 0);
+        const endDay = new Date();
+        endDay.setHours(23, 59, 59, 999);
+        let fupDate = null;
+        if (lead.followup && lead.followup !== '—' && lead.followup !== '-') {
+          const d = new Date(lead.followup);
+          if (!isNaN(d.getTime())) fupDate = d;
+        }
+
+        if (window.__activeFollowupFilter === 'overdue') {
+          if (!fupDate || fupDate >= nowDay) return false;
+        } else if (window.__activeFollowupFilter === 'today') {
+          if (!fupDate || fupDate < nowDay || fupDate > endDay) return false;
+        } else if (window.__activeFollowupFilter === 'due' || window.__activeFollowupFilter === 'pending') {
+          if (!fupDate || fupDate > endDay) return false;
+        } else if (window.__activeFollowupFilter === 'upcoming') {
+          if (!fupDate || fupDate <= endDay) return false;
+        }
+      }
+
+      // Priority filter (High, Medium, Low)
+      if (window.__activePriorityFilter) {
+        const p = (lead.priority || '').toLowerCase().trim();
+        if (p !== window.__activePriorityFilter) return false;
       }
       
       return true;
     });
+  }
+
+  // Active Filter Banner Rendering
+  const filterBannerContainer = document.getElementById('leads-active-filter-banner-container');
+  if (filterBannerContainer) {
+    const rawFilterLabels = [];
+    if (q) rawFilterLabels.push(`Search: "${q}"`);
+    if (fStatus && fStatus !== 'All statuses') rawFilterLabels.push(`Stage: ${fStatus}`);
+    if (fSource && fSource !== 'All sources') rawFilterLabels.push(`Source: ${fSource}`);
+    if (fType && fType !== 'All property types') rawFilterLabels.push(`Type: ${fType}`);
+    if (fStaff && fStaff !== 'All staff') rawFilterLabels.push(`Staff: ${fStaff}`);
+    if (fDate && fDate !== 'All Time') rawFilterLabels.push(`Date: ${fDate}`);
+    if (window.__activeFollowupFilter) {
+      const fCap = window.__activeFollowupFilter.charAt(0).toUpperCase() + window.__activeFollowupFilter.slice(1);
+      rawFilterLabels.push(`Follow-up: ${fCap}`);
+    } else if (fDue) {
+      rawFilterLabels.push(`Follow-up: Due`);
+    }
+    if (window.__activePriorityFilter) {
+      const pCap = window.__activePriorityFilter.charAt(0).toUpperCase() + window.__activePriorityFilter.slice(1);
+      rawFilterLabels.push(`Priority: ${pCap}`);
+    }
+    const activeFilterLabels = Array.from(new Set(rawFilterLabels));
+
+    if (activeFilterLabels.length > 0) {
+      filterBannerContainer.innerHTML = `
+        <div class="leads-active-filter-banner" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; margin-bottom: 4px; font-size: 0.88rem; color: #9a3412; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-weight: 700;">
+            <i class="ri-filter-3-fill" style="color: #ea580c; font-size: 1.1rem;"></i>
+            <span>Filter Active: Showing ${activeFilterLabels.join(' • ')} (${leads.length} matching leads)</span>
+          </div>
+          <button id="btn-clear-leads-filters" style="background: #ea580c; color: #ffffff; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: background 0.2s;" onmouseover="this.style.background='#c2410c'" onmouseout="this.style.background='#ea580c'">
+            <i class="ri-close-circle-line"></i> View All Leads
+          </button>
+        </div>
+      `;
+
+      document.getElementById('btn-clear-leads-filters')?.addEventListener('click', () => {
+        window.__activePriorityFilter = null;
+        window.__activeFollowupFilter = null;
+        if (searchEl) searchEl.value = '';
+        if (dueEl) dueEl.checked = false;
+        if (statusEl) {
+          const valEl = statusEl.querySelector('.select-value');
+          if (valEl) valEl.textContent = 'All statuses';
+          statusEl.querySelectorAll('.select-option').forEach(opt => opt.classList.toggle('selected', opt.textContent.trim() === 'All statuses'));
+        }
+        if (staffEl) {
+          const valEl = staffEl.querySelector('.select-value');
+          if (valEl) valEl.textContent = 'All staff';
+          staffEl.querySelectorAll('.select-option').forEach(opt => opt.classList.toggle('selected', opt.textContent.trim() === 'All staff'));
+        }
+        if (dateEl) {
+          const valEl = dateEl.querySelector('.select-value');
+          if (valEl) valEl.textContent = 'All Time';
+          dateEl.querySelectorAll('.select-option').forEach(opt => opt.classList.toggle('selected', opt.textContent.trim() === 'All Time'));
+        }
+        if (sourceEl) {
+          const valEl = sourceEl.querySelector('.select-value');
+          if (valEl) valEl.textContent = 'All sources';
+          sourceEl.querySelectorAll('.select-option').forEach(opt => opt.classList.toggle('selected', opt.textContent.trim() === 'All sources'));
+        }
+        if (typeEl) {
+          const valEl = typeEl.querySelector('.select-value');
+          if (valEl) valEl.textContent = 'All property types';
+          typeEl.querySelectorAll('.select-option').forEach(opt => opt.classList.toggle('selected', opt.textContent.trim() === 'All property types'));
+        }
+        window.location.hash = '#leads';
+        renderTable();
+      });
+    } else {
+      filterBannerContainer.innerHTML = '';
+    }
   }
 
   const totalLeads = leads.length;
@@ -1001,7 +1239,77 @@ function renderTable() {
   if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
 
   if (pagedLeads.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--os-gray-400);">No matching leads found</td></tr>`;
+    let emptyMsg = 'No matching leads found';
+    let emptySub = 'Try clearing your search query or adjusting your filters.';
+    if (fDate === 'Today') {
+      emptyMsg = 'No new leads received today';
+      emptySub = 'New inquiries received today will appear here in real-time.';
+    } else if (fStatus && fStatus !== 'All statuses') {
+      emptyMsg = `No leads currently in "${fStatus}" stage`;
+      emptySub = `There are currently 0 leads categorized under ${fStatus}.`;
+    } else if (window.__activeFollowupFilter === 'today') {
+      emptyMsg = 'No follow-ups due today';
+      emptySub = 'All scheduled client follow-ups for today are up to date.';
+    } else if (window.__activeFollowupFilter === 'due' || window.__activeFollowupFilter === 'pending') {
+      emptyMsg = 'No pending follow-ups found';
+      emptySub = 'There are no pending or overdue follow-ups matching this view.';
+    } else if (window.__activePriorityFilter === 'high') {
+      emptyMsg = 'No high-priority leads found';
+      emptySub = 'No leads are currently tagged with high priority.';
+    }
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align: center; padding: 48px 24px;">
+          <div style="max-width: 360px; margin: 0 auto; color: var(--os-gray-500);">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--os-gray-100); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 22px; color: var(--os-gray-400);">
+              <i class="ri-search-line"></i>
+            </div>
+            <div style="font-weight: 600; font-size: 15px; color: var(--os-gray-800); margin-bottom: 4px;">${emptyMsg}</div>
+            <div style="font-size: 13px; color: var(--os-gray-500); line-height: 1.4; margin-bottom: 16px;">${emptySub}</div>
+            <button id="leads-empty-reset-btn" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: #ea580c; background: #fff7ed; border: 1px solid #ffedd5; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+              <i class="ri-refresh-line"></i> Clear Filters & Show All (${allConsolidatedLeads.length})
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+    const emptyResetBtn = document.getElementById('leads-empty-reset-btn');
+    if (emptyResetBtn) {
+      emptyResetBtn.addEventListener('click', () => {
+        window.__activePriorityFilter = null;
+        window.__activeFollowupFilter = null;
+        if (searchEl) searchEl.value = '';
+        if (dueEl) dueEl.checked = false;
+        if (statusEl) {
+          const valEl = statusEl.querySelector('.select-value');
+          if (valEl) valEl.textContent = 'All statuses';
+          statusEl.querySelectorAll('.select-option').forEach(opt => opt.classList.toggle('selected', opt.textContent.trim() === 'All statuses'));
+        }
+        if (staffEl) {
+          const valEl = staffEl.querySelector('.select-value');
+          if (valEl) valEl.textContent = 'All staff';
+          staffEl.querySelectorAll('.select-option').forEach(opt => opt.classList.toggle('selected', opt.textContent.trim() === 'All staff'));
+        }
+        if (dateEl) {
+          const valEl = dateEl.querySelector('.select-value');
+          if (valEl) valEl.textContent = 'All Time';
+          dateEl.querySelectorAll('.select-option').forEach(opt => opt.classList.toggle('selected', opt.textContent.trim() === 'All Time'));
+        }
+        if (sourceEl) {
+          const valEl = sourceEl.querySelector('.select-value');
+          if (valEl) valEl.textContent = 'All sources';
+          sourceEl.querySelectorAll('.select-option').forEach(opt => opt.classList.toggle('selected', opt.textContent.trim() === 'All sources'));
+        }
+        if (typeEl) {
+          const valEl = typeEl.querySelector('.select-value');
+          if (valEl) valEl.textContent = 'All property types';
+          typeEl.querySelectorAll('.select-option').forEach(opt => opt.classList.toggle('selected', opt.textContent.trim() === 'All property types'));
+        }
+        window.location.hash = '#leads';
+        renderTable();
+      });
+    }
     return;
   }
 

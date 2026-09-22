@@ -11,6 +11,7 @@ let activeStatusFilter = 'all';
 let activeAdTypeFilter = 'all';
 let activeVisibilityFilter = 'all';
 let activeMaxPriceFilter = 'all';
+let activeDateFilter = 'all';
 
 let currentViewMode = 'list'; // 'list' or 'form'
 let editingPropertyId = null; // null for add, string ID for edit
@@ -259,8 +260,59 @@ export function buildPropertyInquiriesMap(propertiesList = [], allLeads = []) {
   return map;
 }
 
+export function syncPropertiesUrlFilters() {
+  const rawHash = window.location.hash || '';
+  if (rawHash.includes('?')) {
+    const qParts = rawHash.split('?')[1] || '';
+    const params = new URLSearchParams(qParts);
+    const targetStatus = params.get('status') || '';
+    const targetSearch = params.get('search') || params.get('staff') || '';
+    const targetType = params.get('type') || '';
+    const targetCategory = params.get('category') || '';
+    const targetDate = params.get('date') || '';
+
+    activeDateFilter = targetDate ? targetDate.toLowerCase() : 'all';
+    activeStatusFilter = targetStatus ? targetStatus.toLowerCase() : 'all';
+    activeSearch = targetSearch || '';
+    activeTypeFilter = targetType || 'all';
+    activeCategoryFilter = targetCategory || 'all';
+  } else {
+    activeDateFilter = 'all';
+    activeStatusFilter = 'all';
+    activeSearch = '';
+    activeTypeFilter = 'all';
+    activeCategoryFilter = 'all';
+    activeAdTypeFilter = 'all';
+    activeVisibilityFilter = 'all';
+    activeMaxPriceFilter = 'all';
+  }
+}
+
 export function renderPropertiesGridContent(filtered = [], allLeads = []) {
   if (filtered.length === 0) {
+    if (activeDateFilter === 'today') {
+      const allPropsCount = (getProperties() || []).length;
+      return `
+        <div style="
+          background: #ffffff; border-radius: 16px; padding: 50px 20px; text-align: center; border: 1px solid #fed7aa; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        ">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: #fff5eb; color: #eb5e28; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; font-size: 1.6rem;">
+            <i class="ri-calendar-check-line"></i>
+          </div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: #1a202c; margin-bottom: 6px;">No Properties Posted Today</h3>
+          <p style="font-size: 0.88rem; color: #718096; margin-bottom: 20px; max-width: 440px; margin-left: auto; margin-right: auto;">No new property listings have been added today yet. You can view all existing properties in the catalog or post a new listing.</p>
+          <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button class="os-btn-secondary" id="empty-view-all-props-btn" style="padding: 10px 20px; font-size: 0.88rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; color: #4a5568; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="ri-eye-line"></i> View All Properties (${allPropsCount})
+            </button>
+            <button class="os-btn-primary" id="empty-add-prop-btn" style="padding: 10px 22px; font-size: 0.88rem; border-radius: 8px; background: var(--color-orange, #eb5e28); color: #fff; border: none; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="ri-add-line"></i> Add New Property
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
     return `
       <div style="
         background: #ffffff; border-radius: 16px; padding: 60px 20px; text-align: center; border: 1px solid #e2e8f0;
@@ -268,9 +320,14 @@ export function renderPropertiesGridContent(filtered = [], allLeads = []) {
         <i class="ri-building-line" style="font-size: 3rem; color: #a0aec0; margin-bottom: 12px; display: block;"></i>
         <h3 style="font-size: 1.1rem; color: #2d3748; margin-bottom: 6px;">No Properties Match Your Filters</h3>
         <p style="font-size: 0.88rem; color: #718096; margin-bottom: 16px;">Try adjusting your search term, category, status, or price parameters.</p>
-        <button class="os-btn-primary" id="empty-add-prop-btn" style="padding: 10px 20px; font-size: 0.88rem; border-radius: 8px; background: var(--color-orange, #eb5e28); color: #fff; border: none; font-weight: 700; cursor: pointer;">
-          + Add New Property Listing
-        </button>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <button class="os-btn-secondary" id="empty-view-all-props-btn" style="padding: 10px 20px; font-size: 0.88rem; border-radius: 8px; border: 1px solid #cbd5e0; background: #fff; color: #4a5568; font-weight: 700; cursor: pointer;">
+            View All Properties
+          </button>
+          <button class="os-btn-primary" id="empty-add-prop-btn" style="padding: 10px 20px; font-size: 0.88rem; border-radius: 8px; background: var(--color-orange, #eb5e28); color: #fff; border: none; font-weight: 700; cursor: pointer;">
+            + Add New Property Listing
+          </button>
+        </div>
       </div>
     `;
   }
@@ -286,6 +343,7 @@ export function renderPropertiesGridContent(filtered = [], allLeads = []) {
 
 export function renderPropertiesView() {
   try {
+    syncPropertiesUrlFilters();
     const allProperties = getProperties() || [];
 
     if (currentViewMode === 'form') {
@@ -353,7 +411,7 @@ export function renderPropertiesView() {
       <!-- Filter Bar -->
       <div style="
         background: #ffffff; border-radius: 16px; padding: 14px 18px; border: 1px solid #e2e8f0;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.03); margin-bottom: 28px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03); margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
       ">
         <!-- Search Input -->
         <div style="position: relative; flex: 1; min-width: 220px;">
@@ -402,6 +460,19 @@ export function renderPropertiesView() {
           <option value="50000000" ${activeMaxPriceFilter === '50000000' ? 'selected' : ''}>Under ₹ 5 Crore</option>
         </select>
       </div>
+
+      <!-- Active Filter Banner (When filtered by date=today or other criteria) -->
+      ${activeDateFilter === 'today' ? `
+        <div id="active-date-filter-banner" style="display: flex; justify-content: space-between; align-items: center; background: #fff5eb; border: 1px solid #fed7aa; padding: 12px 18px; border-radius: 12px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #c2410c;">
+            <i class="ri-calendar-event-fill" style="font-size: 1.15rem; color: #eb5e28;"></i>
+            <span>Showing Properties Posted Today: <strong>${filtered.length} listings</strong></span>
+          </div>
+          <button id="btn-clear-date-filter" style="background: #ffffff; border: 1px solid #fed7aa; color: #c2410c; padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <i class="ri-close-circle-fill" style="color: #eb5e28;"></i> View All Properties
+          </button>
+        </div>
+      ` : ''}
 
       <!-- Properties Grid Wrapper -->
       <div id="props-cards-grid-wrapper">
@@ -1538,6 +1609,15 @@ function filterPropertiesList(list) {
       if (propP <= 0 || propP > maxP) return false;
     }
 
+    // 8. Date Filter (e.g. today)
+    if (activeDateFilter === 'today') {
+      const pDate = prop.createdAt ? new Date(prop.createdAt) : null;
+      const now = new Date();
+      if (!pDate || isNaN(pDate.getTime()) || pDate.getFullYear() !== now.getFullYear() || pDate.getMonth() !== now.getMonth() || pDate.getDate() !== now.getDate()) {
+        return false;
+      }
+    }
+
     return true;
   });
 
@@ -1743,6 +1823,15 @@ function bindModalPreviewListeners() {
 }
 
 export function bindPropertyCardsListeners() {
+  const clearDateFilter = () => {
+    activeDateFilter = 'all';
+    history.replaceState(null, '', '#properties');
+    refreshPropertiesView();
+  };
+
+  document.getElementById('btn-clear-date-filter')?.addEventListener('click', clearDateFilter);
+  document.getElementById('empty-view-all-props-btn')?.addEventListener('click', clearDateFilter);
+
   // Empty state add property button
   document.getElementById('empty-add-prop-btn')?.addEventListener('click', () => {
     editingPropertyId = null;
@@ -1915,6 +2004,47 @@ export function initPropertiesViewListeners() {
         renderPropertiesGridOnly();
       }
     });
+  }
+
+  // Parse URL hash parameters if arriving with filter query (e.g. #properties?status=available)
+  const rawHash = window.location.hash || '';
+  if (rawHash.includes('?')) {
+    const qParts = rawHash.split('?')[1] || '';
+    const params = new URLSearchParams(qParts);
+    const targetStatus = params.get('status') || '';
+    const targetSearch = params.get('search') || params.get('staff') || '';
+    const targetType = params.get('type') || '';
+    const targetCategory = params.get('category') || '';
+    const targetDate = params.get('date') || '';
+
+    if (targetDate) {
+      activeDateFilter = targetDate.toLowerCase();
+    } else {
+      activeDateFilter = 'all';
+    }
+
+    if (targetStatus) {
+      activeStatusFilter = targetStatus.toLowerCase();
+      const statusSelect = document.getElementById('props-status-filter');
+      if (statusSelect) statusSelect.value = activeStatusFilter;
+    }
+    if (targetSearch) {
+      activeSearch = targetSearch;
+      const searchInp = document.getElementById('props-search-input');
+      if (searchInp) searchInp.value = targetSearch;
+    }
+    if (targetType) {
+      activeTypeFilter = targetType;
+      const typeSelect = document.getElementById('props-type-filter');
+      if (typeSelect) typeSelect.value = targetType;
+    }
+    if (targetCategory) {
+      activeCategoryFilter = targetCategory;
+      const catSelect = document.getElementById('props-category-filter');
+      if (catSelect) catSelect.value = targetCategory;
+    }
+  } else {
+    activeDateFilter = 'all';
   }
 
   // Filters

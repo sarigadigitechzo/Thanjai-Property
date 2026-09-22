@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
       case 'leads':
         html = renderLeadsView();
-        afterRender = () => initLeadsView(param);
+        afterRender = () => initLeadsView();
         break;
       case 'lead-detail':
         html = renderLeadDetailView(param);
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
       case 'pipeline':
         html = renderPipelineBoardView();
-        afterRender = initPipelineBoardView;
+        afterRender = () => initPipelineBoardView(param);
         break;
       case 'ai':
         html = renderAIAgentView();
@@ -420,25 +420,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function navigateTo(viewName, queryParam = null) {
+  function navigateTo(viewName, queryStr = null) {
     if (!viewName) viewName = 'dashboard';
     sessionStorage.setItem('thanjai_active_view', viewName);
     
+    let cleanView = viewName;
+    let finalQuery = queryStr;
+    if (viewName.includes('?')) {
+      const parts = viewName.split('?');
+      cleanView = parts[0];
+      finalQuery = parts[1];
+    }
+
     // Maintain hash in address bar so browser F5 refresh & Back/Forward work cleanly
-    const targetHash = '#' + viewName + (queryParam ? `?prop=${encodeURIComponent(queryParam)}` : '');
+    const targetHash = '#' + cleanView + (finalQuery ? `?${finalQuery}` : '');
     if (window.location.hash !== targetHash) {
       history.replaceState(null, '', targetHash);
     }
 
-    if (viewName.startsWith('lead/')) {
-      const id = viewName.split('/')[1];
+    if (cleanView.startsWith('lead/')) {
+      const id = cleanView.split('/')[1];
       loadView('lead-detail', id);
       setActiveNav('leads');
       return;
     }
 
-    loadView(viewName, queryParam);
-    setActiveNav(viewName);
+    loadView(cleanView, finalQuery);
+    setActiveNav(cleanView);
   }
 
   window.navigateToView = navigateTo;
@@ -450,14 +458,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const cleanHash = rawHash.split('?')[0];
-    let queryParam = null;
-    if (rawHash.includes('?')) {
-      const qParts = rawHash.split('?')[1] || '';
-      const params = new URLSearchParams(qParts);
-      queryParam = params.get('prop') || params.get('search') || null;
-    }
+    const queryStr = rawHash.includes('?') ? rawHash.split('?')[1] : null;
     
-    navigateTo(cleanHash, queryParam);
+    navigateTo(cleanHash, queryStr);
 
     // Restore saved scroll position if refreshed on same page
     const savedY = sessionStorage.getItem('thanjai_scroll_y');
@@ -686,7 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkFollowUps();
   setInterval(checkFollowUps, 60000);
 
-  // Auto-refresh Properties Inventory when background store sync completes
+  // Auto-refresh Views when background store sync completes
   window.addEventListener('propertiesUpdated', () => {
     const currentHash = (window.location.hash || '#dashboard').toLowerCase();
     if (currentHash.startsWith('#properties') || currentHash.startsWith('#inventory')) {
@@ -695,6 +698,19 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) {
         handleHashChange();
       }
+    } else if (currentHash === '#dashboard' || currentHash === '#' || currentHash === '') {
+      try {
+        initDashboardListeners();
+      } catch (e) {}
+    }
+  });
+
+  window.addEventListener('leadsUpdated', () => {
+    const currentHash = (window.location.hash || '#dashboard').toLowerCase();
+    if (currentHash === '#dashboard' || currentHash === '#' || currentHash === '') {
+      try {
+        initDashboardListeners();
+      } catch (e) {}
     }
   });
 

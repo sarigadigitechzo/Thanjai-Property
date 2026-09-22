@@ -214,6 +214,20 @@ export function renderSiteVisitsView() {
 }
 
 export async function initSiteVisitsView() {
+  // Parse URL hash query parameters (e.g. #visits?staff=Vijayaraghavan, #visits?date=today, #visits?filter=...)
+  const rawHash = window.location.hash || '';
+  let urlStaffParam = null;
+  let urlFilterParam = null;
+  let urlDateParam = null;
+
+  if (rawHash.includes('?')) {
+    const qParts = rawHash.split('?')[1] || '';
+    const params = new URLSearchParams(qParts);
+    urlStaffParam = params.get('staff') || '';
+    urlFilterParam = params.get('filter') || params.get('type') || '';
+    urlDateParam = params.get('date') || '';
+  }
+
   // Populate dynamic Admin Staff in dropdown
   const assignedSelect = document.getElementById('sv-assigned-to');
   if (assignedSelect) {
@@ -225,56 +239,84 @@ export async function initSiteVisitsView() {
     }
   }
 
-  // --- Storage & Dynamic Rendering ---
+  // --- Synchronous Initial Cached Load for Instant Zero-Delay Rendering ---
   let visits = [];
   try {
-    const data = await fetchFromAPI('/site_visits');
-    if (data && Array.isArray(data)) {
-      visits = data.map(v => {
-        const vd = new Date(v.visitDate);
-        const hours = vd.getHours();
-        const mins = vd.getMinutes().toString().padStart(2, '0');
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        const h12 = hours % 12 || 12;
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        
-        let clientName = v.leadId;
-        let property = v.propertyId;
-        let assignedTo = v.assignedTo || 'Vijayaraghavan';
-        let visitType = v.visitType || 'Customer Property Tour';
-        let outcome = v.outcome || '';
-        try { 
-          if(v.notes) { 
-            const n = typeof v.notes === 'string' ? JSON.parse(v.notes) : v.notes; 
-            clientName = n.clientName || clientName; 
-            property = n.property || property; 
-            assignedTo = n.assignedTo || assignedTo;
-            visitType = n.visitType || visitType;
-            outcome = n.outcome || outcome;
-          } 
-        } catch(e){}
-
-        return {
-          id: v.id,
-          date: vd.getDate().toString(),
-          month: monthNames[vd.getMonth()],
-          hours: h12.toString().padStart(2, '0'),
-          mins: mins,
-          ampm: ampm,
-          clientName: clientName,
-          phone: 'Site Visit',
-          property: property,
-          assignedTo: assignedTo,
-          visitType: visitType,
-          outcome: outcome,
-          status: v.status || 'Scheduled'
-        };
-      });
+    const cached = localStorage.getItem('thanjai_visits');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        visits = parsed;
+      }
     }
-  } catch (error) {
-    console.error('API Error:', error);
-    visits = JSON.parse(localStorage.getItem('thanjai_visits')) || [];
-  }
+  } catch (e) {}
+
+  const normalizeApiVisit = (v) => {
+    const vd = new Date(v.visitDate || v.date || Date.now());
+    const hours = isNaN(vd.getTime()) ? 10 : vd.getHours();
+    const mins = isNaN(vd.getTime()) ? '00' : vd.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const h12 = hours % 12 || 12;
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    let clientName = v.leadId || v.clientName || 'Client';
+    let property = v.propertyId || v.property || 'Thanjavur Property';
+    let assignedTo = v.assignedTo || 'Vijayaraghavan';
+    let visitType = v.visitType || 'Customer Property Tour';
+    let outcome = v.outcome || '';
+    try { 
+      if (v.notes) { 
+        const n = typeof v.notes === 'string' ? JSON.parse(v.notes) : v.notes; 
+        clientName = n.clientName || clientName; 
+        property = n.property || property; 
+        assignedTo = n.assignedTo || assignedTo;
+        visitType = n.visitType || visitType;
+        outcome = n.outcome || outcome;
+      } 
+    } catch(e){}
+
+    return {
+      id: v.id,
+      date: isNaN(vd.getTime()) ? '22' : vd.getDate().toString(),
+      month: isNaN(vd.getTime()) ? 'Sep' : monthNames[vd.getMonth()],
+      year: isNaN(vd.getTime()) ? 2026 : vd.getFullYear(),
+      hours: h12.toString().padStart(2, '0'),
+      mins: mins,
+      ampm: ampm,
+      clientName: clientName,
+      phone: v.phone || 'Site Visit',
+      property: property,
+      assignedTo: assignedTo,
+      visitType: visitType,
+      outcome: outcome,
+      status: v.status || 'Scheduled'
+    };
+  };
+
+  // Background non-blocking network sync
+  fetchFromAPI('/site_visits').then(data => {
+    if (data && Array.isArray(data) && data.length > 0) {
+      visits = data.map(normalizeApiVisit);
+      try { localStorage.setItem('thanjai_visits', JSON.stringify(visits)); } catch(e) {}
+      renderCalendar();
+      if (urlStaffParam) {
+        renderFilteredVisitsAgenda('staff', `Staff Pre-Inspections & Tours: ${urlStaffParam}`, urlStaffParam);
+      } else if (urlFilterParam) {
+        if (urlFilterParam === 'pre-inspections' || urlFilterParam.includes('inspection')) {
+          renderFilteredVisitsAgenda('pre-inspections', 'Staff Site Pre-Inspections');
+        } else if (urlFilterParam === 'customer-tours' || urlFilterParam.includes('tour')) {
+          renderFilteredVisitsAgenda('customer-tours', 'Customer Property Tours');
+        } else if (urlFilterParam === 'completed') {
+          renderFilteredVisitsAgenda('completed', 'Completed Site Visits');
+        } else {
+          renderFilteredVisitsAgenda('all', 'All Recorded Site Visits');
+        }
+      } else {
+        renderAgenda(selectedDay.toString());
+      }
+      renderExecutivePerformanceSummary();
+    }
+  }).catch(err => console.warn('Site visits background fetch notice:', err));
 
   // Populate dynamic DB Leads in Client datalist
   fetchFromAPI('/leads')
@@ -398,75 +440,63 @@ export async function initSiteVisitsView() {
     });
   };
 
-  const renderAgenda = async (day) => {
-    if (!agendaContainer) return;
-    const monthStr = monthNames[currentMonth];
+  const renderVisitCardHtml = (v) => {
+    const isPreInspection = (v.visitType && v.visitType.includes('Inspection'));
+    const typeBadge = isPreInspection 
+      ? `<span style="background: #f3e8ff; color: #7e22ce; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #e9d5ff;"><i class="ri-search-eye-line"></i> Staff Pre-Inspection</span>`
+      : `<span style="background: #fff5eb; color: #eb5e28; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #fed7aa;"><i class="ri-user-heart-line"></i> Customer Tour</span>`;
     
-    const visibleVisits = filterVisitsForActiveUser(visits);
-    const dayVisits = visibleVisits.filter(v => parseInt(v.date) === parseInt(day) && v.month === monthStr);
-    
-    let html = `<h2 class="agenda-title">Visits for <span>${day} ${monthStr}</span></h2>`;
-    
-    if (dayVisits.length === 0) {
-      html += `<p style="color: var(--os-gray-500); padding: 20px 0;">No visits scheduled for this date.</p>`;
-    } else {
-      dayVisits.forEach(v => {
-        const isPreInspection = (v.visitType && v.visitType.includes('Inspection'));
-        const typeBadge = isPreInspection 
-          ? `<span style="background: #f3e8ff; color: #7e22ce; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #e9d5ff;"><i class="ri-search-eye-line"></i> Staff Pre-Inspection</span>`
-          : `<span style="background: #fff5eb; color: #eb5e28; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #fed7aa;"><i class="ri-user-heart-line"></i> Customer Tour</span>`;
-        
-        const isCompleted = v.status === 'Completed';
-        const statusBadge = isCompleted
-          ? `<span style="background: #ecfdf5; color: #047857; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #a7f3d0;"><i class="ri-checkbox-circle-fill"></i> Completed</span>`
-          : `<span style="background: #eff6ff; color: #1d4ed8; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #bfdbfe;"><i class="ri-time-line"></i> ${v.status || 'Scheduled'}</span>`;
+    const isCompleted = v.status === 'Completed';
+    const statusBadge = isCompleted
+      ? `<span style="background: #ecfdf5; color: #047857; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #a7f3d0;"><i class="ri-checkbox-circle-fill"></i> Completed</span>`
+      : `<span style="background: #eff6ff; color: #1d4ed8; font-weight: 800; font-size: 0.74rem; padding: 3px 8px; border-radius: 6px; border: 1px solid #bfdbfe;"><i class="ri-time-line"></i> ${v.status || 'Scheduled'}</span>`;
 
-        html += `
-          <div class="visit-card hover-lift" style="border-left: 4px solid ${isPreInspection ? '#9333ea' : '#eb5e28'}; margin-bottom: 14px;">
-            <div class="v-time">
-              <div class="v-hour">${v.hours}:${v.mins}</div>
-              <div class="v-ampm">${v.ampm}</div>
-            </div>
-            <div class="v-details">
-              <div style="display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
-                ${typeBadge}
-                ${statusBadge}
-              </div>
-              <div class="v-client">
-                <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(v.clientName)}&background=${isPreInspection ? '9333ea' : 'eb5e28'}&color=fff" class="v-avatar" />
-                <div>
-                  <div class="v-name">${v.clientName}</div>
-                  <div class="v-phone">${v.phone || 'Site Visit'}</div>
-                </div>
-              </div>
-              <div class="v-prop" style="margin-top: 4px;">
-                <i class="ri-building-4-line"></i> ${v.property}
-              </div>
-              <div style="margin-top: 6px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                <span style="background: #FFF5EB; color: #eb5e28; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #FEEBC8;">
-                  <i class="ri-user-star-line"></i> Assigned: ${v.assignedTo || 'Vijayaraghavan (Super Admin)'}
-                </span>
-              </div>
-              ${v.outcome ? `
-                <div style="margin-top: 8px; font-size: 0.8rem; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #3b82f6; color: #334155;">
-                  <strong>Outcome:</strong> ${v.outcome}
-                </div>
-              ` : ''}
-            </div>
-            <div class="v-actions">
-              <button class="v-btn whatsapp" data-phone="${v.phone || ''}"><i class="ri-whatsapp-line"></i> Message</button>
-              <button class="v-btn map" data-prop="${encodeURIComponent(v.property)}"><i class="ri-map-pin-line"></i> Directions</button>
-              ${!isCompleted ? `<button class="v-btn complete-btn" data-id="${v.id}" style="color: #047857; border-color: #a7f3d0; background: #ecfdf5;"><i class="ri-check-line"></i> Complete</button>` : ''}
-              <button class="v-btn delete-btn" data-id="${v.id}" style="color: var(--os-error); border-color: #fee2e2; background: #fef2f2;"><i class="ri-delete-bin-line"></i> Delete</button>
+    return `
+      <div class="visit-card hover-lift" style="border-left: 4px solid ${isPreInspection ? '#9333ea' : '#eb5e28'}; margin-bottom: 14px;">
+        <div class="v-time">
+          <div class="v-hour">${v.hours}:${v.mins}</div>
+          <div class="v-ampm">${v.ampm}</div>
+          <div style="font-size: 0.72rem; color: #64748b; font-weight: 700; margin-top: 4px;">${v.date} ${v.month}</div>
+        </div>
+        <div class="v-details">
+          <div style="display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+            ${typeBadge}
+            ${statusBadge}
+          </div>
+          <div class="v-client">
+            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(v.clientName)}&background=${isPreInspection ? '9333ea' : 'eb5e28'}&color=fff" class="v-avatar" />
+            <div>
+              <div class="v-name">${v.clientName}</div>
+              <div class="v-phone">${v.phone || 'Site Visit'}</div>
             </div>
           </div>
-        `;
-      });
-    }
+          <div class="v-prop" style="margin-top: 4px;">
+            <i class="ri-building-4-line"></i> ${v.property}
+          </div>
+          <div style="margin-top: 6px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span style="background: #FFF5EB; color: #eb5e28; font-weight: 700; padding: 2px 8px; border-radius: 6px; border: 1px solid #FEEBC8;">
+              <i class="ri-user-star-line"></i> Assigned: ${v.assignedTo || 'Vijayaraghavan (Super Admin)'}
+            </span>
+          </div>
+          ${v.outcome ? `
+            <div style="margin-top: 8px; font-size: 0.8rem; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #3b82f6; color: #334155;">
+              <strong>Outcome:</strong> ${v.outcome}
+            </div>
+          ` : ''}
+        </div>
+        <div class="v-actions">
+          <button class="v-btn whatsapp" data-phone="${v.phone || ''}"><i class="ri-whatsapp-line"></i> Message</button>
+          <button class="v-btn map" data-prop="${encodeURIComponent(v.property)}"><i class="ri-map-pin-line"></i> Directions</button>
+          ${!isCompleted ? `<button class="v-btn complete-btn" data-id="${v.id}" style="color: #047857; border-color: #a7f3d0; background: #ecfdf5;"><i class="ri-check-line"></i> Complete</button>` : ''}
+          <button class="v-btn delete-btn" data-id="${v.id}" style="color: var(--os-error); border-color: #fee2e2; background: #fef2f2;"><i class="ri-delete-bin-line"></i> Delete</button>
+        </div>
+      </div>
+    `;
+  };
 
-    agendaContainer.innerHTML = html;
+  const bindVisitActions = (refreshCallback) => {
+    if (!agendaContainer) return;
 
-    // Rebind action buttons
     agendaContainer.querySelectorAll('.v-btn.whatsapp').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const rawPh = e.currentTarget.dataset.phone || '';
@@ -501,7 +531,6 @@ export async function initSiteVisitsView() {
               vObj.status = 'Completed';
               vObj.outcome = outcomeNotes;
             }
-            // Always persist updated status and outcome to localStorage
             localStorage.setItem('thanjai_visits', JSON.stringify(visits));
 
             await fetchFromAPI('/site_visits/' + id, {
@@ -524,12 +553,11 @@ export async function initSiteVisitsView() {
             });
 
             showToast('Site visit marked as Completed!', 'ri-checkbox-circle-fill');
-            renderAgenda(day);
+            if (typeof refreshCallback === 'function') refreshCallback();
             renderExecutivePerformanceSummary();
           } catch (err) {
             console.error('Error completing visit', err);
-            // Even if network fails, local is updated
-            renderAgenda(day);
+            if (typeof refreshCallback === 'function') refreshCallback();
             renderExecutivePerformanceSummary();
             showToast('Site visit completed locally!', 'ri-checkbox-circle-fill');
           }
@@ -546,7 +574,7 @@ export async function initSiteVisitsView() {
             visits = visits.filter(v => v.id != id);
             try { localStorage.setItem('thanjai_visits', JSON.stringify(visits)); } catch(e) {}
             updateCalendarDots();
-            renderAgenda(day);
+            if (typeof refreshCallback === 'function') refreshCallback();
             renderExecutivePerformanceSummary();
             showToast('Site visit removed.', 'ri-delete-bin-line');
           } catch (err) {
@@ -554,11 +582,111 @@ export async function initSiteVisitsView() {
             visits = visits.filter(v => v.id != id);
             try { localStorage.setItem('thanjai_visits', JSON.stringify(visits)); } catch(e) {}
             updateCalendarDots();
-            renderAgenda(day);
+            if (typeof refreshCallback === 'function') refreshCallback();
             renderExecutivePerformanceSummary();
           }
         }
       });
+    });
+  };
+
+  const renderAgenda = async (day) => {
+    if (!agendaContainer) return;
+    const monthStr = monthNames[currentMonth];
+    
+    const visibleVisits = filterVisitsForActiveUser(visits);
+    const dayVisits = visibleVisits.filter(v => parseInt(v.date) === parseInt(day) && v.month === monthStr);
+    
+    let html = `<h2 class="agenda-title">Visits for <span>${day} ${monthStr}</span></h2>`;
+    
+    if (dayVisits.length === 0) {
+      const isToday = parseInt(day) === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+      html += `
+        <div class="empty-state-card" style="padding: 28px 16px; text-align: center; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; margin-top: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #ffffff; color: #94a3b8; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; font-size: 1.3rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+            <i class="ri-calendar-event-line"></i>
+          </div>
+          <strong style="color: #334155; font-size: 0.95rem; display: block; margin-bottom: 4px;">${isToday ? "No site visits scheduled for today." : "No visits scheduled for this date."}</strong>
+          <p style="margin: 0 0 16px 0; font-size: 0.8rem; color: #64748b;">There are no appointments or property tours scheduled for ${day} ${monthStr}.</p>
+          <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button class="os-btn-primary" id="btn-empty-schedule-today" style="font-size: 0.82rem; font-weight: 700; padding: 8px 14px; background: #eb5e28; color: #fff; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+              <i class="ri-add-line"></i> Schedule for ${day} ${monthStr}
+            </button>
+            <button class="os-btn-secondary" id="btn-empty-view-all" style="font-size: 0.82rem; font-weight: 700; padding: 8px 14px; border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+              <i class="ri-calendar-todo-line"></i> View All Visits
+            </button>
+          </div>
+        </div>
+      `;
+      agendaContainer.innerHTML = html;
+
+      document.getElementById('btn-empty-schedule-today')?.addEventListener('click', () => {
+        document.getElementById('btn-open-schedule-visit')?.click();
+      });
+
+      document.getElementById('btn-empty-view-all')?.addEventListener('click', () => {
+        renderFilteredVisitsAgenda('all', 'All Recorded Visits');
+      });
+    } else {
+      html += dayVisits.map(renderVisitCardHtml).join('');
+      agendaContainer.innerHTML = html;
+      bindVisitActions(() => renderAgenda(day));
+    }
+  };
+
+  const renderFilteredVisitsAgenda = (filterType, filterTitle, filterParam = null) => {
+    if (!agendaContainer) return;
+    const visibleVisits = filterVisitsForActiveUser(visits);
+    
+    let filtered = [];
+    if (filterType === 'pre-inspections') {
+      filtered = visibleVisits.filter(v => v.visitType && v.visitType.toLowerCase().includes('inspection'));
+    } else if (filterType === 'customer-tours') {
+      filtered = visibleVisits.filter(v => !(v.visitType && v.visitType.toLowerCase().includes('inspection')));
+    } else if (filterType === 'completed') {
+      filtered = visibleVisits.filter(v => v.status === 'Completed');
+    } else if (filterType === 'staff' && filterParam) {
+      const sNorm = filterParam.toLowerCase().trim();
+      const sFirst = sNorm.split(' ')[0] || '';
+      filtered = visibleVisits.filter(v => {
+        const assigned = (v.assignedTo || '').toLowerCase().trim();
+        return assigned === sNorm || assigned.includes(sNorm) || sNorm.includes(assigned) || (sFirst.length >= 3 && (assigned.includes(sFirst) || sFirst.includes(assigned)));
+      });
+    } else {
+      filtered = visibleVisits;
+    }
+
+    let html = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+        <div>
+          <h2 class="agenda-title" style="margin: 0; font-size: 1.15rem;">Visits: <span style="color: #eb5e28;">${filterTitle}</span></h2>
+          <span style="font-size: 0.8rem; color: #64748b; font-weight: 600;">Showing ${filtered.length} total records</span>
+        </div>
+        <button id="btn-back-to-cal-day" style="font-size: 0.8rem; padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+          <i class="ri-arrow-left-line"></i> Back to Date View
+        </button>
+      </div>
+    `;
+
+    if (filtered.length === 0) {
+      html += `
+        <div class="empty-state-card" style="padding: 28px 16px; text-align: center; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; margin-top: 14px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: #ffffff; color: #94a3b8; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; font-size: 1.3rem;">
+            <i class="ri-filter-3-line"></i>
+          </div>
+          <strong style="color: #334155; font-size: 0.95rem; display: block; margin-bottom: 4px;">No visits found for "${filterTitle}"</strong>
+          <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Try selecting another filter or scheduling a new site visit.</p>
+        </div>
+      `;
+      agendaContainer.innerHTML = html;
+    } else {
+      html += filtered.map(renderVisitCardHtml).join('');
+      agendaContainer.innerHTML = html;
+      bindVisitActions(() => renderFilteredVisitsAgenda(filterType, filterTitle, filterParam));
+    }
+
+    document.getElementById('btn-back-to-cal-day')?.addEventListener('click', () => {
+      renderAgenda(selectedDay.toString());
     });
   };
 
@@ -720,7 +848,7 @@ export async function initSiteVisitsView() {
 
     if (kpiContainer) {
       kpiContainer.innerHTML = `
-        <div class="kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+        <div class="kpi-card filter-visit-kpi hover-lift" data-filter="pre-inspections" data-title="Staff Site Pre-Inspections" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; cursor: pointer; transition: all 0.2s;" title="Click to view all Staff Pre-Inspections">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
             <span style="font-size: 0.74rem; font-weight: 800; color: #718096; letter-spacing: 0.05em; text-transform: uppercase;">STAFF PRE-INSPECTIONS</span>
             <div style="width: 34px; height: 34px; border-radius: 10px; background: #f3e8ff; color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
@@ -737,7 +865,7 @@ export async function initSiteVisitsView() {
           </div>
         </div>
 
-        <div class="kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+        <div class="kpi-card filter-visit-kpi hover-lift" data-filter="customer-tours" data-title="Customer Property Tours" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; cursor: pointer; transition: all 0.2s;" title="Click to view all Customer Property Tours">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
             <span style="font-size: 0.74rem; font-weight: 800; color: #718096; letter-spacing: 0.05em; text-transform: uppercase;">CUSTOMER TOURS</span>
             <div style="width: 34px; height: 34px; border-radius: 10px; background: #fff5eb; color: #eb5e28; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
@@ -754,7 +882,7 @@ export async function initSiteVisitsView() {
           </div>
         </div>
 
-        <div class="kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+        <div class="kpi-card filter-visit-kpi hover-lift" data-filter="completed" data-title="Completed Site Visits" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; cursor: pointer; transition: all 0.2s;" title="Click to view all Completed Visits">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
             <span style="font-size: 0.74rem; font-weight: 800; color: #718096; letter-spacing: 0.05em; text-transform: uppercase;">TOTAL COMPLETED</span>
             <div style="width: 34px; height: 34px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
@@ -765,11 +893,11 @@ export async function initSiteVisitsView() {
             ${totalAllCompleted} <span style="font-size: 0.88rem; font-weight: 600; color: #64748b;">/ ${totalAllVisits} Visits</span>
           </div>
           <div style="font-size: 0.8rem; color: #059669; font-weight: 700;">
-            <i class="ri-check-double-line"></i> Verified Field Interactions
+            <i class="ri-check-double-line"></i> Click to view verified interactions
           </div>
         </div>
 
-        <div class="kpi-card" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column;">
+        <div class="kpi-card filter-visit-kpi hover-lift" data-filter="all" data-title="All Recorded Site Visits" style="background: #ffffff; padding: 18px 20px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; cursor: pointer; transition: all 0.2s;" title="Click to view all Site Visits">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
             <span style="font-size: 0.74rem; font-weight: 800; color: #718096; letter-spacing: 0.05em; text-transform: uppercase;">OVERALL COMPLETION</span>
             <div style="width: 34px; height: 34px; border-radius: 10px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
@@ -784,6 +912,14 @@ export async function initSiteVisitsView() {
           </div>
         </div>
       `;
+
+      kpiContainer.querySelectorAll('.filter-visit-kpi').forEach(card => {
+        card.addEventListener('click', () => {
+          const filterType = card.getAttribute('data-filter') || 'all';
+          const filterTitle = card.getAttribute('data-title') || 'Site Visits';
+          renderFilteredVisitsAgenda(filterType, filterTitle);
+        });
+      });
     }
 
     const execStats = computeExecutiveStats(visibleVisits);
@@ -891,9 +1027,23 @@ export async function initSiteVisitsView() {
     downloadExecutiveVisitsReportCSV(filterVisitsForActiveUser(visits));
   });
 
-  // initial render
+  // initial render with URL parameter detection
   renderCalendar();
-  renderAgenda(selectedDay.toString());
+  if (urlStaffParam) {
+    renderFilteredVisitsAgenda('staff', `Staff Pre-Inspections & Tours: ${urlStaffParam}`, urlStaffParam);
+  } else if (urlFilterParam) {
+    if (urlFilterParam === 'pre-inspections' || urlFilterParam.includes('inspection')) {
+      renderFilteredVisitsAgenda('pre-inspections', 'Staff Site Pre-Inspections');
+    } else if (urlFilterParam === 'customer-tours' || urlFilterParam.includes('tour')) {
+      renderFilteredVisitsAgenda('customer-tours', 'Customer Property Tours');
+    } else if (urlFilterParam === 'completed') {
+      renderFilteredVisitsAgenda('completed', 'Completed Site Visits');
+    } else {
+      renderFilteredVisitsAgenda('all', 'All Recorded Site Visits');
+    }
+  } else {
+    renderAgenda(selectedDay.toString());
+  }
   renderExecutivePerformanceSummary();
 
   // Schedule Visit Modal Logic

@@ -2,24 +2,27 @@ import { getPropertyById, getProperties } from '../utils/propertiesStore.js';
 import { sendWhatsAppMessage } from '../utils/whatsapp.js';
 import { showToast } from '../utils/toast.js';
 import { filterLeadsForActiveUser } from '../utils/adminUsersStore.js';
-import { mapLeadFromAPI, getLeads, saveLeads, initLeadsStore } from './LeadsView.js';
+import { mapLeadFromAPI, getLeads, saveLeads, initLeadsStore, consolidateLeadsByBuyer } from './LeadsView.js';
 import { openPropertyModalById } from '../components/PropertyDetailModal.js';
 import { fetchFromAPI } from '../utils/api.js';
 
 export function renderPipelineBoardView() {
   return `
     <div class="view-enter" style="height: 100%; display: flex; flex-direction: column;">
-      <div class="view-header-flex" style="margin-bottom: 24px;">
+      <div class="view-header-flex" style="margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 16px;">
-          <div style="width: 48px; height: 48px; background: rgba(247,147,26,0.1); border-radius: var(--os-radius-md); display: flex; align-items: center; justify-content: center; color: var(--os-luxury-orange); font-size: 1.5rem;">
+          <div style="width: 48px; height: 48px; background: rgba(235,94,40,0.1); border-radius: var(--os-radius-md); display: flex; align-items: center; justify-content: center; color: var(--os-luxury-orange, #eb5e28); font-size: 1.5rem;">
             <i class="ri-kanban-view"></i>
           </div>
           <div>
             <h1 class="view-title">Pipeline Board</h1>
-            <p class="view-subtitle">Drag cards between stages — some stages (marked <i class="ri-mail-line"></i> in the mobile select) send an automated WhatsApp to the client</p>
+            <p class="view-subtitle">Live CRM lead pipeline — drag cards between stages or manage lead statuses in real time</p>
           </div>
         </div>
       </div>
+
+      <!-- Dynamic Active Filter Banner -->
+      <div id="pipeline-filter-banner-container"></div>
 
       <div class="pipeline-board-container" id="pipeline-board">
         <!-- Columns rendered by JS -->
@@ -75,15 +78,136 @@ function formatCurrency(val, propId = null) {
   return '₹ ' + num.toLocaleString('en-IN');
 }
 
-export async function initPipelineBoardView() {
+function isSameDay(d1, d2) {
+  if (!d1 || !d2) return false;
+  const date1 = new Date(d1);
+  const date2 = new Date(d2);
+  if (isNaN(date1.getTime()) || isNaN(date2.getTime())) return false;
+  return date1.getFullYear() === date2.getFullYear() &&
+         date1.getMonth() === date2.getMonth() &&
+         date1.getDate() === date2.getDate();
+}
+
+function isLeadCreatedToday(lead) {
+  if (!lead) return false;
+  const now = new Date();
+  const rawDate = lead.createdAt || lead.created_at || lead.date || lead.created;
+  if (!rawDate) return false;
+  let leadDate = null;
+  if (typeof rawDate === 'number') leadDate = new Date(rawDate);
+  else if (!isNaN(Number(rawDate)) && Number(rawDate) > 1000000) leadDate = new Date(Number(rawDate));
+  else {
+    const dStr = String(rawDate).trim();
+    leadDate = new Date(dStr);
+    if (isNaN(leadDate.getTime())) {
+      const parts = dStr.split(/[-/\s:]/);
+      if (parts.length >= 3) {
+        if (parts[0].length === 4) leadDate = new Date(parts[0], parts[1] - 1, parts[2]);
+        else if (parts[2].length === 4) leadDate = new Date(parts[2], parts[1] - 1, parts[0]);
+      }
+    }
+  }
+  if (!leadDate || isNaN(leadDate.getTime())) return false;
+  return leadDate.getDate() === now.getDate() &&
+         leadDate.getMonth() === now.getMonth() &&
+         leadDate.getFullYear() === now.getFullYear();
+}
+
+function isLeadHighPriority(lead) {
+  if (!lead) return false;
+  const p = (lead.priority || '').toUpperCase();
+  const s = (lead.status || '').toLowerCase();
+  return p === 'HIGH' || s === 'hot' || s === 'interested';
+}
+
+function isLeadFollowupToday(lead) {
+  if (!lead) return false;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  
+  if (lead.followup && lead.followup !== '—' && lead.followup !== '-') {
+    const fDate = new Date(lead.followup);
+    if (!isNaN(fDate.getTime())) {
+      return fDate >= now && fDate <= end;
+    }
+  }
+  const isFupStage = ['follow up', 'follow up pending', 'contacted', 'property shared'].includes((lead.status || '').toLowerCase());
+  return isFupStage;
+}
+
+function matchStageFilter(stageId, filterStageStr) {
+  if (!filterStageStr) return true;
+  const fLower = filterStageStr.toLowerCase().trim();
+  const sLower = (stageId || '').toLowerCase().trim();
+  
+  if (fLower === sLower) return true;
+  
+  if (fLower === 'new' || fLower.includes('new inquir') || fLower === 'new lead') {
+    return sLower === 'new lead';
+  }
+  if (fLower === 'contacted' || fLower.includes('initial contact')) {
+    return sLower === 'initial contact';
+  }
+  if (fLower.includes('property shared') || fLower.includes('property matching') || fLower.includes('shared to partner')) {
+    return sLower === 'property shared' || sLower === 'property matching' || sLower.includes('shared to partner');
+  }
+  if (fLower.includes('follow up') || fLower.includes('follow')) {
+    return sLower === 'follow up pending';
+  }
+  if (fLower.includes('site visit') || fLower.includes('tour') || fLower === 'interested') {
+    return sLower === 'site visit scheduled' || sLower === 'site visit completed';
+  }
+  if (fLower.includes('negotiat') || fLower.includes('bank loan') || fLower.includes('loan')) {
+    return sLower === 'negotiation' || sLower === 'bank loan';
+  }
+  if (fLower.includes('closed') || fLower.includes('won') || fLower.includes('register') || fLower.includes('convert')) {
+    return sLower === 'registration';
+  }
+  return sLower.includes(fLower) || fLower.includes(sLower);
+}
+
+let activeBoardFilter = {
+  stage: null,
+  date: null,
+  priority: null,
+  followup: null,
+  staff: null,
+  search: null
+};
+
+export async function initPipelineBoardView(queryParam = null) {
   const board = document.getElementById('pipeline-board');
   if (!board) return;
 
-  let leads = [...getLeads()];
+  // 1. Reset and parse incoming URL parameters
+  activeBoardFilter = {
+    stage: null,
+    date: null,
+    priority: null,
+    followup: null,
+    staff: null,
+    search: null
+  };
+
+  const rawHash = window.location.hash.slice(1);
+  const qStr = queryParam || (rawHash.includes('?') ? rawHash.split('?')[1] : '');
+  if (qStr) {
+    const params = new URLSearchParams(qStr);
+    activeBoardFilter.stage = params.get('stage') || params.get('status') || null;
+    activeBoardFilter.date = params.get('date') || null;
+    activeBoardFilter.priority = params.get('priority') || null;
+    activeBoardFilter.followup = params.get('followup') || params.get('due') || null;
+    activeBoardFilter.staff = params.get('staff') || null;
+    activeBoardFilter.search = params.get('search') || params.get('prop') || null;
+  }
+
+  let leads = [...consolidateLeadsByBuyer(getLeads())];
   if (leads.length === 0) {
     const idbLeads = await initLeadsStore();
     if (idbLeads && Array.isArray(idbLeads) && idbLeads.length > 0) {
-      leads = [...idbLeads];
+      leads = [...consolidateLeadsByBuyer(idbLeads)];
     }
   }
   renderBoard();
@@ -158,7 +282,7 @@ export async function initPipelineBoardView() {
         });
 
         saveLeads(filteredMapped);
-        leads = [...filteredMapped];
+        leads = [...consolidateLeadsByBuyer(filteredMapped)];
 
         // View-mount guard: if user navigated away from Pipeline, exit without heavy DOM re-rendering
         if (!document.getElementById('pipeline-board')) {
@@ -198,6 +322,8 @@ export async function initPipelineBoardView() {
 
   function renderBoard() {
     board.innerHTML = '';
+    const bannerContainer = document.getElementById('pipeline-filter-banner-container');
+
     leads.forEach(normalizeLeadStatus);
     leads.sort((a, b) => {
       const timeA = typeof a.createdAt === 'number' ? a.createdAt : new Date(a.createdAt || 0).getTime();
@@ -207,7 +333,107 @@ export async function initPipelineBoardView() {
       }
       return 0;
     });
-    const userLeads = filterLeadsForActiveUser(leads);
+    let userLeads = filterLeadsForActiveUser(leads);
+
+    // Apply active non-stage filters
+    if (activeBoardFilter.date && activeBoardFilter.date.toLowerCase() === 'today') {
+      userLeads = userLeads.filter(isLeadCreatedToday);
+    }
+
+    if (activeBoardFilter.priority && activeBoardFilter.priority.toLowerCase() === 'high') {
+      userLeads = userLeads.filter(isLeadHighPriority);
+    }
+
+    if (activeBoardFilter.followup) {
+      const nowDay = new Date(); nowDay.setHours(0, 0, 0, 0);
+      const endDay = new Date(); endDay.setHours(23, 59, 59, 999);
+      userLeads = userLeads.filter(l => {
+        let fupDate = null;
+        if (l.followup && l.followup !== '—' && l.followup !== '-') {
+          const d = new Date(l.followup);
+          if (!isNaN(d.getTime())) fupDate = d;
+        }
+        const isFupStage = ['follow up', 'follow up pending', 'contacted', 'property shared'].includes((l.status || '').toLowerCase());
+        if (activeBoardFilter.followup.toLowerCase() === 'overdue') {
+          return fupDate && fupDate < nowDay;
+        } else if (activeBoardFilter.followup.toLowerCase() === 'today') {
+          return (fupDate && fupDate >= nowDay && fupDate <= endDay) || (!fupDate && isFupStage);
+        } else if (activeBoardFilter.followup.toLowerCase() === 'upcoming') {
+          return fupDate && fupDate > endDay;
+        }
+        return true;
+      });
+    }
+
+    if (activeBoardFilter.staff) {
+      const staffNorm = activeBoardFilter.staff.toLowerCase().trim();
+      userLeads = userLeads.filter(l => {
+        const assigned = (l.assignTo || l.assignedTo || '').toLowerCase().trim();
+        return assigned === staffNorm || assigned.includes(staffNorm) || staffNorm.includes(assigned);
+      });
+    }
+
+    if (activeBoardFilter.search) {
+      const qClean = activeBoardFilter.search.toLowerCase().trim();
+      userLeads = userLeads.filter(l => {
+        const name = (l.name || '').toLowerCase();
+        const phone = (l.phone || l.mobile || '').toLowerCase();
+        const propId = String(l.propertyId || l.propertyMatch || '').toLowerCase();
+        return name.includes(qClean) || phone.includes(qClean) || propId.includes(qClean);
+      });
+    }
+
+    // Determine if any filter is active
+    const isFiltered = activeBoardFilter.stage || activeBoardFilter.date || activeBoardFilter.priority || activeBoardFilter.followup || activeBoardFilter.staff || activeBoardFilter.search;
+
+    // Render Filter Banner if filtered
+    if (bannerContainer) {
+      if (isFiltered) {
+        let filterLabels = [];
+        if (activeBoardFilter.date) filterLabels.push(`Date: ${activeBoardFilter.date.toUpperCase() === 'TODAY' ? 'Today' : activeBoardFilter.date}`);
+        if (activeBoardFilter.stage) filterLabels.push(`Stage: ${activeBoardFilter.stage}`);
+        if (activeBoardFilter.priority) filterLabels.push(`Priority: ${activeBoardFilter.priority.toUpperCase()}`);
+        if (activeBoardFilter.followup) filterLabels.push(`Follow-up: ${activeBoardFilter.followup.toUpperCase() === 'TODAY' ? 'Due Today' : activeBoardFilter.followup}`);
+        if (activeBoardFilter.staff) filterLabels.push(`Staff: ${activeBoardFilter.staff}`);
+        if (activeBoardFilter.search) filterLabels.push(`Search: "${activeBoardFilter.search}"`);
+
+        const displayLabel = filterLabels.join(' • ');
+
+        // Calculate matching leads in view
+        let matchingTotal = userLeads.length;
+        if (activeBoardFilter.stage) {
+          matchingTotal = userLeads.filter(l => matchStageFilter(l.status, activeBoardFilter.stage)).length;
+        }
+
+        bannerContainer.innerHTML = `
+          <div class="pipeline-filter-banner" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #fff7ed; border: 1.5px solid #fdba74; border-radius: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 8px rgba(234, 88, 12, 0.08);">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span style="font-size: 0.78rem; font-weight: 800; color: #9a3412; text-transform: uppercase; letter-spacing: 0.05em;">ACTIVE FILTER:</span>
+              <span class="os-badge" style="background: #ea580c; color: #ffffff; font-weight: 800; font-size: 0.82rem; padding: 4px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.15);">
+                <i class="ri-filter-3-fill"></i> ${displayLabel}
+              </span>
+              <span style="font-size: 0.85rem; color: #7c2d12; font-weight: 800;">
+                (${matchingTotal.toLocaleString()} lead${matchingTotal !== 1 ? 's' : ''} matching)
+              </span>
+            </div>
+            <button id="pipeline-clear-filter-btn" class="os-btn-secondary" style="padding: 6px 14px; font-size: 0.82rem; font-weight: 800; background: #ffffff; color: #ea580c; border: 1.5px solid #ea580c; cursor: pointer; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+              <i class="ri-close-circle-line" style="font-size: 1.05rem;"></i> Clear Filter & Show All Stages
+            </button>
+          </div>
+        `;
+
+        const clearBtn = document.getElementById('pipeline-clear-filter-btn');
+        if (clearBtn) {
+          clearBtn.addEventListener('click', () => {
+            activeBoardFilter = { stage: null, date: null, priority: null, followup: null, staff: null, search: null };
+            window.location.hash = '#pipeline';
+            renderBoard();
+          });
+        }
+      } else {
+        bannerContainer.innerHTML = '';
+      }
+    }
 
     // Build phone-to-property lookup map once per board render
     const phonePropMap = new Map();
@@ -240,29 +466,58 @@ export async function initPipelineBoardView() {
       }
     });
 
-    STAGES.forEach(stage => {
+    // If a stage filter is active, only render the matching stage column(s) for focused clarity and accurate empty state rendering
+    const stagesToRender = activeBoardFilter.stage
+      ? STAGES.filter(s => matchStageFilter(s.id, activeBoardFilter.stage))
+      : STAGES;
+
+    const finalStages = (stagesToRender.length > 0) ? stagesToRender : STAGES;
+
+    finalStages.forEach(stage => {
       const stageLeads = stageLeadsMap.get(stage.id) || [];
 
       const colDiv = document.createElement('div');
       colDiv.className = 'pipeline-col';
+      if (activeBoardFilter.stage) {
+        colDiv.classList.add('pipeline-col-focused');
+        colDiv.style.flex = finalStages.length === 1 ? '1 1 380px' : '0 0 340px';
+        colDiv.style.maxWidth = finalStages.length === 1 ? '600px' : '420px';
+      }
       colDiv.dataset.stage = stage.id;
       
       const maxRenderCards = 60;
       const visibleLeads = stageLeads.slice(0, maxRenderCards);
       const remainingCount = stageLeads.length - visibleLeads.length;
 
-      colDiv.innerHTML = `
-        <div class="pipeline-col-header">
-          <span>${stage.name}</span>
-          <span class="pipeline-col-count">${stageLeads.length.toLocaleString()}</span>
-        </div>
-        <div class="pipeline-col-cards" data-stage="${stage.id}">
-          ${visibleLeads.map(lead => generateCardHTML(lead, phonePropMap)).join('')}
-          ${remainingCount > 0 ? `
+      let cardsContent = '';
+      if (stageLeads.length === 0) {
+        cardsContent = `
+          <div class="pipeline-col-empty-card" style="text-align: center; padding: 36px 16px; background: rgba(255,255,255,0.75); border: 1.5px dashed var(--os-gray-300, #cbd5e1); border-radius: var(--os-radius-md, 12px); margin-top: 8px;">
+            <div style="width: 44px; height: 44px; border-radius: 50%; background: #f8fafc; color: #94a3b8; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; font-size: 1.3rem;">
+              <i class="ri-inbox-line"></i>
+            </div>
+            <div style="font-weight: 800; color: #334155; font-size: 0.92rem; margin-bottom: 4px;">No leads in ${stage.name}</div>
+            <p style="margin: 0; font-size: 0.78rem; color: #64748b; line-height: 1.4;">There are currently 0 active leads in this pipeline stage.</p>
+          </div>
+        `;
+      } else {
+        cardsContent = visibleLeads.map(lead => generateCardHTML(lead, phonePropMap)).join('');
+        if (remainingCount > 0) {
+          cardsContent += `
             <div class="pipeline-more-indicator" style="text-align: center; padding: 10px 8px; font-size: 0.76rem; font-weight: 700; color: var(--os-gray-500); background: rgba(0,0,0,0.02); border-radius: var(--os-radius-sm); border: 1px dashed var(--os-gray-300); margin-top: 6px;">
               <i class="ri-list-check-2"></i> + ${remainingCount.toLocaleString()} more leads
             </div>
-          ` : ''}
+          `;
+        }
+      }
+
+      colDiv.innerHTML = `
+        <div class="pipeline-col-header" style="${activeBoardFilter.stage ? 'border-top-color: var(--os-luxury-orange, #eb5e28);' : ''}">
+          <span>${stage.name}</span>
+          <span class="pipeline-col-count" style="${stageLeads.length > 0 && activeBoardFilter.stage ? 'background: #fff7ed; color: #ea580c; font-weight: 800;' : ''}">${stageLeads.length.toLocaleString()}</span>
+        </div>
+        <div class="pipeline-col-cards" data-stage="${stage.id}">
+          ${cardsContent}
         </div>
       `;
       
